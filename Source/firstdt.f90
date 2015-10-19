@@ -227,7 +227,6 @@ contains
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
     
     rho_min = 1.d-20
@@ -248,10 +247,8 @@ contains
        eos_state%T     = s(i,temp_comp)
        eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
-       pt_index(:) = (/i, -1, -1/)
-
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state)
        
        spdx    = max(spdx,eos_state%cs)
        pforcex = max(pforcex,abs(force(i)))
@@ -337,7 +334,6 @@ contains
     real (kind = dp_t)  :: gradp0,denom
     integer             :: i,j
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     rho_min = 1.d-20
@@ -362,10 +358,8 @@ contains
           eos_state%T     = s(i,j,temp_comp)
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          pt_index(:) = (/i, j, -1/)
-          
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, eos_state, .false., pt_index)
+          call eos(eos_input_rt, eos_state)
           
           spdx    = max(spdx,eos_state%cs)
           spdy    = max(spdy,eos_state%cs)
@@ -461,7 +455,6 @@ contains
     real (kind = dp_t)  :: eps,dt_divu,dt_sound,gradp0,denom,rho_min
     integer             :: i,j,k
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     eps = 1.0d-8
@@ -490,10 +483,8 @@ contains
              eos_state%T = s(i,j,k,temp_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-             
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              spdx    = max(spdx,eos_state%cs)
              spdy    = max(spdy,eos_state%cs)
@@ -604,7 +595,6 @@ contains
 
     real (kind = dp_t) :: gp0(0:nr_fine)
 
-    integer pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
@@ -635,10 +625,8 @@ contains
              eos_state%T     = s(i,j,k,temp_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-             
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              spdx    = max(spdx,eos_state%cs)
              spdy    = max(spdy,eos_state%cs)

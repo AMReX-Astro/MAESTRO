@@ -93,7 +93,6 @@ contains
     ! local variables
     integer :: i
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     do i = lo(1), hi(1)
@@ -107,10 +106,8 @@ contains
        eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        eos_state%T     = s(i,temp_comp)
 
-       pt_index(:) = (/i, -1, -1/)
-
        ! dens, pres, and xmass are inputs
-       call eos(eos_input_rp, eos_state, .false., pt_index)
+       call eos(eos_input_rp, eos_state)
 
        gamma(i) = eos_state%gam1
 
@@ -134,7 +131,6 @@ contains
     ! local variables
     integer :: i, j
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     do j = lo(2), hi(2)
@@ -149,10 +145,8 @@ contains
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           eos_state%T     = s(i,j,temp_comp)
 
-          pt_index(:) = (/i, j, -1/)
-
           ! dens, pres, and xmass are inputs
-          call eos(eos_input_rp, eos_state, .false., pt_index)
+          call eos(eos_input_rp, eos_state)
 
           gamma(i,j) = eos_state%gam1
 
@@ -178,10 +172,9 @@ contains
     ! local variables
     integer :: i, j, k
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,pt_index,eos_state)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -194,11 +187,8 @@ contains
              endif
              eos_state%T     = s(i,j,k,temp_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-             pt_index(:) = (/i, j, k/)
-
              ! dens, pres, and xmass are inputs
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
 
              gamma(i,j,k) = eos_state%gam1
 
@@ -229,13 +219,12 @@ contains
 
     real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -249,10 +238,8 @@ contains
              eos_state%T     = s(i,j,k,temp_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-
              ! dens, pres, and xmass are inputs
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
 
              gamma(i,j,k) = eos_state%gam1
 

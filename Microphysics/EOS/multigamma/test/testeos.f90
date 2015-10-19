@@ -54,7 +54,7 @@ program testeos
   state % T   = temp_good
   state % xn  = Xin
 
-  call eos(eos_input_rt, state, do_diag)
+  call eos(eos_input_rt, state)
 
   pres_good = state%p
   entr_good = state%s
@@ -86,7 +86,7 @@ program testeos
 
   state%T = 0.1*temp_good
 
-  call eos(eos_input_rh, state, do_diag)
+  call eos(eos_input_rh, state)
 
   ! compute the error in T
   err1 = abs(temp_good - state%T)/temp_good
@@ -102,7 +102,7 @@ program testeos
 
   state%rho = 0.1*dens_good
 
-  call eos(eos_input_tp, state, do_diag)
+  call eos(eos_input_tp, state)
 
   ! compute the error in rho
   err1 = abs(dens_good - state%rho)/dens_good
@@ -118,7 +118,7 @@ program testeos
 
   state%T = 0.1*temp_good
 
-  call eos(eos_input_rp, state, do_diag)
+  call eos(eos_input_rp, state)
 
   ! compute the error in T
   err1 = abs(temp_good - state%T)/temp_good
@@ -134,7 +134,7 @@ program testeos
 
   state%T = 0.1*temp_good
 
-  call eos(eos_input_re, state, do_diag)
+  call eos(eos_input_re, state)
 
   ! compute the error in T
   err1 = abs(temp_good - state%T)/temp_good
@@ -185,7 +185,7 @@ program testeos
   state%T = 0.1*temp_good
   state%rho = 0.1*dens_good
 
-  call eos(eos_input_ph, state, do_diag)
+  call eos(eos_input_ph, state)
 
   ! compute the error in T and rho
   err1 = abs(temp_good - state%T)/temp_good

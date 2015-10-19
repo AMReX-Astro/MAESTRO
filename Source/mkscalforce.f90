@@ -889,7 +889,6 @@ contains
     real(kind=dp_t) :: gradp0, wadv, dhdp
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
     do i = lo(1),hi(1)
 
@@ -908,10 +907,8 @@ contains
        eos_state%rho   = s(i,rho_comp)
        eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1) / s(i,rho_comp)
 
-       pt_index(:) = (/i, -1, -1/)
-
        ! dens, temp, xmass inputs
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state)
 
        dhdp = ONE / s(i,rho_comp) + ( s(i,rho_comp) * eos_state%dedr - &
                                       eos_state%p / s(i,rho_comp) ) &
@@ -955,7 +952,6 @@ contains
     real(kind=dp_t) :: gradp0, wadv, dhdp
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
     do j = lo(2),hi(2)
 
@@ -976,10 +972,8 @@ contains
           eos_state%rho   = s(i,j,rho_comp)
           eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
 
-          pt_index(:) = (/i, j, -1/)
-
           ! dens, temp, xmass inputs
-         call eos(eos_input_rt, eos_state, .false., pt_index)
+         call eos(eos_input_rt, eos_state)
 
          dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * eos_state%dedr - &
                                           eos_state%p / s(i,j,rho_comp) ) &
@@ -1022,9 +1016,8 @@ contains
     real(kind=dp_t) :: dhdp, gradp0, wadv
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,eos_state,pt_index,dhdp,wadv)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,eos_state,dhdp,wadv)
     do k = lo(3),hi(3)
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
@@ -1044,10 +1037,8 @@ contains
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
-             pt_index(:) = (/i, j, k/)
-             
              ! dens, temp, xmass inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * eos_state%dedr - &
                   eos_state%p / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * eos_state%dpdr )
@@ -1095,13 +1086,12 @@ contains
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,dhdp,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,ugradp,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,dhdp,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,ugradp,eos_state)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -1110,10 +1100,8 @@ contains
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
-             pt_index(:) = (/i, j, k/)
-             
              ! dens, temp, xmass inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * eos_state%dedr - &
                                                 eos_state%p / s(i,j,k,rho_comp) ) &

@@ -30,7 +30,7 @@ contains
     logical         , intent(in   ) :: do_diag
     real (kind=dp_t), intent(inout) :: conductivity
 
-    call eos(input, eos_state, do_diag)
+    call eos(input, eos_state)
 
     ! fill the conductivity
     conductivity = conductivity_constant

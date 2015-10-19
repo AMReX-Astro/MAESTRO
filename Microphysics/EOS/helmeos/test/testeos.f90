@@ -39,7 +39,7 @@ program testeos
 
   do_diag = .false.
 
-  call eos(eos_input_rt, eos_state, do_diag)
+  call eos(eos_input_rt, eos_state)
 
   print *, 'eos_input_rt:'
   print *, 'dens: ', dens, ' temp: ', temp

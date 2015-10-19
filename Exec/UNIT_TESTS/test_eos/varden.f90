@@ -161,7 +161,7 @@ subroutine varden()
                  eos_state%rho   = dens_zone
                  eos_state%xn(:) = xn_zone(:)
 
-                 call eos(eos_input_rt, eos_state, .false.)
+                 call eos(eos_input_rt, eos_state)
 
                  ! store the thermodynamic state
                  sp(ii,jj,kk,rho_comp) = dens_zone
@@ -186,7 +186,7 @@ subroutine varden()
                  eos_state%h     = sp(ii,jj,kk,h_comp)
                  eos_state%xn(:) = xn_zone(:)
 
-                 call eos(eos_input_rh, eos_state, .false.)
+                 call eos(eos_input_rh, eos_state)
 
                  ! store the thermodynamic state
                  sp(ii,jj,kk,tfromrh_comp) = eos_state%T
@@ -205,7 +205,7 @@ subroutine varden()
                  eos_state%p     = sp(ii,jj,kk,p_comp)
                  eos_state%xn(:) = xn_zone(:)
 
-                 call eos(eos_input_tp, eos_state, .false.)
+                 call eos(eos_input_tp, eos_state)
 
                  ! store the thermodynamic state
                  sp(ii,jj,kk,rfromtp_comp) = eos_state%rho
@@ -224,7 +224,7 @@ subroutine varden()
                  eos_state%p     = sp(ii,jj,kk,p_comp)
                  eos_state%xn(:) = xn_zone(:)
 
-                 call eos(eos_input_rp, eos_state, .false.)
+                 call eos(eos_input_rp, eos_state)
 
                  ! store the thermodynamic state
                  sp(ii,jj,kk,tfromrp_comp) = eos_state%T
@@ -243,7 +243,7 @@ subroutine varden()
                  eos_state%e     = sp(ii,jj,kk,e_comp)
                  eos_state%xn(:) = xn_zone(:)
 
-                 call eos(eos_input_re, eos_state, .false.)
+                 call eos(eos_input_re, eos_state)
 
                  ! store the thermodynamic state
                  sp(ii,jj,kk,tfromre_comp) = eos_state%T
@@ -268,7 +268,7 @@ subroutine varden()
                  ! of entropy throughout the entire rho-T plane
                  if (eos_state%s > ZERO) then
 
-                    call eos(eos_input_ps, eos_state, .false.)
+                    call eos(eos_input_ps, eos_state)
 
                     ! store the thermodynamic state
                     sp(ii,jj,kk,tfromps_comp) = eos_state%T

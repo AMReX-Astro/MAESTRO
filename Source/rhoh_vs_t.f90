@@ -190,7 +190,6 @@ contains
     integer :: i
     real(kind=dp_t) :: t0_edge
     
-    integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
 
@@ -229,9 +228,7 @@ contains
 
        endif
 
-       pt_index(:) = (/i, -1, -1/)
-
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state)
 
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
            enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -275,7 +272,6 @@ contains
     integer :: i,j
     real(kind=dp_t) :: t0_edge
 
-    integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
     ! x-edge
@@ -315,9 +311,7 @@ contains
               
           endif
            
-          pt_index(:) = (/i, j, -1/)
-          
-          call eos(eos_input_rt, eos_state, .false., pt_index)
+          call eos(eos_input_rt, eos_state)
            
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -368,9 +362,7 @@ contains
           endif
 
 
-          pt_index(:) = (/i, j, -1/)
-          
-          call eos(eos_input_rt, eos_state, .false., pt_index)
+          call eos(eos_input_rt, eos_state)
            
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -416,11 +408,10 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: t0_edge
 
-    integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
     ! x-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -458,9 +449,7 @@ contains
 
              endif
 
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -476,7 +465,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! y-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state,pt_index)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -514,9 +503,7 @@ contains
 
              endif                
 
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -532,7 +519,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! z-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state,pt_index) 
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,eos_state)
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -570,9 +557,7 @@ contains
 
              endif
 
-             pt_index(:) = (/i, j, k/)
-
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -617,11 +602,10 @@ contains
     integer :: i, j, k
     real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge
 
-    integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
     
     ! x-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
@@ -659,9 +643,7 @@ contains
 
              endif
 
-             pt_index(:) = (/i, j, k/)
-
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -679,7 +661,7 @@ contains
 
 
     ! y-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
@@ -717,9 +699,7 @@ contains
 
              endif
 
-             pt_index(:) = (/i, j, k/)
-
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -736,7 +716,7 @@ contains
     !$OMP END PARALLEL DO
 
     ! z-edge
-    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,t0_edge,rho0_edge,rhoh0_edge,eos_state)
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -774,9 +754,7 @@ contains
 
              endif
 
-             pt_index(:) = (/i, j, k/)
-
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -874,7 +852,6 @@ contains
     
     ! Local variables
     integer :: i
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
@@ -891,9 +868,7 @@ contains
           eos_state%e = state(i,rhoh_comp) / state(i,rho_comp) - &
                p0(i) / state(i,rho_comp)
 
-          pt_index(:) = (/i, -1, -1/)
-
-          call eos(eos_input_re, eos_state, .false., pt_index)
+          call eos(eos_input_re, eos_state)
           
           state(i,temp_comp) = eos_state%T
 
@@ -911,9 +886,7 @@ contains
 
           eos_state%h = state(i,rhoh_comp) / state(i,rho_comp)
 
-          pt_index(:) = (/i, -1, -1/)
-
-          call eos(eos_input_rh, eos_state, .false., pt_index)
+          call eos(eos_input_rh, eos_state)
           
           state(i,temp_comp) = eos_state%T
 
@@ -940,7 +913,6 @@ contains
     
     ! Local variables
     integer :: i, j
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
@@ -958,9 +930,7 @@ contains
              eos_state%e = state(i,j,rhoh_comp) / state(i,j,rho_comp) - &
                   p0(j) / state(i,j,rho_comp)
 
-             pt_index(:) = (/i, j, -1/)
-          
-             call eos(eos_input_re, eos_state, .false., pt_index)
+             call eos(eos_input_re, eos_state)
           
              state(i,j,temp_comp) = eos_state%T
           
@@ -980,9 +950,7 @@ contains
              
              eos_state%h = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
-             pt_index(:) = (/i, j, -1/)
-          
-             call eos(eos_input_rh, eos_state, .false., pt_index)
+             call eos(eos_input_rh, eos_state)
           
              state(i,j,temp_comp) = eos_state%T
           
@@ -1010,12 +978,11 @@ contains
 
     ! Local variables
     integer :: i, j, k
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1028,11 +995,9 @@ contains
 
                 ! e = h - p/rho
                 eos_state%e = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - &
-                     p0(k) / state(i,j,k,rho_comp)
-                
-                pt_index(:) = (/i, j, k/)
-             
-                call eos(eos_input_re, eos_state, .false., pt_index)
+                     p0(k) / state(i,j,k,rho_comp) 
+            
+                call eos(eos_input_re, eos_state)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1043,7 +1008,7 @@ contains
 
     else
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1056,9 +1021,7 @@ contains
 
                 eos_state%h = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
                 
-                pt_index(:) = (/i, j, k/)
-             
-                call eos(eos_input_rh, eos_state, .false., pt_index)
+                call eos(eos_input_rh, eos_state)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1091,7 +1054,6 @@ contains
     ! Local variables
     integer :: i, j, k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     if (use_eos_e_instead_of_h) then
@@ -1099,7 +1061,7 @@ contains
        allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1114,9 +1076,7 @@ contains
                 eos_state%e = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - &
                      p0_cart(i,j,k,1) / state(i,j,k,rho_comp)
                 
-                pt_index(:) = (/i, j, k/)
-             
-                call eos(eos_input_re, eos_state, .false., pt_index)
+                call eos(eos_input_re, eos_state)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1129,7 +1089,7 @@ contains
 
     else
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+       !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -1142,9 +1102,7 @@ contains
 
                 eos_state%h = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
                 
-                pt_index(:) = (/i, j, k/)
-             
-                call eos(eos_input_rh, eos_state, .false., pt_index)
+                call eos(eos_input_rh, eos_state)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1238,7 +1196,6 @@ contains
     
     ! Local variables
     integer :: i
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     do i = lo(1), hi(1)
@@ -1255,9 +1212,7 @@ contains
           eos_state%p = p0(i)
        endif
 
-       pt_index(:) = (/i, -1, -1/)
-
-       call eos(eos_input_rp, eos_state, .false., pt_index)
+       call eos(eos_input_rp, eos_state)
 
        state(i,temp_comp) = eos_state%T
 
@@ -1282,7 +1237,6 @@ contains
     
     ! Local variables
     integer :: i, j
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
     
     do j = lo(2), hi(2)
@@ -1300,9 +1254,7 @@ contains
              eos_state%p = p0(j)
           endif
 
-          pt_index(:) = (/i, j, -1/)
-          
-          call eos(eos_input_rp, eos_state, .false., pt_index)
+          call eos(eos_input_rp, eos_state)
           
           state(i,j,temp_comp) = eos_state%T
           
@@ -1329,10 +1281,9 @@ contains
 
     ! Local variables
     integer :: i, j, k
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1349,9 +1300,7 @@ contains
 
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
              
              state(i,j,k,temp_comp) = eos_state%T
              
@@ -1382,13 +1331,12 @@ contains
     ! Local variables
     integer :: i, j, k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1404,9 +1352,7 @@ contains
              endif
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
              
              state(i,j,k,temp_comp) = eos_state%T
              
@@ -1503,7 +1449,6 @@ contains
     
     ! Local variables
     integer :: i
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
     
     do i = lo(1), hi(1)
@@ -1515,9 +1460,7 @@ contains
        
        eos_state%h = state(i,rhoh_comp) / state(i,rho_comp)
 
-       pt_index(:) = (/i, -1, -1/)
-       
-       call eos(eos_input_rh, eos_state, .false., pt_index)
+       call eos(eos_input_rh, eos_state)
        
        peos(i) = eos_state%p
        
@@ -1542,7 +1485,6 @@ contains
     
     ! Local variables
     integer :: i, j
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
     
     do j = lo(2), hi(2)
@@ -1555,9 +1497,7 @@ contains
 
           eos_state%h = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
-          pt_index(:) = (/i, j, -1/)
-
-          call eos(eos_input_rh, eos_state, .false., pt_index)
+          call eos(eos_input_rh, eos_state)
 
           peos(i,j) = eos_state%p
 
@@ -1584,10 +1524,9 @@ contains
 
     ! Local variables
     integer :: i, j, k
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1598,10 +1537,8 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              eos_state%h = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-
-             pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rh, eos_state, .false., pt_index)
+             call eos(eos_input_rh, eos_state)
              
              peos(i,j,k) = eos_state%p
              
@@ -1699,7 +1636,6 @@ contains
 
     ! local
     integer    :: i
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     do i=lo(1),hi(1)
@@ -1712,9 +1648,8 @@ contains
        else
           eos_state%p     = p0(i)
        endif
-       pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rp, eos_state, .false., pt_index)
+       call eos(eos_input_rp, eos_state)
 
        s(i,rhoh_comp) = eos_state%rho*eos_state%h
        s(i,temp_comp) = eos_state%T
@@ -1740,7 +1675,6 @@ contains
 
     ! local
     integer    :: i,j
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     do j=lo(2),hi(2)
@@ -1755,9 +1689,7 @@ contains
              eos_state%p     = p0(j)
           endif
 
-          pt_index(:) = (/i, j, -1/)
-
-          call eos(eos_input_rp, eos_state, .false., pt_index)
+          call eos(eos_input_rp, eos_state)
 
           s(i,j,rhoh_comp) = eos_state%rho*eos_state%h
           s(i,j,temp_comp) = eos_state%T
@@ -1784,10 +1716,9 @@ contains
 
     ! local
     integer    :: i,j,k
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -1801,9 +1732,7 @@ contains
                 eos_state%p     = p0(k)
              endif
 
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
              
              s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
              s(i,j,k,temp_comp) = eos_state%T
@@ -1835,13 +1764,12 @@ contains
     ! local
     integer    :: i,j,k
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
-    integer :: pt_index(MAX_SPACEDIM)
     type (eos_t) :: eos_state
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
+    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state)
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -1855,9 +1783,7 @@ contains
                 eos_state%p     = p0_cart(i,j,k,1)
              endif
 
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
              
              s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
              s(i,j,k,temp_comp) = eos_state%T

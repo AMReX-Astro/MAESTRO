@@ -1,4 +1,4 @@
-subroutine f_rhs(n, t, y, ydot, rpar, ipar)
+subroutine f_rhs(n, time, y, ydot, rpar, ipar)
 
   use bl_types
   use bl_constants_module
@@ -13,12 +13,11 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
   ! order as defined in network.f90, and y(nspec+1) is the temperature
   integer,         intent(in   ) :: n, ipar
   real(kind=dp_t), intent(in   ) :: y(n)
+  real(kind=dp_t), intent(in   ) :: time
   real(kind=dp_t), intent(  out ) :: ydot(n)
   real(kind=dp_t), intent(inout) :: rpar(*)
 
   real(kind=dp_t) :: ymass(nspec)
-
-  real(kind=dp_t) :: t
 
   real(kind=dp_t) :: dens, c_p, dhdX(nspec), X_O16
   real(kind=dp_t) :: temp, T9, T9a, dT9dt, dT9adt
@@ -136,7 +135,8 @@ subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
   implicit none
 
   integer        , intent(IN   ) :: neq, ml, mu, nrpd, ipar
-  real(kind=dp_t), intent(IN   ) :: y(neq), rpar(*), t
+  real(kind=dp_t), intent(IN   ) :: y(neq), rpar(*)
+  real(kind=dp_t), intent(IN   ) :: t
   real(kind=dp_t), intent(  OUT) :: pd(neq,neq)
 
   real(kind=dp_t) :: dens, c_p, dhdX(nspec), X_O16

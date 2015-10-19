@@ -380,7 +380,7 @@ contains
   
   subroutine eos_reset(state, i)
 
-    use actual_eos_module
+!    use actual_eos_module
     
     implicit none
 

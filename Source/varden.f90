@@ -1483,7 +1483,6 @@ subroutine varden()
 
   call destroy_geometry()
 
-  call eos_finalize()
   call network_finalize()
 
   call model_parser_finalize()

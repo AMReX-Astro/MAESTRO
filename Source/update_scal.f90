@@ -152,8 +152,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    integer :: pt_index(MAX_SPACEDIM)
-    
     type(eos_t) :: eos_state
 
     do comp = nstart, nstop
@@ -179,10 +177,8 @@ contains
              eos_state%p   = p0_new(i)
              eos_state%xn  =snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
-             pt_index(:) = (/i, -1, -1/)
-             
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
              
              snew(i,rhoh_comp) = snew(i,rho_comp) * eos_state%h
              
@@ -269,8 +265,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    integer :: pt_index(MAX_SPACEDIM)
-
     type(eos_t) :: eos_state
 
     do comp = nstart, nstop
@@ -299,10 +293,8 @@ contains
                 eos_state%p   = p0_new(j)
                 eos_state%xn  = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                pt_index(:) = (/i, j, -1/)
-                
                 ! (rho,P) --> T,h
-                call eos(eos_input_rp, eos_state, .false., pt_index)
+                call eos(eos_input_rp, eos_state)
                 
                 snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
                 
@@ -394,8 +386,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    integer :: pt_index(MAX_SPACEDIM)
-
     type(eos_t) :: eos_state
 
     !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
@@ -420,7 +410,7 @@ contains
     
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -432,10 +422,8 @@ contains
                    eos_state%p   = p0_new(k)
                    eos_state%xn  = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                   pt_index(:) = (/i, j, k/)
-
                    ! (rho,P) --> T,h
-                   call eos(eos_input_rp, eos_state, .false., pt_index)
+                   call eos(eos_input_rp, eos_state)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 
@@ -535,7 +523,6 @@ contains
     real (kind = dp_t) :: delta,frac,sumX
     logical            :: has_negative_species
 
-    integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
     !
@@ -563,7 +550,7 @@ contains
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
        do k = lo(3), hi(3) 
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -574,10 +561,8 @@ contains
                    eos_state%p     = p0_new_cart(i,j,k)
                    eos_state%xn(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                   pt_index(:) = (/i, j, k/)
-
                    ! (rho,P) --> T,h
-                   call eos(eos_input_rp, eos_state, .false., pt_index)
+                   call eos(eos_input_rp, eos_state)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 

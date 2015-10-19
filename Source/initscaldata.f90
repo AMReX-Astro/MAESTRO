@@ -246,7 +246,6 @@ contains
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
     ! initial the domain with the base state
     s = ZERO
@@ -298,9 +297,7 @@ contains
              eos_state%rho   = s(i,j,k,rho_comp)
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index = (/ i, j, k /)
-
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state)
 
              s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
              s(i,j,k,temp_comp) = eos_state%T

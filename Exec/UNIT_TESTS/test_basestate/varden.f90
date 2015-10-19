@@ -229,7 +229,7 @@ subroutine varden()
      
      eos_state%T     = s0_old(1,r,temp_comp)
      
-     call eos(eos_input_rp, eos_state, .false.)
+     call eos(eos_input_rp, eos_state)
      
      gamma1bar_old(1,r) = eos_state%gam1
 
@@ -378,7 +378,7 @@ subroutine varden()
 
         eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, eos_state, .false.)
+        call eos(eos_input_rp, eos_state)
 
         gamma1bar_new(1,r) = eos_state%gam1
 
@@ -397,7 +397,7 @@ subroutine varden()
 
         eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, eos_state, .false.)
+        call eos(eos_input_rp, eos_state)
 
         s0_new(1,r,temp_comp) = eos_state%T
 
@@ -546,7 +546,7 @@ subroutine varden()
 
         eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, eos_state, .false.)
+        call eos(eos_input_rp, eos_state)
 
         gamma1bar_new(1,r) = eos_state%gam1
 
@@ -568,7 +568,7 @@ subroutine varden()
 
         eos_state%T     = s0_old(1,r,temp_comp)
 
-        call eos(eos_input_rp, eos_state, .false.)
+        call eos(eos_input_rp, eos_state)
 
         s0_new(1,r,temp_comp) = eos_state%T
 

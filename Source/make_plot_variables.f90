@@ -90,19 +90,16 @@ contains
     real(kind=dp_t) :: chi_rho, chi_t, dt, dp, nabla
 
     integer :: i
-    
-    type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
+    type (eos_t) :: eos_state
+    
     do i = lo(1), hi(1)
 
        eos_state%rho   = state(i,rho_comp)
        eos_state%T     = state(i,temp_comp)
        eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-       pt_index(:) = (/i, -1, -1/)       
-
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state)
        
        pres(i) = eos_state%p
 
@@ -163,7 +160,6 @@ contains
     integer :: i, j
     
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -172,9 +168,7 @@ contains
           eos_state%T     = state(i,j,temp_comp)
           eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-          pt_index(:) = (/i, j, -1/)       
-
-          call eos(eos_input_rt, eos_state, .false., pt_index)       
+          call eos(eos_input_rt, eos_state)
        
           pres(i,j) = eos_state%p
 
@@ -238,9 +232,8 @@ contains
     integer :: i, j, k
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t,eos_state,pt_index)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -249,9 +242,7 @@ contains
              eos_state%T     = state(i,j,k,temp_comp)
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)       
-
-             call eos(eos_input_rt, eos_state, .false., pt_index)       
+             call eos(eos_input_rt, eos_state)
        
              pres(i,j,k) = eos_state%p
 
@@ -325,9 +316,8 @@ contains
     integer :: i, j, k, c
 
     type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t,eos_state,pt_index)    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,chi_rho,chi_t,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -336,9 +326,7 @@ contains
              eos_state%T     = state(i,j,k,temp_comp)
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             pt_index(:) = (/i, j, k/)       
-
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state)
        
              pres(i,j,k) = eos_state%p
 
@@ -779,7 +767,7 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              eos_state%h     = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
-             call eos(eos_input_rh, eos_state, .false.)
+             call eos(eos_input_rh, eos_state)
 
              if (it > 0) pdata(i,j,k,iT) = eos_state%T
              if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
@@ -835,7 +823,7 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho, H) --> T, p
-             call eos(eos_input_rh, eos_state, .false.)
+             call eos(eos_input_rh, eos_state)
 
              if (iT > 0) pdata(i,j,k,iT) = eos_state%T
              if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
@@ -940,7 +928,7 @@ contains
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false.)
+             call eos(eos_input_rp, eos_state)
 
              if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
              if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar(r)
@@ -1015,7 +1003,7 @@ contains
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false.)
+             call eos(eos_input_rp, eos_state)
 
              if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
              if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar_cart(i,j,k,1)

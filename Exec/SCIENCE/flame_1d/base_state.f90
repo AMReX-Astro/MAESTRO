@@ -71,7 +71,7 @@ contains
     eos_state%T     = temp_fuel
     eos_state%xn(:) = xn_fuel(:)
 
-    call eos(eos_input_rt, eos_state, .false.)
+    call eos(eos_input_rt, eos_state)
 
     ! note: p_ambient should be = p0_init
     p_ambient = eos_state%p
@@ -88,7 +88,7 @@ contains
     eos_state%xn(:) = xn_ash(:)
     eos_state%p     = p_ambient
 
-    call eos(eos_input_tp, eos_state, .false.)
+    call eos(eos_input_tp, eos_state)
 
     dens_ash = eos_state%rho
     rhoh_ash = dens_ash*eos_state%h
@@ -144,7 +144,7 @@ contains
        eos_state%xn(:) = xn_smooth(:)
        eos_state%p     = p_ambient
 
-       call eos(eos_input_tp, eos_state, .false.)
+       call eos(eos_input_tp, eos_state)
 
        s0_init(r,rho_comp)  = eos_state%rho
        s0_init(r,spec_comp:spec_comp+nspec-1) = eos_state%rho*xn_smooth(:)

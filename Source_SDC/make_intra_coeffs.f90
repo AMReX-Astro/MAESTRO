@@ -102,7 +102,7 @@ contains
        eos_state%xn(:) = sold(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, eos_state, .false.)
+       call eos(eos_input_rt, eos_state)
        
        cp(i) = eos_state%cp
 
@@ -117,7 +117,7 @@ contains
        eos_state%xn(:) = snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
        
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, eos_state, .false.)
+       call eos(eos_input_rt, eos_state)
     
        ! average the current state with the old one
        cp(i) = HALF*(eos_state%cp + cp(i))
@@ -157,7 +157,7 @@ contains
           eos_state%xn(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, eos_state, .false.)
+          call eos(eos_input_rt, eos_state)
           
           cp(i,j) = eos_state%cp
           
@@ -172,7 +172,7 @@ contains
           eos_state%xn(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, eos_state, .false.)
+          call eos(eos_input_rt, eos_state)
           
           ! average the current state with the old one
           cp(i,j) = HALF*(eos_state%cp + cp(i,j))
@@ -215,7 +215,7 @@ contains
              eos_state%xn(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false.)
+             call eos(eos_input_rt, eos_state)
 
              cp(i,j,k) = eos_state%cp
              
@@ -230,7 +230,7 @@ contains
              eos_state%xn(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false.)
+             call eos(eos_input_rt, eos_state)
              
              cp(i,j,k) = HALF*(eos_state%cp + cp(i,j,k))
              
