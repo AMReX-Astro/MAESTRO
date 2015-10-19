@@ -24,7 +24,8 @@ subroutine varden()
   use react_state_module
   use varden_aux
   use simple_log_module
-
+  use cputime_module, only: start_cputime_clock
+  
   !Local variables
   implicit none
   
@@ -54,6 +55,8 @@ subroutine varden()
   !### Execution ###
   !## Initialization ##
   !General Maestro initializations
+  call start_cputime_clock()
+  
   call runtime_init()
   call init_variables()
 
@@ -115,12 +118,16 @@ subroutine varden()
   dbo = do_burning
   dho = do_heating
 
-  !Explore ten orders of magnitude of the time domain using user inputs.
+  !Explore react_its orders of magnitude of the time domain using user inputs.
   do_burning = dbo
   do_heating = dho
   do i=0, react_its-1
     call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                      10**(i)*min_time_step,dx,bct%bc_tower_array)
+    write(temp_buf, *) i
+    temp_buf = adjustl(temp_buf)
+    call react_write(snew, s, rho_omegadot, rho_Hnuc, rho_Hext, mla, &
+                     10**(i)*min_time_step, "dtE+" // trim(temp_buf),bct)
   enddo
 
   !## Clean-up ##
