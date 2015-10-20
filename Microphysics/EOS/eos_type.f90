@@ -602,18 +602,14 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
     integer :: i    
 
-    do i = 1, state % N
+    state % xn(:) = max(smallx, min(ONE, state % xn(:)))
+    
+    state % xn(:) = state % xn(:) / sum(state % xn(:))
 
-       state % xn(i,:) = max(smallx, min(ONE, state % xn(i,:)))
-
-       state % xn(i,:) = state % xn(i,:) / sum(state % xn(i,:))
-
-    enddo
-  
   end subroutine normalize_abundances
 
 
