@@ -70,6 +70,11 @@ UTIL_CORE += Util/simple_log
 # microphysics
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
+ifdef MICROPHYSICS_DIR
+      EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos/$(strip $(EOS_DIR))
+      NETWORK_TOP_DIR := $(MICROPHYSICS_DIR)/networks/$(strip $(NETWORK_DIR))
+endif
+
 # locations of the microphysics 
 ifndef EOS_TOP_DIR 
   EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
