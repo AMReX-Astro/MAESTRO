@@ -3,7 +3,8 @@ MPI    := t
 OMP    := t
 ACC    :=
 
-COMP := gfortran
+COMP := Cray
+#COMP := PGI
 
 MKVERBOSE := t
 
