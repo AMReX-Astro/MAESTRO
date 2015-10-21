@@ -66,39 +66,29 @@ contains
 
     ! Input arguments
 
-    integer,          intent(in   ) :: input
-    class (eos_type), intent(inout) :: state
+    integer,     intent(in   ) :: input
+    type(eos_t), intent(inout) :: state
 
     ! Local variables
 
-    type (eos_t_vector) :: state_vector
-
     if (.not. initialized) call bl_error('EOS: not initialized')
-
-    ! Convert from the incoming type to the vectorized type we work with in the EOS.
-
-    call eos_vector_in(state_vector, state)
 
     ! Get abar, zbar, etc.
 
-    call composition(state_vector)
+    call composition(state)
 
     ! Check to make sure the inputs are valid.
 
-    call check_inputs(input, state_vector)
+    call check_inputs(input, state)
     
     ! Call the EOS.
 
-    call actual_eos(input, state_vector)
+    call actual_eos(input, state)
 
     ! Get dpdX, dedX, dhdX.
 
-    call composition_derivatives(state_vector)
+    call composition_derivatives(state)
 
-    ! Convert the vectorized state back to the output form.
-
-    call eos_vector_out(state_vector, state)
-    
   end subroutine eos
 
   
@@ -107,37 +97,35 @@ contains
 
     implicit none
 
-    integer,             intent(in   ) :: input
-    type (eos_t_vector), intent(inout) :: state
+    integer,      intent(in   ) :: input
+    type (eos_t), intent(inout) :: state
 
     integer :: i, n
     
-    do i = 1, state % N
-
-       ! Check the inputs, and do initial setup for iterations.
-
-       do n = 1, nspec
-          if (state % xn(i,n) .lt. init_test) call eos_type_error(ierr_init_xn, input)
-       enddo
-
-       if ( state % y_e(i) .lt. minye ) then
-          print *, 'Y_E = ', state % y_e(i)
-          call bl_error('EOS: y_e less than minimum possible electron fraction.')
-       endif
-       if ( state % y_e(i) .gt. maxye ) then
-          print *, 'Y_E = ', state % y_e(i)
-          call bl_error('EOS: y_e greater than maximum possible electron fraction.')
-       endif       
-       
+    ! Check the inputs, and do initial setup for iterations.
+    do n = 1, nspec
+       if (state % xn(n) .lt. init_test) &
+            call eos_type_error(ierr_init_xn, input)
     enddo
+
+    if ( state % y_e .lt. minye ) then
+       print *, 'Y_E = ', state % y_e
+       call bl_error('EOS: y_e less than minimum possible electron fraction.')
+    endif
+    if ( state % y_e .gt. maxye ) then
+       print *, 'Y_E = ', state % y_e
+       call bl_error('EOS: y_e greater than maximum possible electron fraction.')
+    endif
        
-    ! Our strategy for testing the validity of the inputs is as follows.
-    ! First, if the quantities for the given call type haven't been initialized,
-    ! then throw an error. Second, if the quantity is rho or T and it has been initialized
-    ! but is less than smalld or smallt, reset to smalld or smallt. Third, if the
-    ! quantity is something else (e, h, etc.) and is less than zero in a zone,
-    ! make sure both T and rho are at least as large as smallt and small d, then
-    ! call the EOS in (rho, T) mode just on that zone.
+    ! Our strategy for testing the validity of the inputs is as
+    ! follows.  First, if the quantities for the given call type
+    ! haven't been initialized, then throw an error. Second, if the
+    ! quantity is rho or T and it has been initialized but is less
+    ! than smalld or smallt, reset to smalld or smallt. Third, if the
+    ! quantity is something else (e, h, etc.) and is less than zero in
+    ! a zone, make sure both T and rho are at least as large as smallt
+    ! and small d, then call the EOS in (rho, T) mode just on that
+    ! zone.
        
     if (input .eq. eos_input_rt) then
 
@@ -189,31 +177,26 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
-    integer :: i
+    if (state % rho .lt. init_test) then
+       call bl_error('EOS: rho not initialized.')
+    endif
 
-    do i = 1, state % N
-    
-       if (state % rho(i) .lt. init_test) then
-          call bl_error('EOS: rho not initialized.')
+    if (state % rho .lt. smalld) then         
+       if (state % reset) then
+          state % rho = smalld
+          call eos_reset(state)
+       else
+          print *, 'DENS = ', state % rho
+          call bl_error('EOS: rho smaller than small_dens and we have not chosen to reset.')
        endif
-    
-       if (state % rho(i) .lt. smalld) then         
-          if (state % reset) then
-             state % rho(i) = smalld
-          else
-             print *, 'DENS = ', state % rho(i)
-             call bl_error('EOS: rho smaller than small_dens and we have not chosen to reset.')
-          endif
-       endif
-    
-       if (state % rho(i) .gt. maxdens) then
-          print *, 'DENS = ', state % rho(i)
-          call bl_error('EOS: dens greater than maximum possible density.')
-       endif
+    endif
 
-    enddo
+    if (state % rho .gt. maxdens) then
+       print *, 'DENS = ', state % rho
+       call bl_error('EOS: dens greater than maximum possible density.')
+    endif
 
   end subroutine check_rho
 
@@ -223,31 +206,26 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
-    integer :: i
+    if (state % T .lt. init_test) then
+       call bl_error('EOS: T not initialized.')
+    endif
 
-    do i = 1, state % N
-    
-       if (state % T(i) .lt. init_test) then
-          call bl_error('EOS: T not initialized.')
+    if (state % T .lt. smallt) then         
+       if (state % reset) then
+          state % T = smallt
+          call eos_reset(state)
+       else
+          print *, 'TEMP = ', state % T
+          call bl_error('EOS: T smaller than small_temp and we have not chosen to reset.')
        endif
-    
-       if (state % T(i) .lt. smallt) then         
-          if (state % reset) then
-             state % T(i) = smallt
-          else
-             print *, 'TEMP = ', state % T(i)
-             call bl_error('EOS: T smaller than small_temp and we have not chosen to reset.')
-          endif
-       endif
-    
-       if (state % T(i) .gt. maxdens) then
-          print *, 'TEMP = ', state % T(i)
-          call bl_error('EOS: T greater than maximum possible temperature.')
-       endif
+    endif
 
-    enddo
+    if (state % T .gt. maxdens) then
+       print *, 'TEMP = ', state % T
+       call bl_error('EOS: T greater than maximum possible temperature.')
+    endif
        
   end subroutine check_T  
 
@@ -257,27 +235,21 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
-    integer :: i
+    if (state % e .lt. init_test) then
+       call bl_error('EOS: energy not initialized.')
+    endif
 
-    do i = 1, state % N
-
-       if (state % e(i) .lt. init_test) then
-          call bl_error('EOS: energy not initialized.')
+    if (state % e .lt. ZERO) then
+       if (state % reset) then
+          state % T = max(smallt, state % T)
+          state % rho = max(smalld, state % rho)
+          call eos_reset(state)
+       else
+          call bl_error('EOS: e smaller than zero and we have not chosen to reset.')
        endif
-    
-       if (state % e(i) .lt. ZERO) then
-          if (state % reset) then
-             state % T(i) = max(smallt, state % T(i))
-             state % rho(i) = max(smalld, state % rho(i))
-             call eos_reset(state, i)
-          else
-             call bl_error('EOS: e smaller than zero and we have not chosen to reset.')
-          endif
-       endif
-
-    enddo
+    endif
        
   end subroutine check_e
   
@@ -287,27 +259,21 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
-    integer :: i
+    if (state % h .lt. init_test) then
+       call bl_error('EOS: enthalpy not initialized.')
+    endif
 
-    do i = 1, state % N
-
-       if (state % h(i) .lt. init_test) then
-          call bl_error('EOS: enthalpy not initialized.')
+    if (state % h .lt. ZERO) then
+       if (state % reset) then
+          state % T = max(smallt, state % T)
+          state % rho = max(smalld, state % rho)
+          call eos_reset(state)
+       else
+          call bl_error('EOS: h smaller than zero and we have not chosen to reset.')
        endif
-    
-       if (state % h(i) .lt. ZERO) then
-          if (state % reset) then
-             state % T(i) = max(smallt, state % T(i))
-             state % rho(i) = max(smalld, state % rho(i))             
-             call eos_reset(state, i)
-          else
-             call bl_error('EOS: h smaller than zero and we have not chosen to reset.')
-          endif
-       endif
-
-    enddo
+    endif
        
   end subroutine check_h
 
@@ -317,27 +283,21 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
-    integer :: i
+    if (state % s .lt. init_test) then
+       call bl_error('EOS: entropy not initialized.')
+    endif
 
-    do i = 1, state % N
-
-       if (state % s(i) .lt. init_test) then
-          call bl_error('EOS: entropy not initialized.')
+    if (state % s .lt. ZERO) then
+       if (state % reset) then
+          state % T = max(smallt, state % T)
+          state % rho = max(smalld, state % rho)             
+          call eos_reset(state)
+       else
+          call bl_error('EOS: s smaller than zero and we have not chosen to reset.')
        endif
-    
-       if (state % s(i) .lt. ZERO) then
-          if (state % reset) then
-             state % T(i) = max(smallt, state % T(i))
-             state % rho(i) = max(smalld, state % rho(i))             
-             call eos_reset(state, i)
-          else
-             call bl_error('EOS: s smaller than zero and we have not chosen to reset.')
-          endif
-       endif
-
-    enddo
+    endif
        
   end subroutine check_s
 
@@ -347,61 +307,43 @@ contains
 
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
+    type (eos_t), intent(inout) :: state
 
-    integer :: i
+    if (state % p .lt. init_test) then
+       call bl_error('EOS: pressure not initialized.')
+    endif
 
-    do i = 1, state % N
-
-       if (state % p(i) .lt. init_test) then
-          call bl_error('EOS: pressure not initialized.')
+    if (state % p .lt. ZERO) then
+       if (state % reset) then
+          state % T = max(smallt, state % T)
+          state % rho = max(smalld, state % rho)
+          call eos_reset(state)
+       else
+          call bl_error('EOS: p smaller than zero and we have not chosen to reset.')
        endif
-    
-       if (state % p(i) .lt. ZERO) then
-          if (state % reset) then
-             state % T(i) = max(smallt, state % T(i))
-             state % rho(i) = max(smalld, state % rho(i))             
-             call eos_reset(state, i)
-          else
-             call bl_error('EOS: p smaller than zero and we have not chosen to reset.')
-          endif
-       endif
-
-    enddo
+    endif
        
   end subroutine check_p
-
-
 
   ! Given an EOS vector and an input i,
   ! the code has reset some characteristic of that
   ! state element and we now want to call the EOS just
   ! on that zone to reset its state values.
   
-  subroutine eos_reset(state, i)
+  subroutine eos_reset(state)
 
-!    use actual_eos_module
+    use actual_eos_module
     
     implicit none
 
-    type (eos_t_vector), intent(inout) :: state
-    integer,             intent(in   ) :: i
+    type (eos_t), intent(inout) :: state
     
-    type (eos_t) :: reset_state
-    type (eos_t_vector) :: reset_state_vector
-
     if (.not. state % reset) then
        call bl_error('EOS: should not be in eos_reset if reset == .false.')
     endif
     
-    call get_eos_t(state, reset_state, i)
-    call eos_vector_in(reset_state_vector, reset_state)
-    call actual_eos(eos_input_rt, reset_state_vector)
-    call eos_vector_out(reset_state_vector, reset_state)
-    call put_eos_t(state, reset_state, i)
+    call actual_eos(eos_input_rt, state)
 
   end subroutine eos_reset
-
-
 
 end module eos_module
