@@ -1,0 +1,30 @@
+&params
+
+ model_prefix = "convective_flame_"
+
+ nx = 192
+
+ dens_base = 1.0
+
+ T_star = 0.75
+ T_base = 1.0
+ T_lo   = 1.e-3
+
+ H_star = 1.0d0
+ delta  = 0.04
+
+ fuel1_name = "fuel"
+ fuel1_frac = 1.0d0
+
+ ash1_name  = "inert"
+ ash1_frac = 1.0d0
+
+ xmin = 0.0
+ xmax = 7.68
+
+ g_const = -4.2e7
+
+ low_density_cutoff = 1.d-8
+
+ index_base_from_temp = T
+/
