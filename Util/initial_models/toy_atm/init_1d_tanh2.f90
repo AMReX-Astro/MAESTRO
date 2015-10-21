@@ -47,7 +47,7 @@ program init_1d_tanh
   use bl_error_module
   use eos_module, only: eos_input_rt, eos, eos_init
   use eos_type_module
-  use extern_probin_module, only: use_eos_coulomb
+  !use extern_probin_module, only: use_eos_coulomb
   use network, only : nspec, network_species_index, spec_names, network_init
   use fundamental_constants_module, only: Gconst
 
@@ -216,7 +216,7 @@ program init_1d_tanh
 
   ! this comes in via extern_probin_module -- override the default
   ! here if we want
-  use_eos_coulomb = .true.
+  !use_eos_coulomb = .true.
 
 
   ! initialize the EOS and network
