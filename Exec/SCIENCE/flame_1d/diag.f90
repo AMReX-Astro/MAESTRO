@@ -28,7 +28,7 @@ contains
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
                              job_name
-    use network, only: network_species_index
+    use actual_network
     use inlet_bc_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
@@ -74,9 +74,7 @@ contains
     integer :: un
     logical :: lexist
 
-    integer, save :: ic12, io16
     logical, save :: firstCall_io = .true.
-    logical, save :: firstCall_params = .true.
 
     type(bl_prof_timer), save :: bpt
 
@@ -84,14 +82,6 @@ contains
 
     dm = mla%dim
     nlevs = mla%nlevel
-
-    if (firstCall_params) then
-
-       ic12 = network_species_index("carbon-12")
-       io16 = network_species_index("oxygen-16")
-
-       firstCall_params = .false.
-    endif
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
