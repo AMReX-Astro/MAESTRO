@@ -30,7 +30,7 @@ contains
 
     use variables, only: rho_comp, spec_comp
     use geometry, only: nr_fine, nr
-    use network
+    use actual_network
     use inlet_bc_module, only: INLET_RHOX, INLET_RHO
 
     type( multifab)          , intent(in   ) :: mf
@@ -46,22 +46,11 @@ contains
     logical           :: radialtag_proc(0:nr_fine-1)
 
     real(kind = dp_t), save    :: fuel_XC12
-    integer, save :: ic12
-    logical, save :: firstCall = .true.    
     integer, parameter :: npad = 4
 
     integer :: dm
 
     dm = get_dim(mf)
-
-    if (firstCall) then
-
-       ic12 = network_species_index("carbon-12")
-       fuel_XC12 = INLET_RHOX(ic12)/INLET_RHO
-
-       firstCall = .false.
-
-    endif
 
 
     ! amr here is done all the way across the domain, at a constant
