@@ -132,9 +132,9 @@ endif
 
 # the helmeos has an include file -- also add a target to link the table
 # into the problem directory.
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  Fmincludes := Microphysics/EOS/helmeos
-  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+  # Fmincludes := Microphysics/EOS/helmeos
+  # EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
   ALL: table
 endif
 
