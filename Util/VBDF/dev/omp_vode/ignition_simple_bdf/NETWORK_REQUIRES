@@ -1,0 +1,3 @@
+NEED_VBDF := t
+NEED_VODE := t
+NEED_BLAS := t
