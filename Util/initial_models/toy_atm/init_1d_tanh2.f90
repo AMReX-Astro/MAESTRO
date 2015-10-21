@@ -1,8 +1,8 @@
 !!  Create a 1-d hydrostatic, atmosphere with an isothermal region
-!!  (T_star) representing the NS, a hyperbolic tangent rise to a 
-!!  peak temperature (T_base) representing the base of an accreted 
+!!  (T_star) representing the NS, a hyperbolic tangent rise to a
+!!  peak temperature (T_base) representing the base of an accreted
 !!  layer, an isoentropic profile down to a lower temperature (T_lo),
-!!  and then isothermal. This can serve as an initial model for a 
+!!  and then isothermal. This can serve as an initial model for a
 !!  nova or XRB.
 !!
 !!  The temperature profile is:
@@ -41,7 +41,7 @@
 !!
 
 program init_1d_tanh
- 
+
   use bl_types
   use bl_constants_module
   use bl_error_module
@@ -74,7 +74,7 @@ program init_1d_tanh
   integer ::nx
 
   integer :: lun1, lun2
-  
+
   ! define convenient indices for the scalars
   integer, parameter :: nvar = 3 + nspec
   integer, parameter :: idens = 1, &
@@ -100,7 +100,7 @@ program init_1d_tanh
   real (kind=dp_t) :: dpd, dpt, dsd, dst
 
   real (kind=dp_t) :: p_want, drho, dtemp, delx
-  
+
   real (kind=dp_t) :: g_zone, g_const, M_enclosed
   logical :: do_invsq_grav
 
@@ -118,7 +118,7 @@ program init_1d_tanh
 
   integer :: index_base
 
-  logical :: isentropic 
+  logical :: isentropic
 
   character (len=256) :: outfile, outfile2
   character (len=8) :: num
@@ -145,7 +145,7 @@ program init_1d_tanh
                     xmin, xmax, g_const, do_invsq_grav, M_enclosed, &
                     low_density_cutoff, model_prefix, index_base_from_temp
 
-  ! determine if we specified a runtime parameters file or use the default      
+  ! determine if we specified a runtime parameters file or use the default
   narg = command_argument_count()
 
   if (narg == 0) then
@@ -158,14 +158,14 @@ program init_1d_tanh
 
 
   ! define defaults for the parameters for this model
-  nx = 640 
+  nx = 640
 
   dens_base = 2.d6
-  
+
   T_star = 1.d8
   T_base = 5.d8
   T_lo   = 5.e7
-  
+
   H_star = 500.d0
   delta  = 25.d0
 
@@ -189,7 +189,7 @@ program init_1d_tanh
   fuel5_frac = ZERO
   fuel6_frac = ZERO
   fuel7_frac = ZERO
-  
+
   ash1_frac = ONE
   ash2_frac = ZERO
   ash3_frac = ZERO
@@ -228,7 +228,7 @@ program init_1d_tanh
   read(unit=11, nml=params)
   close(unit=11)
 
-  
+
   ! get the species indices
   species_defined = .true.
   ifuel1 = network_species_index(trim(fuel1_name))
@@ -288,16 +288,16 @@ program init_1d_tanh
      print *, iash1, iash2, iash3, iash4
      call bl_error("ERROR: species not defined")
   endif
-  
 
-  
+
+
   ! set the composition of the underlying star
   xn_star(:) = smallx
   xn_star(iash1) = ash1_frac
   if (ash2_name /= "") xn_star(iash2) = ash2_frac
   if (ash3_name /= "") xn_star(iash3) = ash3_frac
   if (ash4_name /= "") xn_star(iash4) = ash4_frac
-  
+
   ! and the composition of the accreted layer
   xn_base(:) = smallx
   xn_base(ifuel1) = fuel1_frac
@@ -307,7 +307,7 @@ program init_1d_tanh
   if (fuel5_name /= "") xn_base(ifuel5) = fuel5_frac
   if (fuel6_name /= "") xn_base(ifuel6) = fuel6_frac
   if (fuel7_name /= "") xn_base(ifuel7) = fuel7_frac
-  
+
   ! check if they sum to 1
   if (abs(sum(xn_star) - ONE) > nspec*smallx) then
      call bl_error("ERROR: ash mass fractions don't sum to 1")
@@ -341,7 +341,7 @@ program init_1d_tanh
   enddo
 
 
-  ! find the index of the base height 
+  ! find the index of the base height
   index_base = -1
   do i = 1, nx
      if (xzn_hse(i) >= xmin + H_star + delta) then
@@ -353,7 +353,7 @@ program init_1d_tanh
   if (index_base == -1) then
      print *, 'ERROR: base_height not found on grid'
      call bl_error('ERROR: invalid base_height')
-  endif  
+  endif
 
 
 !-----------------------------------------------------------------------------
@@ -374,19 +374,19 @@ program init_1d_tanh
   pres_base = eos_state%p
   entropy_base = eos_state%s
 
+  print *, 'entropy_base = ', entropy_base
+  print *, 'pres_base = ', pres_base
 
   ! set an initial temperature profile and composition
   do i = 1, nx
-     
+
      !hyperbolic tangent transition:
      model_hse(i,ispec:ispec-1+nspec) = xn_star(1:nspec) + &
           HALF*(xn_base(1:nspec) - xn_star(1:nspec))* &
           (ONE + tanh((xzn_hse(i) - (xmin + H_star - delta) + delta)/delta))
-        
+
      model_hse(i,itemp) = T_star + HALF*(T_base - T_star)* &
           (ONE + tanh((xzn_hse(i) - (xmin + H_star - delta) + delta)/delta))
-
-     print *, i, xzn_hse(i), model_hse(i,itemp)
 
 
      ! the density and pressure will be determined via HSE,
@@ -407,7 +407,7 @@ program init_1d_tanh
            exit
         endif
      enddo
-     
+
      if (index_base == -1) then
         print *, 'ERROR: base_height not found on grid'
         call bl_error('ERROR: invalid base_height')
@@ -425,8 +425,8 @@ program init_1d_tanh
   call eos(eos_input_rt, eos_state, .false.)
 
   model_hse(index_base,ipres) = eos_state%p
-  
-  
+
+
 !-----------------------------------------------------------------------------
 ! HSE + entropy solve
 !-----------------------------------------------------------------------------
@@ -457,7 +457,7 @@ program init_1d_tanh
      temp_zone = model_hse(i,itemp)
      xn(:) = model_hse(i,ispec:nvar)
 
-     
+
      !-----------------------------------------------------------------------
      ! iteration loop
      !-----------------------------------------------------------------------
@@ -476,11 +476,11 @@ program init_1d_tanh
               ! the density of the two zones as an approximation of the
               ! interface value -- this means that we need to iterate for
               ! find the density and pressure that are consistent
-              
+
               ! furthermore, we need to get the entropy that we need,
               ! which will come from adjusting the temperature in
               ! addition to the density.
-        
+
               ! HSE differencing
               p_want = model_hse(i-1,ipres) + &
                    delx*0.5*(dens_zone + model_hse(i-1,idens))*g_zone
@@ -490,12 +490,12 @@ program init_1d_tanh
               ! now we have two functions to zero:
               !   A = p_want - p(rho,T)
               !   B = entropy_base - s(rho,T)
-              ! We use a two dimensional Taylor expansion and find the deltas 
+              ! We use a two dimensional Taylor expansion and find the deltas
               ! for both density and temperature
 
-              
-              ! now we know the pressure and the entropy that we want, so we 
-              ! need to find the temperature and density through a two 
+
+              ! now we know the pressure and the entropy that we want, so we
+              ! need to find the temperature and density through a two
               ! dimensional root find
 
               ! (t, rho) -> (p, s)
@@ -504,7 +504,7 @@ program init_1d_tanh
               eos_state%xn(:) = xn(:)
 
               call eos(eos_input_rt, eos_state, .false.)
-              
+
               entropy = eos_state%s
               pres_zone = eos_state%p
 
@@ -515,12 +515,12 @@ program init_1d_tanh
 
               A = p_want - pres_zone
               B = entropy_base - entropy
-              
+
               dtemp = ((dsd/(dpd-0.5*delx*g_zone))*A - B)/ &
                    (dsd*dpt/(dpd -0.5*delx*g_zone) - dst)
-              
+
               drho = (A - dpt*dtemp)/(dpd - 0.5*delx*g_zone)
-              
+
               dens_zone = max(0.9_dp_t*dens_zone, &
                    min(dens_zone + drho, 1.1_dp_t*dens_zone))
 
@@ -528,31 +528,31 @@ program init_1d_tanh
                    min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
 
 
-              ! check if the density falls below our minimum cut-off -- 
+              ! check if the density falls below our minimum cut-off --
               ! if so, floor it
               if (dens_zone < low_density_cutoff) then
-                 
+
                  dens_zone = low_density_cutoff
                  temp_zone = T_lo
                  converged_hse = .TRUE.
                  fluff = .TRUE.
                  exit
-              
+
               endif
-                 
+
               ! if (A < TOL .and. B < ETOL) then
               if (abs(drho) < TOL*dens_zone .and. &
                   abs(dtemp) < TOL*temp_zone) then
                  converged_hse = .TRUE.
                  exit
               endif
-        
+
            else
 
               ! do isothermal
               p_want = model_hse(i-1,ipres) + &
                    delx*0.5*(dens_zone + model_hse(i-1,idens))*g_zone
-         
+
               temp_zone = T_lo
 
               ! (t, rho) -> (p)
@@ -561,30 +561,30 @@ program init_1d_tanh
               eos_state%xn(:) = xn(:)
 
               call eos(eos_input_rt, eos_state, .false.)
-              
+
               entropy = eos_state%s
               pres_zone = eos_state%p
 
               dpd = eos_state%dpdr
 
               drho = (p_want - pres_zone)/(dpd - 0.5*delx*g_zone)
-              
+
               dens_zone = max(0.9*dens_zone, &
                    min(dens_zone + drho, 1.1*dens_zone))
-       
+
               if (abs(drho) < TOL*dens_zone) then
                  converged_hse = .TRUE.
                  exit
               endif
 
               if (dens_zone < low_density_cutoff) then
-                 
+
                  dens_zone = low_density_cutoff
                  temp_zone = T_lo
                  converged_hse = .TRUE.
                  fluff = .TRUE.
                  exit
-              
+
               endif
 
            endif
@@ -596,18 +596,18 @@ program init_1d_tanh
 
         enddo
 
-        
+
         if (.NOT. converged_hse) then
-           
+
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
            print *, dens_zone, temp_zone
            print *, p_want, entropy_base, entropy
            print *, drho, dtemp
            call bl_error('Error: HSE non-convergence')
-           
+
         endif
-        
+
      else
         dens_zone = low_density_cutoff
         temp_zone = T_lo
@@ -623,7 +623,7 @@ program init_1d_tanh
      call eos(eos_input_rt, eos_state, .false.)
 
      pres_zone = eos_state%p
-     
+
      ! update the thermodynamics in this zone
      model_hse(i,idens) = dens_zone
      model_hse(i,itemp) = temp_zone
@@ -656,7 +656,7 @@ program init_1d_tanh
      xn(:) = model_hse(i,ispec:nvar)
 
      ! use our previous initial guess for density
-     dens_zone = model_hse(i,idens)
+     dens_zone = model_hse(i+1,idens)
 
 
      !-----------------------------------------------------------------------
@@ -673,52 +673,51 @@ program init_1d_tanh
         ! the density of the two zones as an approximation of the
         ! interface value -- this means that we need to iterate for
         ! find the density and pressure that are consistent
-        
+
         ! HSE differencing
         p_want = model_hse(i+1,ipres) - &
              delx*0.5*(dens_zone + model_hse(i+1,idens))*g_zone
 
-        
+
         ! we will take the temperature already defined in model_hse
         ! so we only need to zero:
         !   A = p_want - p(rho)
-        
+
         ! (t, rho) -> (p)
         eos_state%T     = temp_zone
         eos_state%rho   = dens_zone
         eos_state%xn(:) = xn(:)
 
         call eos(eos_input_rt, eos_state, .false.)
-        
+
         pres_zone = eos_state%p
-        
+
         dpd = eos_state%dpdr
-              
+
         A = p_want - pres_zone
-              
+
         drho = A/(dpd + 0.5*delx*g_zone)
-        
+
         dens_zone = max(0.9_dp_t*dens_zone, &
              min(dens_zone + drho, 1.1_dp_t*dens_zone))
 
-                        
+
         if (abs(drho) < TOL*dens_zone) then
            converged_hse = .TRUE.
            exit
         endif
-        
 
      enddo
-        
+
      if (.NOT. converged_hse) then
-        
+
         print *, 'Error zone', i, ' did not converge in init_1d'
         print *, 'integrate down'
         print *, dens_zone, temp_zone
         print *, p_want
         print *, drho
         call bl_error('Error: HSE non-convergence')
-           
+
      endif
 
 
@@ -731,7 +730,7 @@ program init_1d_tanh
      call eos(eos_input_rt, eos_state, .false.)
 
      pres_zone = eos_state%p
-     
+
      ! update the thermodynamics in this zone
      model_hse(i,idens) = dens_zone
      model_hse(i,itemp) = temp_zone
@@ -748,7 +747,7 @@ program init_1d_tanh
   outfile2 = trim(outfile) // ".extras"
 
   open (newunit=lun1, file=outfile, status="unknown")
-  open (newunit=lun2, file=outfile2, status="unknown")  
+  open (newunit=lun2, file=outfile2, status="unknown")
 
   write (lun1,1001) "# npts = ", nx
   write (lun1,1001) "# num of variables = ", nvar
@@ -777,7 +776,7 @@ program init_1d_tanh
   write (lun2,1001), "# num of variables = ", 2
   write (lun2,1002), "# entropy"
   write (lun2,1002), "# c_s"
-  
+
   ! test: bulk EOS call -- Maestro will do this once we are mapped, so make
   ! sure that we are in HSE with updated thermodynamics
   do i = 1, nx
@@ -791,7 +790,7 @@ program init_1d_tanh
 
      write (lun2,1000), xzn_hse(i), eos_state%s, eos_state%cs
   enddo
-  
+
   ! compute the maximum HSE error
   max_hse_error = -1.d30
 
@@ -818,7 +817,7 @@ program init_1d_tanh
 
   close (unit=lun1)
   close (unit=lun2)
-  
+
 end program init_1d_tanh
 
 
@@ -834,7 +833,7 @@ function num_to_unitstring(value)
   if (value > 1.d5) then
 
      ! work in km
-     write(temp,'(f6.3)') value/1.d5     
+     write(temp,'(f6.3)') value/1.d5
      num_to_unitstring = trim(temp) // "km"
   else
 
@@ -850,7 +849,5 @@ function num_to_unitstring(value)
 
   endif
 
-  return 
+  return
 end function num_to_unitstring
-
-
