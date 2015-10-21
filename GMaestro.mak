@@ -69,8 +69,9 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-# some defaults
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+# some defaults - these are required
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS \
+                  $(MAESTRO_TOP_DIR)/Microphysics/networks
 
 # default locations of the microphysics 
 ifndef EOS_TOP_DIR 
@@ -111,7 +112,7 @@ MICROPHYS_CORE += $(EOS_TOP_DIR) \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
 
 # get any additional network dependencies
-include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
+include $(NETWORK_PATH)/NETWORK_REQUIRES
 
 ifdef NEED_VODE
   UTIL_CORE += Util/VODE Util/LINPACK Util/BLAS
