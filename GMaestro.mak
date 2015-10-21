@@ -68,9 +68,11 @@ UTIL_CORE += Util/simple_log
 
 #-----------------------------------------------------------------------------
 # microphysics
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
-# locations of the microphysics 
+# some defaults
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+
+# default locations of the microphysics 
 ifndef EOS_TOP_DIR 
   EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
 endif
@@ -79,12 +81,21 @@ ifndef NETWORK_TOP_DIR
   NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
 endif
 
+ifndef SCREEN_TOP_DIR
+  SCREEN_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/screening
+endif
+
+# This is an override if you have the envvar MICROPHYSICS_DIR already set
+# This allows for use of microphysics existing in the Microphysics repo,
+# rather than what is shipped in MAESTRO/Microphysics
 ifdef MICROPHYSICS_DIR
       EOS_PATH := $(MICROPHYSICS_DIR)/eos/$(strip $(EOS_DIR))
       NETWORK_PATH := $(MICROPHYSICS_DIR)/networks/$(strip $(NETWORK_DIR))
+      SCREENING_PATH := $(MICROPHYSICS_DIR)/screening
 else
       EOS_PATH := $(EOS_TOP_DIR)/$(strip $(EOS_DIR))
       NETWORK_PATH := $(NETWORK_TOP_DIR)/$(strip $(EOS_DIR))
+      SCREENING_PATH := $(SCREEN_TOP_DIR)
 endif
 
 ifndef CONDUCTIVITY_TOP_DIR
@@ -96,6 +107,7 @@ MICROPHYS_CORE += $(EOS_TOP_DIR) \
 	          $(EOS_PATH) \
 	          $(NETWORK_TOP_DIR) \
                   $(NETWORK_PATH) \
+		  $(SCREENING_PATH) \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
 
 # get any additional network dependencies
