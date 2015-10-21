@@ -28,10 +28,10 @@ contains
 
     call eos_copy(state_in, state_out)
 
-    ! We assume that the valid quantities coming in are (rho, e); do an EOS call
-    ! to make sure all other variables are consistent.
+    ! We assume that the valid quantities coming in are (rho, t); do
+    ! an EOS call to make sure all other variables are consistent.
 
-    call eos(eos_input_re, state_in)
+    call eos(eos_input_rt, state_in)
 
     ! Do the burning.
     
