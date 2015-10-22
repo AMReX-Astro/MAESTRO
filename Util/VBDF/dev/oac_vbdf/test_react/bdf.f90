@@ -231,8 +231,8 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
-    integer  :: j
-    real(dp_t) :: a0, a0hat, a1, a2, a3, a4, a5, a6, xistar_inv, xi_inv, c
+    integer  :: j, o
+    real(dp_t) :: a0, a0hat, a1, a2, a3, a4, a5, a6, xistar_inv, xi_inv, c, l_shift(size(ts%l))
 
     ts%l  = 0
     ts%tq = 0
@@ -242,11 +242,18 @@ contains
     ts%l(1) = xi_j(ts%h, 1)
     if (ts%k > 1) then
        do j = 2, ts%k-1
-          !NOTE: this is causing a confromable error, workaround may be
-          !-Mallocatable=95
-          ts%l = ts%l + eoshift_local(ts%l, -1) / xi_j(ts%h, j)
+          !NOTE: this is causing a conformable error, had to replace with
+          !explicit loop
+          !  ts%l = ts%l + eoshift_local(ts%l, -1) / xi_j(ts%h, j)
+          l_shift = eoshift(ts%l, -1)
+          do o = 0, ts%max_order
+             ts%l(o) = ts%l(o) + l_shift(o) / xi_j(ts%h, j)
+          end do
        end do
-       ts%l = ts%l + eoshift_local(ts%l, -1) * xi_star_inv(ts%k, ts%h)
+       l_shift = eoshift(ts%l, -1)
+       do o = 0, ts%max_order
+          ts%l(o) = ts%l(o) + l_shift(o) * xi_star_inv(ts%k, ts%h)
+       end do
     end if
 
     ! compute error coefficients (adapted from cvode)
