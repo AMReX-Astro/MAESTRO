@@ -542,7 +542,7 @@ contains
        end if
     end do
 
-    p = minloc(etamax, dim=1)
+    p = minloc(etamax)
     rescale = 0
     etaminmax = etamax(p)
     if (etaminmax > ts%eta_thresh) then
@@ -634,7 +634,6 @@ contains
 
     real(dp_t) :: eta
     integer  :: i
-    logical  :: force
 
     if (force) then
        eta = eta_in
@@ -828,13 +827,8 @@ contains
     allocate(ts%ewt(neq, npt))
     allocate(ts%b(neq, npt))
     allocate(ts%ipvt(neq,npt))
-
-    if(present(upar)) then
-      allocate(ts%upar(size(upar,1),npt))
-      ts%upar = upar
-    else
-      nullify(ts%upar)
-    endif
+    allocate(ts%upar(size(upar,1),npt))
+    ts%upar = upar
 
     ts%neq        = neq
     ts%npt        = npt

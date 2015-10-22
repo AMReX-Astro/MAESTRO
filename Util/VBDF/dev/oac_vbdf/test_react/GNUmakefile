@@ -1,7 +1,7 @@
 NDEBUG := t
 MPI    := t
 OMP    := t
-ACC    :=
+ACC    := t
 
 #COMP := Cray
 COMP := PGI
