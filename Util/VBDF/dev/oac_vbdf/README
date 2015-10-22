@@ -1,0 +1,2 @@
+This is a GPU- (OpenACC-)accelerated version of the test_react Maestro unit test using
+the VBDF integrator.
