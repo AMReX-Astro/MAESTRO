@@ -23,7 +23,7 @@ contains
 
     use bl_constants_module
     use bl_error_module
-    use network
+    use actual_network
     use eos_module, only: eos, eos_input_tp, eos_input_rt
     use eos_type_module
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &
@@ -42,20 +42,12 @@ contains
 
     ! local
     real(kind=dp_t) :: rlen, rloc
-    integer :: r, ic12, io16, img24
+    integer :: r
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
     real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
     
     type (eos_t) :: eos_state
 
-    ! figure out the indices for different species
-    ic12  = network_species_index("carbon-12")
-    io16  = network_species_index("oxygen-16")
-    img24  = network_species_index("magnesium-24")    
-
-    if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
-       call bl_error("ERROR: species indices not defined")
-    end if
 
     ! length of the domain
     rlen = (prob_hi(size(dx)) - prob_lo(size(dx)))
