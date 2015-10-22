@@ -11,7 +11,7 @@ module burner_module
   use extern_probin_module, only: use_vbdf
   
   private
-  public :: burner
+  public :: burner, burner_vec
 
   integer, public, save :: nst = 0
   integer, public, save :: nfe = 0
@@ -278,9 +278,12 @@ contains
       integer, parameter :: MAX_ORDER = 5   !This is arbitrary, should investigate other values
       logical, parameter :: RESET = .true.  !.true. means we want to initialize the bdf_ts object
       logical, parameter :: REUSE = .false. !.false. means don't reuse the Jacobian
-
+      real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
+                                                 !t to tout.  Also arbitrary,
+                                                 !multiple values should be
+                                                 !explored.
       !!Local variables 
-      integer :: n, i, npt, bdf_npt        ! npt is the size of the vectors
+      integer :: n, i, npt, bdf_npt, ierr  ! npt is the size of the vectors
                                            !passed in, basically the number of
                                            !hydro cells. bdf_npt refers to bdf's
                                            !own notion of vectors, which we're
@@ -290,30 +293,35 @@ contains
                                            ! species ordering
       logical, save :: firstCall = .true.
       real(kind=dp_t), dimension(NEQ) :: y, atol, rtol   ! input state, abs and rel tolerances
-      real(kind=dp_t), allocatable :: rpar(:), eos_cp(:), eos_dhdX(:,:)
-      real(kind=dp_t), allocatable :: upar(:,:)
+      real(kind=dp_t), allocatable :: eos_cp(:), eos_dhdX(:,:)
+      real(kind=dp_t), allocatable :: upar(:,:), y0(:,:), y1(:,:)
       real(kind=dp_t) :: t0, t1, enuc, dX
       type (eos_t) :: eos_state
       type(bdf_ts), allocatable :: ts(:)
 
       interface
-        subroutine f_rhs(n, t, y, ydot, rpar, ipar)
+        subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
+          !$acc routine seq
           import dp_t
-          integer,         intent(in   ) :: n, ipar(:)
-          real(kind=dp_t), intent(in   ) :: y(n), t
-          real(kind=dp_t), intent(  out) :: ydot(n)
-          real(kind=dp_t), intent(inout) :: rpar(:)  
-        end subroutine
-        subroutine jac(neq, t, y, ml, mu, pd, nrpd, rpar, ipar)
+          integer,    intent(in   ) :: neq, npt
+          real(dp_t), intent(in   ) :: y(neq,npt), t
+          real(dp_t), intent(  out) :: yd(neq,npt)
+          real(dp_t), intent(inout), optional :: upar(:,:)
+        end subroutine f_rhs_vec
+!
+        subroutine jac_vec(neq, npt, y, t, pd, upar)
+          !$acc routine seq
           import dp_t
-          integer        , intent(IN   ) :: neq, ml, mu, nrpd, ipar(:)
-          real(kind=dp_t), intent(IN   ) :: y(neq), t
-          real(kind=dp_t), intent(  OUT) :: pd(neq,neq)
-          real(kind=dp_t), intent(INOUT) :: rpar(:)  
-        end subroutine
+          integer,    intent(in   ) :: neq, npt
+          real(dp_t), intent(in   ) :: y(neq,npt), t
+          real(dp_t), intent(  out) :: pd(neq, neq, npt)
+          real(dp_t), intent(inout), optional :: upar(:,:)
+        end subroutine jac_vec
+ 
       end interface
 
       !!Execution
+      print *, 'mark A'
       if (firstCall) then
 
          if (.NOT. network_initialized) then
@@ -339,15 +347,18 @@ contains
       atol(nspec_advance+1) = 1.d-8     ! temperature
       rtol(1:nspec_advance) = 1.d-12    ! mass fractions
       rtol(nspec_advance+1) = 1.d-5     ! temperature
-      ! allocate storage for rpar -- the scratch array passed into the            
-      ! rhs and jacobian routines                                                 
-      allocate(rpar(n_rpar_comps))
 
+      print *, 'mark B'
       ! Call EoS on all points.  Maestro's being redesigned to have already done
       ! this, so this is just a temporary hack for the purposes of rapid GPU development.
       ! Also build array of vbdf time-stepper derived types.
       npt = size(dens)
       allocate(eos_cp(npt), eos_dhdX(nspec, npt))
+      allocate(ts(npt))
+      allocate(upar(n_rpar_comps, bdf_npt))
+      allocate(y0(NEQ, bdf_npt), y1(NEQ, bdf_npt))
+
+      print *, 'mark C'
       do i = 1, npt
          ! we need the specific heat at constant pressure and dhdX |_p.  Take
          ! T, rho, Xin as input
@@ -365,10 +376,29 @@ contains
 
          ! Build the bdf_ts time-stepper object
          bdf_npt = 1
-         allocate(upar(n_rpar_comps, bdf_npt))
-         call bdf_ts_build(ts(i), neq, bdf_npt, rtol, atol, MAX_ORDER, upar)
-      end do
+         call bdf_ts_build(ts(i), NEQ, bdf_npt, rtol, atol, MAX_ORDER, upar)
 
+      end do
+      print *, 'mark D'
+
+      ! for CRAY: copyin(ts) should work
+      ! for PGI:
+      ! $acc enter data copyin(ts(:))
+      ! do i
+      !    $acc enter data copyin( &
+      !       ts(i)%member1        &
+      !       ts(i)%member2        &
+      !       ...)
+      ! end do
+      !
+      ! <work>
+      !
+      ! do i
+      !    $acc exit data copyout or delete each ts(i)%member
+      ! end do
+      !
+      ! $acc exit data delete(ts(i))
+      ! WARNING! Do *not* do copyout, this'll break
          
       !TODO: Put first OpenACC parallel here with a loop over vector inputs
       !TODO: get ierr out, do a reduce
@@ -386,18 +416,23 @@ contains
          ! Since we are only integrating C12, we will need the O16 mass fraction
          ! in the RHS routine to compute the screening (and we know that the
          ! Mg24 abundance is constraint so things add to 1).
-         ts(i)%upar(irp_dens,i) = dens(i)
-         ts(i)%upar(irp_cp,i)   = eos_cp(i)
-         ts(i)%upar(irp_dhdX:irp_dhdX-1+nspec,i) = eos_dhdX(:,i)
-         ts(i)%upar(irp_o16,i)  = Xin(io16,i)
+         ts(i)%upar(irp_dens,1) = dens(i)
+         ts(i)%upar(irp_cp,1)   = eos_cp(i)
+         ts(i)%upar(irp_dhdX:irp_dhdX-1+nspec,1) = eos_dhdX(:,i)
+         ts(i)%upar(irp_o16,1)  = Xin(io16,i)
 
-         ! Translate DVODE args into args for bdf_advance
          y0(:,1) = y
          t0 = ZERO
          t1 = dt
-         call bdf_advance(ts(i), f_rhs, Jac, neq, bdf_npt, y0, t0, y1, t1, &
+         call bdf_advance(ts(i), f_rhs_vec, jac_vec, neq, bdf_npt, y0, t0, y1, t1, &
                           DT0, RESET, REUSE, ierr, initial_call=.true.)
          y = y1(:,1)
+
+         if (ierr /= BDF_ERR_SUCCESS) then
+            print *, 'ERROR: integration failed'
+            print *, errors(ierr)
+            call  bl_error("ERROR in burner: integration failed")
+         endif
 
          ! store the new mass fractions -- note, we discard the temperature
          ! here and instead compute the energy release from the binding
@@ -423,11 +458,13 @@ contains
          rho_Hnuc(i) = dens(i)*enuc/dt
       end do
 
+      print *, 'mark E'
       ! Cleanup
       do i=1, npt
          call bdf_ts_destroy(ts(i))
       end do
 
+      print *, 'mark F'
       if (ierr /= BDF_ERR_SUCCESS) then
          print *, 'ERROR: integration failed'
          print *, errors(ierr)

@@ -121,7 +121,7 @@ subroutine varden()
   !Explore react_its orders of magnitude of the time domain using user inputs.
   do_burning = dbo
   do_heating = dho
-  do i=0, react_its-1
+  do i=0, 1
     call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                      10**(i)*min_time_step,dx,bct%bc_tower_array)
     write(temp_buf, *) i

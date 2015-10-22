@@ -1,3 +1,9 @@
++omp_vdbf comments
+Though I call this omp_vbdf, it doesn't really use omp.  omp_vode *does* use it.
+The purpose of this is to be the reference and baseline code that the accelerated
+version of test_react using VBDF is build off of.
+
+
 +Introduction
 -------------------------
 The test_react unit test serves both as a check of the consistency of a reaction network

@@ -980,6 +980,7 @@ contains
     end do 
    
     ! Call vectorized burner 
+    print *, 'call burner_vec'
     call burner_vec(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
 
     ! Process output
