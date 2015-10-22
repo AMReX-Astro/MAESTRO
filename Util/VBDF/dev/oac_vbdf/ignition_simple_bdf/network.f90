@@ -38,6 +38,7 @@ module network
   character (len= 5), save :: short_aux_names(naux)
 
   real(kind=dp_t), save :: aion(nspec), zion(nspec), ebin(nspec)
+  !$acc declare create(aion(:), zion(:), ebin(:))
 
   logical, save :: network_initialized = .false.
 
@@ -74,11 +75,12 @@ contains
     ebin(io16_)  = -7.6959672e18_dp_t     ! 127.62093 MeV
     ebin(img24_) = -7.9704080e18_dp_t     ! 198.2579  MeV
 
+    !$acc update device(aion(:), zion(:), ebin(:))
+
     ! rpar is VODE's way of passing information into the RHS and
     ! jacobian routines.  Here we initialize some indices to make
     ! sense of what is stored in the rpar() array.
     call init_rpar_indices(nspec)
-
 
     network_initialized = .true.
 

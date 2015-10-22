@@ -17,7 +17,7 @@ subroutine f_rhs_vec(neq, npt, y, t, yd_out, upar)
   integer,         intent(in   ) :: neq, npt
   real(kind=dp_t), intent(in   ) :: y(neq,npt), t
   real(kind=dp_t), intent(  out) :: yd_out(neq,npt)
-  real(kind=dp_t), intent(inout), optional :: upar(:,:)
+  real(kind=dp_t), intent(inout) :: upar(:,:)
 
   integer :: k, n
   real(kind=dp_t) :: ymass(nspec,npt), yd(neq,npt)
@@ -49,7 +49,6 @@ subroutine f_rhs_vec(neq, npt, y, t, yd_out, upar)
   ymass(ic12_,:) = y(1,:)/aion(ic12_)
   ymass(io16_,:) = X_O16(:)/aion(io16_)
   ymass(img24_,:) = (ONE - y(1,:) - X_O16)/aion(img24_)
-
  
   do n = 1, npt
     ! call the screening routine
@@ -271,7 +270,7 @@ subroutine jac_vec(neq, npt, y, t, pd, upar)
   integer        , intent(IN   ) :: neq, npt
   real(kind=dp_t), intent(IN   ) :: y(neq,npt), t 
   real(kind=dp_t), intent(  OUT) :: pd(neq,neq,npt)
-  real(dp_t),      intent(inout), optional :: upar(:,:)
+  real(dp_t),      intent(inout) :: upar(:,:)
 
   real(kind=dp_t) :: dens(npt), c_p(npt), dhdX(nspec,npt), X_O16(npt)
   real(kind=dp_t) :: rate, dratedt, scorr, dscorrdt, xc12tmp

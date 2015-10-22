@@ -8,7 +8,6 @@ module burner_module
   use network
   use bdf
   use parallel
-  use extern_probin_module, only: use_vbdf
   
   private
   public :: burner, burner_vec
@@ -306,7 +305,7 @@ contains
           integer,    intent(in   ) :: neq, npt
           real(dp_t), intent(in   ) :: y(neq,npt), t
           real(dp_t), intent(  out) :: yd(neq,npt)
-          real(dp_t), intent(inout), optional :: upar(:,:)
+          real(dp_t), intent(inout) :: upar(:,:)
         end subroutine f_rhs_vec
 !
         subroutine jac_vec(neq, npt, y, t, pd, upar)
@@ -315,7 +314,7 @@ contains
           integer,    intent(in   ) :: neq, npt
           real(dp_t), intent(in   ) :: y(neq,npt), t
           real(dp_t), intent(  out) :: pd(neq, neq, npt)
-          real(dp_t), intent(inout), optional :: upar(:,:)
+          real(dp_t), intent(inout) :: upar(:,:)
         end subroutine jac_vec
  
       end interface
@@ -378,35 +377,11 @@ contains
          ! Build the bdf_ts time-stepper object
          bdf_npt = 1
          call bdf_ts_build(ts(i), NEQ, bdf_npt, rtol, atol, MAX_ORDER, upar)
+         !Note: only need to copy in allocatables and pointers
          !$acc enter data copyin(    &
-         !$acc    ts(i)%neq,         &
-         !$acc    ts(i)%npt,         &
-         !$acc    ts(i)%max_order,   &
-         !$acc    ts(i)%max_steps,   &
-         !$acc    ts(i)%max_iters,   &
-         !$acc    ts(i)%verbose,     &
-         !$acc    ts(i)%dt_min,      &
-         !$acc    ts(i)%eta_min,     &
-         !$acc    ts(i)%eta_max,     &
-         !$acc    ts(i)%eta_thresh,  &
-         !$acc    ts(i)%max_j_age,   &
-         !$acc    ts(i)%max_p_age,   &
-         !$acc    ts(i)%debug,       &
-         !$acc    ts(i)%dump_unit,   &
          !$acc    ts(i)%rtol(:),     &
          !$acc    ts(i)%atol(:),     &
-         !$acc    ts(i)%t,           &
-         !$acc    ts(i)%t1,          &
-         !$acc    ts(i)%dt,          &
-         !$acc    ts(i)%dt_nwt,      &
-         !$acc    ts(i)%k,           &
-         !$acc    ts(i)%n,           &
-         !$acc    ts(i)%j_age,       &
-         !$acc    ts(i)%p_age,       &
-         !$acc    ts(i)%k_age,       &
          !$acc    ts(i)%tq(-1:2),    &
-         !$acc    ts(i)%tq2save,     &
-         !$acc    ts(i)%refactor,    &
          !$acc    ts(i)%J(:,:,:),    &
          !$acc    ts(i)%P(:,:,:),    &
          !$acc    ts(i)%z(:,:,:),    &
@@ -422,21 +397,20 @@ contains
          !$acc    ts(i)%ewt(:,:),    &
          !$acc    ts(i)%b(:,:),      &
          !$acc    ts(i)%ipvt(:,:),   &
-         !$acc    ts(i)%A(:,:),      &
-         !$acc    ts(i)%nfe,         &
-         !$acc    ts(i)%nje,         &
-         !$acc    ts(i)%nlu,         &
-         !$acc    ts(i)%nit,         &
-         !$acc    ts(i)%nse,         &
-         !$acc    ts(i)%ncse,        &
-         !$acc    ts(i)%ncit,        &
-         !$acc    ts(i)%ncdtmin)
+         !$acc    ts(i)%A(:,:))
       end do
       print *, 'mark D'
 
-      !TODO: Copy over all needed data
-      !TODO: Put first OpenACC parallel here with a loop over vector inputs
-      !TODO: get ierr out, do a reduce
+      !NOTE: The (:)'s are not necessary.  I'm putting them here just for 
+      !      clarity about the shape.
+      !$acc data                                                               &
+      !$acc copyin(dens(:), temp(:), eos_cp(:), eos_dhdX(:), Xin(:,:))         &
+      !$acc create(y(:), y0(:,:), y1(:,:))                                     &
+      !$acc copyout(Xout(:,:), rho_omegadot(:,:), rho_Hnuc(:)) 
+
+      !$acc parallel loop gang vector present(dens, temp, eos_cp, eos_dhdX,    &
+      !$acc    Xin, y, y0, y1, Xout, rho_omegadot, rho_Hnuc, ebin, ts)         &
+      !$acc    reduction(+:ierr)
       do i = 1, npt
          ! abundances are the first nspec_advance values and temperature is the last
          y(ic12) = Xin(ic12,i)
@@ -459,15 +433,10 @@ contains
          y0(:,1) = y
          t0 = ZERO
          t1 = dt
-         call bdf_advance(ts(i), f_rhs_vec, jac_vec, neq, bdf_npt, y0, t0, y1, t1, &
-                          DT0, RESET, REUSE, ierr, initial_call=.true.)
+         call bdf_advance(ts(i), f_rhs_vec, jac_vec, NEQ, bdf_npt, y0, t0, y1, t1, &
+                          DT0, RESET, REUSE, ierr, .true.)
          y = y1(:,1)
 
-         if (ierr /= BDF_ERR_SUCCESS) then
-            print *, 'ERROR: integration failed'
-            print *, errors(ierr)
-            call  bl_error("ERROR in burner: integration failed")
-         endif
 
          ! store the new mass fractions -- note, we discard the temperature
          ! here and instead compute the energy release from the binding
@@ -497,34 +466,9 @@ contains
       ! Cleanup
       do i=1, npt
          !$acc exit data delete(     &
-         !$acc    ts(i)%neq,         &
-         !$acc    ts(i)%npt,         &
-         !$acc    ts(i)%max_order,   &
-         !$acc    ts(i)%max_steps,   &
-         !$acc    ts(i)%max_iters,   &
-         !$acc    ts(i)%verbose,     &
-         !$acc    ts(i)%dt_min,      &
-         !$acc    ts(i)%eta_min,     &
-         !$acc    ts(i)%eta_max,     &
-         !$acc    ts(i)%eta_thresh,  &
-         !$acc    ts(i)%max_j_age,   &
-         !$acc    ts(i)%max_p_age,   &
-         !$acc    ts(i)%debug,       &
-         !$acc    ts(i)%dump_unit,   &
          !$acc    ts(i)%rtol(:),     &
          !$acc    ts(i)%atol(:),     &
-         !$acc    ts(i)%t,           &
-         !$acc    ts(i)%t1,          &
-         !$acc    ts(i)%dt,          &
-         !$acc    ts(i)%dt_nwt,      &
-         !$acc    ts(i)%k,           &
-         !$acc    ts(i)%n,           &
-         !$acc    ts(i)%j_age,       &
-         !$acc    ts(i)%p_age,       &
-         !$acc    ts(i)%k_age,       &
          !$acc    ts(i)%tq(-1:2),    &
-         !$acc    ts(i)%tq2save,     &
-         !$acc    ts(i)%refactor,    &
          !$acc    ts(i)%J(:,:,:),    &
          !$acc    ts(i)%P(:,:,:),    &
          !$acc    ts(i)%z(:,:,:),    &
@@ -540,25 +484,18 @@ contains
          !$acc    ts(i)%ewt(:,:),    &
          !$acc    ts(i)%b(:,:),      &
          !$acc    ts(i)%ipvt(:,:),   &
-         !$acc    ts(i)%A(:,:),      &
-         !$acc    ts(i)%nfe,         &
-         !$acc    ts(i)%nje,         &
-         !$acc    ts(i)%nlu,         &
-         !$acc    ts(i)%nit,         &
-         !$acc    ts(i)%nse,         &
-         !$acc    ts(i)%ncse,        &
-         !$acc    ts(i)%ncit,        &
-         !$acc    ts(i)%ncdtmin)
+         !$acc    ts(i)%A(:,:))
          call bdf_ts_destroy(ts(i))
       end do
 
       !WARNING! Do *not* do copyout, it'll break
       !$acc exit data delete(ts(:))
-      
+     
+      !$acc end data 
       print *, 'mark F'
       if (ierr /= BDF_ERR_SUCCESS) then
          print *, 'ERROR: integration failed'
-         print *, errors(ierr)
+         print *, 'sum(ierr) for all GPU threads: ', ierr
          call  bl_error("ERROR in burner: integration failed")
       endif
 

@@ -20,13 +20,10 @@ module bdf
 
   use bl_types
   use bl_error_module
+  use bl_constants_module
   use parallel
 
   implicit none
-
-  real(dp_t), private, parameter :: one  = 1.0_dp_t
-  real(dp_t), private, parameter :: two  = 2.0_dp_t
-  real(dp_t), private, parameter :: half = 0.5_dp_t
 
   integer, parameter :: bdf_max_iters = 666666666
 
@@ -129,29 +126,31 @@ contains
     real(dp_t),   intent(  out) :: y1(neq,npt)
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
-    logical,      intent(in   ), optional :: initial_call
+    logical,      intent(in   ) :: initial_call
     interface
        subroutine f(neq, npt, y, t, yd, upar)
+         !$acc routine seq
          import dp_t
          integer,    intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(dp_t), intent(inout) :: upar(:,:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
+         !$acc routine seq
          import dp_t
          integer,    intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq, npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(dp_t), intent(inout) :: upar(:,:)
        end subroutine Jac
     end interface
 
     integer  :: k, p, m
     logical  :: retry, linitial
-    real(kind=dp_t) :: r1, r2
 
-    linitial = .false.; if (present(initial_call)) linitial = initial_call
+    !TODO: We no longer have this argument as optional, so rewrite to get rid of linitial
+    linitial = initial_call
 
     if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
 
@@ -159,25 +158,18 @@ contains
 
     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
     do k = 1, bdf_max_iters + 1
-       !print *, 'bdf iter ', k
-       !call flush()
        if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
           ierr = BDF_ERR_MAXSTEPS; return
        end if
 
-       if (k == 1) &
-            call bdf_dump(ts)
+       !TODO: Debug I/O not cool on GPUs. If we want to keep it, need to rewrite
+       !if (k == 1) &
+       !     call bdf_dump(ts)
 
-       !print *, 'call update... '
-       !call flush()
        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
 
-       !print *, 'call predict... '
-       !call flush()
        call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
        if(linitial .and. k == 1) then
-          !print *, 'initial call... '
-          !call flush()
           !This is the initial solve, so use the user's initial value, 
           !not the predicted value.
           do p = 1, ts%npt
@@ -187,30 +179,28 @@ contains
              end do
           end do
        endif
-       !print *, 'call solve... '
-       !call flush()
        call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
-       !print *, '  cur time: ', ts%t
-       !print *, 'call check... '
-       !call flush()
        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
        if (ierr /= BDF_ERR_SUCCESS) return
+       !TODO: cycle statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
+       !look into this when tuning
        if (retry) cycle
 
-       !print *, 'call correct... '
-       !call flush()
        call bdf_correct(ts)               ! new solution looks good, correct history and advance
 
-       call bdf_dump(ts)
+       !call bdf_dump(ts)
+       !TODO: exit statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
+       !look into this when tuning
        if (ts%t >= t1) exit
 
        call bdf_adjust(ts)                ! adjust step-size/order
     end do
 
-    if (ts%verbose > 0) &
-         print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", it: ",i3,", se: ",i3,", dt: ",e15.8,", k: ",i2)', &
-         ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, ts%dt, ts%k
+    !TODO: GPUs don't like print statements.  Either delete this or work up alternative implementations
+    !if (ts%verbose > 0) &
+    !     print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", it: ",i3,", se: ",i3,", dt: ",e15.8,", k: ",i2)', &
+    !     ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, ts%dt, ts%k
 
     y1 = ts%z(:,:,0)
     
@@ -238,6 +228,7 @@ contains
   !   2. The step size h_n = t_n - t_{n-1}.
   !
   subroutine bdf_update(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
     integer  :: j
@@ -260,30 +251,30 @@ contains
     a0hat = alphahat0(ts%k, ts%h)
     a0    = alpha0(ts%k)
 
-    xi_inv     = one
-    xistar_inv = one
+    xi_inv     = ONE
+    xistar_inv = ONE
     if (ts%k > 1) then
-       xi_inv     = one / xi_j(ts%h, ts%k)
+       xi_inv     = ONE / xi_j(ts%h, ts%k)
        xistar_inv = xi_star_inv(ts%k, ts%h)
     end if
 
-    a1 = one - a0hat + a0
-    a2 = one + ts%k * a1
+    a1 = ONE - a0hat + a0
+    a2 = ONE + ts%k * a1
     ts%tq(0) = abs(a1 / (a0 * a2))
     ts%tq(2) = abs(a2 * xistar_inv / (ts%l(ts%k) * xi_inv))
     if (ts%k > 1) then
        c  = xistar_inv / ts%l(ts%k)
-       a3 = a0 + one / ts%k
+       a3 = a0 + ONE / ts%k
        a4 = a0hat + xi_inv
-       ts%tq(-1) = abs(c * (one - a4 + a3) / a3)
+       ts%tq(-1) = abs(c * (ONE - a4 + a3) / a3)
     else
-       ts%tq(-1) = one
+       ts%tq(-1) = ONE
     end if
 
     xi_inv = ts%h(0) / sum(ts%h(0:ts%k))
-    a5 = a0 - one / (ts%k+1)
+    a5 = a0 - ONE / (ts%k+1)
     a6 = a0hat - xi_inv
-    ts%tq(1) = abs((one - a6 + a5) / a2 / (xi_inv * (ts%k+2) * a5))
+    ts%tq(1) = abs((ONE - a6 + a5) / a2 / (xi_inv * (ts%k+2) * a5))
 
     call ewts(ts)
   end subroutine bdf_update
@@ -292,6 +283,7 @@ contains
   ! Predict (apply Pascal matrix).
   !
   subroutine bdf_predict(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: i, j, m, p
     do i = 0, ts%k
@@ -317,21 +309,26 @@ contains
   !   G(y) = y - dt * f(y,t) - rhs
   !
   subroutine bdf_solve(ts, f, Jac)
+    !$acc routine seq
+    !$acc routine(dgefa) seq
+    !$acc routine(dgesl) seq
     type(bdf_ts), intent(inout) :: ts
     interface
        subroutine f(neq, npt, y, t, yd, upar)
+         !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(dp_t), intent(inout) :: upar(:,:)
        end subroutine f
        subroutine Jac(neq, npt, y, t, J, upar)
+         !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq,npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(dp_t), intent(inout) :: upar(:,:)
        end subroutine Jac
     end interface
 
@@ -409,7 +406,7 @@ contains
              ts%e(m,p) = ts%e(m,p) + ts%b(m,p)
              ts%y(m,p) = ts%z0(m,p,0) + ts%e(m,p)
           end do
-          if (norm(ts%b(:,p), ts%ewt(:,p)) < one) iterating(p) = .false.
+          if (norm(ts%b(:,p), ts%ewt(:,p)) < ONE) iterating(p) = .false.
        end do
 
        if (.not. any(iterating)) exit
@@ -441,7 +438,7 @@ contains
     ! if solver failed to converge, shrink dt and try again
     if (ts%ncit >= ts%max_iters) then
        ts%refactor = .true.; ts%nse = ts%nse + 1; ts%ncse = ts%ncse + 1
-       call rescale_timestep(ts, 0.25d0)
+       call rescale_timestep(ts, 0.25d0, .false.)
        retry = .true.
        return
     end if
@@ -450,9 +447,9 @@ contains
     ! if local error is too large, shrink dt and try again
     do p = 1, ts%npt
        error = ts%tq(0) * norm(ts%e(:,p), ts%ewt(:,p))
-       if (error > one) then
-          eta = one / ( (6.d0 * error) ** (one / ts%k) + 1.d-6 )
-          call rescale_timestep(ts, eta)
+       if (error > ONE) then
+          eta = ONE / ( (6.d0 * error) ** (ONE / ts%k) + 1.d-6 )
+          call rescale_timestep(ts, eta, .false.)
           retry = .true.
           if (ts%dt < ts%dt_min + epsilon(ts%dt_min)) ts%ncdtmin = ts%ncdtmin + 1
           if (ts%ncdtmin > 7) err = BDF_ERR_DTMIN
@@ -467,6 +464,7 @@ contains
   ! Correct (apply l coeffs) and advance step.
   !
   subroutine bdf_correct(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: i, m, p
 
@@ -501,6 +499,7 @@ contains
   ! Adjust step-size/order to maximize step-size.
   !
   subroutine bdf_adjust(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
     real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
@@ -512,16 +511,16 @@ contains
        ! compute eta(k-1), eta(k), eta(k+1)
        eta = 0
        error  = ts%tq(0) * norm(ts%e(:,p), ts%ewt(:,p))
-       eta(0) = one / ( (6.d0 * error) ** (one / ts%k) + 1.d-6 )
+       eta(0) = ONE / ( (6.d0 * error) ** (ONE / ts%k) + 1.d-6 )
        if (ts%k_age > ts%k) then
           if (ts%k > 1) then
              error     = ts%tq(-1) * norm(ts%z(:,p,ts%k), ts%ewt(:,p))
-             eta(-1) = one / ( (6.d0 * error) ** (one / ts%k) + 1.d-6 )
+             eta(-1) = ONE / ( (6.d0 * error) ** (ONE / ts%k) + 1.d-6 )
           end if
           if (ts%k < ts%max_order) then
              c = (ts%tq(2) / ts%tq2save) * (ts%h(0) / ts%h(2)) ** (ts%k+1)
              error  = ts%tq(1) * norm(ts%e(:,p) - c * ts%e1(:,p), ts%ewt(:,p))
-             eta(1) = one / ( (10.d0 * error) ** (one / (ts%k+2)) + 1.d-6 )
+             eta(1) = ONE / ( (10.d0 * error) ** (ONE / (ts%k+2)) + 1.d-6 )
           end if
           ts%k_age = 0
        end if
@@ -558,7 +557,7 @@ contains
        rescale = (ts%t1 - ts%t) / ts%dt
        call rescale_timestep(ts, rescale, .true.)
     else if (rescale /= 0) then
-       call rescale_timestep(ts, rescale)
+       call rescale_timestep(ts, rescale, .false.)
     end if
 
     ! save for next step (needed to compute eta(1))
@@ -571,16 +570,18 @@ contains
   ! Reset counters, set order to one, init Nordsieck history array.
   !
   subroutine bdf_reset(ts, f, y0, dt, reuse)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     real(dp_t),     intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
     interface
        subroutine f(neq, npt, y, t, yd, upar)
+         !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout), optional :: upar(:,:)
+         real(dp_t), intent(inout) :: upar(:,:)
        end subroutine f
     end interface
 
@@ -624,16 +625,15 @@ contains
   !   2. scale dt and adjust time array t accordingly
   !   3. rescale Nordsieck history array
   !
-  subroutine rescale_timestep(ts, eta_in, force_in)
-    type(bdf_ts), intent(inout)           :: ts
-    real(dp_t),     intent(in   )           :: eta_in
-    logical,      intent(in   ), optional :: force_in
+  subroutine rescale_timestep(ts, eta_in, force)
+    !$acc routine seq
+    type(bdf_ts), intent(inout) :: ts
+    real(dp_t),   intent(in   ) :: eta_in
+    logical,      intent(in   ) :: force
 
     real(dp_t) :: eta
     integer  :: i
     logical  :: force
-
-    force = .false.; if (present(force_in)) force = force_in
 
     if (force) then
        eta = eta_in
@@ -658,6 +658,7 @@ contains
   ! Decrease order.
   !
   subroutine decrease_order(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer  :: j
     real(dp_t) :: c(0:6)
@@ -682,6 +683,7 @@ contains
   ! Increase order.
   !
   subroutine increase_order(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer  :: j
     real(dp_t) :: c(0:6)
@@ -709,7 +711,7 @@ contains
     integer  :: j
     a0 = -1
     do j = 2, k
-       a0 = a0 - one / j
+       a0 = a0 - ONE / j
     end do
   end function alpha0
 
@@ -734,6 +736,7 @@ contains
   ! $\xi^*_k$ that appears in Jackson and Sacks-Davis.
   !
   function xi_star_inv(k, h) result(xii)
+    !$acc routine seq
     integer,  intent(in) :: k
     real(dp_t), intent(in) :: h(0:)
     real(dp_t) :: xii, hs
@@ -750,6 +753,7 @@ contains
   ! Return $\xi_j$.
   !
   function xi_j(h, j) result(xi)
+    !$acc routine seq
     integer,  intent(in) :: j
     real(dp_t), intent(in) :: h(0:)
     real(dp_t) :: xi
@@ -760,11 +764,12 @@ contains
   ! Pre-compute error weights.
   !
   subroutine ewts(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: m, p
     do p = 1, ts%npt
        do m = 1, ts%neq
-          ts%ewt(m,p) = one / (ts%rtol(m) * abs(ts%y(m,p)) + ts%atol(m))
+          ts%ewt(m,p) = ONE / (ts%rtol(m) * abs(ts%y(m,p)) + ts%atol(m))
        end do
     end do
   end subroutine ewts
@@ -781,6 +786,7 @@ contains
   ! Compute weighted norm of y.
   !
   function norm(y, ewt) result(r)
+    !$acc routine seq
     real(dp_t), intent(in) :: y(1:), ewt(1:)
     real(dp_t) :: r
     integer :: m, n
@@ -799,7 +805,7 @@ contains
     type(bdf_ts),   intent(inout) :: ts
     integer,        intent(in   ) :: max_order, neq, npt
     real(dp_t),     intent(in   ) :: rtol(neq), atol(neq)
-    real(dp_t),     intent(in   ), optional :: upar(:,:)
+    real(dp_t),     intent(in   ) :: upar(:,:)
 
     integer :: k, U(max_order+1, max_order+1), Uk(max_order+1, max_order+1)
 
@@ -883,6 +889,7 @@ contains
   ! Various misc. helper functions
   !
   subroutine eye_r(A)
+    !$acc routine seq
     real(dp_t), intent(inout) :: A(:,:,:)
     integer :: i
     A = 0
@@ -907,5 +914,63 @@ contains
        r = n * factorial(n-1)
     end if
   end function factorial
+
+  !
+  ! A local, GPU-compiled version of intrinsic eoshift 
+  ! Only what's needed for VBDF is implemented, also no
+  ! error-checking.
+  !
+  function eoshift(arr, sh) result(ret)
+    !$acc routine seq
+    real(kind=dp_t), intent(in   ) :: arr(:)
+    integer,         intent(in   ) :: sh
+    
+    !real(kind=dp_t), pointer :: ret(:)
+    real(kind=dp_t) :: ret(size(arr))
+    integer :: i
+
+    !No allocates on GPU! Delete this commented out code, keeping for reference for now
+    !allocate(ret(size(arr)))
+    ret = 0.0_dp_t
+
+    if (sh == 0) then
+       return
+    else if(sh > 0) then
+       do i = 1, size(arr) - sh
+          ret(i) = arr(i+sh)
+       enddo
+    else 
+       do i = size(arr), abs(sh), -1
+          ret(i) = arr(i+sh)
+       enddo
+    end if
+  end function eoshift
+
+  !
+  ! A local, GPU-compiled version of intrinsic minloc
+  ! Only what's needed for VBDF is implemented, also no
+  ! error-checking.
+  ! TODO: Check if this is implemented on GPU, if so delete all this
+  !
+  function minloc(arr) result(ret)
+    !$acc routine seq
+    real(kind=dp_t), intent(in   ) :: arr(:)
+    
+    integer :: ret
+    integer :: i
+    real(kind=dp_t) :: cur_min
+
+    cur_min = arr(1)
+    ret = 1
+    do i = 1, size(arr)
+      if(arr(i) < cur_min) then
+        cur_min = arr(i)
+        ret = i
+      endif
+    enddo
+  end function minloc
+
+
+
 
 end module bdf
