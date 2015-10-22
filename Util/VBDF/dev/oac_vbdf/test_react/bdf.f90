@@ -875,9 +875,7 @@ contains
     deallocate(ts%h,ts%l,ts%ewt,ts%rtol,ts%atol)
     deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
     deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
-    if(associated(ts%upar)) then
-      deallocate(ts%upar)
-    endif
+    deallocate(ts%upar)
   end subroutine bdf_ts_destroy
 
   !
