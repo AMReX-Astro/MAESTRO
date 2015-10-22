@@ -656,14 +656,18 @@ contains
   subroutine decrease_order(ts)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    integer  :: j
-    real(dp_t) :: c(0:6)
+    integer  :: j, o
+    real(dp_t) :: c(0:6), c_shift(0:6)
 
     if (ts%k > 2) then
        c = 0
        c(2) = 1
        do j = 1, ts%k-2
-          c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
+          !c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
+          c_shift = eoshift_local(c, -1)
+          do o = 0, 6
+             c(o) = c_shift(o) + c(o) *  xi_j(ts%h, j)
+          end do
        end do
 
        do j = 2, ts%k-1
@@ -681,13 +685,17 @@ contains
   subroutine increase_order(ts)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    integer  :: j
-    real(dp_t) :: c(0:6)
+    integer  :: j, o
+    real(dp_t) :: c(0:6), c_shift(0:6)
 
     c = 0
     c(2) = 1
     do j = 1, ts%k-2
-       c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
+       !c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
+       c_shift = eoshift_local(c, -1)
+       do o = 0, 6
+          c(o) = c_shift(o) + c(o) * xi_j(ts%h, j)
+       end do
     end do
 
     ts%z(:,:,ts%k+1) = 0
