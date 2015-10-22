@@ -378,91 +378,63 @@ contains
          ! Build the bdf_ts time-stepper object
          bdf_npt = 1
          call bdf_ts_build(ts(i), NEQ, bdf_npt, rtol, atol, MAX_ORDER, upar)
-         !$acc enter data copyin( &
-         !$acc ts(i)%neq,         &
-         !$acc ts(i)%npt,         &
-         !$acc ts(i)%max_order,   &
-         !$acc ts(i)%max_steps,   &
-         !$acc ts(i)%max_iters,   &
-         !$acc ts(i)%verbose,     &
-         !$acc ts(i)%dt_min,      &
-         !$acc ts(i)%eta_min,     &
-         !$acc ts(i)%eta_max,     &
-         !$acc ts(i)%eta_thresh,  &
-         !$acc ts(i)%max_j_age                  ! maximum age of Jacobian
-         !$acc ts(i)%max_p_age                  ! maximum age of newton iteration matrix
-
-         !$acc ts(i)%debug
-         !$acc ts(i)%dump_unit
-
-     real(dp_t), pointer :: rtol(:)         ! relative tolerances
-     real(dp_t), pointer :: atol(:)         ! absolute tolerances
-
-     ! state
-     real(dp_t) :: t                        ! current time
-     real(dp_t) :: t1                       ! final time
-     real(dp_t) :: dt                       ! current time step
-     real(dp_t) :: dt_nwt                   ! dt used when building newton iteration matrix
-     integer  :: k                          ! current order
-     integer  :: n                          ! current step
-     integer  :: j_age                      ! age of Jacobian
-     integer  :: p_age                      ! age of newton iteration matrix
-     integer  :: k_age                      ! number of steps taken at current order
-     real(dp_t) :: tq(-1:2)                 ! error coefficients (test quality)
-     real(dp_t) :: tq2save
-     logical  :: refactor
-
-     real(dp_t), pointer :: J(:,:,:)        ! Jacobian matrix
-     real(dp_t), pointer :: P(:,:,:)        ! Newton iteration matrix
-     real(dp_t), pointer :: z(:,:,:)        ! Nordsieck histroy array, indexed as (dof, p, n)
-     real(dp_t), pointer :: z0(:,:,:)       ! Nordsieck predictor array
-     real(dp_t), pointer :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
-     real(dp_t), pointer :: l(:)            ! predictor/corrector update coefficients
-     real(dp_t), pointer :: upar(:,:)       ! array of user parameters (passed to
-                                            ! user's Jacobian and f)
-     real(dp_t), pointer :: y(:,:)          ! current y
-     real(dp_t), pointer :: yd(:,:)         ! current \dot{y}
-     real(dp_t), pointer :: rhs(:,:)        ! solver rhs
-     real(dp_t), pointer :: e(:,:)          ! accumulated correction
-     real(dp_t), pointer :: e1(:,:)         ! accumulated correction, previous step
-     real(dp_t), pointer :: ewt(:,:)        ! cached error weights
-     real(dp_t), pointer :: b(:,:)          ! solver work space
-     integer,  pointer :: ipvt(:,:)         ! pivots (neq,npts)
-     integer,  pointer :: A(:,:)            ! pascal matrix
-
-     ! counters
-     integer :: nfe                         ! number of function evaluations
-     integer :: nje                         ! number of Jacobian evaluations
-     integer :: nlu                         ! number of factorizations
-     integer :: nit                         ! number of non-linear solver iterations
-     integer :: nse                         ! number of non-linear solver errors
-     integer :: ncse                        ! number of consecutive non-linear solver errors
-     integer :: ncit                        ! number of current non-linear solver iterations
-     integer :: ncdtmin                     ! number of consecutive times we tried to shrink beyond the minimum time step
-
-
+         !$acc enter data copyin(    &
+         !$acc    ts(i)%neq,         &
+         !$acc    ts(i)%npt,         &
+         !$acc    ts(i)%max_order,   &
+         !$acc    ts(i)%max_steps,   &
+         !$acc    ts(i)%max_iters,   &
+         !$acc    ts(i)%verbose,     &
+         !$acc    ts(i)%dt_min,      &
+         !$acc    ts(i)%eta_min,     &
+         !$acc    ts(i)%eta_max,     &
+         !$acc    ts(i)%eta_thresh,  &
+         !$acc    ts(i)%max_j_age,   &
+         !$acc    ts(i)%max_p_age,   &
+         !$acc    ts(i)%debug,       &
+         !$acc    ts(i)%dump_unit,   &
+         !$acc    ts(i)%rtol(:),     &
+         !$acc    ts(i)%atol(:),     &
+         !$acc    ts(i)%t,           &
+         !$acc    ts(i)%t1,          &
+         !$acc    ts(i)%dt,          &
+         !$acc    ts(i)%dt_nwt,      &
+         !$acc    ts(i)%k,           &
+         !$acc    ts(i)%n,           &
+         !$acc    ts(i)%j_age,       &
+         !$acc    ts(i)%p_age,       &
+         !$acc    ts(i)%k_age,       &
+         !$acc    ts(i)%tq(-1:2),    &
+         !$acc    ts(i)%tq2save,     &
+         !$acc    ts(i)%refactor,    &
+         !$acc    ts(i)%J(:,:,:),    &
+         !$acc    ts(i)%P(:,:,:),    &
+         !$acc    ts(i)%z(:,:,:),    &
+         !$acc    ts(i)%z0(:,:,:),   &
+         !$acc    ts(i)%h(:),        &
+         !$acc    ts(i)%l(:),        &
+         !$acc    ts(i)%upar(:,:),   &
+         !$acc    ts(i)%y(:,:),      &
+         !$acc    ts(i)%yd(:,:),     &
+         !$acc    ts(i)%rhs(:,:),    &
+         !$acc    ts(i)%e(:,:),      &
+         !$acc    ts(i)%e1(:,:),     &
+         !$acc    ts(i)%ewt(:,:),    &
+         !$acc    ts(i)%b(:,:),      &
+         !$acc    ts(i)%ipvt(:,:),   &
+         !$acc    ts(i)%A(:,:),      &
+         !$acc    ts(i)%nfe,         &
+         !$acc    ts(i)%nje,         &
+         !$acc    ts(i)%nlu,         &
+         !$acc    ts(i)%nit,         &
+         !$acc    ts(i)%nse,         &
+         !$acc    ts(i)%ncse,        &
+         !$acc    ts(i)%ncit,        &
+         !$acc    ts(i)%ncdtmin)
       end do
       print *, 'mark D'
 
-      ! for CRAY: copyin(ts) should work
-      ! for PGI:
-      ! $acc enter data copyin(ts(:))
-      ! do i
-      !    $acc enter data copyin( &
-      !       ts(i)%member1        &
-      !       ts(i)%member2        &
-      !       ...)
-      ! end do
-      !
-      ! <work>
-      !
-      ! do i
-      !    $acc exit data copyout or delete each ts(i)%member
-      ! end do
-      !
-      ! $acc exit data delete(ts(i))
-      ! WARNING! Do *not* do copyout, this'll break
-         
+      !TODO: Copy over all needed data
       !TODO: Put first OpenACC parallel here with a loop over vector inputs
       !TODO: get ierr out, do a reduce
       do i = 1, npt
@@ -521,14 +493,68 @@ contains
          rho_Hnuc(i) = dens(i)*enuc/dt
       end do
 
-
-      !$acc exit data delete(ts(:))
       print *, 'mark E'
       ! Cleanup
       do i=1, npt
+         !$acc exit data delete(     &
+         !$acc    ts(i)%neq,         &
+         !$acc    ts(i)%npt,         &
+         !$acc    ts(i)%max_order,   &
+         !$acc    ts(i)%max_steps,   &
+         !$acc    ts(i)%max_iters,   &
+         !$acc    ts(i)%verbose,     &
+         !$acc    ts(i)%dt_min,      &
+         !$acc    ts(i)%eta_min,     &
+         !$acc    ts(i)%eta_max,     &
+         !$acc    ts(i)%eta_thresh,  &
+         !$acc    ts(i)%max_j_age,   &
+         !$acc    ts(i)%max_p_age,   &
+         !$acc    ts(i)%debug,       &
+         !$acc    ts(i)%dump_unit,   &
+         !$acc    ts(i)%rtol(:),     &
+         !$acc    ts(i)%atol(:),     &
+         !$acc    ts(i)%t,           &
+         !$acc    ts(i)%t1,          &
+         !$acc    ts(i)%dt,          &
+         !$acc    ts(i)%dt_nwt,      &
+         !$acc    ts(i)%k,           &
+         !$acc    ts(i)%n,           &
+         !$acc    ts(i)%j_age,       &
+         !$acc    ts(i)%p_age,       &
+         !$acc    ts(i)%k_age,       &
+         !$acc    ts(i)%tq(-1:2),    &
+         !$acc    ts(i)%tq2save,     &
+         !$acc    ts(i)%refactor,    &
+         !$acc    ts(i)%J(:,:,:),    &
+         !$acc    ts(i)%P(:,:,:),    &
+         !$acc    ts(i)%z(:,:,:),    &
+         !$acc    ts(i)%z0(:,:,:),   &
+         !$acc    ts(i)%h(:),        &
+         !$acc    ts(i)%l(:),        &
+         !$acc    ts(i)%upar(:,:),   &
+         !$acc    ts(i)%y(:,:),      &
+         !$acc    ts(i)%yd(:,:),     &
+         !$acc    ts(i)%rhs(:,:),    &
+         !$acc    ts(i)%e(:,:),      &
+         !$acc    ts(i)%e1(:,:),     &
+         !$acc    ts(i)%ewt(:,:),    &
+         !$acc    ts(i)%b(:,:),      &
+         !$acc    ts(i)%ipvt(:,:),   &
+         !$acc    ts(i)%A(:,:),      &
+         !$acc    ts(i)%nfe,         &
+         !$acc    ts(i)%nje,         &
+         !$acc    ts(i)%nlu,         &
+         !$acc    ts(i)%nit,         &
+         !$acc    ts(i)%nse,         &
+         !$acc    ts(i)%ncse,        &
+         !$acc    ts(i)%ncit,        &
+         !$acc    ts(i)%ncdtmin)
          call bdf_ts_destroy(ts(i))
       end do
 
+      !WARNING! Do *not* do copyout, it'll break
+      !$acc exit data delete(ts(:))
+      
       print *, 'mark F'
       if (ierr /= BDF_ERR_SUCCESS) then
          print *, 'ERROR: integration failed'
