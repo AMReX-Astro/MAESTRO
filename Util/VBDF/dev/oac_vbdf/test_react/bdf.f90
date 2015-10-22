@@ -420,6 +420,7 @@ contains
   ! Check error estimates.
   !
   subroutine bdf_check(ts, retry, err)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     logical,      intent(out)   :: retry
     integer,      intent(out)   :: err
