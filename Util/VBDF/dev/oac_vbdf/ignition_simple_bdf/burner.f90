@@ -298,26 +298,26 @@ contains
       type (eos_t) :: eos_state
       type(bdf_ts), allocatable :: ts(:)
 
-      interface
-        subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-          !$acc routine seq
-          import dp_t
-          integer,    intent(in   ) :: neq, npt
-          real(dp_t), intent(in   ) :: y(neq,npt), t
-          real(dp_t), intent(  out) :: yd(neq,npt)
-          real(dp_t), intent(inout) :: upar(:,:)
-        end subroutine f_rhs_vec
+      !interface
+      !  subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
+      !    !$acc routine seq
+      !    import dp_t
+      !    integer,    intent(in   ) :: neq, npt
+      !    real(dp_t), intent(in   ) :: y(neq,npt), t
+      !    real(dp_t), intent(  out) :: yd(neq,npt)
+      !    real(dp_t), intent(inout) :: upar(:,:)
+      !  end subroutine f_rhs_vec
 !
-        subroutine jac_vec(neq, npt, y, t, pd, upar)
-          !$acc routine seq
-          import dp_t
-          integer,    intent(in   ) :: neq, npt
-          real(dp_t), intent(in   ) :: y(neq,npt), t
-          real(dp_t), intent(  out) :: pd(neq, neq, npt)
-          real(dp_t), intent(inout) :: upar(:,:)
-        end subroutine jac_vec
+      !  subroutine jac_vec(neq, npt, y, t, pd, upar)
+      !    !$acc routine seq
+      !    import dp_t
+      !    integer,    intent(in   ) :: neq, npt
+      !    real(dp_t), intent(in   ) :: y(neq,npt), t
+      !    real(dp_t), intent(  out) :: pd(neq, neq, npt)
+      !    real(dp_t), intent(inout) :: upar(:,:)
+      !  end subroutine jac_vec
  
-      end interface
+      !end interface
 
       !!Execution
       print *, 'mark A'
@@ -433,7 +433,7 @@ contains
          y0(:,1) = y
          t0 = ZERO
          t1 = dt
-         call bdf_advance(ts(i), f_rhs_vec, jac_vec, NEQ, bdf_npt, y0, t0, y1, t1, &
+         call bdf_advance(ts(i), NEQ, bdf_npt, y0, t0, y1, t1, &
                           DT0, RESET, REUSE, ierr, .true.)
          y = y1(:,1)
 

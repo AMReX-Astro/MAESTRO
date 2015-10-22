@@ -118,7 +118,8 @@ contains
   !
   ! Advance system from t0 to t1.
   !
-  subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
+  !subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
+  subroutine bdf_advance(ts, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer,      intent(in   ) :: neq, npt
@@ -127,32 +128,13 @@ contains
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
     logical,      intent(in   ) :: initial_call
-    interface
-       subroutine f(neq, npt, y, t, yd, upar)
-         !$acc routine seq
-         import dp_t
-         integer,    intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine f
-       subroutine Jac(neq, npt, y, t, J, upar)
-         !$acc routine seq
-         import dp_t
-         integer,    intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: J(neq, neq, npt)
-         real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine Jac
-    end interface
-
     integer  :: k, p, m
     logical  :: retry, linitial
 
     !TODO: We no longer have this argument as optional, so rewrite to get rid of linitial
     linitial = initial_call
 
-    if (reset) call bdf_reset(ts, f, y0, dt0, reuse)
+    if (reset) call bdf_reset(ts, y0, dt0, reuse)
 
     ierr = BDF_ERR_SUCCESS
 
@@ -179,7 +161,7 @@ contains
              end do
           end do
        endif
-       call bdf_solve(ts, f, Jac)         ! solve for y_n based on predicted y and yd
+       call bdf_solve(ts)         ! solve for y_n based on predicted y and yd
        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
        if (ierr /= BDF_ERR_SUCCESS) return
@@ -245,12 +227,12 @@ contains
           !NOTE: this is causing a conformable error, had to replace with
           !explicit loop
           !  ts%l = ts%l + eoshift_local(ts%l, -1) / xi_j(ts%h, j)
-          l_shift = eoshift(ts%l, -1)
+          l_shift = eoshift_local(ts%l, -1)
           do o = 0, ts%max_order
              ts%l(o) = ts%l(o) + l_shift(o) / xi_j(ts%h, j)
           end do
        end do
-       l_shift = eoshift(ts%l, -1)
+       l_shift = eoshift_local(ts%l, -1)
        do o = 0, ts%max_order
           ts%l(o) = ts%l(o) + l_shift(o) * xi_star_inv(ts%k, ts%h)
        end do
@@ -317,28 +299,28 @@ contains
   ! where
   !   G(y) = y - dt * f(y,t) - rhs
   !
-  subroutine bdf_solve(ts, f, Jac)
+  subroutine bdf_solve(ts)
     !$acc routine seq
     !$acc routine(dgefa) seq
     !$acc routine(dgesl) seq
     type(bdf_ts), intent(inout) :: ts
     interface
-       subroutine f(neq, npt, y, t, yd, upar)
+       subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
          !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
          real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine f
-       subroutine Jac(neq, npt, y, t, J, upar)
+       end subroutine f_rhs_vec
+       subroutine jac_vec(neq, npt, y, t, J, upar)
          !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: J(neq, neq,npt)
          real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine Jac
+       end subroutine jac_vec
     end interface
 
     !include 'LinAlg.inc'
@@ -372,7 +354,7 @@ contains
           if (ts%ncse > 0  .and. (dt_rat < 0.2d0 .or. dt_rat > 5.d0)) rebuild = .false.
 
           if (rebuild) then
-             call Jac(ts%neq, ts%npt, ts%y, ts%t, ts%J, ts%upar)
+             call jac_vec(ts%neq, ts%npt, ts%y, ts%t, ts%J, ts%upar)
              ts%nje   = ts%nje + 1*ts%npt
              ts%j_age = 0
           end if
@@ -397,7 +379,7 @@ contains
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
-       call f(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
+       call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
 
        do p = 1, ts%npt
@@ -476,7 +458,8 @@ contains
   subroutine bdf_correct(ts)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    integer :: i, m, p
+    integer :: i, m, p, o
+    real(dp_t) :: h_shift(size(ts%h))
 
     do i = 0, ts%k
        do p = 1, ts%npt
@@ -486,7 +469,11 @@ contains
        end do
     end do
 
-    ts%h     = eoshift_local(ts%h, -1)
+    !ts%h     = eoshift_local(ts%h, -1)
+    h_shift = eoshift_local(ts%l, -1)
+    do o = 0, ts%max_order
+       ts%h(o) = h_shift(o)
+    end do
     ts%h(0)  = ts%dt
     ts%t     = ts%t + ts%dt
     ts%n     = ts%n + 1
@@ -579,20 +566,20 @@ contains
   !
   ! Reset counters, set order to one, init Nordsieck history array.
   !
-  subroutine bdf_reset(ts, f, y0, dt, reuse)
+  subroutine bdf_reset(ts, y0, dt, reuse)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     real(dp_t),     intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
     interface
-       subroutine f(neq, npt, y, t, yd, upar)
+       subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
          !$acc routine seq
          import dp_t
          integer,  intent(in   ) :: neq, npt
          real(dp_t), intent(in   ) :: y(neq,npt), t
          real(dp_t), intent(  out) :: yd(neq,npt)
          real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine f
+       end subroutine f_rhs_vec
     end interface
 
     ts%nfe = 0
@@ -610,7 +597,7 @@ contains
     ts%dt_nwt   = ts%dt
     ts%refactor = .true.
 
-    call f(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
+    call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
     ts%nfe = ts%nfe + 1
 
     ts%z(:,:,0) = ts%y
@@ -715,6 +702,7 @@ contains
   ! Return $\alpha_0$.
   !
   function alpha0(k) result(a0)
+    !$acc routine seq
     integer,  intent(in) :: k
     real(dp_t) :: a0
     integer  :: j
@@ -728,6 +716,7 @@ contains
   ! Return $\hat{\alpha}_{n,0}$.
   !
   function alphahat0(k, h) result(a0)
+    !$acc routine seq
     integer,  intent(in) :: k
     real(dp_t), intent(in) :: h(0:k)
     real(dp_t) :: a0
