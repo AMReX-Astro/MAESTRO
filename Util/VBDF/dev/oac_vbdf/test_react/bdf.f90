@@ -59,8 +59,8 @@ module bdf
      logical  :: debug
      integer  :: dump_unit
 
-     real(dp_t), pointer :: rtol(:)         ! relative tolerances
-     real(dp_t), pointer :: atol(:)         ! absolute tolerances
+     real(dp_t), allocatable :: rtol(:)         ! relative tolerances
+     real(dp_t), allocatable :: atol(:)         ! absolute tolerances
 
      ! state
      real(dp_t) :: t                        ! current time
@@ -76,23 +76,23 @@ module bdf
      real(dp_t) :: tq2save
      logical  :: refactor
 
-     real(dp_t), pointer :: J(:,:,:)        ! Jacobian matrix
-     real(dp_t), pointer :: P(:,:,:)        ! Newton iteration matrix
-     real(dp_t), pointer :: z(:,:,:)        ! Nordsieck histroy array, indexed as (dof, p, n)
-     real(dp_t), pointer :: z0(:,:,:)       ! Nordsieck predictor array
-     real(dp_t), pointer :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
-     real(dp_t), pointer :: l(:)            ! predictor/corrector update coefficients
-     real(dp_t), pointer :: upar(:,:)       ! array of user parameters (passed to
+     real(dp_t), allocatable :: J(:,:,:)        ! Jacobian matrix
+     real(dp_t), allocatable :: P(:,:,:)        ! Newton iteration matrix
+     real(dp_t), allocatable :: z(:,:,:)        ! Nordsieck histroy array, indexed as (dof, p, n)
+     real(dp_t), allocatable :: z0(:,:,:)       ! Nordsieck predictor array
+     real(dp_t), allocatable :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
+     real(dp_t), allocatable :: l(:)            ! predictor/corrector update coefficients
+     real(dp_t), allocatable :: upar(:,:)       ! array of user parameters (passed to
                                             ! user's Jacobian and f)
-     real(dp_t), pointer :: y(:,:)          ! current y
-     real(dp_t), pointer :: yd(:,:)         ! current \dot{y}
-     real(dp_t), pointer :: rhs(:,:)        ! solver rhs
-     real(dp_t), pointer :: e(:,:)          ! accumulated correction
-     real(dp_t), pointer :: e1(:,:)         ! accumulated correction, previous step
-     real(dp_t), pointer :: ewt(:,:)        ! cached error weights
-     real(dp_t), pointer :: b(:,:)          ! solver work space
-     integer,  pointer :: ipvt(:,:)         ! pivots (neq,npts)
-     integer,  pointer :: A(:,:)            ! pascal matrix
+     real(dp_t), allocatable :: y(:,:)          ! current y
+     real(dp_t), allocatable :: yd(:,:)         ! current \dot{y}
+     real(dp_t), allocatable :: rhs(:,:)        ! solver rhs
+     real(dp_t), allocatable :: e(:,:)          ! accumulated correction
+     real(dp_t), allocatable :: e1(:,:)         ! accumulated correction, previous step
+     real(dp_t), allocatable :: ewt(:,:)        ! cached error weights
+     real(dp_t), allocatable :: b(:,:)          ! solver work space
+     integer,    allocatable :: ipvt(:,:)         ! pivots (neq,npts)
+     integer,    allocatable :: A(:,:)            ! pascal matrix
 
      ! counters
      integer :: nfe                         ! number of function evaluations
