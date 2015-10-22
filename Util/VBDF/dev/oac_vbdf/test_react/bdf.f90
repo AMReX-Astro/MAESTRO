@@ -242,9 +242,11 @@ contains
     ts%l(1) = xi_j(ts%h, 1)
     if (ts%k > 1) then
        do j = 2, ts%k-1
-          ts%l = ts%l + eoshift(ts%l, -1) / xi_j(ts%h, j)
+          !NOTE: this is causing a confromable error, workaround may be
+          !-Mallocatable=95
+          ts%l = ts%l + eoshift_local(ts%l, -1) / xi_j(ts%h, j)
        end do
-       ts%l = ts%l + eoshift(ts%l, -1) * xi_star_inv(ts%k, ts%h)
+       ts%l = ts%l + eoshift_local(ts%l, -1) * xi_star_inv(ts%k, ts%h)
     end if
 
     ! compute error coefficients (adapted from cvode)
@@ -477,7 +479,7 @@ contains
        end do
     end do
 
-    ts%h     = eoshift(ts%h, -1)
+    ts%h     = eoshift_local(ts%h, -1)
     ts%h(0)  = ts%dt
     ts%t     = ts%t + ts%dt
     ts%n     = ts%n + 1
@@ -667,7 +669,7 @@ contains
        c = 0
        c(2) = 1
        do j = 1, ts%k-2
-          c = eoshift(c, -1) + c * xi_j(ts%h, j)
+          c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
        end do
 
        do j = 2, ts%k-1
@@ -691,7 +693,7 @@ contains
     c = 0
     c(2) = 1
     do j = 1, ts%k-2
-       c = eoshift(c, -1) + c * xi_j(ts%h, j)
+       c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
     end do
 
     ts%z(:,:,ts%k+1) = 0
@@ -913,7 +915,7 @@ contains
   ! Only what's needed for VBDF is implemented, also no
   ! error-checking.
   !
-  function eoshift(arr, sh) result(ret)
+  function eoshift_local(arr, sh) result(ret)
     !$acc routine seq
     real(kind=dp_t), intent(in   ) :: arr(:)
     integer,         intent(in   ) :: sh
@@ -937,7 +939,7 @@ contains
           ret(i) = arr(i+sh)
        enddo
     end if
-  end function eoshift
+  end function eoshift_local
 
   !
   ! A local, GPU-compiled version of intrinsic minloc
