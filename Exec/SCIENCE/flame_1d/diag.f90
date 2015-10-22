@@ -295,7 +295,7 @@ contains
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use bl_constants_module
-    use network, only: nspec, network_species_index
+    use actual_network
     use probin_module, only: prob_lo
 
     integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw
@@ -318,17 +318,6 @@ contains
     logical            :: cell_valid
     real (kind=dp_t)   :: x
 
-    integer, save :: ic12, io16
-
-    logical, save :: firstCall = .true.
-
-    if (firstCall) then
-
-       ic12 = network_species_index("carbon-12")
-       io16 = network_species_index("oxygen-16")
-
-       firstCall = .false.
-    endif
 
     ! weight is the factor by which the volume of a cell at the current level
     ! relates to the volume of a cell at the coarsest level of refinement.

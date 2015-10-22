@@ -105,6 +105,7 @@ contains
     integer :: ng_si,ng_so,ng_rw,ng_he,ng_hn,ng_tc
     integer :: dm,nlevs
     integer :: i,j,k,m,n,idx
+    integer :: jlo, jhi, klo, khi
 
     type(eos_t) :: state_in
     type(eos_t) :: state_out
@@ -182,8 +183,20 @@ contains
 
              if (spherical == 1) tcp => dataptr(tempbar_init_cart(n), m)
 
-             do k = lo(3), hi(3)
-                do j = lo(2), hi(2)
+             jlo = 1
+             jhi = 1
+             klo = 1
+             khi = 1
+             if (dm > 1) then
+                jlo = lo(2)
+                jhi = hi(2)
+             end if
+             if (dm > 2) then
+                klo = lo(3)
+                khi = hi(3)
+             end if
+             do k = klo, khi
+                do j = jlo, jhi
                    do i = lo(1), hi(1)
                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                       ! pack initial state
