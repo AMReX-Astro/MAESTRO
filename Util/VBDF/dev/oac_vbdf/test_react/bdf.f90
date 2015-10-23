@@ -227,12 +227,12 @@ contains
           !NOTE: this is causing a conformable error, had to replace with
           !explicit loop
           !  ts%l = ts%l + eoshift_local(ts%l, -1) / xi_j(ts%h, j)
-          l_shift = eoshift_local(ts%l, -1)
+          !l_shift = eoshift_local(ts%l, -1)
           do o = 0, ts%max_order
              ts%l(o) = ts%l(o) + l_shift(o) / xi_j(ts%h, j)
           end do
        end do
-       l_shift = eoshift_local(ts%l, -1)
+       !l_shift = eoshift_local(ts%l, -1)
        do o = 0, ts%max_order
           ts%l(o) = ts%l(o) + l_shift(o) * xi_star_inv(ts%k, ts%h)
        end do
@@ -470,7 +470,7 @@ contains
     end do
 
     !ts%h     = eoshift_local(ts%h, -1)
-    h_shift = eoshift_local(ts%h, -1)
+    !h_shift = eoshift_local(ts%h, -1)
     do o = 0, ts%max_order
        ts%h(o) = h_shift(o)
     end do
@@ -676,7 +676,7 @@ contains
        c(2) = 1
        do j = 1, ts%k-2
           !c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
-          c_shift = eoshift_local(c, -1)
+          !c_shift = eoshift_local(c, -1)
           do o = 0, 6
              c(o) = c_shift(o) + c(o) *  xi_j(ts%h, j)
           end do
@@ -704,7 +704,7 @@ contains
     c(2) = 1
     do j = 1, ts%k-2
        !c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
-       c_shift = eoshift_local(c, -1)
+       !c_shift = eoshift_local(c, -1)
        do o = 0, 6
           c(o) = c_shift(o) + c(o) * xi_j(ts%h, j)
        end do
