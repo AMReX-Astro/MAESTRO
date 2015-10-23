@@ -470,7 +470,7 @@ contains
     end do
 
     !ts%h     = eoshift_local(ts%h, -1)
-    h_shift = eoshift_local(ts%l, -1)
+    h_shift = eoshift_local(ts%h, -1)
     do o = 0, ts%max_order
        ts%h(o) = h_shift(o)
     end do
@@ -500,7 +500,7 @@ contains
     type(bdf_ts), intent(inout) :: ts
 
     real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
-    integer  :: p
+    integer  :: p, m
 
     rescale = 0
 
@@ -558,7 +558,12 @@ contains
     end if
 
     ! save for next step (needed to compute eta(1))
-    ts%e1 = ts%e
+    !ts%e1 = ts%e
+    do p = 1, ts%npt
+       do m = 1, ts%neq
+          ts%e1(m,p) = ts%e(m,p)
+       end do
+    end do
     ts%tq2save = ts%tq(2)
 
   end subroutine bdf_adjust
@@ -569,8 +574,10 @@ contains
   subroutine bdf_reset(ts, y0, dt, reuse)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    real(dp_t),     intent(in   ) :: y0(ts%neq, ts%npt), dt
+    real(dp_t),   intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
+    
+    integer :: p,m
     interface
        subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
          !$acc routine seq
@@ -588,7 +595,12 @@ contains
     ts%nit = 0
     ts%nse = 0
 
-    ts%y  = y0
+    !ts%y  = y0
+    do p = 1, ts%npt
+       do m = 1, ts%neq
+          ts%y(m,p) = y0(m,p)
+       end do
+    end do
     ts%dt = dt
     ts%n  = 1
     ts%k  = 1
@@ -905,6 +917,7 @@ contains
     end do
   end subroutine eye_i
   recursive function factorial(n) result(r)
+    !$acc routine seq
     integer, intent(in) :: n
     integer :: r
     if (n == 1) then
