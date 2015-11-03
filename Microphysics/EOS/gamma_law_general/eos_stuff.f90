@@ -23,13 +23,13 @@
 !
 ! The ratio of specific heats (gamma) is allowed to vary.  NOTE: the
 ! expression for entropy is only valid for an ideal MONATOMIC gas
-! (gamma = 5/3).  
+! (gamma = 5/3).
 
 module eos_module
 
   use bl_types
   use bl_space
-  use bl_constants_module, only: M_PI, ONE
+  use bl_constants_module, only: M_PI, ONE, TWO
   use network, only: nspec, aion, zion
   use eos_type_module
   use eos_data_module
@@ -62,25 +62,25 @@ contains
   subroutine eos_init(small_temp, small_dens, gamma_in)
 
     implicit none
- 
+
     real(kind=dp_t), intent(in), optional :: small_temp
     real(kind=dp_t), intent(in), optional :: small_dens
     real(kind=dp_t), intent(in), optional :: gamma_in
- 
+
     ! constant ratio of specific heats
     if (present(gamma_in)) then
        gamma_const = gamma_in
     else
        gamma_const = 5.d0/3.d0
     end if
- 
+
     ! small temperature and density parameters
     if (present(small_temp)) then
        smallt = small_temp
     else
        smallt = 0.d0
     endif
- 
+
     if (present(small_dens)) then
        smalld = small_dens
     else
@@ -88,7 +88,7 @@ contains
     endif
 
     initialized = .true.
- 
+
   end subroutine eos_init
 
 
@@ -106,14 +106,17 @@ contains
     use fundamental_constants_module, only: k_B, n_A, hbar
 
     implicit none
-    
+
     integer,           intent(in   ) :: input
     type (eos_t),      intent(inout) :: eos_state
     logical, optional, intent(in   ) :: do_eos_diag
     integer, optional, intent(in   ) :: pt_index(:)
 
+    double precision, parameter :: fac = ONE / (TWO*M_PI*hbar*hbar)**1.5d0
+
+
 ! All state information comes in through the eos_t derived type
-    
+
 ! rho      -- mass density (g/cc)
 ! T        -- temperature (K)
 ! xn       -- the mass fractions of the individual isotopes
@@ -135,7 +138,7 @@ contains
 ! cs       -- sound speed -- note that this is the non-relativistic one
 !             (we compute it in this wrapper as sqrt(gam1 p /rho) instead
 !             of taking the relativistic version from helmeos.
-! s        -- entropy (erg/g/K)  NOTE: presently the entropy expression is 
+! s        -- entropy (erg/g/K)  NOTE: presently the entropy expression is
 !             valid only for an ideal MONATOMIC gas (gamma = 5/3).
 !
 ! input = 1 means dens, temp    , and xmass are inputs, return enthalpy, eint
@@ -159,12 +162,12 @@ contains
 
 
     ! local variables
-    real(kind=dp_t) :: ymass(nspec)    
+    real(kind=dp_t) :: ymass(nspec)
     real(kind=dp_t) :: mu
     real(kind=dp_t) :: dmudX, sum_y
 
     real(kind=dp_t) :: dedX(nspec)
-    
+
     ! get the mass of a nucleon from Avogadro's number.
     real(kind=dp_t), parameter :: m_nucleon = 1.d0/n_A
 
@@ -172,7 +175,7 @@ contains
 
     ! general sanity checks
     if (.not. initialized) call bl_error('EOS: not initialized')
-      
+
 
     !-------------------------------------------------------------------------
     ! compute mu -- the mean molecular weight
@@ -181,24 +184,24 @@ contains
        ! assume completely neutral atoms
 
        sum_y  = 0.d0
-          
+
        do n = 1, nspec
           ymass(n) = eos_state%xn(n)/aion(n)
           sum_y = sum_y + ymass(n)
        enddo
-          
+
        mu = 1.d0/sum_y
 
     else
        ! assume completely ionized species
 
        sum_y  = 0.d0
-          
+
        do n = 1, nspec
           ymass(n) = eos_state%xn(n)*(1.d0 + zion(n))/aion(n)
           sum_y = sum_y + ymass(n)
        enddo
-          
+
        mu = 1.d0/sum_y
 
     endif
@@ -219,7 +222,7 @@ contains
     else if (input .EQ. eos_input_tp ) then
 
        ! temp, pres, and xmass are inputs
-          
+
        ! Solve for the density:
        ! p = rho k T / (mu m_nucleon)
        eos_state%rho = eos_state%p*mu*m_nucleon/(k_B*eos_state%T)
@@ -244,11 +247,11 @@ contains
 
 
     else if (input .EQ. eos_input_ps) then
-       
+
        ! pressure and entropy are inputs
 
        ! Solve for the temperature
-       ! Invert Sackur-Tetrode eqn (below) using 
+       ! Invert Sackur-Tetrode eqn (below) using
        ! rho = p mu m_nucleon / (k T)
        eos_state%T = eos_state%p**(2.0_dp_t/5.0_dp_t) * &
             ( 2.0_dp_t*M_PI*hbar*hbar/(mu*m_nucleon) )**(3.0_dp_t/5.0_dp_t) * &
@@ -277,18 +280,18 @@ contains
     ! enthalpy is h = e + p/rho
     eos_state%h = eos_state%e + eos_state%p/eos_state%rho
 
-    ! entropy (per gram) of an ideal monoatomic gas (the Sactur-Tetrode equation)
+    ! entropy (per gram) of an ideal monoatomic gas (the Sackur-Tetrode equation)
     ! NOTE: this expression is only valid for gamma = 5/3.
     eos_state%s = (k_B/(mu*m_nucleon))*(2.5_dp_t + &
-         log( ( (mu*m_nucleon)**2.5/eos_state%rho )*(k_B*eos_state%T)**1.5_dp_t / (2.0_dp_t*M_PI*hbar*hbar)**1.5_dp_t ) )
+         log( ( (mu*m_nucleon)**2.5/eos_state%rho )*(k_B*eos_state%T)**1.5_dp_t * fac) )
 
-    ! compute the thermodynamic derivatives and specific heats 
+    ! compute the thermodynamic derivatives and specific heats
     eos_state%dpdT = eos_state%p/eos_state%T
     eos_state%dpdr = eos_state%p/eos_state%rho
     eos_state%dedT = eos_state%e/eos_state%T
     eos_state%dedr = 0.d0
-    eos_state%dsdT = 0.d0
-    eos_state%dsdR = 0.d0
+    eos_state%dsdT = 1.5_dp_t * (k_B / (mu*m_nucleon*eos_state%T))
+    eos_state%dsdR = - (k_B / (mu* m_nucleon*eos_State%rho) )
 
     eos_state%cv = eos_state%dedT
     eos_state%cp = gamma_const*eos_state%cv
@@ -305,7 +308,7 @@ contains
        ! (for the neutral, analogous for the ionized).  The
        ! numerator is simply 1, but we can differentiate
        ! wrt it, giving the constant mu(k) term in dmudx.  Since
-       ! dPdX only appears in a sum over species creation rate 
+       ! dPdX only appears in a sum over species creation rate
        ! (omegadot) and sum{omegadot} = 0, this term has no effect.
        ! If is added simply for completeness.
 
@@ -317,7 +320,7 @@ contains
 
        eos_state%dpdX(n) = -(eos_state%p/mu)*dmudX
        dedX(n) = -(eos_state%e/mu)*dmudX
-          
+
        ! dhdX is at constant pressure -- see paper III for details
        eos_state%dhdX(n) = dedX(n) + &
             (eos_state%p/eos_state%rho**2 - eos_state%dedr)*eos_state%dpdX(n)/eos_state%dpdr
