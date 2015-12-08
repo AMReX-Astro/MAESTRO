@@ -93,11 +93,11 @@ contains
     tagbox = .false.
 
     !First refine based on the most physically interesting cells:
-    !  level 2: helium mass fraction > 0.01 and we haven't gotten too far
-    !             from the stellar surface as determined by density.  This
-    !             roughly traces the convective shell
-    !  level 3-4: to resolve the thinnest shells, we refine to a 4th level the
-    !           hottest cells with T > 100 MK
+    !  level 1:   helium mass fraction > 0.01 and we haven't gotten too far
+    !                from the stellar surface as determined by density.  This
+    !                roughly traces the convective shell
+    !  level 2-3: to resolve the thinnest shells, we refine up to a 3rd level the
+    !                hottest cells with T > tag_crittemp
     !           
     select case(llev)
     case (1)
