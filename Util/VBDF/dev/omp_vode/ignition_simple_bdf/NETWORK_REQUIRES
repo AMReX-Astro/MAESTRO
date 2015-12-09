@@ -1,0 +1,3 @@
+NEED_VODE := t
+NEED_BLAS := t
+NEED_LINPACK := t

@@ -1,0 +1,5 @@
+This is a reference version of the same test problem used to develop
+the accelerated version of BDF.  I have it to make it easy to throw in debug prints
+and to make apples-to-apples comparisons as much as possible with the accelerated
+version of BDF.  In this reference, we use the default integrator VODE and OpenMP.
+This establishes the baseline to compare all VBDF tests with.
