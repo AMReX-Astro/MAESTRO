@@ -1,3 +1,5 @@
+! bdf.f90 is the copy of the BDF code currently being utilized by Maestro
+!
 !
 ! BDF (backward differentiation formula) time-stepping routines.
 !
@@ -16,6 +18,11 @@
 !      1975.
 !
 
+! TODO:
+!  1) In fully vecorizing BDF into VBDF, many loops over npts have been
+!  introduced.  We need to make sure the memory access pattern is cache
+!  efficient.
+!  2) To be consistent, we should rename this vbdf.f90
 module bdf
 
   use bl_types

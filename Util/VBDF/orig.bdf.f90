@@ -1,3 +1,5 @@
+! orig.bdf.f90 is the original BDF code provided to us by Matt Emmett/LBNL's CCSE.
+!
 !
 ! BDF (backward differentiation formula) time-stepping routines.
 !

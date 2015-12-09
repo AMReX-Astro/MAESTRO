@@ -6,7 +6,7 @@ velpert_steep                       real               1.d0
 # Tagging criteria
 #   tag_rhomin   := Density below which to tag no cells
 #   tag_critxhe  := Critical value for helium mass fraction.  Above this, tag cells
-#   tag_crittemp := Refine to a fourth level if above this temperature
+#   tag_crittemp := Refine to finest available level if above this temperature
 tag_rhomin                          real               1.d4
 tag_critxhe                         real               0.01d0
 tag_crittemp                        real               1.25d8

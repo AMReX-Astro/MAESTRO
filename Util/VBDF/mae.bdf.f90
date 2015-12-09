@@ -1,3 +1,6 @@
+! mae.bdf.f90 is a minimally modified version of the original BDF code that
+! integrates it into BoxLib/Maestro.
+!
 !
 ! BDF (backward differentiation formula) time-stepping routines.
 !

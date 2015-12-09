@@ -67,9 +67,8 @@
 
 
  ! boundary conditions
- bcx_lo = 11
- bcx_hi = 12
-
+ xlo_boundary_type = "inlet"
+ xhi_boundary_type = "outlet"
 
 
  ! verbosity
