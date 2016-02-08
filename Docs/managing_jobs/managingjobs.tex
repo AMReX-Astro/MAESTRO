@@ -69,9 +69,14 @@ Perform partial redundancy elimination (PRE) on trees. This flag is enabled by d
 
 \item {\em gfortran 5.1.1}: These compilers have no known issues.
 
+\item {\em gfortran 5.3.x}: These compilers have no known issues.
 
 \end{itemize}
 
+\subsection{PGI compilers}
+
+The \boxlib\ floating point exception trapping is disabled with PGI compilers, due to 
+problems with PGI using the system header files.
 
 
 
