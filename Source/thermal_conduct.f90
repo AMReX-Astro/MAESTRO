@@ -105,6 +105,7 @@ contains
     do n=1,nlevs
        do i = 1,dm
           call multifab_build_edge(rhsbeta(n,i), mla%la(n), 1, 1, i)
+          call setval(rhsbeta(n,i), ZERO, all=.true.)
        end do
     end do
 
@@ -317,6 +318,7 @@ contains
     do n=1,nlevs
        do i = 1,dm
           call multifab_build_edge(lhsbeta(n,i), mla%la(n), 1, 1, i)
+          call setval(lhsbeta(n,i), ZERO, all=.true.)
        end do
     end do
 
