@@ -130,10 +130,9 @@ class Supercomputer(object):
    @staticmethod
    def getCurrentSC(scomp_config=None):
       """Return a Supercomputer object for the current host machine."""
-      import os
-      import getpass
+      import socket
       
-      host = os.environ.get('HOST')
+      host = socket.gethostname()
       if host is None:
          raise OSError("No environment variable HOST.")
       elif host.count('titan') == 1:
@@ -146,6 +145,13 @@ class Supercomputer(object):
       elif host.count('h2ologin') == 1:
          try:
             scmodule = __import__("bluewaters")
+            return scmodule.BWSC()
+         except ImportError:
+            print('Cannot find module for host {}'.format(host))
+            return None
+      elif host.count('sn') == 1:
+         try:
+            scmodule = __import__("sn")
             return scmodule.BWSC()
          except ImportError:
             print('Cannot find module for host {}'.format(host))
