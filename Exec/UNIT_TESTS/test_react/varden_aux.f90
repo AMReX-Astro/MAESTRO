@@ -306,7 +306,7 @@ contains
                    rsp(ii,jj,kk,h_c)   = snp(ii,jj,kk,rhoh_comp) / cur_rho
                    do j=0, nspec-1
                       rsp(ii,jj,kk,spec_c + j)     = snp(ii,jj,kk,spec_comp + j) / cur_rho
-                      rsp(ii,jj,kk,omegadot_c + j) = 0.0d0  !rwp(ii,jj,kk,j + 1)         / cur_rho
+                      rsp(ii,jj,kk,omegadot_c + j) = rwp(ii,jj,kk,j + 1)         / cur_rho
                    enddo
                    rsp(ii,jj,kk,t_c)    = snp(ii,jj,kk,temp_comp)
                    rsp(ii,jj,kk,hnuc_c) = rnp(ii,jj,kk,1) / cur_rho
