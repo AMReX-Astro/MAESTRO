@@ -15,6 +15,10 @@ module variables
   integer, save :: tfromrh_err_comp, rfromtp_err_comp, tfromrp_err_comp, &
                    tfromre_err_comp, tfromps_err_comp
 
+  ! this is only needed to compile -- we don't have any ghost cells, so the
+  ! value here doesn't matter
+  integer, save :: foextrap_comp = -1  
+
   ! the total number of state quantities we will deal with
   integer, save :: nscal = 0
 
