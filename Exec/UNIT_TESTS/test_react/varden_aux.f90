@@ -13,7 +13,7 @@ module varden_aux
   private
   type(multifab), allocatable, save :: react_s(:) !Multifab to hold react data
 
-  integer, save :: rho_c, h_c, spec_c, t_c, p_c, omegadot_c, hnuc_c, &
+  integer, save :: rho_c, h_c, spec_c, t_c, omegadot_c, hnuc_c, &
                    lhnuc_c, hext_c, dxn_con_c, h_con_c, ncomps
   integer, save :: nlevs
 
@@ -49,7 +49,7 @@ contains
     allocate(react_s(nlevs))
   
     do n = 1,nlevs
-      call multifab_build(react_s(n), mla%la(n), ncomps, 1)
+      call multifab_build(react_s(n), mla%la(n), ncomps, 0)
     end do
   
     react_is_init = .true.
@@ -272,6 +272,7 @@ contains
           
           lo = lwb(get_box(react_s(n), i))
           hi = upb(get_box(react_s(n), i))
+          
           do kk = lo(3), hi(3)
              do jj = lo(2), hi(2)
                 do ii = lo(1), hi(1)
@@ -305,7 +306,7 @@ contains
                    rsp(ii,jj,kk,h_c)   = snp(ii,jj,kk,rhoh_comp) / cur_rho
                    do j=0, nspec-1
                       rsp(ii,jj,kk,spec_c + j)     = snp(ii,jj,kk,spec_comp + j) / cur_rho
-                      rsp(ii,jj,kk,omegadot_c + j) = rwp(ii,jj,kk,j + 1)         / cur_rho
+                      rsp(ii,jj,kk,omegadot_c + j) = 0.0d0  !rwp(ii,jj,kk,j + 1)         / cur_rho
                    enddo
                    rsp(ii,jj,kk,t_c)    = snp(ii,jj,kk,temp_comp)
                    rsp(ii,jj,kk,hnuc_c) = rnp(ii,jj,kk,1) / cur_rho
@@ -322,7 +323,8 @@ contains
        enddo
     enddo
 
-    !Write reaction data
+
+    ! write reaction data
     call fabio_ml_multifab_write_d(react_s,mla%mba%rr(:,1), &
                                    trim(run_prefix) // trim(pref), names=varnames, time=dt)
 
@@ -338,14 +340,14 @@ contains
     h_c        = 2
     spec_c     = 3
     t_c        = spec_c     + nspec 
-    p_c        = t_c        + 1
-    omegadot_c = p_c        + 1
+    omegadot_c = t_c        + 1
     hnuc_c     = omegadot_c + nspec
     lhnuc_c    = hnuc_c     + 1
     hext_c     = lhnuc_c    + 1
     dxn_con_c  = hext_c     + 1
     h_con_c    = dxn_con_c  + nspec
-    ncomps     = 8          + 3*nspec
+    ncomps     = 7          + 3*nspec
+
     !Suggested components:
       !mode0_err_c (no  burn, no  heat)
       !mode1_err_c (no  burn, yes heat)
@@ -369,7 +371,6 @@ contains
        varnames(dxn_con_c  + i) = adjustl(trim(spec_names(i+1))) // ' consistency'
     enddo
     varnames(t_c)          = 'temperature'
-    varnames(p_c)          = 'pressure'
     varnames(hnuc_c)       = 'H_nuc'
     varnames(lhnuc_c)      = 'log10(H_nuc)'
     varnames(hext_c)       = 'H_ext'
