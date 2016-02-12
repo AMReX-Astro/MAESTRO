@@ -159,8 +159,22 @@ contains
 
     !     Local variables
     integer :: i,j
+    integer :: ngylo, ngyhi
 
-    if(ng == 0) return
+    if (ng == 0) return
+
+    if (bc(2,1) .eq. INTERIOR) then  ! y-lo direction
+       ngylo = ng
+    else
+       ngylo = 0  ! avoid corner ghost cells because we don't have good data in y-lo faces
+    endif
+
+    if (bc(2,2) .eq. INTERIOR) then  ! y-hi direction
+       ngyhi = ng
+    else
+       ngyhi = 0
+    endif
+
 
     !-------------------------------------------------------------------------- 
     ! lower X                                                                  
@@ -169,24 +183,28 @@ contains
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
        s(lo(1)-ng:lo(1)-1,:) = 0.d0
     else if (bc(1,1) .eq. FOEXTRAP) then
-       do j = lo(2)-1,hi(2)+1
+       do j = lo(2)-ngylo, hi(2)+ngyhi
           s(lo(1)-ng:lo(1)-1,j) = s(lo(1),j)
        end do
     else if (bc(1,1) .eq. HOEXTRAP) then
-       do j = lo(2)-1,hi(2)+1
+       do j = lo(2)-ngylo, hi(2)+ngyhi
           s(lo(1)-ng:lo(1)-1,j) = &
                ( 15.d0 * s(lo(1)  ,j) &
                 -10.d0 * s(lo(1)+1,j) &
                 + 3.d0 * s(lo(1)+2,j) ) * EIGHTH
        end do
     else if (bc(1,1) .eq. REFLECT_EVEN) then
-       do i = 1,ng
-          s(lo(1)-i,lo(2)-1:hi(2)+1) = s(lo(1)+i-1,lo(2)-1:hi(2)+1)
-       end do
+       do j = lo(2)-ngylo, hi(2)+ngyhi
+          do i = 1,ng
+             s(lo(1)-i,j) = s(lo(1)+i-1,j)
+          enddo
+       enddo
     else if (bc(1,1) .eq. REFLECT_ODD) then
-       do i = 1,ng
-          s(lo(1)-i,lo(2)-1:hi(2)+1) = -s(lo(1)+i-1,lo(2)-1:hi(2)+1)
-       end do
+       do j = lo(2)-ngylo, hi(2)+ngyhi
+          do i = 1,ng
+             s(lo(1)-i,j) = -s(lo(1)+i-1,j)
+          enddo
+       enddo
     else if (bc(1,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
@@ -204,24 +222,28 @@ contains
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
        s(hi(1)+1:hi(1)+ng,:) = 0.d0
     else if (bc(1,2) .eq. FOEXTRAP) then
-       do j = lo(2)-1,hi(2)+1
+       do j = lo(2)-ngylo, hi(2)+ngyhi
           s(hi(1)+1:hi(1)+ng,j) = s(hi(1),j)
        end do
     else if (bc(1,2) .eq. HOEXTRAP) then
-       do j = lo(2)-1,hi(2)+1
+       do j = lo(2)-ngylo, hi(2)+ngyhi
           s(hi(1)+1:hi(1)+ng,j) = &
                ( 15.d0 * s(hi(1)  ,j) &
                 -10.d0 * s(hi(1)-1,j) &
                 + 3.d0 * s(hi(1)-2,j) ) * EIGHTH
        end do
     else if (bc(1,2) .eq. REFLECT_EVEN) then
-       do i = 1,ng
-          s(hi(1)+i,lo(2)-ng:hi(2)+ng) = s(hi(1)-i+1,lo(2)-ng:hi(2)+ng)
-       end do
+       do j = lo(2)-ngylo, hi(2)+ngyhi
+          do i = 1,ng
+             s(hi(1)+i,j) = s(hi(1)-i+1,j)
+          enddo
+       enddo
     else if (bc(1,2) .eq. REFLECT_ODD) then
-       do i = 1,ng
-          s(hi(1)+i,lo(2)-ng:hi(2)+ng) = -s(hi(1)-i+1,lo(2)-ng:hi(2)+ng)
-       end do
+       do j = lo(2)-ngylo, hi(2)+ngyhi
+          do i = 1,ng
+             s(hi(1)+i,j) = -s(hi(1)-i+1,j)
+          enddo
+       enddo
     else if (bc(1,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
@@ -316,41 +338,81 @@ contains
 
     !     Local variables
     integer :: i,j,k
+    integer :: ngylo, ngyhi, ngzlo, ngzhi
 
     if (ng == 0) return
+
+    if (bc(2,1) .eq. INTERIOR) then  ! y-lo direction
+       ngylo = ng
+    else
+       ngylo = 0  ! avoid corner ghost cells because we don't have good data in y-lo faces
+    endif
+
+    if (bc(2,2) .eq. INTERIOR) then  ! y-hi direction
+       ngyhi = ng
+    else
+       ngyhi = 0
+    endif
+
+    if (bc(3,1) .eq. INTERIOR) then  ! z-lo direction
+       ngzlo = ng
+    else
+       ngzlo = 0  
+    endif
+
+    if (bc(3,2) .eq. INTERIOR) then  ! z-hi direction
+       ngzhi = ng
+    else
+       ngzhi = 0
+    endif
+
 
     !--------------------------------------------------------------------------
     ! lower X
     !--------------------------------------------------------------------------
     if (bc(1,1) .eq. EXT_DIR) then
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
-       do k = lo(3)-1,hi(3)+1
-          do j = lo(2)-1,hi(2)+1
+       do k = lo(3)-ng, hi(3)+ng
+          do j = lo(2)-ng, hi(2)+ng
              s(lo(1)-ng:lo(1)-1,j,k) = ZERO
           end do
        end do
     else if (bc(1,1) .eq. FOEXTRAP) then
-       do i = 1,ng
-          s(lo(1)-i,:,:) = s(lo(1),:,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             do i = 1,ng
+                s(lo(1)-i,j,k) = s(lo(1),j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,1) .eq. HOEXTRAP) then
-       s(lo(1)-1,:,:) = &
-         ( 15.d0 * s(lo(1)  ,:,:) &
-          -10.d0 * s(lo(1)+1,:,:) &
-          + 3.d0 * s(lo(1)+2,:,:) ) * EIGHTH
-       do i = 2,ng
-          s(lo(1)-i,:,:) = s(lo(1)-1,:,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             s(lo(1)-1,j,k) = &
+                  ( 15.d0 * s(lo(1)  ,j,k) &
+                   -10.d0 * s(lo(1)+1,j,k) &
+                   + 3.d0 * s(lo(1)+2,j,k) ) * EIGHTH
+             do i = 2,ng
+                s(lo(1)-i,j,k) = s(lo(1)-1,j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,1) .eq. REFLECT_EVEN) then
-       do i = 1,ng
-          s(lo(1)-i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
-          s(lo(1)+i-1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             do i = 1,ng
+                s(lo(1)-i,j,k) = s(lo(1)+i-1,j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,1) .eq. REFLECT_ODD) then
-       do i = 1,ng
-          s(lo(1)-i  ,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng) = &
-         -s(lo(1)+i-1,lo(2)-ng:hi(2)+ng,lo(3)-ng:hi(3)+ng)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             do i = 1,ng
+                s(lo(1)-i,j,k) = -s(lo(1)+i-1,j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
@@ -368,25 +430,41 @@ contains
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
        s(hi(1)+1:hi(1)+ng,:,:) = ZERO
     else if (bc(1,2) .eq. FOEXTRAP) then
-       do i = 1,ng
-          s(hi(1)+i,:,:) = s(hi(1),:,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             do i = 1,ng
+                s(hi(1)+i,j,k) = s(hi(1),j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,2) .eq. HOEXTRAP) then
-       s(hi(1)+1,:,:) = &
-         ( 15.d0 * s(hi(1)  ,:,:) &
-          -10.d0 * s(hi(1)-1,:,:) &
-          + 3.d0 * s(hi(1)-2,:,:) ) * EIGHTH
-       do i = 2,ng
-          s(hi(1)+i,:,:) = s(hi(1)+1,:,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             s(hi(1)+1,j,k) = &
+                  ( 15.d0 * s(hi(1)  ,j,k) &
+                   -10.d0 * s(hi(1)-1,j,k) &
+                   + 3.d0 * s(hi(1)-2,j,k) ) * EIGHTH
+             do i = 2,ng
+                s(hi(1)+i,j,k) = s(hi(1)+1,j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,2) .eq. REFLECT_EVEN) then
-       do i = 1,ng
-          s(hi(1)+i,:,:) =  s(hi(1)-i+1,:,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             do i = 1,ng
+                s(hi(1)+i,j,k) =  s(hi(1)-i+1,j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,2) .eq. REFLECT_ODD) then
-       do i = 1,ng
-          s(hi(1)+i,:,:) = -s(hi(1)-i+1,:,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = lo(2)-ngylo, hi(2)+ngyhi
+             do i = 1,ng
+                s(hi(1)+i,j,k) = -s(hi(1)-i+1,j,k)
+             enddo
+          enddo
+       enddo
     else if (bc(1,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
@@ -404,25 +482,41 @@ contains
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
        s(:,lo(2)-ng:lo(2)-1,:) = ZERO
     else if (bc(2,1) .eq. FOEXTRAP) then
-       do j = 1,ng
-          s(:,lo(2)-j,:) = s(:,lo(2),:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do i = lo(1)-ng, hi(1)+ng
+             do j = 1,ng
+                s(i,lo(2)-j,k) = s(i,lo(2),k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,1) .eq. HOEXTRAP) then
-       s(:,lo(2)-1,:) = &
-            ( 15.d0 * s(:,lo(2)  ,:) &
-             -10.d0 * s(:,lo(2)+1,:) &
-             + 3.d0 * s(:,lo(2)+2,:) ) * EIGHTH
-       do j = 2,ng
-          s(:,lo(2)-j,:) = s(:,lo(2)-1,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do i = lo(1)-ng, hi(1)+ng
+             s(i,lo(2)-1,k) = &
+                  ( 15.d0 * s(i,lo(2)  ,k) &
+                   -10.d0 * s(i,lo(2)+1,k) &
+                   + 3.d0 * s(i,lo(2)+2,k) ) * EIGHTH
+             do j = 2,ng
+                s(i,lo(2)-j,k) = s(i,lo(2)-1,k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,1) .eq. REFLECT_EVEN) then
-       do j = 1,ng
-          s(:,lo(2)-j  ,:) =  s(:,lo(2)+j-1,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = 1,ng
+             do i = lo(1)-ng, hi(1)+ng
+                s(i,lo(2)-j,k) =  s(i,lo(2)+j-1,k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,1) .eq. REFLECT_ODD) then
-       do j = 1,ng
-          s(:,lo(2)-j  ,:) = -s(:,lo(2)+j-1,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = 1,ng
+             do i = lo(1)-ng, hi(1)+ng
+                s(i,lo(2)-j,k) = -s(i,lo(2)+j-1,k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,1) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
@@ -440,25 +534,41 @@ contains
        ! NOTE: if you want an inhomogeneous dirichlet condition, you need to write it
        s(:,hi(2)+1:hi(2)+ng,:) = ZERO
     else if (bc(2,2) .eq. FOEXTRAP) then
-       do j = 1,ng
-          s(:,hi(2)+j,:) = s(:,hi(2),:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = 1,ng
+             do i = lo(1)-ng, hi(1)+ng
+                s(i,hi(2)+j,k) = s(i,hi(2),k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,2) .eq. HOEXTRAP) then
-       s(:,hi(2)+1,:) = &
-            ( 15.d0 * s(:,hi(2)  ,:) &
-             -10.d0 * s(:,hi(2)-1,:) &
-             + 3.d0 * s(:,hi(2)-2,:) ) * EIGHTH
-       do j = 2,ng
-          s(:,hi(2)+j,:) = s(:,hi(2)+1,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do i = lo(1)-ng, hi(1)+ng
+             s(i,hi(2)+1,k) = &
+                  ( 15.d0 * s(i,hi(2)  ,k) &
+                   -10.d0 * s(i,hi(2)-1,k) &
+                   + 3.d0 * s(i,hi(2)-2,k) ) * EIGHTH
+             do j = 2,ng
+                s(i,hi(2)+j,k) = s(i,hi(2)+1,k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,2) .eq. REFLECT_EVEN) then
-       do j = 1,ng
-          s(:,hi(2)+j,:) =  s(:,hi(2)-j+1,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = 1,ng
+             do i = lo(1)-ng, hi(1)+ng
+                s(i,hi(2)+j,k) =  s(i,hi(2)-j+1,k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,2) .eq. REFLECT_ODD) then
-       do j = 1,ng
-          s(:,hi(2)+j,:) = -s(:,hi(2)-j+1,:)
-       end do
+       do k = lo(3)-ngzlo, hi(3)+ngzhi
+          do j = 1,ng
+             do i = lo(1)-ng, hi(1)+ng
+                s(i,hi(2)+j,k) = -s(i,hi(2)-j+1,k)
+             enddo
+          enddo
+       enddo
     else if (bc(2,2) .eq. INTERIOR) then
        ! nothing to do - these ghost cells are filled with either
        ! multifab_fill_boundary or multifab_fill_ghost_cells
