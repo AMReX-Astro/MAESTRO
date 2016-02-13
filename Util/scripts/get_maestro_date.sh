@@ -4,9 +4,8 @@
 # date/time.  Then output the necessary environment variables to build
 # with this source.
 
+branch=development
 
-username=mzingale
-server=gamera.lbl.gov:/usr/local/gitroot
 
 #-----------------------------------------------------------------------------
 
@@ -16,52 +15,28 @@ pwd=`pwd`
 
 # MAESTRO
 echo "cloning MAESTRO"
-git clone ${username}@${server}/MAESTRO
+git clone ssh://git@github.com/BoxLib-Codes/MAESTRO
 
 echo " "
-echo "resetting to before ${date}"
+echo "resetting to before ${date} on branch ${branch}"
 cd MAESTRO
-hash=`git rev-list -n 1 --before="$date" master`
-git reset --hard ${hash}
+git checkout ${branch}
+hash=`git rev-list -n 1 --before="$date" ${branch}`
+git checkout ${hash}
 
 cd ..
 
 # BoxLib
 echo " "
 echo "cloning BoxLib"
-git clone ${username}@${server}/BoxLib
+git clone ssh://git@github.com/BoxLib-Codes/BoxLib
 
 echo " "
-echo "resetting to before ${date}"
+echo "resetting to before ${date} on branch ${branch}"
 cd BoxLib
-hash=`git rev-list -n 1 --before="$date" master`
-git reset --hard ${hash}
-
-cd ..
-
-# AstroDev
-echo " "
-echo "cloning AstroDev"
-git clone ${username}@${server}/AstroDev
-
-echo " "
-echo "resetting to before ${date}"
-cd AstroDev
-hash=`git rev-list -n 1 --before="$date" master`
-git reset --hard ${hash}
-
-cd ..
-
-# MAESTRO_Exec
-echo " "
-echo "cloning MAESTRO_Exec"
-git clone ${username}@${server}/MAESTRO_Exec
-
-echo " "
-echo "resetting to before ${date}"
-cd MAESTRO_Exec
-hash=`git rev-list -n 1 --before="$date" master`
-git reset --hard ${hash}
+git checkout ${branch}
+hash=`git rev-list -n 1 --before="$date" ${branch}`
+git checkout ${hash}
 
 cd ..
 
@@ -75,7 +50,6 @@ fi
 cat >> exports.sh << EOF 
 export MAESTRO_HOME="${pwd}/MAESTRO"
 export BOXLIB_HOME="${pwd}/BoxLib"
-export ASTRODEV_DIR="${pwd}/AstroDev"
 EOF
 
 echo " "
