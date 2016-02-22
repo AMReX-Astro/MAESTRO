@@ -287,6 +287,8 @@ clean::
 	$(RM) probin.f90 
 	$(RM) build_info.f90
 
+realclean ::
+	$(RM) helm_table.dat
 
 
 
