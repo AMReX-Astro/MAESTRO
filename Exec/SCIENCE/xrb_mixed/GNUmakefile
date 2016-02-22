@@ -16,7 +16,7 @@ MAESTRO_TOP_DIR := ../../..
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
-NETWORK_DIR := rprox
+NETWORK_DIR := xrb_simple
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
