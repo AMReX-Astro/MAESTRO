@@ -105,7 +105,6 @@ contains
        firstCall = .false.
     endif
 
-    print *, 'in burner'
 
     ! allocate storage for rpar -- the scratch array passed into the
     ! rhs and jacobian routines
