@@ -1,6 +1,6 @@
 module network
 
-  integer, parameter :: nspec = 6
+  integer, parameter :: nspec = 7
   integer, parameter :: naux = 0
   integer, parameter :: nrates = 6  ! including constant weak rates
 
@@ -37,6 +37,7 @@ contains
     short_spec_names(io15) = "o15"
     short_spec_names(ine18) = "ne18"
     short_spec_names(isi25) = "si25"
+    short_spec_names(ife56) = "fe56"
 
     spec_names(ih1) = "hydrogen-1"
     spec_names(ihe4) = "helium-4"
@@ -44,6 +45,7 @@ contains
     spec_names(io15) = "oxygen-15"
     spec_names(ine18) = "neon-18"
     spec_names(isi25) = "silicon-25"
+    spec_names(ife56) = "iron-56"
 
     aion(ih1) = ONE
     aion(ihe4) = FOUR
@@ -51,6 +53,7 @@ contains
     aion(io15) = 15.0_dp_t
     aion(ine18) = 18.0_dp_t
     aion(isi25) = 25.0_dp_t
+    aion(ife56) = 56.0_dp_t
 
     zion(ih1) = ONE
     zion(ihe4) = TWO
@@ -58,6 +61,7 @@ contains
     zion(io15) = EIGHT
     zion(ine18) = TEN
     zion(isi25) = 14.0_dp_t
+    zion(ife56) = 26.0_dp_t
 
     ! Binding Energy in MeV
     ! from Stan:
@@ -68,6 +72,7 @@ contains
     bion(io15) = 111.956652_dp_t
     bion(ine18) = 132.144124_dp_t
     bion(isi25) = 187.005541_dp_t
+    bion(ife56) = 492.2450_dp_t   ! older value, but not important -- this is inert
 
     ! convert to erg/g by multiplying by N_A / aion and converting to erg
     bion = -bion * N_A * MeV2erg / aion

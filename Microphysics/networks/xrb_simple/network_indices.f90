@@ -8,6 +8,7 @@ module network_indices
   integer, parameter :: io15 = 4
   integer, parameter :: ine18 = 5
   integer, parameter :: isi25 = 6
+  integer, parameter :: ife56 = 7
 
   integer, parameter :: ir3a    = 1
   integer, parameter :: irag15  = 2

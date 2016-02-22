@@ -198,6 +198,8 @@ subroutine make_ydots(ymol, t9, rpar, dydt)
        - ymol(io14) * rpar(irp_rates+irwk14o-1) &
        - THREE * ymol(io15) * rpar(irp_rates+irwk15o-1)
   
+  ! iron is just a tracer
+  dydt(ife56) = ZERO
   
 end subroutine make_ydots
 
