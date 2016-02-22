@@ -14,15 +14,15 @@
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
- xrb_pert_height = 1475.0d0
+ xrb_pert_height = 5760.d0
 
  ! velocity perturbation
  apply_vel_field    = T
  velpert_scale      = 1.0d2
  velpert_amplitude  = 1.0d5
- velpert_height_loc = 1460.0
+ velpert_height_loc = 5750.0
  velpert_steep      = 12.0d0
-
+ num_vortices = 8
 
  !----------------------------------------------------------------------------
  ! gridding
