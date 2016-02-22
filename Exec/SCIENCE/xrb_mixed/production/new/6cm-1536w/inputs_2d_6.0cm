@@ -29,13 +29,13 @@
  !----------------------------------------------------------------------------
  test_set = "gr0_2d_6.0cm"
 
- dm_in = 3
+ dm_in = 2
 
  prob_lo_x = 0.0d0
  prob_lo_y = 0.0d0
 
- prob_hi_x = 1536.0d0
- prob_hi_y = 4608.0d0
+ prob_hi_x = 2304.0d0
+ prob_hi_y = 9216.0d0
 
  bcx_lo = -1
  bcx_hi = -1
