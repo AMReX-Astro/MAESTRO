@@ -4,3 +4,5 @@ The corresponding network is xrb_simple
 
 The Lagrangian initial model can be processed for our grid using
 MAESTRO/Util/initial_models/lagrangian_planar
+
+This model is to be paired with the xrb_simple burner
