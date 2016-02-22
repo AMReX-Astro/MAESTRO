@@ -77,5 +77,26 @@ contains
     call init_rpar_indices(nrates, nspec)
     
   end subroutine network_init
+
+  function network_species_index(name) result(r)
+
+    character(len=*) :: name
+    integer :: r, n
+
+    r = -1
+
+    do n = 1, nspec
+       if (name == spec_names(n) .or. name == short_spec_names(n)) then
+          r = n
+          exit
+       endif
+    enddo
+    return
+  end function network_species_index
+
+
+  subroutine network_finalize()
+
+  end subroutine network_finalize
   
 end module network
