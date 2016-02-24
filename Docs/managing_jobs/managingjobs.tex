@@ -391,13 +391,10 @@ to use 8 MPI tasks each with 6 threads.
 
 The scripts in {\tt Util/job\_scripts/edison/} provides some examples.
 
-{\em Not sure if this still applies: Note that with the Intel compilers, you should never use the {\tt -ss}
-option to {\tt aprun}, and should use {\tt -cc depth} for $< 12$
-threads and {\tt -cc numa\_node} for $12$ threads.}
 
-
-Jobs are submitted with {\tt sbatch}.  A job can be canceled using {\tt scancel}, and
-the status can be checked using {\tt squeue -u {\em username}}.
+Jobs are submitted with {\tt sbatch}.  A job can be canceled using
+{\tt scancel}, and the status can be checked using {\tt squeue -u {\em
+username}}.
 
 \subsection{Automatic Restarting and Archiving of Data}
 
