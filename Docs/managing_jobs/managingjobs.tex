@@ -75,8 +75,9 @@ Perform partial redundancy elimination (PRE) on trees. This flag is enabled by d
 
 \subsection{PGI compilers}
 
-The \boxlib\ floating point exception trapping is disabled with PGI compilers, due to 
-problems with PGI using the system header files.
+The \boxlib\ floating point exception trapping is disabled with PGI
+compilers earlier than version 16, due to problems with PGI using the
+system header files.  From version 16 onward, things should work.
 
 
 
