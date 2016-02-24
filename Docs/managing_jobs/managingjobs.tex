@@ -350,7 +350,7 @@ Note: in order to compile, you will need to ensure that both the {\tt
 python} and {\tt python\_base} modules are loaded (via the {\tt
 module} command).
 
-\subsection{General Guidelines}
+\subsection{Running Jobs}
 
 edison is configured with 24 cores per node split between two Intel
 IvyBridge 12-core processors.  Each processor connects to 1/2 of the
@@ -395,6 +395,8 @@ option to {\tt aprun}, and should use {\tt -cc depth} for $< 12$
 threads and {\tt -cc numa\_node} for $12$ threads.}
 
 
+Jobs are submitted with {\tt sbatch}.  A job can be canceled using {\tt scancel}, and
+the status can be checked using {\tt squeue -u {\em username}}.
 
 \subsection{Automatic Restarting and Archiving of Data}
 
