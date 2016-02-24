@@ -336,6 +336,9 @@ PGI and Cray also work well
 \begin{itemize}
 \item Intel 15.0.1 works well on edison/NERSC with MPI/OpenMP
 
+\item Intel 16.x currently has issues with the linear solvers in \boxlib\
+  and should be avoided.
+
 \item Cray 8.4.3 triggers a backtrace error in {\tt make\_pi\_cc.f90}---this is 
   likely an optimization issue, and may be 2-d specific.  
 
