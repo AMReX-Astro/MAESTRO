@@ -96,11 +96,11 @@ subroutine varden()
   allocate(rho_Hext(nlevs))
   
   do n = 1,nlevs
-    call multifab_build(s(n)            , mla%la(n), nscal , 1)
-    call multifab_build(snew(n)         , mla%la(n), nscal , 1)
-    call multifab_build(rho_omegadot(n) , mla%la(n), nspec , 1)
-    call multifab_build(rho_Hnuc(n)     , mla%la(n), 1     , 1)
-    call multifab_build(rho_Hext(n)     , mla%la(n), 1     , 1)
+    call multifab_build(s(n)            , mla%la(n), nscal , 0)
+    call multifab_build(snew(n)         , mla%la(n), nscal , 0)
+    call multifab_build(rho_omegadot(n) , mla%la(n), nspec , 0)
+    call multifab_build(rho_Hnuc(n)     , mla%la(n), 1     , 0)
+    call multifab_build(rho_Hext(n)     , mla%la(n), 1     , 0)
 
     call bc_tower_level_build(bct,n,mla%la(n))
   end do
@@ -114,6 +114,7 @@ subroutine varden()
   !Calculate react_state inputs
   call average(mla,s,tempbar,dx,temp_comp)
   call setval(rho_Hext(1), ZERO, all=.true.)
+
 
   !Check the consistency of each mode
   dbo = do_burning

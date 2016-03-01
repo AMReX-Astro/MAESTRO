@@ -14,7 +14,10 @@ module variables
                    tfromre_comp, tfromps_comp
   integer, save :: tfromrh_err_comp, rfromtp_err_comp, tfromrp_err_comp, &
                    tfromre_err_comp, tfromps_err_comp
-  integer, save :: foextrap_comp
+
+  ! this is only needed to compile -- we don't have any ghost cells, so the
+  ! value here doesn't matter
+  integer, save :: foextrap_comp = -1  
 
   ! the total number of state quantities we will deal with
   integer, save :: nscal = 0
@@ -62,8 +65,6 @@ contains
     tfromrp_err_comp = get_next_scal_index(1)
     tfromre_err_comp = get_next_scal_index(1)
     tfromps_err_comp = get_next_scal_index(1)
-
-    foextrap_comp = get_next_scal_index(1)
 
     allocate (varnames(nscal))
 

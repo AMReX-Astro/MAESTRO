@@ -274,6 +274,10 @@ subroutine varden()
                     sp(ii,jj,kk,tfromps_comp) = eos_state%T
                     sp(ii,jj,kk,tfromps_err_comp) = &
                          (eos_state%T - temp_zone)/temp_zone
+
+                 else
+                    sp(ii,jj,kk,tfromps_comp) = ZERO
+                    sp(ii,jj,kk,tfromps_err_comp) = ZERO
                     
                  endif
 
@@ -288,7 +292,6 @@ subroutine varden()
 
   ! write out a plotfile that contains the magnitude of the velocity
   ! field
-  print *, mla%mba%rr(:,1)
   call fabio_ml_multifab_write_d(s,mla%mba%rr(:,1), &
                                  trim(run_prefix) // "eos_thermo", &
                                  names=varnames)

@@ -12,7 +12,7 @@ module test_advect_module
 
 contains
 
-  subroutine init_density_2d(rho, rhoX, ng_s, lo, hi, dx)
+  subroutine init_density_2d(rho, rhoX, trac, ng_s, lo, hi, dx)
 
     ! initialize the density field to a Gaussian centered on the domain.
     ! set the first composition variable to the density and the rest to 0.
@@ -22,6 +22,7 @@ contains
     integer         , intent(in   ) :: lo(:), hi(:), ng_s
     real (kind=dp_t), intent(inout) ::  rho(lo(1)-ng_s:,lo(2)-ng_s:)
     real (kind=dp_t), intent(inout) :: rhoX(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(inout) :: trac(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
     ! Local variables
@@ -47,13 +48,14 @@ contains
           rhoX(i,j,:) = ZERO
           rhoX(i,j,1) = rho(i,j)
 
+          trac(i,j,1) = ZERO
        enddo
     enddo
 
   end subroutine init_density_2d
 
 
-  subroutine init_density_3d(rho, rhoX, ng_s, lo, hi, dx)
+  subroutine init_density_3d(rho, rhoX, trac, ng_s, lo, hi, dx)
 
     ! initialize the density field to a Gaussian centered on the domain.
     ! set the first composition variable to the density and the rest to 0.
@@ -63,6 +65,7 @@ contains
     integer         , intent(in   ) :: lo(:), hi(:), ng_s
     real (kind=dp_t), intent(inout) ::  rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)
     real (kind=dp_t), intent(inout) :: rhoX(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(inout) :: trac(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
     ! Local variables
@@ -93,6 +96,7 @@ contains
              rhoX(i,j,k,:) = ZERO
              rhoX(i,j,k,1) = rho(i,j,k)
 
+             trac(i,j,k,1) = ZERO
           enddo
        enddo
     enddo

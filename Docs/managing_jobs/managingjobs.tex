@@ -69,9 +69,15 @@ Perform partial redundancy elimination (PRE) on trees. This flag is enabled by d
 
 \item {\em gfortran 5.1.1}: These compilers have no known issues.
 
+\item {\em gfortran 5.3.x}: These compilers have no known issues.
 
 \end{itemize}
 
+\subsection{PGI compilers}
+
+The \boxlib\ floating point exception trapping is disabled with PGI
+compilers earlier than version 16, due to problems with PGI using the
+system header files.  From version 16 onward, things should work.
 
 
 
@@ -329,41 +335,66 @@ The default compilers on edison are the Intel compilers, but
 PGI and Cray also work well
 
 \begin{itemize}
-\item Cray 8.4.0 works well on edison/NERSC with MPI/OpenMP
-
 \item Intel 15.0.1 works well on edison/NERSC with MPI/OpenMP
+
+\item Intel 16.x currently has issues with the linear solvers in \boxlib\
+  and should be avoided.
+
+\item Cray 8.4.3 triggers a backtrace error in {\tt make\_pi\_cc.f90}---this is 
+  likely an optimization issue, and may be 2-d specific.  
+
+  Previously,  Cray 8.4.0 worked well on edison/NERSC with MPI/OpenMP.
 
 \end{itemize}
 
+Note: in order to compile, you will need to ensure that both the {\tt
+python} and {\tt python\_base} modules are loaded (via the {\tt
+module} command).
 
-\subsection{General Guidelines}
+\subsection{Running Jobs}
 
 edison is configured with 24 cores per node split between two Intel
 IvyBridge 12-core processors.  Each processor connects to 1/2 of the
 node's memory and is called a NUMA node, so there are 2 NUMA nodes per
 edison node.  Best performance is seen when running with 6 or 12 threads.
+
+Note: edison switched to SLURM as the batch system.  Your job is submitted
+using the {\tt sbatch} command.  Options to {\tt sbatch} are specified at the
+top of your submission script with {\tt \#SBATCH} as the prefix.  These options
+can be found on the {\tt sbatch manpage}.  For instance, 
 \begin{verbatim}
-aprun -n 192 -N 4 -S 2 -d 6 ./main.Linux.Cray.mpi.omp.exe inputs_3d
+#SBATCH -N 2
+#SBATCH -J myjob
+#SBATCH -A repo-name
+#SBATCH -p regular
+#SBATCH -t 12:00:00
 \end{verbatim}
-Here,
-\begin{itemize}
-\item {\tt -S} is the number of MPI tasks per NUMA node (you want to split them
-  across the 2 NUMA nodes per Edison node)
-\item {\tt -n} is the total number of MPI tasks for the entire application
-\item {\tt -N} is the number of MPI tasks PER Edison node
-\item {\tt -d} is the number of OpenMP threads per MPI task (must match 
-{\tt OMP\_NUM\_THREADS})
-\end{itemize}
-The product of {\tt -N} and {\tt -d} should be 24---the total number of cores
-per edison node.
-The script {\tt
-Util/job\_scripts/edison/edison.run} provides an example.
+will request 2 nodes ({\tt -N}), under the account {\tt repo-name} ({\tt -J}),
+in the regular queue, and for a 12-hour window {\tt -t}.
 
-Note that with the Intel compilers, you should never use the {\tt -ss}
-option to {\tt aprun}, and should use {\tt -cc depth} for $< 12$
-threads and {\tt -cc numa\_node} for $12$ threads.
+If you are using OpenMP, then your script should set {\tt OMP\_NUM\_THREADS}, e.g.,
+\begin{verbatim}
+export OMP_NUM_THREADS=12
+\end{verbatim}
+
+By default, SLURM will change directory into the submission directory.  The 
+job is launched from your script using {\tt srun}, e.g.:
+\begin{verbatim}
+srun -n 48 ./main.Linux.Cray.mpi.exe inputs_3d
+\end{verbatim}
+to run 48 MPI tasks (across the 2 nodes), or 
+\begin{verbatim}
+export OMP_NUM_THREADS=6
+srun -n 8 -c 6 ./main.Linux.Cray.mpi.omp.exe inputs_3d
+\end{verbatim}
+to use 8 MPI tasks each with 6 threads.
+
+The scripts in {\tt Util/job\_scripts/edison/} provides some examples.
 
 
+Jobs are submitted with {\tt sbatch}.  A job can be canceled using
+{\tt scancel}, and the status can be checked using {\tt squeue -u {\em
+username}}.
 
 \subsection{Automatic Restarting and Archiving of Data}
 

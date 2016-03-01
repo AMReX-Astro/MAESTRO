@@ -30,7 +30,7 @@ subroutine varden()
   use box_util_module
   use bl_IO_module
   use fabio_module
-  use variables, only: nscal, init_variables, rho_comp, spec_comp
+  use variables, only: nscal, init_variables, rho_comp, spec_comp, ntrac, trac_comp
   use fill_3d_module, only: make_normal
   use geometry, only:  nlevs_radial, spherical, &
                        dr_fine, nr_fine, &
@@ -375,11 +375,13 @@ subroutine varden()
                  case (2)
                     call init_density_2d(sp(:,:,1,rho_comp), &
                                          sp(:,:,1,spec_comp:spec_comp-1+nspec), &
+                                         sp(:,:,1,trac_comp:trac_comp-1+ntrac), &
                                          sold(n)%ng, lo, hi, dx(n,:))
 
                  case (3)
                     call init_density_3d(sp(:,:,:,rho_comp), &
                                          sp(:,:,:,spec_comp:spec_comp-1+nspec), &
+                                         sp(:,:,:,trac_comp:trac_comp-1+ntrac), &
                                          sold(n)%ng, lo, hi, dx(n,:))
                  end select
               end do
