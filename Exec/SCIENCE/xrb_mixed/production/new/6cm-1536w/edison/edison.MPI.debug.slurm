@@ -16,12 +16,6 @@ export OMP_NUM_THREADS=1
 
 cd $SLURM_SUBMIT_DIR
 
-# run the compression script to tar up the plot and checkpoint files
-# as they are created.
-./process.xrb &
-PID=$!
-trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
-
 # find the latest restart file -- first look for one with 7 digits then fall
 # back to 6 and then 5
 restartFile=$(find . -type d -name "*chk???????" -print | sort | tail -1)
@@ -87,7 +81,4 @@ fi
 # are 2 NUMA nodes per Edison node.
 
 srun -n 256 ./main.Linux.Intel.mpi.exe inputs_2d_6.0cm ${restartString}
-
-
-rm -f process.pid
 
