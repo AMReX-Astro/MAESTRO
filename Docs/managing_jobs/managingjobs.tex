@@ -391,6 +391,8 @@ to use 8 MPI tasks each with 6 threads.
 
 The scripts in {\tt Util/job\_scripts/edison/} provides some examples.
 
+To chain jobs, such that one queues up after the previous job finished,
+use the {\tt chainslurm.sh} script in that same directory.
 
 Jobs are submitted with {\tt sbatch}.  A job can be canceled using
 {\tt scancel}, and the status can be checked using {\tt squeue -u {\em
@@ -399,9 +401,26 @@ username}}.
 \subsection{Automatic Restarting and Archiving of Data}
 
 The same set of submission scripts described for titan are available
-for edison at NERSC in {\tt Util/job\_scripts/edison/}.  They are
-mostly identical, with a few minor changes for the local system
-configuration.  The use is the same as described above.
+for edison at NERSC in {\tt Util/job\_scripts/edison/}.  In particular,
+the job submission script will set the restart command line parameters
+to restart from the most recent checkpoint file in the output directory.
+
+Note: NERSC does not allow for the {\tt process} script that archives
+to HPSS to run in the main job submission script.  Instead, a separate
+job needs to be run in the ``{\tt xfer}'' queue.  The script {\tt edison.xfer.slurm} 
+in {\tt Util/job\_scripts/edison/} shows how this works.  
+
+Jobs in the {\tt xfer} queue start up quickly.  The best approach is
+to start one as you start your main job (or make it dependent on the
+main job).  The sample {\tt process.xrb} script will wait for output
+and then archive it as it is produced, using the techniques described
+for titan above.
+
+To check the status of a job in the {\tt xfer} queue, use:
+\begin{verbatim}
+squeue -u username -M all
+\end{verbatim}
+
 
 \subsection{Batch visualization using \yt}
 
