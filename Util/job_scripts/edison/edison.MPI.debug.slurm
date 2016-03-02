@@ -2,8 +2,8 @@
 #SBATCH -J xrb-simplenet
 #SBATCH -A m1938
 #SBATCH -N 11                
-#SBATCH -p regular
-#SBATCH -t 04:00:00
+#SBATCH -p debug
+#SBATCH -t 00:10:00
 
 # -N = number of nodes
 
@@ -81,5 +81,4 @@ fi
 # are 2 NUMA nodes per Edison node.
 
 srun -n 256 ./main.Linux.Intel.mpi.exe inputs_2d_6.0cm ${restartString}
-
 
