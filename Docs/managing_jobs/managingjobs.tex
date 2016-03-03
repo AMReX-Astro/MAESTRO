@@ -392,7 +392,12 @@ to use 8 MPI tasks each with 6 threads.
 The scripts in {\tt Util/job\_scripts/edison/} provides some examples.
 
 To chain jobs, such that one queues up after the previous job finished,
-use the {\tt chainslurm.sh} script in that same directory.
+use the {\tt chainslurm.sh} script in that same directory. You can view
+the job dependency using:
+\begin{verbatim}
+squeue -l -j job-id
+\end{verbatim}
+where {\tt job-id} is the number of the job.
 
 Jobs are submitted with {\tt sbatch}.  A job can be canceled using
 {\tt scancel}, and the status can be checked using {\tt squeue -u {\em
