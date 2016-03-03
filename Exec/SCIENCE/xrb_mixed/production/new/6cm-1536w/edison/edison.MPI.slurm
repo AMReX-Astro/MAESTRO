@@ -1,28 +1,40 @@
 #!/bin/ksh
-#PBS -A m1400
-#PBS -N xrb
-#PBS -j oe
-#PBS -q regular
-#PBS -l walltime=2:00:00
-#PBS -l mppwidth=128
+#SBATCH -J xrb-simplenet
+#SBATCH -A m1938
+#SBATCH -N 11                
+#SBATCH -p regular
+#SBATCH -t 04:00:00
+
+# -N = number of nodes
 
 
-# this script runs with 6 threads on hopper -- this seems to give the best 
+# this script runs with 12 threads on edison -- this seems to give the best 
 # performance.
 
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=1
 
 
-cd $PBS_O_WORKDIR
+cd $SLURM_SUBMIT_DIR
 
-# run the compression script to tar up the plot and checkpoint files
-# as they are created.
-./process.nersc &
-PID=$!
-trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
+# find the latest restart file -- first look for one with 7 digits then fall
+# back to 6 and then 5
+restartFile=$(find . -type d -name "*chk???????" -print | sort | tail -1)
 
-# find the latest restart file -- first look for one with 6 digits then fall
-# back to 5
+# the Header is the last thing written -- check if it's there, otherwise,
+# fall back to the second-to-last check file written
+if [ ! -f ${restartFile}/Header ]; then
+
+    # how many *chk?????? files are there? if only one, then skip
+    nl=$(find . -type d -name "*chk???????" -print | sort | wc -l)
+    if [ $nl -gt 1 ]; then
+	restartFile=$(find . -type d -name "*chk???????" -print | sort | tail -2 | head -1)    
+    else
+	restartFile=""
+    fi
+fi
+
+# if the above checks failed, then there are no valid 7-digit chk files, so
+# check the 6-digit ones
 restartFile=$(find . -type d -name "*chk??????" -print | sort | tail -1)
 
 # the Header is the last thing written -- check if it's there, otherwise,
@@ -64,18 +76,10 @@ else
     restartString="--restart ${restartNum}"
 fi
 
+# Edison has 2 Intel "IvyBridge" processors each with 12 cores.  Each processor
+# connects to 1/2 of the node's memory, and is called a NUMA node.  So there
+# are 2 NUMA nodes per Edison node.
 
-# -n is the total number of MPI tasks
-# -N is the number of MPI tasks PER compute node
-# -d is the number of OpenMP threads per MPI task (must match OMP_NUM_THREADS)
-#
-# see http://www.nersc.gov/users/computational-systems/hopper/running-jobs/using-openmp-with-mpi/
+srun -n 256 ./main.Linux.Intel.mpi.exe inputs_2d_6.0cm ${restartString}
 
-# you need to change -n to give the number of MPI tasks you want.  Then
-# that number * 6 should match the mppwidth set at the top of this script
-
-aprun -n 128 ./main.Linux.Cray.mpi.exe inputs_2d_0.75cm.alex_hot ${restartString}
-
-
-rm -f process.pid
 

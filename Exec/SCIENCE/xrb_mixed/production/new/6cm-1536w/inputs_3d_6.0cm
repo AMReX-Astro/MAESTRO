@@ -14,20 +14,20 @@
  xrb_pert_size = 50
  xrb_pert_factor = 1.0d-5
  xrb_pert_type = 1
- xrb_pert_height = 1475.0d0
+ xrb_pert_height = 5760.d0
 
  ! velocity perturbation
  apply_vel_field    = T
  velpert_scale      = 1.0d2
  velpert_amplitude  = 1.0d5
- velpert_height_loc = 1460.0
+ velpert_height_loc = 5750.0
  velpert_steep      = 12.0d0
 
 
  !----------------------------------------------------------------------------
  ! gridding
  !----------------------------------------------------------------------------
- test_set = "gr0_3d_6.0cm_hi_dens.64"
+ test_set = "gr0_3d_6.0cm"
 
  dm_in = 3
 
@@ -35,9 +35,9 @@
  prob_lo_y = 0.0d0
  prob_lo_z = 0.0d0
 
- prob_hi_x = 1536.0d0
- prob_hi_y = 1536.0d0
- prob_hi_z = 4608.0d0
+ prob_hi_x = 2304.0d0
+ prob_hi_y = 2304.0d0
+ prob_hi_z = 9216.0d0
 
  bcx_lo = -1
  bcx_hi = -1
@@ -70,7 +70,7 @@
  plot_deltat = 1.e-4
  chk_int   = 2500
 
- plot_base_name = "xrb_3d_w30.72m_plt"
+ plot_base_name = "xrb_3d_simple_plt"
 
  plot_base = F
  plot_h_with_use_tfromp = T
