@@ -102,7 +102,7 @@ contains
 
        pt_index(:) = (/i, -1, -1/)       
 
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state, pt_index)
        
        pres(i) = eos_state%p
 
@@ -174,7 +174,7 @@ contains
 
           pt_index(:) = (/i, j, -1/)       
 
-          call eos(eos_input_rt, eos_state, .false., pt_index)       
+          call eos(eos_input_rt, eos_state, pt_index)       
        
           pres(i,j) = eos_state%p
 
@@ -251,7 +251,7 @@ contains
 
              pt_index(:) = (/i, j, k/)       
 
-             call eos(eos_input_rt, eos_state, .false., pt_index)       
+             call eos(eos_input_rt, eos_state, pt_index)       
        
              pres(i,j,k) = eos_state%p
 
@@ -338,7 +338,7 @@ contains
 
              pt_index(:) = (/i, j, k/)       
 
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
        
              pres(i,j,k) = eos_state%p
 
@@ -779,7 +779,7 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              eos_state%h     = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
-             call eos(eos_input_rh, eos_state, .false.)
+             call eos(eos_input_rh, eos_state)
 
              if (it > 0) pdata(i,j,k,iT) = eos_state%T
              if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar(r)
@@ -835,7 +835,7 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho, H) --> T, p
-             call eos(eos_input_rh, eos_state, .false.)
+             call eos(eos_input_rh, eos_state)
 
              if (iT > 0) pdata(i,j,k,iT) = eos_state%T
              if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
@@ -940,7 +940,7 @@ contains
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false.)
+             call eos(eos_input_rp, eos_state)
 
              if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
              if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar(r)
@@ -1015,7 +1015,7 @@ contains
              eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false.)
+             call eos(eos_input_rp, eos_state)
 
              if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
              if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar_cart(i,j,k,1)

@@ -326,7 +326,7 @@ contains
              pt_index(:) = (/i, j, k/)
 
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
 
              sigma = eos_state%dpdt / &
                   (eos_state%rho * eos_state%cp * eos_state%dpdr)
@@ -435,7 +435,7 @@ contains
              pt_index(:) = (/i, j, k/)
 
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
 
              sigma = eos_state%dpdt / &
                   (eos_state%rho * eos_state%cp * eos_state%dpdr)

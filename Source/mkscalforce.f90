@@ -911,7 +911,7 @@ contains
        pt_index(:) = (/i, -1, -1/)
 
        ! dens, temp, xmass inputs
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state, pt_index)
 
        dhdp = ONE / s(i,rho_comp) + ( s(i,rho_comp) * eos_state%dedr - &
                                       eos_state%p / s(i,rho_comp) ) &
@@ -979,7 +979,7 @@ contains
           pt_index(:) = (/i, j, -1/)
 
           ! dens, temp, xmass inputs
-         call eos(eos_input_rt, eos_state, .false., pt_index)
+         call eos(eos_input_rt, eos_state, pt_index)
 
          dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * eos_state%dedr - &
                                           eos_state%p / s(i,j,rho_comp) ) &
@@ -1047,7 +1047,7 @@ contains
              pt_index(:) = (/i, j, k/)
              
              ! dens, temp, xmass inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * eos_state%dedr - &
                   eos_state%p / s(i,j,k,rho_comp) ) / ( s(i,j,k,rho_comp) * eos_state%dpdr )
@@ -1113,7 +1113,7 @@ contains
              pt_index(:) = (/i, j, k/)
              
              ! dens, temp, xmass inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * eos_state%dedr - &
                                                 eos_state%p / s(i,j,k,rho_comp) ) &

@@ -608,6 +608,9 @@ small_temp                          real               5.d6
 
 small_dens                          real               1.d-5
 
+# cutoff for species mass fractions
+small_x                              real               0.0
+
 # When updating temperature, use $T=T(\rho,p_0,X) $ rather than
 # $T=T(\rho,h,X)$.
 use_tfromp                          logical            .false.
