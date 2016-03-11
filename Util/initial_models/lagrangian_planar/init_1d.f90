@@ -173,7 +173,7 @@ program init_1d
      eos_state%T = model_hse(i,itemp_model)
      eos_state%xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      model_hse(i,ipres_model) = eos_state%p
   enddo
@@ -202,7 +202,7 @@ program init_1d
   eos_state%T = model_hse(index_base,itemp_model)
   eos_state%xn(:) = model_hse(index_base,ispec_model:ispec_model-1+nspec)
 
-  call eos(eos_input_rt, eos_state, .false.)
+  call eos(eos_input_rt, eos_state)
 
   model_hse(index_base,ipres_model) = eos_state%p
   
@@ -254,7 +254,7 @@ program init_1d
         eos_state%rho = dens_zone
         eos_state%xn(:) = xn(:)
 
-        call eos(eos_input_rt, eos_state, .false.)
+        call eos(eos_input_rt, eos_state)
               
         entropy = eos_state%s
         pres_zone = eos_state%p
@@ -297,7 +297,7 @@ program init_1d
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
      
@@ -364,7 +364,7 @@ program init_1d
         eos_state%rho   = dens_zone
         eos_state%xn(:) = xn(:)
 
-        call eos(eos_input_rt, eos_state, .false.)
+        call eos(eos_input_rt, eos_state)
         
         pres_zone = eos_state%p
         
@@ -404,7 +404,7 @@ program init_1d
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
      
@@ -459,7 +459,7 @@ program init_1d
      eos_state%T = model_hse(i,itemp_model)
      eos_state%xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      model_hse(i,ipres_model) = eos_state%p
 

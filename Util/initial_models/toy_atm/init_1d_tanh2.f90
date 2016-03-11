@@ -367,7 +367,7 @@ program init_1d_tanh
   eos_state%rho   = dens_base
   eos_state%xn(:) = xn_base(:)
 
-  call eos(eos_input_rt, eos_state, .false.)
+  call eos(eos_input_rt, eos_state)
 
   ! store the conditions at the base -- we'll use the entropy later
   ! to constrain the isentropic layer
@@ -422,7 +422,7 @@ program init_1d_tanh
   eos_state%T = model_hse(index_base,itemp)
   eos_state%xn(:) = model_hse(index_base,ispec:ispec-1+nspec)
 
-  call eos(eos_input_rt, eos_state, .false.)
+  call eos(eos_input_rt, eos_state)
 
   model_hse(index_base,ipres) = eos_state%p
 
@@ -503,7 +503,7 @@ program init_1d_tanh
               eos_state%rho   = dens_zone
               eos_state%xn(:) = xn(:)
 
-              call eos(eos_input_rt, eos_state, .false.)
+              call eos(eos_input_rt, eos_state)
 
               entropy = eos_state%s
               pres_zone = eos_state%p
@@ -560,7 +560,7 @@ program init_1d_tanh
               eos_state%rho = dens_zone
               eos_state%xn(:) = xn(:)
 
-              call eos(eos_input_rt, eos_state, .false.)
+              call eos(eos_input_rt, eos_state)
 
               entropy = eos_state%s
               pres_zone = eos_state%p
@@ -620,7 +620,7 @@ program init_1d_tanh
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 
@@ -688,7 +688,7 @@ program init_1d_tanh
         eos_state%rho   = dens_zone
         eos_state%xn(:) = xn(:)
 
-        call eos(eos_input_rt, eos_state, .false.)
+        call eos(eos_input_rt, eos_state)
 
         pres_zone = eos_state%p
 
@@ -727,7 +727,7 @@ program init_1d_tanh
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 
@@ -784,7 +784,7 @@ program init_1d_tanh
      eos_state%T = model_hse(i,itemp)
      eos_state%xn(:) = model_hse(i,ispec:ispec-1+nspec)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      model_hse(i,ipres) = eos_state%p
 
