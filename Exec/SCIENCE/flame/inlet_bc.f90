@@ -51,7 +51,7 @@ contains
     eos_state%xn(ic12) = xc12_fuel
     eos_state%xn(io16) = 1.d0 - xc12_fuel
 
-    call eos(eos_input_rt, eos_state, .false.)
+    call eos(eos_input_rt, eos_state)
 
     INLET_RHO     = dens_fuel
     INLET_RHOH    = dens_fuel*eos_state%h
