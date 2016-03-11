@@ -82,6 +82,9 @@ endif
 table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
+ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
+  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+endif
 
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
