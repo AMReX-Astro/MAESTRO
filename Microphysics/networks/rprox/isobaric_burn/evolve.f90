@@ -52,7 +52,7 @@ program evolve
   eos_state%xn  = Xin
 
 
-  call eos(eos_input_rt, eos_state, .false.)
+  call eos(eos_input_rt, eos_state)
 
   ! the fixed pressure for this isobaric burn
   p_fixed = eos_state%p
@@ -71,7 +71,7 @@ program evolve
      eos_state%T   = temp
      eos_state%xn  = Xin
      
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      hin = eos_state%h
 
@@ -91,7 +91,7 @@ program evolve
      eos_state%xn  = xout
      eos_state%p = p_fixed
         
-     call eos(eos_input_ph, eos_state, .false.)
+     call eos(eos_input_ph, eos_state)
         
      temp = eos_state%T
      dens = eos_state%rho
