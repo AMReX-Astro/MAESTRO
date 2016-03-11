@@ -1,3 +1,3 @@
-f90sources += eos_stuff.f90
+f90sources += gamma_law_general.f90
 
 
