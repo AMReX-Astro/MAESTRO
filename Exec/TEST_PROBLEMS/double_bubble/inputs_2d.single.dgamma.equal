@@ -25,6 +25,8 @@
  anelastic_cutoff = 1.d-10
  base_cutoff_density = 1.d-10
 
+ small_temp = 1.d-5
+
  evolve_base_state = F
  ! fix_base_state = T
 
