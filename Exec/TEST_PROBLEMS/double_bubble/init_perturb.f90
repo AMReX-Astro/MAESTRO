@@ -87,7 +87,7 @@ contains
     eos_state%rho   = dens
     eos_state%xn(:) = xn(:)
 
-    call eos(eos_input_rp, eos_state, .false.)
+    call eos(eos_input_rp, eos_state)
 
     dens_pert = dens
     rhoh_pert = dens_pert * eos_state%h

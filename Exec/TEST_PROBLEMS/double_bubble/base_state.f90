@@ -60,7 +60,7 @@ contains
     ! initial guess
     eos_state % T = 1000.0d0
 
-    call eos(eos_input_rp, eos_state, .false.)
+    call eos(eos_input_rp, eos_state)
 
 
     gamma_const = pres_base/(dens_base * eos_state % e) + 1.0d0
@@ -123,7 +123,7 @@ contains
 
 
        ! (rho,p) --> T, h
-       call eos(eos_input_rp, eos_state, .false.)
+       call eos(eos_input_rp, eos_state)
 
        s0_init(j, rho_comp) = dens_zone
        s0_init(j,rhoh_comp) = dens_zone * eos_state%h
