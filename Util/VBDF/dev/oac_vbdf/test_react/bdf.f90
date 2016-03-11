@@ -15,6 +15,49 @@
 !      Hindmarsh; ACM Trans. Math. Soft., vol. 1, no. 1, pp. 71-96,
 !      1975.
 !
+ 
+!This module is inlined here for development.  GPUs do not like you passing in
+!functions as arugments as originally done in BDF, so unfortunately we have to 
+!somehwere hardcode and link the RHS and Jacobian
+module feval
+  !use bdf
+  use bl_types
+  implicit none
+  integer, parameter :: neq = 3
+  integer, parameter :: npt = 1
+contains
+  subroutine f_rhs_vec(neq, npt, y, t, ydot, upar)
+    !$acc routine seq
+    integer,  intent(in   ) :: neq, npt
+    real(dp_t), intent(in   ) :: y(neq,npt), t
+    real(dp_t), intent(  out) :: ydot(neq,npt)
+    real(dp_t), intent(inout), optional :: upar(:,:)
+   
+    !For the purposes of t1, npt=1
+    ydot(1,1) = -.04d0*y(1,1) + 1.d4*y(2,1)*y(3,1)
+    ydot(3,1) = 3.e7*y(2,1)*y(2,1)
+    ydot(2,1) = -ydot(1,1) - ydot(3,1)
+  end subroutine f_rhs_vec
+
+  subroutine jac_vec(neq, npt, y, t, pd, upar)
+    !$acc routine seq
+    integer,  intent(in   ) :: neq, npt
+    real(dp_t), intent(in   ) :: y(neq,npt), t
+    real(dp_t), intent(  out) :: pd(neq,neq,npt)
+    real(dp_t), intent(inout), optional :: upar(:,:)
+
+    !For the purposes of t1, npt=1
+    pd(1,1,1) = -.04d0
+    pd(1,2,1) = 1.d4*y(3,1)
+    pd(1,3,1) = 1.d4*y(2,1)
+    pd(2,1,1) = .04d0
+    pd(2,3,1) = -pd(1,3,1)
+    pd(3,2,1) = 6.e7*y(2,1)
+    pd(2,2,1) = -pd(1,2,1) - pd(3,2,1)
+  end subroutine jac_vec
+end module feval
+
+
 
 module bdf
 
@@ -74,6 +117,7 @@ module bdf
      integer  :: k_age                      ! number of steps taken at current order
      real(dp_t) :: tq(-1:2)                 ! error coefficients (test quality)
      real(dp_t) :: tq2save
+     real(dp_t) :: temp_data                ! For GPU development, TODO: delete this
      logical  :: refactor
 
      real(dp_t), allocatable :: J(:,:,:)        ! Jacobian matrix
@@ -131,6 +175,8 @@ contains
     integer  :: k, p, m
     logical  :: retry, linitial
 
+    ts%temp_data = -1.5
+    
     !TODO: We no longer have this argument as optional, so rewrite to get rid of linitial
     linitial = initial_call
 
@@ -303,25 +349,26 @@ contains
     !$acc routine seq
     !$acc routine(dgefa) seq
     !$acc routine(dgesl) seq
+    use feval, only: f_rhs_vec, jac_vec
     type(bdf_ts), intent(inout) :: ts
-    interface
-       subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-         !$acc routine seq
-         import dp_t
-         integer,  intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine f_rhs_vec
-       subroutine jac_vec(neq, npt, y, t, J, upar)
-         !$acc routine seq
-         import dp_t
-         integer,  intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: J(neq, neq,npt)
-         real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine jac_vec
-    end interface
+    !interface
+    !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
+    !     !$acc routine seq
+    !     import dp_t
+    !     integer,  intent(in   ) :: neq, npt
+    !     real(dp_t), intent(in   ) :: y(neq,npt), t
+    !     real(dp_t), intent(  out) :: yd(neq,npt)
+    !     real(dp_t), intent(inout) :: upar(:,:)
+    !   end subroutine f_rhs_vec
+    !   subroutine jac_vec(neq, npt, y, t, J, upar)
+    !     !$acc routine seq
+    !     import dp_t
+    !     integer,  intent(in   ) :: neq, npt
+    !     real(dp_t), intent(in   ) :: y(neq,npt), t
+    !     real(dp_t), intent(  out) :: J(neq, neq,npt)
+    !     real(dp_t), intent(inout) :: upar(:,:)
+    !   end subroutine jac_vec
+    !end interface
 
     !include 'LinAlg.inc'
 
@@ -573,21 +620,22 @@ contains
   !
   subroutine bdf_reset(ts, y0, dt, reuse)
     !$acc routine seq
+    use feval, only: f_rhs_vec
     type(bdf_ts), intent(inout) :: ts
     real(dp_t),   intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
     
     integer :: p,m
-    interface
-       subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-         !$acc routine seq
-         import dp_t
-         integer,  intent(in   ) :: neq, npt
-         real(dp_t), intent(in   ) :: y(neq,npt), t
-         real(dp_t), intent(  out) :: yd(neq,npt)
-         real(dp_t), intent(inout) :: upar(:,:)
-       end subroutine f_rhs_vec
-    end interface
+    !interface
+    !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
+    !     !$acc routine seq
+    !     import dp_t
+    !     integer,  intent(in   ) :: neq, npt
+    !     real(dp_t), intent(in   ) :: y(neq,npt), t
+    !     real(dp_t), intent(  out) :: yd(neq,npt)
+    !     real(dp_t), intent(inout) :: upar(:,:)
+    !   end subroutine f_rhs_vec
+    !end interface
 
     ts%nfe = 0
     ts%nje = 0
