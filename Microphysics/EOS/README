@@ -1,7 +1,10 @@
-This directory contains the different equations of state that are
-released with MAESTRO:
+This directory contains the simple gamma_law_general equation of 
+state that models an ideal gas as a gamma-law (p = (gamma-1) rho e).
 
-1) gamma_law_general:
+Additional equations of state are available in the Microphysics git
+repo.
+
+   gamma_law_general:
 
    A general gamma-law EOS.  This computes the mean molecular
    weight from the mass fractions and the species properties defined
@@ -11,10 +14,3 @@ released with MAESTRO:
    (gamma = 5/3).  A more general expression (than the Sactur-Tetrode
    equation) is needed for an arbitrary constant-gamma gas.
 
-2) helmeos:
-   
-   Frank Timmes' general stellar EOS.  This is modified from the
-   publically available version (although the changes should not
-   affect the results).  The major changes are related to
-   thread-safety.  The common blocks no longer pass the state to/from
-   the EOS, instead we use the argument list.
