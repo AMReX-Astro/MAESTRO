@@ -796,7 +796,7 @@ contains
                      eos_state%T     = p(ii,jj,kk,sc%temp_comp) !initial guess
                      eos_state%xn(:) = xmass(:)
                        
-                     call eos(eos_input_rh, eos_state, .false.)
+                     call eos(eos_input_rh, eos_state)
                      
                      b = min( &
                            nint((eos_state%T - thist%min_temp)/thist%dT), &
