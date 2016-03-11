@@ -89,7 +89,7 @@ contains
     varnames(rfromtp_err_comp) = "[rho(T,p) - rho]/rho"
     varnames(tfromrp_err_comp) = "[T(rho,p) - T]/T"
     varnames(tfromre_err_comp) = "[T(rho,e) - T]/T"
-    varnames(tfromps_err_comp) = "[TT(p,s) - T]/T"
+    varnames(tfromps_err_comp) = "[T(p,s) - T]/T"
 
   end subroutine init_variables
 
