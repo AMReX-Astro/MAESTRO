@@ -169,7 +169,7 @@ contains
        eos_state%xn(:) = xn_ambient(:)
 
        ! (rho,p) --> T, h
-       call eos(eos_input_rp, eos_state, .false.)
+       call eos(eos_input_rp, eos_state)
 
        s0_init(r, rho_comp) = d_ambient
        s0_init(r,rhoh_comp) = d_ambient * eos_state%h
