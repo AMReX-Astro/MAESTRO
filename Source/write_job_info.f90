@@ -67,7 +67,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
      
      write (99,999)
-     write (99,*) "Job Information"
+     write (99,*) "Maestro Job Information"
      write (99,999)
      write (99,1001) "job name:    ", trim(job_name)
      write (99,1001) "inputs file: ", trim(inputs_file_used)
