@@ -80,7 +80,7 @@ subroutine f_rhs_instantaneous_reaction_rates(n, t, y, ydot, rho_Hnuc, rpar, ipa
      ! need an initial T guess
      eos_state%T = 1.d9
 
-     call eos(eos_input_rh, eos_state, .false.)
+     call eos(eos_input_rh, eos_state)
 
      temp = eos_state%T
 

@@ -55,7 +55,7 @@ program testjacobian
   eos_state%T = temp
   eos_state%xn(:) = Xin(:)
 
-  call eos(eos_input_rt, eos_state, .false.)
+  call eos(eos_input_rt, eos_state)
 
   print *, 'evaluating the RHS...'
 

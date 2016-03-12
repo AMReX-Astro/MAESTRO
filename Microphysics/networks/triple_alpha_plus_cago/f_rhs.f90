@@ -62,7 +62,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      eos_state%xn(io16_) = y(io16_)
      eos_state%xn(ife56_) = rpar(irp_Y56)*aion(ife56_)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      c_p = eos_state%cp
      dhdx(:) = eos_state%dhdx(:)
