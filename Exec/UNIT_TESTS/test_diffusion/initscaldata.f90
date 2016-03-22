@@ -138,7 +138,7 @@ contains
           do iter = 1, max_iter
              eos_state%T = temp_zone
 
-             call eos(eos_input_rt, eos_state, .false.)
+             call eos(eos_input_rt, eos_state)
 
              dhdt = eos_state%cv + eos_state%dpdt/eos_state%rho
 
@@ -158,7 +158,7 @@ contains
           ! call eos one last time
           eos_state%T = temp_zone
 
-          call eos(eos_input_rt, eos_state, .false.)
+          call eos(eos_input_rt, eos_state)
 
           s(i,j,rho_comp)  = eos_state%rho
           s(i,j,rhoh_comp) = eos_state%rho * eos_state%h
