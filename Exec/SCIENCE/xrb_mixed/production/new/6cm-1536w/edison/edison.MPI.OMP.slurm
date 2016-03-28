@@ -1,17 +1,17 @@
 #!/bin/ksh
-#SBATCH -J xrb-simplenet
+#SBATCH -J xrb-simplenet-3d
 #SBATCH -A m1938
-#SBATCH -N 11                
+#SBATCH -N 512
 #SBATCH -p regular
 #SBATCH -t 04:00:00
 
-# -N = number of nodes
+# -N = number of nodes = # of MPI * number of threads / 24 (cores / node)
 
 
 # this script runs with 12 threads on edison -- this seems to give the best 
 # performance.
 
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=6
 
 
 cd $SLURM_SUBMIT_DIR
@@ -80,6 +80,8 @@ fi
 # connects to 1/2 of the node's memory, and is called a NUMA node.  So there
 # are 2 NUMA nodes per Edison node.
 
-srun -n 256 ./main.Linux.Intel.mpi.exe inputs_2d_6.0cm ${restartString}
+# -n is the number of MPI tasks
+# -c sets the number of OMP threads per MPI -- this should be the same as OMP_NUM_THREADS
+srun -n 2048 -c ${OMP_NUM_THREADS} ./main.Linux.Intel.mpi.omp.exe inputs_3d_6.0cm ${restartString}
 
 

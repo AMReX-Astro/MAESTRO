@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# this is for the wdconvect problem
+
 import matplotlib
 matplotlib.use('agg')
 
@@ -13,50 +15,29 @@ import os
 import pylab
 
 import yt
-import yt.visualization.volume_rendering.api as vr
+#import yt.visualization.volume_rendering.api as vr
+import yt.visualization.volume_rendering.old_camera as vr
 
-def doit(plotfile, fname):
+
+def doit(plotfile):
 
     ds = yt.load(plotfile)
 
-    cm = "gist_rainbow"
+    cm = "coolwarm"
 
+    field = ('boxlib', 'radial_velocity')
+        
+    vals = [-5.e6, -2.5e6, -1.25e6, 1.25e6, 2.5e6, 5.e6]
+    sigma = 3.e5
+        
+    # select a sphere
+    center = (0, 0, 0)
+    R = (5.e8, 'cm')
 
-    if fname == "vz":
-        field = ('gas', 'velocity_z')
-        use_log = False
-        
-        vals = [-1.e7, -5.e6, 5.e6, 1.e7]
-        sigma = 5.e5
-        
-    elif fname == "magvel":
-        field = ('gas', 'velocity_magnitude')
-        use_log = False
-        
-        vals = [1.e6, 2.e6, 4.e6, 8.e6, 1.6e7]
-        sigma = 2.e5
-
-    elif fname == "radvel":
-        field = ('boxlib', 'radial_velocity')
-        use_log = False
-        
-        vals = [-1.e7, -5.e6, -2.5e6, 2.5e6, 5.e6, 1.e7]
-        sigma = 2.e5
-        
-        cm = "coolwarm"
-
-
-    dd = ds.all_data()
-
-    mi = min(vals)
-    ma = max(vals)
-    
-    if use_log:
-        mi, ma = np.log10(mi), np.log10(ma)
-        
+    dd = ds.sphere(center, R)
 
     # Instantiate the ColorTransferfunction.
-    tf =  vr.ColorTransferFunction((mi, ma))
+    tf =  yt.ColorTransferFunction((min(vals), max(vals)))
 
     # Set up the camera parameters: center, looking direction, width, resolution
     c = np.array([0.0, 0.0, 0.0])
@@ -68,20 +49,19 @@ def doit(plotfile, fname):
     north=[0.0,0.0,1.0]
 
     for v in vals:
-        if (use_log):
-            tf.sample_colormap(math.log10(v), sigma**2, colormap=cm) #, alpha=0.2)
-        else:
-            tf.sample_colormap(v, sigma**2, colormap=cm) #, alpha=0.2)
+        tf.sample_colormap(v, sigma**2, colormap=cm) #, alpha=0.2)
 
 
     # alternate attempt
     ds.periodicity = (True, True, True)
 
     # Create a camera object
-    cam = vr.Camera(c, L, W, N, transfer_function=tf, ds=ds, 
+    cam = vr.Camera(c, L, W, N, transfer_function=tf, ds=ds, data_source=dd, 
                     no_ghost=False,
                     north_vector=north,
-                    fields = [field], log_fields = [use_log])
+                    fields = [field], log_fields = [False])
+
+    #cam.zoom(3)
 
     # make an image
     im = cam.snapshot()
@@ -89,14 +69,14 @@ def doit(plotfile, fname):
 
     # add an axes triad -- note if we do this, we HAVE to do draw
     # domain, otherwise the image is blank (likely a bug)
-    cam.draw_coordinate_vectors(im)
+    #cam.draw_coordinate_vectors(im)
 
     # add the domain box to the image:
-    nim = cam.draw_domain(im)
-
+    #nim = cam.draw_domain(im)
+    nim = im
     # increase the contrast -- for some reason, the enhance default
     # to save_annotated doesn't do the trick (likely a bug)
-    max_val = im[:,:,:3].std() * 4.0
+    max_val = im[:,:,:3].std() * 6.0
     nim[:,:,:3] /= max_val
 
     f = pylab.figure()
@@ -105,29 +85,27 @@ def doit(plotfile, fname):
                transform=f.transFigure, color="white")
 
     cam._render_figure = f
+
+    cam.save_image(im, "test.png")
     
     # save annotated -- this added the transfer function values, 
     # but this messes up our image size defined above
-    cam.save_annotated("{}_{}.png".format(os.path.normpath(plotfile), fname), 
-                       nim, 
-                       dpi=145, clear_fig=False)
+    cam.save_annotated("{}.png".format(os.path.normpath(plotfile)), 
+                       im, 
+                       dpi=200, clear_fig=False)
 
 
 
 if __name__ == "__main__":
 
     # Choose a field
-    fname = "vz"
     plotfile = ""
 
 
     try: plotfile = sys.argv[1]
     except: sys.exit("ERROR: no plotfile specified")
 
-    try: fname = sys.argv[2]
-    except: pass
-
-    doit(plotfile, fname)
+    doit(plotfile)
 
 
         

@@ -43,14 +43,6 @@ trap '/bin/rm -f $pidfile' EXIT HUP TERM XCPU KILL
 N=60
 
 
-# modules requires
-module load python
-module load matplotlib
-module load gcc
-module load gnuplot
-
-
-
 #----------------------------------------------------------------------------
 # make storage directories
 
@@ -153,7 +145,7 @@ function process_files
 	  mv ${dir}.processed plotfiles/
 
 	  # and visualize it
-	  runtimevis.py plotfiles/${dir}
+	  #runtimevis.py plotfiles/${dir}
 
         fi
 
@@ -240,9 +232,10 @@ ftime_files=$(find . -maxdepth 1 -name "ftime.out" -print)
 overview_files=$(find . -maxdepth 1 -name "maestro-overview.out" -print)
 inputs_files=$(find . -maxdepth 1 -name "inputs*" -print)
 grid_files=$(find . -maxdepth 1 -name "gr0*" -print)
+slurm_files=$(find . -maxdepth 1 -name "*.slurm" -print)
 
 if [ "${diag_files}" ] || [ "${ftime_files}" ]; then
-    ${HTAR} -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} ${ftime_files} ${overview_files} ${inputs_files} ${grid_files} >> /dev/null
+    ${HTAR} -cvf ${HPSS_DIR}/diag_files_${datestr}.tar ${diag_files} ${ftime_files} ${overview_files} ${inputs_files} ${grid_files} ${slurm_files} >> /dev/null
 fi
 
 
