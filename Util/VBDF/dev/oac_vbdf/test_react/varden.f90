@@ -95,11 +95,11 @@ subroutine varden()
   allocate(rho_Hext(nlevs))
   
   do n = 1,nlevs
-    call multifab_build(s(n)            , mla%la(n), nscal , 1)
-    call multifab_build(snew(n)         , mla%la(n), nscal , 1)
-    call multifab_build(rho_omegadot(n) , mla%la(n), nspec , 1)
-    call multifab_build(rho_Hnuc(n)     , mla%la(n), 1     , 1)
-    call multifab_build(rho_Hext(n)     , mla%la(n), 1     , 1)
+    call multifab_build(s(n)            , mla%la(n), nscal , 0)
+    call multifab_build(snew(n)         , mla%la(n), nscal , 0)
+    call multifab_build(rho_omegadot(n) , mla%la(n), nspec , 0)
+    call multifab_build(rho_Hnuc(n)     , mla%la(n), 1     , 0)
+    call multifab_build(rho_Hext(n)     , mla%la(n), 1     , 0)
 
     call bc_tower_level_build(bct,n,mla%la(n))
   end do
@@ -121,7 +121,7 @@ subroutine varden()
   !Explore react_its orders of magnitude of the time domain using user inputs.
   do_burning = dbo
   do_heating = dho
-  do i=0, 1
+  do i=0, 0
     call react_state(mla,tempbar,s,snew,rho_omegadot,rho_Hnuc,rho_Hext,pbar, &
                      10**(i)*min_time_step,dx,bct%bc_tower_array)
     write(temp_buf, *) i

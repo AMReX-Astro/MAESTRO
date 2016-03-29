@@ -1,2 +1,6 @@
 This is a GPU- (OpenACC-)accelerated version of the test_react Maestro unit test using
 the VBDF integrator.
+
+I have compared the output of this modified version of the test_react unit test
+without acceleration with that of the original.  Differences are minor, but
+non-zero.

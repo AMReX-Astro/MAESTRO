@@ -12,5 +12,5 @@ if [ -z "$1" ]; then
 fi
 
 for file in `ls -d $1*`; do
-    echo $file: `fcompare --infile1 $file --infile2 $2/$file | tail -1`
+    echo $file: `fcompare --infile1 $file --infile2 $2/$file `
 done

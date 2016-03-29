@@ -15,59 +15,19 @@
 !      Hindmarsh; ACM Trans. Math. Soft., vol. 1, no. 1, pp. 71-96,
 !      1975.
 !
- 
-!This module is inlined here for development.  GPUs do not like you passing in
-!functions as arugments as originally done in BDF, so unfortunately we have to 
-!somehwere hardcode and link the RHS and Jacobian
-module feval
-  !use bdf
-  use bl_types
-  implicit none
-  integer, parameter :: neq = 3
-  integer, parameter :: npt = 1
-contains
-  subroutine f_rhs_vec(neq, npt, y, t, ydot, upar)
-    !$acc routine seq
-    integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t
-    real(dp_t), intent(  out) :: ydot(neq,npt)
-    real(dp_t), intent(inout), optional :: upar(:,:)
-   
-    !For the purposes of t1, npt=1
-    ydot(1,1) = -.04d0*y(1,1) + 1.d4*y(2,1)*y(3,1)
-    ydot(3,1) = 3.e7*y(2,1)*y(2,1)
-    ydot(2,1) = -ydot(1,1) - ydot(3,1)
-  end subroutine f_rhs_vec
-
-  subroutine jac_vec(neq, npt, y, t, pd, upar)
-    !$acc routine seq
-    integer,  intent(in   ) :: neq, npt
-    real(dp_t), intent(in   ) :: y(neq,npt), t
-    real(dp_t), intent(  out) :: pd(neq,neq,npt)
-    real(dp_t), intent(inout), optional :: upar(:,:)
-
-    !For the purposes of t1, npt=1
-    pd(1,1,1) = -.04d0
-    pd(1,2,1) = 1.d4*y(3,1)
-    pd(1,3,1) = 1.d4*y(2,1)
-    pd(2,1,1) = .04d0
-    pd(2,3,1) = -pd(1,3,1)
-    pd(3,2,1) = 6.e7*y(2,1)
-    pd(2,2,1) = -pd(1,2,1) - pd(3,2,1)
-  end subroutine jac_vec
-end module feval
 
 
 
 module bdf
 
   use bl_types
-  use bl_error_module
+  !use bl_error_module
   use bl_constants_module
-  use parallel
+  !use parallel
 
   implicit none
 
+  !TODO: Lowered iters for dev, change back
   integer, parameter :: bdf_max_iters = 666666666
 
   integer, parameter :: BDF_ERR_SUCCESS  = 0
@@ -117,7 +77,9 @@ module bdf
      integer  :: k_age                      ! number of steps taken at current order
      real(dp_t) :: tq(-1:2)                 ! error coefficients (test quality)
      real(dp_t) :: tq2save
-     real(dp_t) :: temp_data                ! For GPU development, TODO: delete this
+     !real(dp_t) :: temp_data
+     !real(dp_t) :: temp_data(3,1,0:3) !z-like, if max_order=3
+     real(dp_t) :: temp_data(0:3)      !l-like, if max_order=3
      logical  :: refactor
 
      real(dp_t), allocatable :: J(:,:,:)        ! Jacobian matrix
@@ -126,8 +88,9 @@ module bdf
      real(dp_t), allocatable :: z0(:,:,:)       ! Nordsieck predictor array
      real(dp_t), allocatable :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
      real(dp_t), allocatable :: l(:)            ! predictor/corrector update coefficients
+     real(dp_t), allocatable :: shift(:)        ! scratch array to hold shifted arrays
      real(dp_t), allocatable :: upar(:,:)       ! array of user parameters (passed to
-                                            ! user's Jacobian and f)
+                                                !    user's Jacobian and f)
      real(dp_t), allocatable :: y(:,:)          ! current y
      real(dp_t), allocatable :: yd(:,:)         ! current \dot{y}
      real(dp_t), allocatable :: rhs(:,:)        ! solver rhs
@@ -152,7 +115,8 @@ module bdf
 
   private :: &
        rescale_timestep, decrease_order, increase_order, &
-       alpha0, alphahat0, xi_j, xi_star_inv, ewts, norm, eye_r, eye_i, factorial
+       alpha0, alphahat0, xi_j, xi_star_inv, ewts, norm, eye_r, eye_i, &
+       factorial, eoshift_local
   !public subroutines: bdf_advance, bdf_update, bdf_predict, bdf_solve, bdf_check
   !                    bdf_correct, bdf_dump, bdf_adjust, bdf_reset, print_y
   !                    bdf_ts_build, bdf_ts_destroy, bdf_wrap
@@ -172,13 +136,13 @@ contains
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
     logical,      intent(in   ) :: initial_call
-    integer  :: k, p, m
+    integer  :: k, p, m, n
     logical  :: retry, linitial
 
-    ts%temp_data = -1.5
-    
-    !TODO: We no longer have this argument as optional, so rewrite to get rid of linitial
-    linitial = initial_call
+    !TODO: We no longer have this argument as optional, so rewrite to get rid of linitial,
+    !or maybe just get rid of it.  Commented out for now.  I prefer to use this,
+    !but for GPU dev I'm trying to simplify.
+    !linitial = initial_call
 
     if (reset) call bdf_reset(ts, y0, dt0, reuse)
 
@@ -187,7 +151,8 @@ contains
     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
     do k = 1, bdf_max_iters + 1
        if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
-          ierr = BDF_ERR_MAXSTEPS; return
+          !ierr = BDF_ERR_MAXSTEPS; return
+          ierr = BDF_ERR_MAXSTEPS; exit
        end if
 
        !TODO: Debug I/O not cool on GPUs. If we want to keep it, need to rewrite
@@ -195,22 +160,25 @@ contains
        !     call bdf_dump(ts)
 
        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
-
        call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
-       if(linitial .and. k == 1) then
-          !This is the initial solve, so use the user's initial value, 
-          !not the predicted value.
-          do p = 1, ts%npt
-             do m = 1, ts%neq
-                !Overwrite the predicted z0 with the user's y0
-                ts%z0(m,p,0) = ts%y(m,p)
-             end do
-          end do
-       endif
+       do m=0,3
+          ts%temp_data(m) = ts%l(m)
+       end do
+       !if(linitial .and. k == 1) then
+       !   !This is the initial solve, so use the user's initial value, 
+       !   !not the predicted value.
+       !   do p = 1, ts%npt
+       !      do m = 1, ts%neq
+       !         !Overwrite the predicted z0 with the user's y0
+       !         ts%z0(m,p,0) = ts%y(m,p)
+       !      end do
+       !   end do
+       !endif
        call bdf_solve(ts)         ! solve for y_n based on predicted y and yd
        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
-       if (ierr /= BDF_ERR_SUCCESS) return
+       !if (ierr /= BDF_ERR_SUCCESS) return
+       if (ierr /= BDF_ERR_SUCCESS) exit
        !TODO: cycle statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
        !look into this when tuning
        if (retry) cycle
@@ -230,7 +198,12 @@ contains
     !     print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", it: ",i3,", se: ",i3,", dt: ",e15.8,", k: ",i2)', &
     !     ts%n, ts%nfe, ts%nje, ts%nlu, ts%nit, ts%nse, ts%dt, ts%k
 
-    y1 = ts%z(:,:,0)
+    !y1 = ts%z(:,:,0)
+    do p = 1, ts%npt
+       do m = 1, ts%neq
+          y1(m,p) = ts%z0(m,p,0)
+       end do
+    end do
     
   end subroutine bdf_advance
 
@@ -260,9 +233,12 @@ contains
     type(bdf_ts), intent(inout) :: ts
 
     integer  :: j, o
-    real(dp_t) :: a0, a0hat, a1, a2, a3, a4, a5, a6, xistar_inv, xi_inv, c, l_shift(size(ts%l))
+    real(dp_t) :: a0, a0hat, a1, a2, a3, a4, a5, a6, xistar_inv, xi_inv, c
 
-    ts%l  = 0
+    !ts%l  = 0
+    do o = 0, ts%max_order
+       ts%l(o) = 0
+    end do
     ts%tq = 0
 
     ! compute l vector
@@ -274,13 +250,15 @@ contains
           !explicit loop
           !  ts%l = ts%l + eoshift_local(ts%l, -1) / xi_j(ts%h, j)
           !l_shift = eoshift_local(ts%l, -1)
+          call eoshift_local(ts%l, -1, ts%shift)
           do o = 0, ts%max_order
-             ts%l(o) = ts%l(o) + l_shift(o) / xi_j(ts%h, j)
+             ts%l(o) = ts%l(o) + ts%shift(o) / xi_j(ts%h, j)
           end do
        end do
        !l_shift = eoshift_local(ts%l, -1)
+       call eoshift_local(ts%l, -1, ts%shift)
        do o = 0, ts%max_order
-          ts%l(o) = ts%l(o) + l_shift(o) * xi_star_inv(ts%k, ts%h)
+          ts%l(o) = ts%l(o) + ts%shift(o) * xi_star_inv(ts%k, ts%h)
        end do
     end if
 
@@ -325,7 +303,10 @@ contains
     integer :: i, j, m, p
     do i = 0, ts%k
        do p = 1, ts%npt
-          ts%z0(:,p,i) = 0
+          !ts%z0(:,p,i) = 0
+          do m = 1, ts%neq
+             ts%z0(m,p,i) = 0
+          end do
           do j = i, ts%k
              do m = 1, ts%neq
                 ts%z0(m,p,i) = ts%z0(m,p,i) + ts%A(i,j) * ts%z(m,p,j)
@@ -506,7 +487,6 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer :: i, m, p, o
-    real(dp_t) :: h_shift(size(ts%h))
 
     do i = 0, ts%k
        do p = 1, ts%npt
@@ -518,8 +498,9 @@ contains
 
     !ts%h     = eoshift_local(ts%h, -1)
     !h_shift = eoshift_local(ts%h, -1)
+    call eoshift_local(ts%h, -1, ts%shift)
     do o = 0, ts%max_order
-       ts%h(o) = h_shift(o)
+       ts%h(o) = ts%shift(o)
     end do
     ts%h(0)  = ts%dt
     ts%t     = ts%t + ts%dt
@@ -546,7 +527,8 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
-    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax, delta(ts%npt)
+    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax
+    real(dp_t) :: cxe1(ts%neq, ts%npt), emcxe1(ts%neq, ts%npt), delta(ts%npt)
     integer  :: p, m
 
     rescale = 0
@@ -563,7 +545,15 @@ contains
           end if
           if (ts%k < ts%max_order) then
              c = (ts%tq(2) / ts%tq2save) * (ts%h(0) / ts%h(2)) ** (ts%k+1)
-             error  = ts%tq(1) * norm(ts%e(:,p) - c * ts%e1(:,p), ts%ewt(:,p))
+             !error  = ts%tq(1) * norm(ts%e(:,p) - c * ts%e1(:,p), ts%ewt(:,p))
+             do m = 1, ts%neq
+                !NOTE: we have to calculate these temporary arrays because
+                !   the original code required an implicit allocation which is not
+                !   allowed on GPUs
+                cxe1(m,p) = c * ts%e1(m,p)
+                emcxe1(m,p) = ts%e(m,p) - cxe1(m,p)
+             end do
+             error  = ts%tq(1) * norm(emcxe1(:,p), ts%ewt(:,p))
              eta(1) = ONE / ( (10.d0 * error) ** (ONE / (ts%k+2)) + 1.d-6 )
           end if
           ts%k_age = 0
@@ -625,7 +615,7 @@ contains
     real(dp_t),   intent(in   ) :: y0(ts%neq, ts%npt), dt
     logical,      intent(in   ) :: reuse
     
-    integer :: p,m
+    integer :: p,m,o
     !interface
     !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
     !     !$acc routine seq
@@ -653,15 +643,24 @@ contains
     ts%n  = 1
     ts%k  = 1
 
-    ts%h        = ts%dt
+    !ts%h = ts%dt
+    do o = 0, ts%max_order
+       ts%h(o) = ts%dt
+    enddo
     ts%dt_nwt   = ts%dt
     ts%refactor = .true.
 
     call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
     ts%nfe = ts%nfe + 1
 
-    ts%z(:,:,0) = ts%y
-    ts%z(:,:,1) = ts%dt * ts%yd
+    !ts%z(:,:,0) = ts%y
+    !ts%z(:,:,1) = ts%dt * ts%yd
+    do p = 1, ts%npt
+       do m = 1, ts%neq
+          ts%z(m,p,0) = ts%y(m,p)
+          ts%z(m,p,1) = ts%dt * ts%yd(m,p)
+       end do
+    end do
 
     ts%k_age = 0
     if (.not. reuse) then
@@ -716,22 +715,34 @@ contains
   subroutine decrease_order(ts)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    integer  :: j, o
+    integer  :: j, o, p, m
     real(dp_t) :: c(0:6), c_shift(0:6)
 
     if (ts%k > 2) then
-       c = 0
+       do o = 0, 6
+          c(o) = 0
+       end do
        c(2) = 1
        do j = 1, ts%k-2
           !c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
           !c_shift = eoshift_local(c, -1)
+          call eoshift_local(c, -1, c_shift)
           do o = 0, 6
              c(o) = c_shift(o) + c(o) *  xi_j(ts%h, j)
           end do
        end do
 
        do j = 2, ts%k-1
-          ts%z(:,:,j) = ts%z(:,:,j) - c(j) * ts%z(:,:,ts%k)
+          !NOTE: We have to explicitly loop here because otherwise this breaks
+          !   on the GPUs.  Assignments of form array = array + expr often
+          !   require an implicit temporary array that Fortran or compilers generate in the
+          !   background.  Such an array must be allocated and is thus not OK
+          !   for GPUs.
+          do p = 1, ts%npt
+             do m = 1, ts%neq
+                ts%z(m,p,j) = ts%z(m,p,j) - c(j) * ts%z(m,p,ts%k)
+             end do
+          end do
        end do
     end if
 
@@ -753,6 +764,7 @@ contains
     do j = 1, ts%k-2
        !c = eoshift_local(c, -1) + c * xi_j(ts%h, j)
        !c_shift = eoshift_local(c, -1)
+       call eoshift_local(c, -1, c_shift)
        do o = 0, 6
           c(o) = c_shift(o) + c(o) * xi_j(ts%h, j)
        end do
@@ -873,7 +885,8 @@ contains
     real(dp_t),     intent(in   ) :: rtol(neq), atol(neq)
     real(dp_t),     intent(in   ) :: upar(:,:)
 
-    integer :: k, U(max_order+1, max_order+1), Uk(max_order+1, max_order+1)
+    integer :: U(max_order+1, max_order+1), Uk(max_order+1, max_order+1)
+    integer :: k, n
 
 
     allocate(ts%rtol(neq))
@@ -882,6 +895,7 @@ contains
     allocate(ts%z0(neq, npt, 0:max_order))
     allocate(ts%l(0:max_order))
     allocate(ts%h(0:max_order))
+    allocate(ts%shift(0:max_order))
     allocate(ts%A(0:max_order, 0:max_order))
     allocate(ts%P(neq, neq, npt))
     allocate(ts%J(neq, neq, npt))
@@ -911,8 +925,10 @@ contains
 
     ts%k = -1
 
-    ts%rtol = rtol
-    ts%atol = atol
+    do n = 1, neq
+       ts%rtol(n) = rtol(n)
+       ts%atol(n) = atol(n)
+    end do
 
     ts%J  = 0
     ts%P  = 0
@@ -938,7 +954,7 @@ contains
 
   subroutine bdf_ts_destroy(ts)
     type(bdf_ts), intent(inout) :: ts
-    deallocate(ts%h,ts%l,ts%ewt,ts%rtol,ts%atol)
+    deallocate(ts%h,ts%l,ts%shift,ts%ewt,ts%rtol,ts%atol)
     deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
     deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
     deallocate(ts%upar)
@@ -978,33 +994,39 @@ contains
   !
   ! A local, GPU-compiled version of intrinsic eoshift 
   ! Only what's needed for VBDF is implemented, also no
-  ! error-checking.
+  ! error-checking.  And we assume 0-based indexing for the arrays as all uses
+  ! of eoshift in bdf are with 0-based arrays.
   !
-  function eoshift_local(arr, sh) result(ret)
+  ! NOTE: Array-valued functions are NOT allowed on the GPU (in PGI at least), had to rewrite this
+  ! as a subroutine
+  !
+  subroutine eoshift_local(arr, sh, shifted_arr)
     !$acc routine seq
-    real(kind=dp_t), intent(in   ) :: arr(:)
+    real(kind=dp_t), intent(in   ) :: arr(0:)
     integer,         intent(in   ) :: sh
+    real(kind=dp_t), intent(  out) :: shifted_arr(0:)
     
-    !real(kind=dp_t), pointer :: ret(:)
-    real(kind=dp_t) :: ret(size(arr))
-    integer :: i
+    integer :: i, hi_arr, hi_shift
 
-    !No allocates on GPU! Delete this commented out code, keeping for reference for now
-    !allocate(ret(size(arr)))
-    ret = 0.0_dp_t
+    !TODO: These should be the same size, maybe do a consistency check here
+    hi_arr = size(arr) - 1
+    hi_shift = size(shifted_arr) - 1
 
-    if (sh == 0) then
-       return
-    else if(sh > 0) then
-       do i = 1, size(arr) - sh
-          ret(i) = arr(i+sh)
+    !shifted_arr = 0.0
+    do i = 0, hi_shift
+       shifted_arr(i) = 0.0
+    enddo
+
+    if(sh > 0) then
+       do i = 0, hi_arr - sh
+          shifted_arr(i) = arr(i+sh)
        enddo
-    else 
-       do i = size(arr), abs(sh), -1
-          ret(i) = arr(i+sh)
+    else if(sh < 0) then
+       do i = hi_arr, abs(sh), -1
+          shifted_arr(i) = arr(i+sh)
        enddo
     end if
-  end function eoshift_local
+  end subroutine eoshift_local
 
   !
   ! A local, GPU-compiled version of intrinsic minloc
@@ -1029,8 +1051,5 @@ contains
       endif
     enddo
   end function minloc
-
-
-
 
 end module bdf

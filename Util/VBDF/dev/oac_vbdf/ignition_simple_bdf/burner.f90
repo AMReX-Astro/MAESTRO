@@ -282,7 +282,7 @@ contains
                                                  !multiple values should be
                                                  !explored.
       !!Local variables 
-      integer :: n, i, npt, bdf_npt, ierr  ! npt is the size of the vectors
+      integer :: n, i, j, npt, bdf_npt, ierr, ierr_tot  ! npt is the size of the vectors
                                            !passed in, basically the number of
                                            !hydro cells. bdf_npt refers to bdf's
                                            !own notion of vectors, which we're
@@ -352,13 +352,22 @@ contains
       ! this, so this is just a temporary hack for the purposes of rapid GPU development.
       ! Also build array of vbdf time-stepper derived types.
       npt = size(dens)
+      bdf_npt = 1
+      ierr_tot = 0
       allocate(eos_cp(npt), eos_dhdX(nspec, npt))
       allocate(ts(npt))
       allocate(upar(n_rpar_comps, bdf_npt))
       allocate(y0(NEQ, bdf_npt), y1(NEQ, bdf_npt))
 
       print *, 'mark C'
-      !$acc enter data copyin(ts(:))
+      !$acc enter data create(ts)
+      !NOTE: We create ts and then update all members below (even scalar)
+      !      instead of, say, doing a copyin followed by updates.  This is
+      !      necessary because of how PGI implements these directives, and to
+      !      some extent it makes sense regardless of compiler.  Doing a copyin
+      !      and then updating serves to overwrite the device (GPU) pointer with
+      !      the host (CPU) pointer.  Once deep copy is widely implemented we
+      !      won't have to worry so much about this.
       do i = 1, npt
          ! we need the specific heat at constant pressure and dhdX |_p.  Take
          ! T, rho, Xin as input
@@ -371,46 +380,93 @@ contains
          eos_cp(i) = eos_state%cp
          eos_dhdX(:,i) = eos_state%dhdX(:)
 
-         !We need to build, allocate bdf_ts objects before the OpenACC region,
+         !We need to build and allocate bdf_ts objects before the OpenACC region,
          !because you cannot allocate within OpenACC regions.
 
          ! Build the bdf_ts time-stepper object
-         bdf_npt = 1
          call bdf_ts_build(ts(i), NEQ, bdf_npt, rtol, atol, MAX_ORDER, upar)
-         !Note: only need to copy in allocatables and pointers
-         !$acc enter data copyin(    &
-         !$acc    ts(i)%rtol(:),     &
-         !$acc    ts(i)%atol(:),     &
-         !$acc    ts(i)%tq(-1:2),    &
-         !$acc    ts(i)%J(:,:,:),    &
-         !$acc    ts(i)%P(:,:,:),    &
-         !$acc    ts(i)%z(:,:,:),    &
-         !$acc    ts(i)%z0(:,:,:),   &
-         !$acc    ts(i)%h(:),        &
-         !$acc    ts(i)%l(:),        &
-         !$acc    ts(i)%upar(:,:),   &
-         !$acc    ts(i)%y(:,:),      &
-         !$acc    ts(i)%yd(:,:),     &
-         !$acc    ts(i)%rhs(:,:),    &
-         !$acc    ts(i)%e(:,:),      &
-         !$acc    ts(i)%e1(:,:),     &
-         !$acc    ts(i)%ewt(:,:),    &
-         !$acc    ts(i)%b(:,:),      &
-         !$acc    ts(i)%ipvt(:,:),   &
-         !$acc    ts(i)%A(:,:))
+
+         !Now we update all non-dynamic data members, meaning those that aren't
+         !allocatables, pointers, etc.  They can be arrays as long as they're
+         !static.  To make my previous note more concrete, if we did something
+         !like `update device(ts(i))` it would overwrite the device's pointer
+         !address with that of the host, according to PGI/NVIDIA consults.
+         !Updating individual members avoids this.
+          
+         !$acc update device(       &
+         !$acc    ts(i)%neq,        &
+         !$acc    ts(i)%npt,        &
+         !$acc    ts(i)%max_order,  &
+         !$acc    ts(i)%max_steps,  &
+         !$acc    ts(i)%max_iters,  &
+         !$acc    ts(i)%verbose,    &
+         !$acc    ts(i)%dt_min,     &
+         !$acc    ts(i)%eta_min,    &
+         !$acc    ts(i)%eta_max,    &
+         !$acc    ts(i)%eta_thresh, &
+         !$acc    ts(i)%max_j_age,  &
+         !$acc    ts(i)%max_p_age,  &
+         !$acc    ts(i)%debug,      &
+         !$acc    ts(i)%dump_unit,  &
+         !$acc    ts(i)%t,          &
+         !$acc    ts(i)%t1,         &
+         !$acc    ts(i)%dt,         &
+         !$acc    ts(i)%dt_nwt,     &
+         !$acc    ts(i)%k,          &
+         !$acc    ts(i)%n,          &
+         !$acc    ts(i)%j_age,      &
+         !$acc    ts(i)%p_age,      &
+         !$acc    ts(i)%k_age,      &
+         !$acc    ts(i)%tq,         &
+         !$acc    ts(i)%tq2save,    &
+         !$acc    ts(i)%temp_data,  &
+         !$acc    ts(i)%refactor,   &
+         !$acc    ts(i)%nfe,        &
+         !$acc    ts(i)%nje,        &
+         !$acc    ts(i)%nlu,        &
+         !$acc    ts(i)%nit,        &
+         !$acc    ts(i)%nse,        &
+         !$acc    ts(i)%ncse,       &
+         !$acc    ts(i)%ncit,       &
+         !$acc    ts(i)%ncdtmin)
+
+         !Now it's time to deal with dynamic data.  At the moment, they only
+         !exist as pointers on the device.  For PGI at least, doing a copyin on
+         !dynamic data serves to create, allocate, and then attach each dynamic
+         !data member to the corresponding pointer in ts(i).
+         !$acc enter data copyin(   &
+         !$acc    ts(i)%rtol,       &
+         !$acc    ts(i)%atol,       &
+         !$acc    ts(i)%J,          &
+         !$acc    ts(i)%P,          &
+         !$acc    ts(i)%z(:,:,0:),  &
+         !$acc    ts(i)%z0(:,:,0:), &
+         !$acc    ts(i)%h(0:),      &
+         !$acc    ts(i)%l(0:),      &
+         !$acc    ts(i)%shift(0:),  &
+         !$acc    ts(i)%upar,       &
+         !$acc    ts(i)%y,          &
+         !$acc    ts(i)%yd,         &
+         !$acc    ts(i)%rhs,        &
+         !$acc    ts(i)%e,          &
+         !$acc    ts(i)%e1,         &
+         !$acc    ts(i)%ewt,        &
+         !$acc    ts(i)%b,          &
+         !$acc    ts(i)%ipvt,       &
+         !$acc    ts(i)%A(0:,0:))
       end do
       print *, 'mark D'
 
       !NOTE: The (:)'s are not necessary.  I'm putting them here just for 
       !      clarity about the shape.
       !$acc data                                                               &
-      !$acc copyin(dens(:), temp(:), eos_cp(:), eos_dhdX(:), Xin(:,:))         &
+      !$acc copyin(dens(:), temp(:), eos_cp(:), eos_dhdX(:,:), Xin(:,:))       &
       !$acc create(y(:), y0(:,:), y1(:,:))                                     &
       !$acc copyout(Xout(:,:), rho_omegadot(:,:), rho_Hnuc(:)) 
 
       !$acc parallel loop gang vector present(dens, temp, eos_cp, eos_dhdX,    &
       !$acc    Xin, y, y0, y1, Xout, rho_omegadot, rho_Hnuc, ebin, ts)         &
-      !$acc    reduction(+:ierr)
+      !$acc    private(ierr) reduction(+:ierr_tot)
       do i = 1, npt
          ! abundances are the first nspec_advance values and temperature is the last
          y(ic12) = Xin(ic12,i)
@@ -427,16 +483,29 @@ contains
          ! Mg24 abundance is constraint so things add to 1).
          ts(i)%upar(irp_dens,1) = dens(i)
          ts(i)%upar(irp_cp,1)   = eos_cp(i)
-         ts(i)%upar(irp_dhdX:irp_dhdX-1+nspec,1) = eos_dhdX(:,i)
+         !ts(i)%upar(irp_dhdX:irp_dhdX-1+nspec,1) = eos_dhdX(:,i)
+         j=1
+         do n = irp_dhdX, irp_dhdX-1+nspec
+            !We replace the array notation assignment commented out above
+            !because such operations often cause errors on GPU.
+            ts(i)%upar(n,1) = eos_dhdX(j,i)
+            j = j + 1
+         end do
          ts(i)%upar(irp_o16,1)  = Xin(io16,i)
 
-         y0(:,1) = y
+         !y0(:,1) = y
+         do n = 1, NEQ
+            y0(n,1) = y(n)
+         end do
          t0 = ZERO
          t1 = dt
          call bdf_advance(ts(i), NEQ, bdf_npt, y0, t0, y1, t1, &
                           DT0, RESET, REUSE, ierr, .true.)
-         y = y1(:,1)
-
+         !y = y1(:,1)
+         do n = 1, NEQ
+            y(n) = y1(n,1)
+         end do
+         ierr_tot = ierr_tot + ierr
 
          ! store the new mass fractions -- note, we discard the temperature
          ! here and instead compute the energy release from the binding
@@ -468,13 +537,13 @@ contains
          !$acc exit data delete(     &
          !$acc    ts(i)%rtol(:),     &
          !$acc    ts(i)%atol(:),     &
-         !$acc    ts(i)%tq(-1:2),    &
          !$acc    ts(i)%J(:,:,:),    &
          !$acc    ts(i)%P(:,:,:),    &
          !$acc    ts(i)%z(:,:,:),    &
          !$acc    ts(i)%z0(:,:,:),   &
          !$acc    ts(i)%h(:),        &
          !$acc    ts(i)%l(:),        &
+         !$acc    ts(i)%shift(:),    &
          !$acc    ts(i)%upar(:,:),   &
          !$acc    ts(i)%y(:,:),      &
          !$acc    ts(i)%yd(:,:),     &
@@ -485,6 +554,7 @@ contains
          !$acc    ts(i)%b(:,:),      &
          !$acc    ts(i)%ipvt(:,:),   &
          !$acc    ts(i)%A(:,:))
+ 
          call bdf_ts_destroy(ts(i))
       end do
 
@@ -493,9 +563,11 @@ contains
      
       !$acc end data 
       print *, 'mark F'
-      if (ierr /= BDF_ERR_SUCCESS) then
+      !TODO: Here I'm using fact I know success is 0, need to update this since
+      !      we're looping over cells and have ierr_tot now instead of single ierr
+      if (ierr_tot /= BDF_ERR_SUCCESS) then
          print *, 'ERROR: integration failed'
-         print *, 'sum(ierr) for all GPU threads: ', ierr
+         print *, 'sum(ierr) for all GPU threads: ', ierr_tot
          call  bl_error("ERROR in burner: integration failed")
       endif
 

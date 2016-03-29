@@ -17,7 +17,7 @@ The basic algorithm:
       1)Mode 1: No burning and no heating.  We should expect H_nuc and H_ext to be 
                 0 everywhere.
       2)Mode 2: Burning is turned on and heating off.  We expect H_ext to be 0 everywhere.
-      3)Mode 3: Heating is turned on and burning off.  We expect H_nux to be 0 everywhere.
+      3)Mode 3: Heating is turned on and burning off.  We expect H_nuc to be 0 everywhere.
                 External heating is implemented as a simple Gaussian at the center of the
                 grid.
       4)Mode 4: Burning and heating are both on.  H_nuc and H_ext should be non-zero.

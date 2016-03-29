@@ -1,10 +1,11 @@
-NDEBUG := t
-MPI    := t
-OMP    := t
+NDEBUG :=
+MPI    :=
+OMP    :=
 ACC    := t
 
 #COMP := Cray
-COMP := PGI
+#COMP := PGI
+COMP := gfortran
 
 MKVERBOSE := t
 
