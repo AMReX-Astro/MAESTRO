@@ -57,10 +57,8 @@ c
 c
 c     gaussian elimination with partial pivoting
 c
-!$acc parallel
       info = 0
       nm1 = n - 1
-!$acc end parallel
       if (nm1 .lt. 1) goto 70
       do k = 1, nm1
          kp1 = k + 1
