@@ -146,9 +146,9 @@ contains
     !linitial = initial_call
 
     if (reset) call bdf_reset(ts, y0, dt0, reuse)
-    do m=1,2
-       ts%temp_data(m,1) = ts%y(m,1)
-    end do
+    !do m=1,2
+    !   ts%temp_data(m,1) = y0(m,1)
+    !end do
 
     ierr = BDF_ERR_SUCCESS
 

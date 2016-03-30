@@ -461,16 +461,19 @@ contains
       !      clarity about the shape.
       !$acc data                                                               &
       !$acc copyin(dens(:), temp(:), eos_cp(:), eos_dhdX(:,:), Xin(:,:))       &
-      !$acc create(y(:), y0(:,:), y1(:,:))                                     &
       !$acc copyout(Xout(:,:), rho_omegadot(:,:), rho_Hnuc(:)) 
 
       !$acc parallel loop gang vector present(dens, temp, eos_cp, eos_dhdX,    &
-      !$acc    Xin, y, y0, y1, Xout, rho_omegadot, rho_Hnuc, ebin, ts)         &
-      !$acc    private(ierr) reduction(+:ierr_tot)
+      !$acc    Xin, Xout, rho_omegadot, rho_Hnuc, ebin, ts)         &
+      !$acc    private(ierr, y, y0, y1) reduction(+:ierr_tot)
       do i = 1, npt
          ! abundances are the first nspec_advance values and temperature is the last
          y(ic12) = Xin(ic12,i)
          y(nspec_advance+1) = temp(i)
+         if (i==32) then
+            ts(i)%temp_data(1,1) = Xin(ic12,i)
+            ts(i)%temp_data(2,1) = temp(i)
+         endif
          
          ! density, specific heat at constant pressure, c_p, and dhdX are needed
          ! in the righthand side routine, so we will pass these in through the
