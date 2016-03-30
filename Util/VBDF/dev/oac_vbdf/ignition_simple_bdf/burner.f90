@@ -529,9 +529,10 @@ contains
          enddo
 
          rho_Hnuc(i) = dens(i)*enuc/dt
+         !rho_Hnuc(i) = 3.25 
       end do
 
-      print *, 'mark E'
+      !$acc update host(ts(32)%temp_data)
       ! Cleanup
       do i=1, npt
          !$acc exit data delete(     &
@@ -562,6 +563,11 @@ contains
       !$acc exit data delete(ts(:))
      
       !$acc end data 
+      print *, 'Xout:         ', Xout(io16,32)
+      print *, 'rho_omegadot: ', rho_omegadot(io16,32)
+      print *, 'rho_Hnuc:     ', rho_Hnuc(32)
+      print *, 'ierr_tot:     ', ierr_tot
+      print *, 'temp_data:    ', ts(32)%temp_data
       print *, 'mark F'
       !TODO: Here I'm using fact I know success is 0, need to update this since
       !      we're looping over cells and have ierr_tot now instead of single ierr

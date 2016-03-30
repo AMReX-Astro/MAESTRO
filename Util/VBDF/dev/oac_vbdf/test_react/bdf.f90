@@ -79,7 +79,8 @@ module bdf
      real(dp_t) :: tq2save
      !real(dp_t) :: temp_data
      !real(dp_t) :: temp_data(3,1,0:3) !z-like, if max_order=3
-     real(dp_t) :: temp_data(0:3)      !l-like, if max_order=3
+     !real(dp_t) :: temp_data(0:3)     !l-like, if max_order=3
+     real(dp_t) :: temp_data(2,1)
      logical  :: refactor
 
      real(dp_t), allocatable :: J(:,:,:)        ! Jacobian matrix
@@ -145,6 +146,9 @@ contains
     !linitial = initial_call
 
     if (reset) call bdf_reset(ts, y0, dt0, reuse)
+    do m=1,2
+       ts%temp_data(m,1) = ts%y(m,1)
+    end do
 
     ierr = BDF_ERR_SUCCESS
 
@@ -161,9 +165,6 @@ contains
 
        call bdf_update(ts)                ! update various coeffs (l, tq) based on time-step history
        call bdf_predict(ts)               ! predict nordsieck array using pascal matrix
-       do m=0,3
-          ts%temp_data(m) = ts%l(m)
-       end do
        !if(linitial .and. k == 1) then
        !   !This is the initial solve, so use the user's initial value, 
        !   !not the predicted value.

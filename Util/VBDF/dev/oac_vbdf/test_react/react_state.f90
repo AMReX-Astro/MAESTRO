@@ -952,6 +952,7 @@ contains
     y_size = (hi(2) - lo(2) + 1)
     z_size = (hi(3) - lo(3) + 1)
     vec_size = x_size * y_size * z_size
+    print *, 'vector size: ', vec_size
     allocate(    rho(vec_size))
     allocate(   T_in(vec_size))
     allocate(   x_in(nspec,vec_size))
