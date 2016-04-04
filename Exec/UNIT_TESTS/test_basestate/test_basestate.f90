@@ -149,7 +149,7 @@ contains
         eos_state%T     = s0(r,temp_comp)
         eos_state%xn(:) = s0(r,spec_comp:spec_comp-1+nspec)/s0(r,rho_comp)
 
-        call eos(eos_input_rt, eos_state, .false.)
+        call eos(eos_input_rt, eos_state)
 
         Sbar(r) = Hbar(r) * eos_state%dpdt / (eos_state%rho * eos_state%cp * eos_state%dpdr)
 

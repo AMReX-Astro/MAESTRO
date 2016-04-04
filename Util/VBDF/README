@@ -18,10 +18,13 @@ orig.bdf.f90: The original bdf from Combustion, written by Matthew
 
 mae.bdf.f90 : A modified version of the original that uses
               BoxLib/Maestro conventions and source, modified by
-	      Adam Jacobs
+	           Adam Jacobs
 
 vec.bdf.f90 : A further modified version that fully vectorized the
               state object that tracks bdf data.  Developed
-	      by Adam Jacobs
+	           by Adam Jacobs
+
+oac.bdf.f90 : A version with OpenACC directives, enabling the integrator to be
+              run on co-processors like GPUs. Developed by Adam Jacobs.
 
 bdf.f90     : The version that will be used when you compile.

@@ -1,3 +1,0 @@
-# use the Coulomb corrections between ions (if supported by the EOS)
-use_eos_coulomb                     logical            .true.       
-

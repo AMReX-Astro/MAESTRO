@@ -231,7 +231,7 @@ contains
 
        pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state, pt_index)
 
        if (enthalpy_pred_type .eq. predict_T_then_h .or. &
            enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -317,7 +317,7 @@ contains
            
           pt_index(:) = (/i, j, -1/)
           
-          call eos(eos_input_rt, eos_state, .false., pt_index)
+          call eos(eos_input_rt, eos_state, pt_index)
            
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -370,7 +370,7 @@ contains
 
           pt_index(:) = (/i, j, -1/)
           
-          call eos(eos_input_rt, eos_state, .false., pt_index)
+          call eos(eos_input_rt, eos_state, pt_index)
            
           if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -460,7 +460,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -516,7 +516,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -572,7 +572,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -661,7 +661,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -719,7 +719,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -776,7 +776,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
 
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              if (enthalpy_pred_type .eq. predict_T_then_h .or. &
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
@@ -893,7 +893,7 @@ contains
 
           pt_index(:) = (/i, -1, -1/)
 
-          call eos(eos_input_re, eos_state, .false., pt_index)
+          call eos(eos_input_re, eos_state, pt_index)
           
           state(i,temp_comp) = eos_state%T
 
@@ -913,7 +913,7 @@ contains
 
           pt_index(:) = (/i, -1, -1/)
 
-          call eos(eos_input_rh, eos_state, .false., pt_index)
+          call eos(eos_input_rh, eos_state, pt_index)
           
           state(i,temp_comp) = eos_state%T
 
@@ -960,7 +960,7 @@ contains
 
              pt_index(:) = (/i, j, -1/)
           
-             call eos(eos_input_re, eos_state, .false., pt_index)
+             call eos(eos_input_re, eos_state, pt_index)
           
              state(i,j,temp_comp) = eos_state%T
           
@@ -982,7 +982,7 @@ contains
 
              pt_index(:) = (/i, j, -1/)
           
-             call eos(eos_input_rh, eos_state, .false., pt_index)
+             call eos(eos_input_rh, eos_state, pt_index)
           
              state(i,j,temp_comp) = eos_state%T
           
@@ -1032,7 +1032,7 @@ contains
                 
                 pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_re, eos_state, .false., pt_index)
+                call eos(eos_input_re, eos_state, pt_index)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1058,7 +1058,7 @@ contains
                 
                 pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_rh, eos_state, .false., pt_index)
+                call eos(eos_input_rh, eos_state, pt_index)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1116,7 +1116,7 @@ contains
                 
                 pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_re, eos_state, .false., pt_index)
+                call eos(eos_input_re, eos_state, pt_index)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1144,7 +1144,7 @@ contains
                 
                 pt_index(:) = (/i, j, k/)
              
-                call eos(eos_input_rh, eos_state, .false., pt_index)
+                call eos(eos_input_rh, eos_state, pt_index)
              
                 state(i,j,k,temp_comp) = eos_state%T
              
@@ -1257,7 +1257,7 @@ contains
 
        pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rp, eos_state, .false., pt_index)
+       call eos(eos_input_rp, eos_state, pt_index)
 
        state(i,temp_comp) = eos_state%T
 
@@ -1302,7 +1302,7 @@ contains
 
           pt_index(:) = (/i, j, -1/)
           
-          call eos(eos_input_rp, eos_state, .false., pt_index)
+          call eos(eos_input_rp, eos_state, pt_index)
           
           state(i,j,temp_comp) = eos_state%T
           
@@ -1351,7 +1351,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
              
              state(i,j,k,temp_comp) = eos_state%T
              
@@ -1406,7 +1406,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
              
              state(i,j,k,temp_comp) = eos_state%T
              
@@ -1517,7 +1517,7 @@ contains
 
        pt_index(:) = (/i, -1, -1/)
        
-       call eos(eos_input_rh, eos_state, .false., pt_index)
+       call eos(eos_input_rh, eos_state, pt_index)
        
        peos(i) = eos_state%p
        
@@ -1557,7 +1557,7 @@ contains
 
           pt_index(:) = (/i, j, -1/)
 
-          call eos(eos_input_rh, eos_state, .false., pt_index)
+          call eos(eos_input_rh, eos_state, pt_index)
 
           peos(i,j) = eos_state%p
 
@@ -1601,7 +1601,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rh, eos_state, .false., pt_index)
+             call eos(eos_input_rh, eos_state, pt_index)
              
              peos(i,j,k) = eos_state%p
              
@@ -1714,7 +1714,7 @@ contains
        endif
        pt_index(:) = (/i, -1, -1/)
 
-       call eos(eos_input_rp, eos_state, .false., pt_index)
+       call eos(eos_input_rp, eos_state, pt_index)
 
        s(i,rhoh_comp) = eos_state%rho*eos_state%h
        s(i,temp_comp) = eos_state%T
@@ -1757,7 +1757,7 @@ contains
 
           pt_index(:) = (/i, j, -1/)
 
-          call eos(eos_input_rp, eos_state, .false., pt_index)
+          call eos(eos_input_rp, eos_state, pt_index)
 
           s(i,j,rhoh_comp) = eos_state%rho*eos_state%h
           s(i,j,temp_comp) = eos_state%T
@@ -1803,7 +1803,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
              
              s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
              s(i,j,k,temp_comp) = eos_state%T
@@ -1857,7 +1857,7 @@ contains
 
              pt_index(:) = (/i, j, k/)
              
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
              
              s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
              s(i,j,k,temp_comp) = eos_state%T

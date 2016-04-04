@@ -110,7 +110,7 @@ contains
        pt_index(:) = (/i, -1, -1/)
 
        ! dens, pres, and xmass are inputs
-       call eos(eos_input_rp, eos_state, .false., pt_index)
+       call eos(eos_input_rp, eos_state, pt_index)
 
        gamma(i) = eos_state%gam1
 
@@ -152,7 +152,7 @@ contains
           pt_index(:) = (/i, j, -1/)
 
           ! dens, pres, and xmass are inputs
-          call eos(eos_input_rp, eos_state, .false., pt_index)
+          call eos(eos_input_rp, eos_state, pt_index)
 
           gamma(i,j) = eos_state%gam1
 
@@ -198,7 +198,7 @@ contains
              pt_index(:) = (/i, j, k/)
 
              ! dens, pres, and xmass are inputs
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
 
              gamma(i,j,k) = eos_state%gam1
 
@@ -252,7 +252,7 @@ contains
              pt_index(:) = (/i, j, k/)
 
              ! dens, pres, and xmass are inputs
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
 
              gamma(i,j,k) = eos_state%gam1
 

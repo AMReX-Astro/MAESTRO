@@ -874,7 +874,7 @@ contains
                 eos_state%rho   = s(i,j,k,rho_comp)
                 eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                call eos(eos_input_rt, eos_state, .false.)
+                call eos(eos_input_rt, eos_state)
 
                 ! max vel and Mach number
                 U_max = max(U_max,vel)
