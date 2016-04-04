@@ -10,7 +10,7 @@ module burner_module
    use parallel
    
    private
-   public :: burner_vec
+   public :: burner, burner_vec
 
    integer, public, save :: nst = 0
    integer, public, save :: nfe = 0
@@ -19,6 +19,39 @@ module burner_module
    integer, public, save :: nit = 0
 
 contains
+   
+   subroutine burner(dens, temp, Xin, dt, Xout, rho_omegadot, rho_Hnuc)
+
+      ! A wrapper for compatibility purposes
+      ! outputs:
+      !   Xout are the mass fractions after burning through timestep dt
+      !   rho_omegadot = rho dX/dt
+      !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s]
+
+      use rpar_indices
+      use bdf
+
+      implicit none
+
+      !!Arguments
+      real(kind=dp_t), intent(in   ) :: dens, temp, Xin(:), dt
+      real(kind=dp_t), intent(  out) :: Xout(:), rho_omegadot(:), rho_Hnuc
+
+      real(kind=dp_t) :: dens_arr(1), temp_arr(1), Xin_arr(nspec,1)
+      real(kind=dp_t) :: Xout_arr(nspec,1), rho_omegadot_arr(nspec,1), rho_Hnuc_arr(1)
+
+      dens_arr(1) = dens
+      temp_arr(1) = temp
+      Xin_arr(:,1) = Xin(:)
+
+      call burner_vec(dens_arr, temp_arr, Xin_arr, dt, Xout_arr, &
+                      rho_omegadot_arr, rho_Hnuc_arr)
+      
+      Xout(:) = Xout_arr(:,1)
+      rho_omegadot(:) = rho_omegadot_arr(:,1)
+      rho_Hnuc = rho_Hnuc_arr(1)
+
+   end subroutine burner
 
    subroutine burner_vec(dens, temp, Xin, dt, Xout, rho_omegadot, rho_Hnuc)
 
@@ -116,7 +149,7 @@ contains
          eos_state%T     = temp(i)
          eos_state%xn(:) = Xin(:,i)
             
-         call eos(eos_input_rt, eos_state, .false.)
+         call eos(eos_input_rt, eos_state)
 
          eos_cp(i) = eos_state%cp
          eos_dhdX(:,i) = eos_state%dhdX(:)

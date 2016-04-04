@@ -11,11 +11,10 @@ MKVERBOSE := t
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
 # define the physics packages to build this problem
-MICROPHYSICS_DIR := $(MAESTRO_HOME)/Microphysics
+MICROPHYSICS_DIR := $(HOME)/Codebase/Microphysics
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
-NETWORK_TOP_DIR := $(MICROPHYSICS_DIR)/networks
 NETWORK_DIR := ignition_simple_bdf
 #NETWORK_DIR := rprox_vbdf
 
