@@ -33,7 +33,7 @@ contains
     integer        , intent(in   )        :: bc_comp
     type(multifab) , intent(in   )        :: alpha(:), beta(:,:)
     type(multifab) , intent(inout)        ::    rh(:),  phi(:)
-    type(bndry_reg), intent(inout)        :: fine_flx(2:)
+    type(bndry_reg), intent(inout)        :: fine_flx(:)
     real(dp_t)     , intent(in   )        :: rel_solver_eps 
     real(dp_t)     , intent(in   )        :: abs_solver_eps 
 

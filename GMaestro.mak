@@ -5,11 +5,16 @@ NEED := 3.81
 OK := $(filter $(NEED),$(firstword $(sort $(MAKE_VERSION) $(NEED))))
 
 ifndef OK
-  $(error your version of GNU make is too old.  You need atleast version $(NEED))
+   $(error your version of GNU make is too old.  You need atleast version $(NEED))
 endif
 
-ifeq ($(findstring ~, $(BOXLIB_HOME)), ~)
-   $(error you cannot include the ~ character in your BOXLIB_HOME variable)
+# Make sure we have BoxLib and that the build system will find it
+ifdef BOXLIB_HOME
+   ifeq ($(findstring ~, $(BOXLIB_HOME)), ~)
+      $(error you cannot include the ~ character in your BOXLIB_HOME variable)
+   endif
+else
+   $(error Maestro requires BoxLib. Please ensure that you have downloaded it and set $$BOXLIB_HOME appropriately)
 endif
 
 # include the main Makefile stuff

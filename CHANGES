@@ -4,7 +4,7 @@ changes since last merge with master:
    equation of state in the separate Microphysics/ repo.  This
    allows for code reuse with other BoxLib astro codes.
 
-   Also with this change, the follows EOS changes were inherited:
+   Also with this change, the following EOS changes were inherited:
 
    * The minimum temperature allowable in the EOS is now a separately
      saved variable in the EOS structure and is strictly enforced by

@@ -108,3 +108,7 @@ test_react/
   ----> xinGen.py      - Python script for generating mass fraction input files.  The generated file can be pointed
                          to by setting the 'xin_file' parameter to the name of the file.
 
++TODO
+-------------------------
+- It would be nice to have this run with varying dimensionality and geometry.
+  Effectively, only one burner loop gets exercised as it currently stands.
