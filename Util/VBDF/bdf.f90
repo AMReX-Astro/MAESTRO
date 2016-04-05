@@ -21,13 +21,10 @@
 module bdf
 
   use bl_types
-  !use bl_error_module
   use bl_constants_module
-  !use parallel
 
   implicit none
 
-  !TODO: Lowered iters for dev, change back
   integer, parameter :: bdf_max_iters = 666666666
 
   integer, parameter :: BDF_ERR_SUCCESS  = 0
@@ -99,18 +96,18 @@ module bdf
      real(dp_t), allocatable :: e1(:,:)         ! accumulated correction, previous step
      real(dp_t), allocatable :: ewt(:,:)        ! cached error weights
      real(dp_t), allocatable :: b(:,:)          ! solver work space
-     integer,    allocatable :: ipvt(:,:)         ! pivots (neq,npts)
-     integer,    allocatable :: A(:,:)            ! pascal matrix
+     integer,    allocatable :: ipvt(:,:)       ! pivots (neq,npts)
+     integer,    allocatable :: A(:,:)          ! pascal matrix
 
      ! counters
-     integer :: nfe                         ! number of function evaluations
-     integer :: nje                         ! number of Jacobian evaluations
-     integer :: nlu                         ! number of factorizations
-     integer :: nit                         ! number of non-linear solver iterations
-     integer :: nse                         ! number of non-linear solver errors
-     integer :: ncse                        ! number of consecutive non-linear solver errors
-     integer :: ncit                        ! number of current non-linear solver iterations
-     integer :: ncdtmin                     ! number of consecutive times we tried to shrink beyond the minimum time step
+     integer :: nfe                             ! number of function evaluations
+     integer :: nje                             ! number of Jacobian evaluations
+     integer :: nlu                             ! number of factorizations
+     integer :: nit                             ! number of non-linear solver iterations
+     integer :: nse                             ! number of non-linear solver errors
+     integer :: ncse                            ! number of consecutive non-linear solver errors
+     integer :: ncit                            ! number of current non-linear solver iterations
+     integer :: ncdtmin                         ! number of consecutive times we tried to shrink beyond the minimum time step
 
   end type bdf_ts
 
@@ -127,7 +124,6 @@ contains
   !
   ! Advance system from t0 to t1.
   !
-  !subroutine bdf_advance(ts, f, Jac, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
   subroutine bdf_advance(ts, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
