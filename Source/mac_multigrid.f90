@@ -27,7 +27,7 @@ contains
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: rh(:),phi(:)
-    type(bndry_reg), intent(inout) :: fine_flx(2:)
+    type(bndry_reg), intent(inout) :: fine_flx(:)
     type(multifab) , intent(in   ) :: alpha(:), beta(:,:)
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
