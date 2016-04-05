@@ -10,8 +10,12 @@ MKVERBOSE := t
 # define the location of the MAESTRO top directory
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
+# this unit test requires the Microphysics repo -- make sure we have it
+ifndef MICROPHYSICS_DIR
+   $(error test_react requires the Microphysics repo. Please ensure that you have downloaded it and set $$MICROPHYSICS_DIR appropriately)
+endif
+
 # define the physics packages to build this problem
-MICROPHYSICS_DIR := $(HOME)/Codebase/Microphysics
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
