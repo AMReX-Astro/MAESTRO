@@ -188,7 +188,7 @@ contains
                    eos_state%rho   = dens_zone
                    eos_state%xn(:) = xn_zone(:,kk)
                    
-                   call eos(eos_input_rt, eos_state, .false.)
+                   call eos(eos_input_rt, eos_state)
     
                    !Initialize this element of the state
                    sp(ii,jj,kk,rho_comp)                    = dens_zone

@@ -284,7 +284,7 @@ Subtracting it from the full enthalpy equation gives:
 
 
 \section{Time Advancement Algorithm}\label{Sec:Time Advancement Algorithm}
-Here is the current description of the algorithm, based from the
+Here is the current description of the algorithm, based on the
 description in the multilevel paper.  The initialization has also been
 included with more detail than was given in paper III.  The main
 driver for a single step of the algorithm is \code{advance.f90}---refer
@@ -292,7 +292,9 @@ to that code to see the sequence of functions called to implement each
 step.
 
 
-\subsection{Notation}
+\subsection{Definitions}
+Below we define operations that will be referenced in
+\S~\ref{sec:flow:singlestep}.
 
 \begin{itemize}
 \item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp},                                                      
@@ -320,6 +322,8 @@ T(\rho^\outp,p_0^\inp,X_k^\outp)$ for spherical geometry, with this behavior
 controlled by \runparam{use\_tfromp}.
 Note that the density remains unchanged within {\bf React State}, i.e.,
 $\rho^{\outp} = \rho^{\inp}$.
+
+The source code for this operation can be found in \code{react\_state.f90}.
 
 
 \item {\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp] \rightarrow
@@ -352,6 +356,9 @@ $\rho^{\outp} = \rho^{\inp}$.
 \end{equation}
 \end{description}
 
+The source code for this operation can be found in \code{advect\_base.f90}.
+
+
 \item {\bf Enforce HSE}$[p_0^{\inp},\rho_0^{\inp}]
   \rightarrow [p_0^{\outp}]$ has replaced {\bf Advect Base Pressure}
   from Paper III as the process by which we update the base state
@@ -368,6 +375,8 @@ p_{0,j+1}^{\outp} = p_{0,j}^{\outp} + \Delta r g_{j+\myhalf}\frac{\left(\rho_{0,
   every element in $p_0^\outp$ so that $p_{0,j_{\rm max}}^\outp = p_{0,j_{\rm max}}^\inp$.  
   We are effectively using the location where the $\rho_0^\inp$ drops below 
   $\rho_{\rm cutoff}$ as the starting point for integration.
+
+The source code for this operation can be found in \code{enforce\_HSE.f90}.
 
 
 \item {\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0^\outp]$
@@ -396,6 +405,9 @@ source terms, to compute the new base state enthalpy,
 \frac{\partial (\rho h)_0}{\partial t} + w_0 \frac{\partial (\rho h)_0}{\partial r} = -(\rho h)_0 \frac{\partial w_0}{\partial r} - \frac{2 (\rho h)_0 w_0}{r} + \psi.
 \end{equation}
 \end{description}
+
+The source code for this operation can be found in \code{advect\_base.f90}. 
+
 
 \item {\bf Computing {\boldmath $w_0$}}\label{Sec:Computing w0}
 Here we describe the process by which we compute $w_0$.  The arguments 
@@ -433,9 +445,10 @@ We solve this equation for $w_0$ as described in Appendix~B of the multilevel pa
 
 \end{description}
 
+The source code for this operation can be found in \code{make\_w0.f90}.
 \end{itemize}
 
-\subsection{Single Step}
+\subsection{\label{sec:flow:singlestep} Single Step}
 
 
 \begin{description}\itemsep 1em

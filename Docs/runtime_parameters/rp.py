@@ -58,11 +58,12 @@ Mfooter=r"""
 """
 
 fParallel="../../.."
-paramFile=fParallel + "/MAESTRO/Source/_parameters"
+param_file=fParallel + "/MAESTRO/Source/_parameters"
 
 
-# container class for the parameters
-class Parameter:
+class Parameter(object):
+    # container class for the parameters
+    
     def __init__(self):
         self.var=""
         self.default=""
@@ -80,28 +81,28 @@ class Parameter:
 def make_tex_table():
 
     # open the file
-    try: f = open(paramFile, "r")
+    try: f = open(param_file, "r")
     except IOError:
-        print "ERROR: %s does not exist" % paramFile
+        print "ERROR: %s does not exist" % param_file
         sys.exit(2)
 
     # local storage for the parameters
-    paramsList=[]
+    params_list=[]
     descr=r""
     category=""
 
     # read in the file
     # skip all lines before the first empty line
-    foundFirstParam = False
+    found_first_param = False
 
     line = f.readline()
-    while (line):
+    while line:
 
-        if not foundFirstParam:
+        if not found_first_param:
             if line.isspace():
                 # this is the first empty line and we begin reading the file 
                 # from here on out
-                foundFirstParam = True
+                found_first_param = True
                 line = f.readline()
                 continue
 
@@ -110,7 +111,7 @@ def make_tex_table():
             continue
 
         # land here once we have found the first parameter
-        currentParam = Parameter()
+        current_param = Parameter()
         
         # skip blank lines
         if line.isspace(): 
@@ -128,9 +129,8 @@ def make_tex_table():
 
             # following this is another #---------
             line = f.readline()
-            if (not line.startswith("#------")):
-                print "ERROR: category block not formatted correctly"
-                sys.exit(2)
+            if not line.startswith("#------"):
+                sys.exit("ERROR: category block not formatted correctly")
 
             line = f.readline()
             continue
@@ -147,19 +147,17 @@ def make_tex_table():
 
             lineList = line.split()
 
-            currentParam.var=lineList[0]
-            currentParam.default=lineList[2].replace("_","\_")
-            currentParam.description=descr
-            currentParam.category=category
+            current_param.var=lineList[0]
+            current_param.default=lineList[2].replace("_","\_")
+            current_param.description=descr
+            current_param.category=category
 
             descr=r""
 
         
         # store the current parameter in the list
-        paramsList.append(currentParam)
+        params_list.append(current_param)
         
-        
-        # get the next line
         line = f.readline()
 
     
@@ -167,22 +165,22 @@ def make_tex_table():
     print Mheader
 
     # sort the parameters and dump them in latex-fashion.  Group things by category
-    currentCategory = ""
+    current_category = ""
     start = 1
 
-    for param in sorted(paramsList):
+    for param in sorted(params_list):
 
-        if (not param.category == currentCategory):
-            if (not start == 1):
+        if not param.category == current_category:
+            if not start == 1:
                 print footer
 
-            currentCategory = param.category
+            current_category = param.category
             odd = 1
-            catHeader = header.replace("@@catname@@", param.category + " parameters.")
-            print catHeader
+            cat_header = header.replace("@@catname@@", param.category + " parameters.")
+            print cat_header
             start = 0
 
-        if (odd == 1):
+        if odd == 1:
             print "\\rowcolor{tableShade}"
             odd = 0
         else:

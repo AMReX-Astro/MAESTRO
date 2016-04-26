@@ -20,7 +20,7 @@ program init_1d
   use bl_constants_module
   use bl_error_module
   use eos_module, only: eos_input_rt, eos, eos_init
-  use eos_type_module
+  use eos_type_module, only: eos_t
   use extern_probin_module, only: use_eos_coulomb
   use network, only : nspec, network_species_index, spec_names, network_init
 
