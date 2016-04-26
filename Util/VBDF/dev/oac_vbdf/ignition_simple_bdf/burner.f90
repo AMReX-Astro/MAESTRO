@@ -184,7 +184,7 @@ contains
     eos_state%T     = temp
     eos_state%xn(:) = Xin(:)
        
-    call eos(eos_input_rt, eos_state, .false.)
+    call eos(eos_input_rt, eos_state)
 
     ! density, specific heat at constant pressure, c_p, and dhdX are needed
     ! in the righthand side routine, so we will pass these in through the
@@ -375,7 +375,7 @@ contains
          eos_state%T     = temp(i)
          eos_state%xn(:) = Xin(:,i)
             
-         call eos(eos_input_rt, eos_state, .false.)
+         call eos(eos_input_rt, eos_state)
 
          eos_cp(i) = eos_state%cp
          eos_dhdX(:,i) = eos_state%dhdX(:)
