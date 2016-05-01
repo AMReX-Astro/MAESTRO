@@ -33,6 +33,12 @@ module network
   integer, parameter :: nspec_advance = 1
   integer, parameter :: naux  = 0
 
+  ! These indices are intended only for internal network usage.  
+  ! External program units should use network_species_index()
+  integer, parameter :: ic12_  = 1
+  integer, parameter :: io16_  = 2
+  integer, parameter :: img24_ = 3
+
   character (len=16), save :: spec_names(nspec) 
   character (len= 5), save :: short_spec_names(nspec)
   character (len= 5), save :: short_aux_names(naux)
@@ -45,9 +51,6 @@ module network
 contains
   
   subroutine network_init()
-
-    use network_indices
-    use rpar_indices
 
     spec_names(ic12_)  = "carbon-12"
     spec_names(io16_)  = "oxygen-16"
@@ -80,7 +83,7 @@ contains
     ! rpar is VODE's way of passing information into the RHS and
     ! jacobian routines.  Here we initialize some indices to make
     ! sense of what is stored in the rpar() array.
-    call init_rpar_indices(nspec)
+    !call init_rpar_indices(nspec)
 
     network_initialized = .true.
 

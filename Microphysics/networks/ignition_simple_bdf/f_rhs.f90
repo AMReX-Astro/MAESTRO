@@ -1,10 +1,12 @@
 module feval
    use bl_types, only: dp_t
    use bl_constants_module, only: ZERO, ONE, TWELFTH, FIVE6TH, THIRD
-   use network, only: nspec, nspec_advance, aion, zion, ebin
-   use network_indices, only: ic12_, io16_, img24_
-   use rpar_indices, only: irp_dens, irp_cp, irp_dhdx, irp_o16, irp_rate, &
-                           irp_dratedt, irp_sc1212, irp_dsc1212dt, irp_xc12tmp
+   use network, only: nspec, nspec_advance, &
+                      aion, zion, ebin, ic12_, io16_, img24_
+   !use network_indices, only: ic12_, io16_, img24_
+   use burner_data, only: irp_dens, irp_cp, irp_dhdx, irp_o16, irp_rate, &
+                           irp_dratedt, irp_sc1212, irp_dsc1212dt,       &
+                           irp_xc12tmp, n_rpar_comps
    implicit none
 contains
    subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
@@ -17,7 +19,7 @@ contains
       integer,         intent(in   ) :: neq, npt
       real(kind=dp_t), intent(in   ) :: y(neq,npt), t
       real(kind=dp_t), intent(  out) :: yd(neq,npt)
-      real(kind=dp_t), intent(inout) :: upar(:,:)
+      real(kind=dp_t), intent(inout) :: upar(n_rpar_comps,npt)
    
       integer :: k, n
       real(kind=dp_t) :: ymass(nspec,npt)
@@ -29,7 +31,7 @@ contains
       real(kind=dp_t) :: xc12tmp
       real(kind=dp_t) :: scratch, dscratchdt
       real(kind=dp_t) :: a, b, dadt, dbdt
-    
+   
       do n = 1, npt
          !initialize data
          dens(n) = upar(irp_dens,n)
@@ -125,7 +127,7 @@ contains
       integer        , intent(in   ) :: neq, npt
       real(kind=dp_t), intent(in   ) :: y(neq,npt), t 
       real(kind=dp_t), intent(  out) :: pd(neq,neq,npt)
-      real(kind=dp_t), intent(inout) :: upar(:,:)
+      real(kind=dp_t), intent(inout) :: upar(n_rpar_comps,npt)
    
       real(kind=dp_t) :: dens(npt), c_p(npt), dhdX(nspec,npt), X_O16(npt)
       real(kind=dp_t) :: rate, dratedt, scorr, dscorrdt, xc12tmp

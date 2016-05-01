@@ -20,8 +20,9 @@
 
 module bdf
 
-  use bl_types
+  use bl_types, only: dp_t
   use bl_constants_module
+  use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
 
   implicit none
 
@@ -43,71 +44,71 @@ module bdf
   !
   type :: bdf_ts
 
-     integer  :: neq                        ! number of equations (degrees of freedom) per point
-     integer  :: npt                        ! number of points
-     integer  :: max_order                  ! maximum order (1 to 6)
-     integer  :: max_steps                  ! maximum allowable number of steps
-     integer  :: max_iters                  ! maximum allowable number of newton iterations
-     integer  :: verbose                    ! verbosity level
-     real(dp_t) :: dt_min                   ! minimum allowable step-size
-     real(dp_t) :: eta_min                  ! minimum allowable step-size shrink factor
-     real(dp_t) :: eta_max                  ! maximum allowable step-size growth factor
-     real(dp_t) :: eta_thresh               ! step-size growth threshold
-     integer  :: max_j_age                  ! maximum age of Jacobian
-     integer  :: max_p_age                  ! maximum age of newton iteration matrix
+     integer    :: neq       = neqs           ! number of equations (degrees of freedom) per point
+     integer    :: npt       = burn_npts      ! number of points
+     integer    :: max_order = burn_max_order ! maximum order (1 to 6)
+     integer    :: max_steps                  ! maximum allowable number of steps
+     integer    :: max_iters                  ! maximum allowable number of newton iterations
+     integer    :: verbose                    ! verbosity level
+     real(dp_t) :: dt_min                     ! minimum allowable step-size
+     real(dp_t) :: eta_min                    ! minimum allowable step-size shrink factor
+     real(dp_t) :: eta_max                    ! maximum allowable step-size growth factor
+     real(dp_t) :: eta_thresh                 ! step-size growth threshold
+     integer    :: max_j_age                  ! maximum age of Jacobian
+     integer    :: max_p_age                  ! maximum age of newton iteration matrix
 
-     logical  :: debug
-     integer  :: dump_unit
+     logical    :: debug
+     integer    :: dump_unit
 
-     real(dp_t), allocatable :: rtol(:)         ! relative tolerances
-     real(dp_t), allocatable :: atol(:)         ! absolute tolerances
+     real(dp_t) :: rtol(neqs)               ! relative tolerances
+     real(dp_t) :: atol(neqs)               ! absolute tolerances
 
      ! state
-     real(dp_t) :: t                        ! current time
-     real(dp_t) :: t1                       ! final time
-     real(dp_t) :: dt                       ! current time step
-     real(dp_t) :: dt_nwt                   ! dt used when building newton iteration matrix
-     integer  :: k                          ! current order
-     integer  :: n                          ! current step
-     integer  :: j_age                      ! age of Jacobian
-     integer  :: p_age                      ! age of newton iteration matrix
-     integer  :: k_age                      ! number of steps taken at current order
-     real(dp_t) :: tq(-1:2)                 ! error coefficients (test quality)
+     real(dp_t) :: t                          ! current time
+     real(dp_t) :: t1                         ! final time
+     real(dp_t) :: dt                         ! current time step
+     real(dp_t) :: dt_nwt                     ! dt used when building newton iteration matrix
+     integer    :: k                          ! current order
+     integer    :: n                          ! current step
+     integer    :: j_age                      ! age of Jacobian
+     integer    :: p_age                      ! age of newton iteration matrix
+     integer    :: k_age                      ! number of steps taken at current order
+     real(dp_t) :: tq(-1:2)                   ! error coefficients (test quality)
      real(dp_t) :: tq2save
      !real(dp_t) :: temp_data
-     !real(dp_t) :: temp_data(3,1,0:3) !z-like, if max_order=3
-     !real(dp_t) :: temp_data(0:3)     !l-like, if max_order=3
+     !real(dp_t) :: temp_data(3,1,0:3)        !z-like, if max_order=3
+     !real(dp_t) :: temp_data(0:3)            !l-like, if max_order=3
      real(dp_t) :: temp_data(2,1)
-     logical  :: refactor
+     logical    :: refactor
 
-     real(dp_t), allocatable :: J(:,:,:)        ! Jacobian matrix
-     real(dp_t), allocatable :: P(:,:,:)        ! Newton iteration matrix
-     real(dp_t), allocatable :: z(:,:,:)        ! Nordsieck histroy array, indexed as (dof, p, n)
-     real(dp_t), allocatable :: z0(:,:,:)       ! Nordsieck predictor array
-     real(dp_t), allocatable :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
-     real(dp_t), allocatable :: l(:)            ! predictor/corrector update coefficients
-     real(dp_t), allocatable :: shift(:)        ! scratch array to hold shifted arrays
-     real(dp_t), allocatable :: upar(:,:)       ! array of user parameters (passed to
-                                                !    user's Jacobian and f)
-     real(dp_t), allocatable :: y(:,:)          ! current y
-     real(dp_t), allocatable :: yd(:,:)         ! current \dot{y}
-     real(dp_t), allocatable :: rhs(:,:)        ! solver rhs
-     real(dp_t), allocatable :: e(:,:)          ! accumulated correction
-     real(dp_t), allocatable :: e1(:,:)         ! accumulated correction, previous step
-     real(dp_t), allocatable :: ewt(:,:)        ! cached error weights
-     real(dp_t), allocatable :: b(:,:)          ! solver work space
-     integer,    allocatable :: ipvt(:,:)       ! pivots (neq,npts)
-     integer,    allocatable :: A(:,:)          ! pascal matrix
+     real(dp_t) :: J(neqs,neqs,burn_npts)           ! Jacobian matrix
+     real(dp_t) :: P(neqs,neqs,burn_npts)           ! Newton iteration matrix
+     real(dp_t) :: z(neqs,burn_npts,0:burn_max_order)   ! Nordsieck histroy array, indexed as (dof, p, n)
+     real(dp_t) :: z0(neqs,burn_npts,0:burn_max_order)  ! Nordsieck predictor array
+     real(dp_t) :: h(0:burn_max_order)                 ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
+     real(dp_t) :: l(0:burn_max_order)                 ! predictor/corrector update coefficients
+     real(dp_t) :: shift(0:burn_max_order)             ! scratch array to hold shifted arrays
+     real(dp_t) :: upar(n_rpar_comps,burn_npts)         ! array of user parameters (passed to
+                                                     !    user's Jacobian and f)
+     real(dp_t) :: y(neqs,burn_npts)           ! current y
+     real(dp_t) :: yd(neqs,burn_npts)          ! current \dot{y}
+     real(dp_t) :: rhs(neqs,burn_npts)         ! solver rhs
+     real(dp_t) :: e(neqs,burn_npts)           ! accumulated correction
+     real(dp_t) :: e1(neqs,burn_npts)          ! accumulated correction, previous step
+     real(dp_t) :: ewt(neqs,burn_npts)         ! cached error weights
+     real(dp_t) :: b(neqs,burn_npts)           ! solver work space
+     integer    :: ipvt(neqs,burn_npts)        ! pivots (neq,npts)
+     integer    :: A(0:burn_max_order, 0:burn_max_order) ! pascal matrix
 
      ! counters
-     integer :: nfe                             ! number of function evaluations
-     integer :: nje                             ! number of Jacobian evaluations
-     integer :: nlu                             ! number of factorizations
-     integer :: nit                             ! number of non-linear solver iterations
-     integer :: nse                             ! number of non-linear solver errors
-     integer :: ncse                            ! number of consecutive non-linear solver errors
-     integer :: ncit                            ! number of current non-linear solver iterations
-     integer :: ncdtmin                         ! number of consecutive times we tried to shrink beyond the minimum time step
+     integer :: nfe                           ! number of function evaluations
+     integer :: nje                           ! number of Jacobian evaluations
+     integer :: nlu                           ! number of factorizations
+     integer :: nit                           ! number of non-linear solver iterations
+     integer :: nse                           ! number of non-linear solver errors
+     integer :: ncse                          ! number of consecutive non-linear solver errors
+     integer :: ncit                          ! number of current non-linear solver iterations
+     integer :: ncdtmin                       ! number of consecutive times we tried to shrink beyond the minimum time step
 
   end type bdf_ts
 
@@ -876,40 +877,43 @@ contains
   !
   ! Build/destroy BDF time-stepper.
   !
-  subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
-    type(bdf_ts),   intent(inout) :: ts
-    integer,        intent(in   ) :: max_order, neq, npt
-    real(dp_t),     intent(in   ) :: rtol(neq), atol(neq)
-    real(dp_t),     intent(in   ) :: upar(:,:)
+  !subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
+  subroutine bdf_ts_build(ts, rtol, atol, upar)
+    !$acc routine seq
+    !NOTE: Using this is redundant as we already do at the top of the module,
+    !but I like it here for clarity
+    use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
 
-    integer :: U(max_order+1, max_order+1), Uk(max_order+1, max_order+1)
+    type(bdf_ts),   intent(inout) :: ts
+    real(dp_t),     intent(in   ) :: rtol(neqs), atol(neqs)
+    real(dp_t),     intent(in   ) :: upar(n_rpar_comps,burn_npts)
+    integer :: U(burn_max_order+1, burn_max_order+1), Uk(burn_max_order+1, burn_max_order+1)
     integer :: k, n
 
-
-    allocate(ts%rtol(neq))
-    allocate(ts%atol(neq))
-    allocate(ts%z(neq, npt, 0:max_order))
-    allocate(ts%z0(neq, npt, 0:max_order))
-    allocate(ts%l(0:max_order))
-    allocate(ts%h(0:max_order))
-    allocate(ts%shift(0:max_order))
-    allocate(ts%A(0:max_order, 0:max_order))
-    allocate(ts%P(neq, neq, npt))
-    allocate(ts%J(neq, neq, npt))
-    allocate(ts%y(neq, npt))
-    allocate(ts%yd(neq, npt))
-    allocate(ts%rhs(neq, npt))
-    allocate(ts%e(neq, npt))
-    allocate(ts%e1(neq, npt))
-    allocate(ts%ewt(neq, npt))
-    allocate(ts%b(neq, npt))
-    allocate(ts%ipvt(neq,npt))
-    allocate(ts%upar(size(upar,1),npt))
+    !allocate(ts%rtol(neq))
+    !allocate(ts%atol(neq))
+    !allocate(ts%z(neq, npt, 0:max_order))
+    !allocate(ts%z0(neq, npt, 0:max_order))
+    !allocate(ts%l(0:max_order))
+    !allocate(ts%h(0:max_order))
+    !allocate(ts%shift(0:max_order))
+    !allocate(ts%A(0:max_order, 0:max_order))
+    !allocate(ts%P(neq, neq, npt))
+    !allocate(ts%J(neq, neq, npt))
+    !allocate(ts%y(neq, npt))
+    !allocate(ts%yd(neq, npt))
+    !allocate(ts%rhs(neq, npt))
+    !allocate(ts%e(neq, npt))
+    !allocate(ts%e1(neq, npt))
+    !allocate(ts%ewt(neq, npt))
+    !allocate(ts%b(neq, npt))
+    !allocate(ts%ipvt(neq,npt))
+    !allocate(ts%upar(size(upar,1),npt))
     ts%upar = upar
 
-    ts%neq        = neq
-    ts%npt        = npt
-    ts%max_order  = max_order
+    !ts%neq        = neq
+    !ts%npt        = npt
+    !ts%max_order  = max_order
     ts%max_steps  = 1000000
     ts%max_iters  = 10
     ts%verbose    = 0
@@ -922,7 +926,7 @@ contains
 
     ts%k = -1
 
-    do n = 1, neq
+    do n = 1, neqs
        ts%rtol(n) = rtol(n)
        ts%atol(n) = atol(n)
     end do
@@ -938,12 +942,12 @@ contains
 
     ! build pascal matrix A using A = exp(U)
     U = 0
-    do k = 1, max_order
+    do k = 1, burn_max_order
        U(k,k+1) = k
     end do
     Uk = U
     call eye_i(ts%A)
-    do k = 1, max_order+1
+    do k = 1, burn_max_order+1
        ts%A  = ts%A + Uk / factorial(k)
        Uk = matmul(U, Uk)
     end do
@@ -951,10 +955,10 @@ contains
 
   subroutine bdf_ts_destroy(ts)
     type(bdf_ts), intent(inout) :: ts
-    deallocate(ts%h,ts%l,ts%shift,ts%ewt,ts%rtol,ts%atol)
-    deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
-    deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
-    deallocate(ts%upar)
+    !deallocate(ts%h,ts%l,ts%shift,ts%ewt,ts%rtol,ts%atol)
+    !deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
+    !deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
+    !deallocate(ts%upar)
   end subroutine bdf_ts_destroy
 
   !
