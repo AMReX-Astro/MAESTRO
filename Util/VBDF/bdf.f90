@@ -888,7 +888,7 @@ contains
     real(dp_t),     intent(in   ) :: rtol(neqs), atol(neqs)
     real(dp_t),     intent(in   ) :: upar(n_rpar_comps,burn_npts)
     integer :: U(burn_max_order+1, burn_max_order+1), Uk(burn_max_order+1, burn_max_order+1)
-    integer :: k, n
+    integer :: k, n, r, c, sum_element
 
     !allocate(ts%rtol(neq))
     !allocate(ts%atol(neq))
@@ -909,7 +909,13 @@ contains
     !allocate(ts%b(neq, npt))
     !allocate(ts%ipvt(neq,npt))
     !allocate(ts%upar(size(upar,1),npt))
-    ts%upar = upar
+
+    !ts%upar = upar
+    do k = 1, n_rpar_comps
+       do n = 1, burn_npts
+          ts%upar(k,n) = upar(k,n)
+       enddo
+    enddo
 
     !ts%neq        = neq
     !ts%npt        = npt
@@ -931,9 +937,22 @@ contains
        ts%atol(n) = atol(n)
     end do
 
-    ts%J  = 0
-    ts%P  = 0
-    ts%yd = 0
+    !ts%J  = 0
+    !ts%P  = 0
+    !ts%yd = 0
+    do r = 1, neqs
+       do c = 1, neqs
+          do n = 1, burn_npts
+             ts%J(r,c,n) = 0.0_dp_t
+             ts%P(r,c,n) = 0.0_dp_t
+          enddo
+       enddo
+    enddo
+    do c = 1, neqs
+       do n = 1, burn_npts
+          ts%yd(c,n) = 0.0_dp_t
+       enddo
+    enddo
 
     ts%j_age = 666666666
     ts%p_age = 666666666
@@ -941,19 +960,41 @@ contains
     ts%debug = .false.
 
     ! build pascal matrix A using A = exp(U)
-    U = 0
+    !U = 0
+    do r = 1, burn_max_order+1
+       do c = 1, burn_max_order+1
+          U(r,c) = 0
+       enddo
+    enddo
     do k = 1, burn_max_order
        U(k,k+1) = k
     end do
-    Uk = U
+    !Uk = U
+    do r = 1, burn_max_order+1
+       do c = 1, burn_max_order+1
+          Uk(r,c) = U(r,c)
+       enddo
+    enddo
     call eye_i(ts%A)
     do k = 1, burn_max_order+1
        ts%A  = ts%A + Uk / factorial(k)
-       Uk = matmul(U, Uk)
+       !TODO: This is an unoptimized, naive matrix multiply, might consider
+       !using optimized.  Can't use Fortran intrinsic matmul() on GPU
+       !Uk = matmul(U, Uk)
+       do r = 1, burn_max_order+1
+          do c = 1, burn_max_order+1
+             sum_element = 0
+             do n = 1, burn_max_order+1
+                sum_element = sum_element + U(r,n) * Uk(n,c)
+             enddo
+             Uk(r,c) = sum_element
+          enddo
+       enddo
     end do
   end subroutine bdf_ts_build
 
   subroutine bdf_ts_destroy(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     !deallocate(ts%h,ts%l,ts%shift,ts%ewt,ts%rtol,ts%atol)
     !deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
@@ -974,6 +1015,7 @@ contains
     end do
   end subroutine eye_r
   subroutine eye_i(A)
+    !$acc routine seq
     integer, intent(inout) :: A(:,:)
     integer :: i
     A = 0

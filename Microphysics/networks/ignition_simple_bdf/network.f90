@@ -39,14 +39,14 @@ module network
   integer, parameter :: io16_  = 2
   integer, parameter :: img24_ = 3
 
-  character (len=16), save :: spec_names(nspec) 
-  character (len= 5), save :: short_spec_names(nspec)
-  character (len= 5), save :: short_aux_names(naux)
+  character (len=16) :: spec_names(nspec) 
+  character (len= 5) :: short_spec_names(nspec)
+  character (len= 5) :: short_aux_names(naux)
 
-  real(kind=dp_t), save :: aion(nspec), zion(nspec), ebin(nspec)
+  real(kind=dp_t) :: aion(nspec), zion(nspec), ebin(nspec)
   !$acc declare create(aion(:), zion(:), ebin(:))
 
-  logical, save :: network_initialized = .false.
+  logical :: network_initialized = .false.
 
 contains
   

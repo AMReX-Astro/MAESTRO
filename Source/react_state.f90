@@ -758,84 +758,90 @@ contains
 
       ldt = dt
 
-      !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
-      !$OMP SCHEDULE(DYNAMIC,1)
+      !!$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
+      !!$OMP SCHEDULE(DYNAMIC,1)
+
+      !$acc data copyin(sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)) &
+      !$acc      copyin(tempbar_init(k)) copyout(snew, rho_omegadot, rho_Hnuc)
+
+      !$acc parallel loop private(rho,x_in,T_in,x_test,x_out) &
+      !$acc    private(rhowdot,rhoH,sumX,n) firstprivate(ldt)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
 
-               cell_valid = .true.
-               if ( present(mask) ) then
-                  if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+               !TODO: For OpenACC dev, all masking/cell_valid logic has been
+               !removed.  Once it's working, we should see if we want to bring
+               !back the masking or not.
+
+               rho = sold(i,j,k,rho_comp)
+               x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
+
+               if (drive_initial_convection) then
+                  T_in = tempbar_init(k)
+               else
+                  T_in = sold(i,j,k,temp_comp)
                endif
-
-               if (cell_valid) then
-
-                  rho = sold(i,j,k,rho_comp)
-                  x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
-
-                  if (drive_initial_convection) then
-                     T_in = tempbar_init(k)
-                  else
-                     T_in = sold(i,j,k,temp_comp)
-                  endif
-                  
-                  ! Fortran doesn't guarantee short-circuit evaluation of logicals 
-                  ! so we need to test the value of ispec_threshold before using it 
-                  ! as an index in x_in
-                  if (ispec_threshold > 0) then
-                     x_test = x_in(ispec_threshold)
-                  else
-                     x_test = ZERO
-                  endif
-                  
-                  ! if the threshold species is not in the network, then we burn
-                  ! normally.  if it is in the network, make sure the mass
-                  ! fraction is above the cutoff.
-                  if (rho > burning_cutoff_density .and.                &
-                       ( ispec_threshold < 0 .or.                       &
-                       (ispec_threshold > 0 .and.                       &
-                       x_test > burner_threshold_cutoff))) then
-                     call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
-                  else
-                     x_out = x_in
-                     rhowdot = 0.d0
-                     rhoH = 0.d0
-                  endif
-                  
-                  ! check if sum{X_k} = 1
-                  sumX = ZERO
-                  do n = 1, nspec
-                     sumX = sumX + x_out(n)
-                  enddo
-                  if (abs(sumX - ONE) > reaction_sum_tol) then
-                     call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
-                  endif
-
-                  ! pass the density and pi through
-                  snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
-                  snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
-                  
-                  ! update the species
-                  snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-                  
-                  ! store the energy generation and species create quantities
-                  rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
-                  rho_Hnuc(i,j,k) = rhoH
-                  
-                  ! update the enthalpy -- include the change due to external heating
-                  snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
-                       + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
-                  
-                  ! pass the tracers through
-                  snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                       sold(i,j,k,trac_comp:trac_comp+ntrac-1)
-
+               
+               ! Fortran doesn't guarantee short-circuit evaluation of logicals 
+               ! so we need to test the value of ispec_threshold before using it 
+               ! as an index in x_in
+               if (ispec_threshold > 0) then
+                  x_test = x_in(ispec_threshold)
+               else
+                  x_test = ZERO
                endif
+               
+               ! if the threshold species is not in the network, then we burn
+               ! normally.  if it is in the network, make sure the mass
+               ! fraction is above the cutoff.
+               if (rho > burning_cutoff_density .and.                &
+                    ( ispec_threshold < 0 .or.                       &
+                    (ispec_threshold > 0 .and.                       &
+                    x_test > burner_threshold_cutoff))) then
+                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+               else
+                  x_out = x_in
+                  rhowdot = 0.d0
+                  rhoH = 0.d0
+               endif
+               
+               ! check if sum{X_k} = 1
+               sumX = ZERO
+               do n = 1, nspec
+                  sumX = sumX + x_out(n)
+               enddo
+               !TODO: Removed this check for OpenACC dev, put it somewhere once
+               !OpenACC's going.
+               !if (abs(sumX - ONE) > reaction_sum_tol) then
+               !   call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
+               !endif
+
+               ! pass the density and pi through
+               snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
+               snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
+               
+               ! update the species
+               snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+               
+               ! store the energy generation and species create quantities
+               rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+               rho_Hnuc(i,j,k) = rhoH
+               
+               ! update the enthalpy -- include the change due to external heating
+               snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
+                    + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
+               
+               ! pass the tracers through
+               snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &
+                    sold(i,j,k,trac_comp:trac_comp+ntrac-1)
+
             enddo
          enddo
       enddo
-      !$OMP END PARALLEL DO
+      !$acc end parallel
+      
+      !$acc end data
    end subroutine burner_loop_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

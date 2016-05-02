@@ -51,53 +51,53 @@ module eos_type_module
   ! so that we know if the user forgot to initialize them
   ! when calling the EOS in a particular mode.
 
-  double precision, parameter :: init_num  = -1.0d200
-  double precision, parameter :: init_test = -1.0d199
+  real(kind=dp_t), parameter :: init_num  = -1.0d200
+  real(kind=dp_t), parameter :: init_test = -1.0d199
 
   type :: eos_t
 
-    double precision :: rho         = init_num
-    double precision :: T           = init_num
-    double precision :: p           = init_num
-    double precision :: e           = init_num
-    double precision :: h           = init_num
-    double precision :: s           = init_num
-    double precision :: dpdT        = init_num
-    double precision :: dpdr        = init_num
-    double precision :: dedT        = init_num
-    double precision :: dedr        = init_num
-    double precision :: dhdT        = init_num
-    double precision :: dhdr        = init_num
-    double precision :: dsdT        = init_num
-    double precision :: dsdr        = init_num
-    double precision :: dpde        = init_num
-    double precision :: dpdr_e      = init_num
+    real(kind=dp_t) :: rho         = init_num
+    real(kind=dp_t) :: T           = init_num
+    real(kind=dp_t) :: p           = init_num
+    real(kind=dp_t) :: e           = init_num
+    real(kind=dp_t) :: h           = init_num
+    real(kind=dp_t) :: s           = init_num
+    real(kind=dp_t) :: dpdT        = init_num
+    real(kind=dp_t) :: dpdr        = init_num
+    real(kind=dp_t) :: dedT        = init_num
+    real(kind=dp_t) :: dedr        = init_num
+    real(kind=dp_t) :: dhdT        = init_num
+    real(kind=dp_t) :: dhdr        = init_num
+    real(kind=dp_t) :: dsdT        = init_num
+    real(kind=dp_t) :: dsdr        = init_num
+    real(kind=dp_t) :: dpde        = init_num
+    real(kind=dp_t) :: dpdr_e      = init_num
 
-    double precision :: xn(nspec)   = init_num
-    double precision :: aux(naux)   = init_num
-    double precision :: cv          = init_num
-    double precision :: cp          = init_num
-    double precision :: xne         = init_num
-    double precision :: xnp         = init_num
-    double precision :: eta         = init_num
-    double precision :: pele        = init_num
-    double precision :: ppos        = init_num
-    double precision :: mu          = init_num
-    double precision :: mu_e        = init_num
-    double precision :: y_e         = init_num
-    double precision :: dedX(nspec) = init_num
-    double precision :: dpdX(nspec) = init_num
-    double precision :: dhdX(nspec) = init_num
-    double precision :: gam1        = init_num
-    double precision :: cs          = init_num
+    real(kind=dp_t) :: xn(nspec)   = init_num
+    real(kind=dp_t) :: aux(naux)   = init_num
+    real(kind=dp_t) :: cv          = init_num
+    real(kind=dp_t) :: cp          = init_num
+    real(kind=dp_t) :: xne         = init_num
+    real(kind=dp_t) :: xnp         = init_num
+    real(kind=dp_t) :: eta         = init_num
+    real(kind=dp_t) :: pele        = init_num
+    real(kind=dp_t) :: ppos        = init_num
+    real(kind=dp_t) :: mu          = init_num
+    real(kind=dp_t) :: mu_e        = init_num
+    real(kind=dp_t) :: y_e         = init_num
+    real(kind=dp_t) :: dedX(nspec) = init_num
+    real(kind=dp_t) :: dpdX(nspec) = init_num
+    real(kind=dp_t) :: dhdX(nspec) = init_num
+    real(kind=dp_t) :: gam1        = init_num
+    real(kind=dp_t) :: cs          = init_num
 
-    double precision :: abar        = init_num
-    double precision :: zbar        = init_num
-    double precision :: dpdA        = init_num
+    real(kind=dp_t) :: abar        = init_num
+    real(kind=dp_t) :: zbar        = init_num
+    real(kind=dp_t) :: dpdA        = init_num
 
-    double precision :: dpdZ        = init_num
-    double precision :: dedA        = init_num
-    double precision :: dedZ        = init_num
+    real(kind=dp_t) :: dpdZ        = init_num
+    real(kind=dp_t) :: dedA        = init_num
+    real(kind=dp_t) :: dedZ        = init_num
 
     logical :: reset                = .false.
     logical :: check_small          = .true.
