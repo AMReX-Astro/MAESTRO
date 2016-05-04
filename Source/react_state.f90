@@ -761,8 +761,12 @@ contains
       !!$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
       !!$OMP SCHEDULE(DYNAMIC,1)
 
-      !$acc data copyin(sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)) &
-      !$acc      copyin(tempbar_init(k)) copyout(snew, rho_omegadot, rho_Hnuc)
+      !$acc data copyin(sold(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))           &
+      !$acc      copyin(tempbar_init(0:hi(3)))                                 &
+      !$acc      copyout(snew(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))          &
+      !$acc      copyout(rho_omegadot(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:) ) &
+      !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        &
+      !$acc      copyout(rho_Hext(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
       !$acc parallel loop private(rho,x_in,T_in,x_test,x_out) &
       !$acc    private(rhowdot,rhoH,sumX,n) firstprivate(ldt)
@@ -795,16 +799,16 @@ contains
                ! if the threshold species is not in the network, then we burn
                ! normally.  if it is in the network, make sure the mass
                ! fraction is above the cutoff.
-               if (rho > burning_cutoff_density .and.                &
-                    ( ispec_threshold < 0 .or.                       &
-                    (ispec_threshold > 0 .and.                       &
-                    x_test > burner_threshold_cutoff))) then
-                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
-               else
+               !if (rho > burning_cutoff_density .and.                &
+               !     ( ispec_threshold < 0 .or.                       &
+               !     (ispec_threshold > 0 .and.                       &
+               !     x_test > burner_threshold_cutoff))) then
+               !   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+               !else
                   x_out = x_in
                   rhowdot = 0.d0
                   rhoH = 0.d0
-               endif
+               !endif
                
                ! check if sum{X_k} = 1
                sumX = ZERO
