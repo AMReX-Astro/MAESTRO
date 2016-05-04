@@ -51,56 +51,56 @@ module eos_type_module
   ! so that we know if the user forgot to initialize them
   ! when calling the EOS in a particular mode.
 
-  real(kind=dp_t), parameter :: init_num  = -1.0d200
-  real(kind=dp_t), parameter :: init_test = -1.0d199
+  real(kind=dp_t), parameter :: init_num  = -1.0e200_dp_t
+  real(kind=dp_t), parameter :: init_test = -1.0e199_dp_t
 
   type :: eos_t
 
-    real(kind=dp_t) :: rho         = init_num
-    real(kind=dp_t) :: T           = init_num
-    real(kind=dp_t) :: p           = init_num
-    real(kind=dp_t) :: e           = init_num
-    real(kind=dp_t) :: h           = init_num
-    real(kind=dp_t) :: s           = init_num
-    real(kind=dp_t) :: dpdT        = init_num
-    real(kind=dp_t) :: dpdr        = init_num
-    real(kind=dp_t) :: dedT        = init_num
-    real(kind=dp_t) :: dedr        = init_num
-    real(kind=dp_t) :: dhdT        = init_num
-    real(kind=dp_t) :: dhdr        = init_num
-    real(kind=dp_t) :: dsdT        = init_num
-    real(kind=dp_t) :: dsdr        = init_num
-    real(kind=dp_t) :: dpde        = init_num
-    real(kind=dp_t) :: dpdr_e      = init_num
+    real(kind=dp_t) :: rho         
+    real(kind=dp_t) :: T           
+    real(kind=dp_t) :: p           
+    real(kind=dp_t) :: e           
+    real(kind=dp_t) :: h           
+    real(kind=dp_t) :: s           
+    real(kind=dp_t) :: dpdT        
+    real(kind=dp_t) :: dpdr        
+    real(kind=dp_t) :: dedT        
+    real(kind=dp_t) :: dedr        
+    real(kind=dp_t) :: dhdT        
+    real(kind=dp_t) :: dhdr        
+    real(kind=dp_t) :: dsdT        
+    real(kind=dp_t) :: dsdr        
+    real(kind=dp_t) :: dpde        
+    real(kind=dp_t) :: dpdr_e      
 
-    real(kind=dp_t) :: xn(nspec)   = init_num
-    real(kind=dp_t) :: aux(naux)   = init_num
-    real(kind=dp_t) :: cv          = init_num
-    real(kind=dp_t) :: cp          = init_num
-    real(kind=dp_t) :: xne         = init_num
-    real(kind=dp_t) :: xnp         = init_num
-    real(kind=dp_t) :: eta         = init_num
-    real(kind=dp_t) :: pele        = init_num
-    real(kind=dp_t) :: ppos        = init_num
-    real(kind=dp_t) :: mu          = init_num
-    real(kind=dp_t) :: mu_e        = init_num
-    real(kind=dp_t) :: y_e         = init_num
-    real(kind=dp_t) :: dedX(nspec) = init_num
-    real(kind=dp_t) :: dpdX(nspec) = init_num
-    real(kind=dp_t) :: dhdX(nspec) = init_num
-    real(kind=dp_t) :: gam1        = init_num
-    real(kind=dp_t) :: cs          = init_num
+    real(kind=dp_t) :: xn(nspec)   
+    real(kind=dp_t) :: aux(naux)   
+    real(kind=dp_t) :: cv          
+    real(kind=dp_t) :: cp          
+    real(kind=dp_t) :: xne         
+    real(kind=dp_t) :: xnp         
+    real(kind=dp_t) :: eta         
+    real(kind=dp_t) :: pele        
+    real(kind=dp_t) :: ppos        
+    real(kind=dp_t) :: mu          
+    real(kind=dp_t) :: mu_e        
+    real(kind=dp_t) :: y_e         
+    real(kind=dp_t) :: dedX(nspec) 
+    real(kind=dp_t) :: dpdX(nspec) 
+    real(kind=dp_t) :: dhdX(nspec) 
+    real(kind=dp_t) :: gam1        
+    real(kind=dp_t) :: cs          
 
-    real(kind=dp_t) :: abar        = init_num
-    real(kind=dp_t) :: zbar        = init_num
-    real(kind=dp_t) :: dpdA        = init_num
+    real(kind=dp_t) :: abar        
+    real(kind=dp_t) :: zbar        
+    real(kind=dp_t) :: dpdA        
 
-    real(kind=dp_t) :: dpdZ        = init_num
-    real(kind=dp_t) :: dedA        = init_num
-    real(kind=dp_t) :: dedZ        = init_num
+    real(kind=dp_t) :: dpdZ        
+    real(kind=dp_t) :: dedA        
+    real(kind=dp_t) :: dedZ        
 
-    logical :: reset                = .false.
-    logical :: check_small          = .true.
+    logical :: reset               
+    logical :: check_small         
 
   end type eos_t
 
