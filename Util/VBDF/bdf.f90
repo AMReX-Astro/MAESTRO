@@ -44,9 +44,12 @@ module bdf
   !
   type :: bdf_ts
 
-     integer    :: neq       = neqs           ! number of equations (degrees of freedom) per point
-     integer    :: npt       = burn_npts      ! number of points
-     integer    :: max_order = burn_max_order ! maximum order (1 to 6)
+     !integer    :: neq       = neqs           ! number of equations (degrees of freedom) per point
+     !integer    :: npt       = burn_npts      ! number of points
+     !integer    :: max_order = burn_max_order ! maximum order (1 to 6)
+     integer    :: neq                        ! number of equations (degrees of freedom) per point
+     integer    :: npt                        ! number of points
+     integer    :: max_order                  ! maximum order (1 to 6)
      integer    :: max_steps                  ! maximum allowable number of steps
      integer    :: max_iters                  ! maximum allowable number of newton iterations
      integer    :: verbose                    ! verbosity level
@@ -917,9 +920,9 @@ contains
        enddo
     enddo
 
-    !ts%neq        = neq
-    !ts%npt        = npt
-    !ts%max_order  = max_order
+    ts%neq        = neqs
+    ts%npt        = burn_npts
+    ts%max_order  = burn_max_order
     ts%max_steps  = 1000000
     ts%max_iters  = 10
     ts%verbose    = 0
@@ -1023,15 +1026,18 @@ contains
        A(i,i) = 1
     end do
   end subroutine eye_i
-  recursive function factorial(n) result(r)
+  
+  !NOTE: This was implemented in the typical recursive way, but this doesn't fly
+  !on the GPU.  Gotta do it the less pretty way.
+  function factorial(n) result(r)
     !$acc routine seq
     integer, intent(in) :: n
-    integer :: r
-    if (n == 1) then
-       r = 1
-    else
-       r = n * factorial(n-1)
-    end if
+    integer :: r, i
+
+    r = 1
+    do i = n, 2, -1
+       r = r * i
+    enddo
   end function factorial
 
   !
