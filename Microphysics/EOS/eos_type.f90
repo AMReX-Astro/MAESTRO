@@ -98,6 +98,9 @@ module eos_type_module
     real(kind=dp_t) :: dpdZ        
     real(kind=dp_t) :: dedA        
     real(kind=dp_t) :: dedZ        
+    
+    real(kind=dp_t) :: smallt
+    real(kind=dp_t) :: smalld
 
     logical :: reset               
     logical :: check_small         
