@@ -799,16 +799,16 @@ contains
                ! if the threshold species is not in the network, then we burn
                ! normally.  if it is in the network, make sure the mass
                ! fraction is above the cutoff.
-               !if (rho > burning_cutoff_density .and.                &
-               !     ( ispec_threshold < 0 .or.                       &
-               !     (ispec_threshold > 0 .and.                       &
-               !     x_test > burner_threshold_cutoff))) then
-               !   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
-               !else
+               if (rho > burning_cutoff_density .and.                &
+                    ( ispec_threshold < 0 .or.                       &
+                    (ispec_threshold > 0 .and.                       &
+                    x_test > burner_threshold_cutoff))) then
+                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+               else
                   x_out = x_in
                   rhowdot = 0.d0
                   rhoH = 0.d0
-               !endif
+               endif
                
                ! check if sum{X_k} = 1
                sumX = ZERO
