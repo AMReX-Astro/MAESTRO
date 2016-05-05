@@ -762,14 +762,14 @@ contains
       !!$OMP SCHEDULE(DYNAMIC,1)
 
       !$acc data copyin(sold(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))           &
-      !$acc      copyin(tempbar_init(0:hi(3)))                                 &
+      !$acc      copyin(tempbar_init(0:hi(3)), ldt)                                 &
       !$acc      copyout(snew(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))          &
       !$acc      copyout(rho_omegadot(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:) ) &
       !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        &
       !$acc      copyout(rho_Hext(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
-      !$acc parallel loop private(rho,x_in,T_in,x_test,x_out) &
-      !$acc    private(rhowdot,rhoH,sumX,n) firstprivate(ldt)
+      !$acc parallel loop gang vector collapse(3) private(rho,x_in,T_in,x_test,x_out) &
+      !$acc    private(rhowdot,rhoH,sumX,n)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)

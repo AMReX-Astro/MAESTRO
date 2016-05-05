@@ -154,10 +154,6 @@ contains
 
     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
     do k = 1, bdf_max_iters + 1
-       if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
-          !ierr = BDF_ERR_MAXSTEPS; return
-          ierr = BDF_ERR_MAXSTEPS; exit
-       end if
 
        !TODO: Debug I/O not cool on GPUs. If we want to keep it, need to rewrite
        !if (k == 1) &
@@ -179,21 +175,24 @@ contains
        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
        !if (ierr /= BDF_ERR_SUCCESS) return
-       if (ierr /= BDF_ERR_SUCCESS) exit
        !TODO: cycle statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
        !look into this when tuning
-       if (retry) cycle
+       if (.not. retry) then
 
-       call bdf_correct(ts)               ! new solution looks good, correct history and advance
+          call bdf_correct(ts)               ! new solution looks good, correct history and advance
 
-       !call bdf_dump(ts)
-       !TODO: exit statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
-       !look into this when tuning
-       if (ts%t >= t1) exit
+          !call bdf_dump(ts)
+          !TODO: exit statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
+          !look into this when tuning
 
-       call bdf_adjust(ts)                ! adjust step-size/order
+          call bdf_adjust(ts)                ! adjust step-size/order
+       endif
+       if (ts%t >= t1 .or. ierr /= BDF_ERR_SUCCESS) exit
     end do
 
+    if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
+       ierr = BDF_ERR_MAXSTEPS
+    end if
     !TODO: GPUs don't like print statements.  Either delete this or work up alternative implementations
     !if (ts%verbose > 0) &
     !     print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", it: ",i3,", se: ",i3,", dt: ",e15.8,", k: ",i2)', &
