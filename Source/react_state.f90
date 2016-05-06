@@ -737,7 +737,7 @@ contains
       logical        , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
       !     Local variables
-      integer            :: i, j, k, n
+      integer            :: i, j, k, n, ii
       real (kind = dp_t) :: rho,T_in,ldt
 
       real (kind = dp_t) :: x_in(nspec)
@@ -749,7 +749,7 @@ contains
       integer, save      :: ispec_threshold
       logical, save      :: firstCall = .true.
 
-      real (kind = dp_t) :: sumX
+      real (kind = dp_t) :: sumX, full_start, full_end, loop_start, loop_end
 
       if (firstCall) then
          ispec_threshold = network_species_index(burner_threshold_species)
@@ -761,14 +761,19 @@ contains
       !!$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
       !!$OMP SCHEDULE(DYNAMIC,1)
 
+      call cpu_time(full_start)
+
       !$acc data copyin(sold(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))           &
-      !$acc      copyin(tempbar_init(0:hi(3)), ldt)                                 &
+      !$acc      copyin(tempbar_init(0:hi(3)), ldt)                            &
+      !$acc      copyin(rho_Hext(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))         &
       !$acc      copyout(snew(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))          &
       !$acc      copyout(rho_omegadot(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:) ) &
-      !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        &
-      !$acc      copyout(rho_Hext(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+      !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        
 
-      !$acc parallel loop gang vector collapse(3) private(rho,x_in,T_in,x_test,x_out) &
+      call cpu_time(loop_start)
+      !$acc parallel
+
+      !$acc loop gang vector collapse(3) private(rho,x_in,T_in,x_test,x_out) &
       !$acc    private(rhowdot,rhoH,sumX,n)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
@@ -779,7 +784,11 @@ contains
                !back the masking or not.
 
                rho = sold(i,j,k,rho_comp)
-               x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
+               ii = 1
+               do n = spec_comp, spec_comp+nspec-1
+                  x_in(ii) = sold(i,j,k,n) / rho
+                  ii = ii + 1
+               enddo
 
                if (drive_initial_convection) then
                   T_in = tempbar_init(k)
@@ -799,16 +808,16 @@ contains
                ! if the threshold species is not in the network, then we burn
                ! normally.  if it is in the network, make sure the mass
                ! fraction is above the cutoff.
-               if (rho > burning_cutoff_density .and.                &
-                    ( ispec_threshold < 0 .or.                       &
-                    (ispec_threshold > 0 .and.                       &
-                    x_test > burner_threshold_cutoff))) then
+               !if (rho > burning_cutoff_density .and.                &
+               !     ( ispec_threshold < 0 .or.                       &
+               !     (ispec_threshold > 0 .and.                       &
+               !     x_test > burner_threshold_cutoff))) then
                   call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
-               else
-                  x_out = x_in
-                  rhowdot = 0.d0
-                  rhoH = 0.d0
-               endif
+               !else
+               !   x_out = x_in
+               !   rhowdot = 0.d0
+               !   rhoH = 0.d0
+               !endif
                
                ! check if sum{X_k} = 1
                sumX = ZERO
@@ -826,10 +835,16 @@ contains
                snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
                
                ! update the species
-               snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+               ii = 1
+               do n = spec_comp, spec_comp+nspec-1
+                  snew(i,j,k,n) = x_out(ii) * rho
+                  ii = ii + 1
+               enddo
                
                ! store the energy generation and species create quantities
-               rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+               do n = 1, nspec
+                  rho_omegadot(i,j,k,n) = rhowdot(n)
+               enddo
                rho_Hnuc(i,j,k) = rhoH
                
                ! update the enthalpy -- include the change due to external heating
@@ -837,15 +852,21 @@ contains
                     + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
                
                ! pass the tracers through
-               snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                    sold(i,j,k,trac_comp:trac_comp+ntrac-1)
+               do n = trac_comp, trac_comp+ntrac-1
+                  snew(i,j,k,n) = sold(i,j,k,n)
+               enddo
 
             enddo
          enddo
       enddo
       !$acc end parallel
       
+      call cpu_time(loop_end)
       !$acc end data
+      
+      call cpu_time(full_end)
+      print *, 'burner loop time (s): ', loop_end-loop_start
+      print *, 'burner loop time + data (s): ', full_end-full_start
    end subroutine burner_loop_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
