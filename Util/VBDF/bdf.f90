@@ -32,6 +32,8 @@ module bdf
   integer, parameter :: BDF_ERR_SOLVER   = 1
   integer, parameter :: BDF_ERR_MAXSTEPS = 2
   integer, parameter :: BDF_ERR_DTMIN    = 3
+  integer :: A(0:burn_max_order, 0:burn_max_order) ! pascal matrix
+  !$acc declare create(A)
 
   character(len=64), parameter :: errors(0:3) = [ &
        'Success.                                                ', &
@@ -101,7 +103,7 @@ module bdf
      real(dp_t) :: ewt(neqs,burn_npts)         ! cached error weights
      real(dp_t) :: b(neqs,burn_npts)           ! solver work space
      integer    :: ipvt(neqs,burn_npts)        ! pivots (neq,npts)
-     integer    :: A(0:burn_max_order, 0:burn_max_order) ! pascal matrix
+     !integer    :: A(0:burn_max_order, 0:burn_max_order) ! pascal matrix
 
      ! counters
      integer :: nfe                           ! number of function evaluations
@@ -309,7 +311,8 @@ contains
           end do
           do j = i, ts%k
              do m = 1, ts%neq
-                ts%z0(m,p,i) = ts%z0(m,p,i) + ts%A(i,j) * ts%z(m,p,j)
+                !ts%z0(m,p,i) = ts%z0(m,p,i) + ts%A(i,j) * ts%z(m,p,j)
+                ts%z0(m,p,i) = ts%z0(m,p,i) + A(i,j) * ts%z(m,p,j)
              end do
           end do
        end do
@@ -960,39 +963,6 @@ contains
     ts%p_age = 666666666
 
     ts%debug = .false.
-
-    ! build pascal matrix A using A = exp(U)
-    !U = 0
-    do r = 1, burn_max_order+1
-       do c = 1, burn_max_order+1
-          U(r,c) = 0
-       enddo
-    enddo
-    do k = 1, burn_max_order
-       U(k,k+1) = k
-    end do
-    !Uk = U
-    do r = 1, burn_max_order+1
-       do c = 1, burn_max_order+1
-          Uk(r,c) = U(r,c)
-       enddo
-    enddo
-    call eye_i(ts%A)
-    do k = 1, burn_max_order+1
-       ts%A  = ts%A + Uk / factorial(k)
-       !TODO: This is an unoptimized, naive matrix multiply, might consider
-       !using optimized.  Can't use Fortran intrinsic matmul() on GPU
-       !Uk = matmul(U, Uk)
-       do r = 1, burn_max_order+1
-          do c = 1, burn_max_order+1
-             sum_element = 0
-             do n = 1, burn_max_order+1
-                sum_element = sum_element + U(r,n) * Uk(n,c)
-             enddo
-             Uk(r,c) = sum_element
-          enddo
-       enddo
-    end do
   end subroutine bdf_ts_build
 
   subroutine bdf_ts_destroy(ts)
@@ -1100,4 +1070,46 @@ contains
     enddo
   end function minloc
 
+  !
+  ! Initialize the pascal matrix.  We do this here because we should only do
+  ! it once and use it for all bdf_ts types
+  !
+  subroutine init_pascal()
+     integer :: U(burn_max_order+1, burn_max_order+1), Uk(burn_max_order+1, burn_max_order+1)
+     integer :: k, n, r, c, sum_element
+
+     ! build pascal matrix A using A = exp(U)
+     !U = 0
+     do r = 1, burn_max_order+1
+        do c = 1, burn_max_order+1
+           U(r,c) = 0
+        enddo
+     enddo
+     do k = 1, burn_max_order
+        U(k,k+1) = k
+     end do
+     !Uk = U
+     do r = 1, burn_max_order+1
+        do c = 1, burn_max_order+1
+           Uk(r,c) = U(r,c)
+        enddo
+     enddo
+     call eye_i(A)
+     do k = 1, burn_max_order+1
+        A  = A + Uk / factorial(k)
+        !TODO: This is an unoptimized, naive matrix multiply, might consider
+        !using optimized.  Can't use Fortran intrinsic matmul() on GPU
+        !Uk = matmul(U, Uk)
+        do r = 1, burn_max_order+1
+           do c = 1, burn_max_order+1
+              sum_element = 0
+              do n = 1, burn_max_order+1
+                 sum_element = sum_element + U(r,n) * Uk(n,c)
+              enddo
+              Uk(r,c) = sum_element
+           enddo
+        enddo
+     end do
+     !$acc update device(A)
+  end subroutine init_pascal
 end module bdf

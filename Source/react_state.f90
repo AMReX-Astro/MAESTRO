@@ -725,6 +725,7 @@ contains
       use network, only: nspec, network_species_index
       use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
            burner_threshold_cutoff, drive_initial_convection, reaction_sum_tol
+      use bdf, only: init_pascal
 
       integer        , intent(in   ) :: lo(:),hi(:),ng_si,ng_so,ng_rw,ng_he,ng_hn
       real(kind=dp_t), intent(in   ) ::         sold(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
@@ -757,6 +758,7 @@ contains
       endif
 
       ldt = dt
+      call init_pascal()
 
       !!$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
       !!$OMP SCHEDULE(DYNAMIC,1)
@@ -771,7 +773,7 @@ contains
       !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        
 
       call cpu_time(loop_start)
-      !$acc parallel
+      !$acc parallel num_gangs(100000)
 
       !$acc loop gang vector collapse(3) private(rho,x_in,T_in,x_test,x_out) &
       !$acc    private(rhowdot,rhoH,sumX,n)
