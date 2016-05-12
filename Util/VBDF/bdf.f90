@@ -130,12 +130,11 @@ contains
   !
   ! Advance system from t0 to t1.
   !
-  subroutine bdf_advance(ts, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
+  subroutine bdf_advance(ts, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    integer,      intent(in   ) :: neq, npt
-    real(dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
-    real(dp_t),   intent(  out) :: y1(neq,npt)
+    real(dp_t),   intent(in   ) :: y0(neqs,burn_npts), t0, t1, dt0
+    real(dp_t),   intent(  out) :: y1(neqs,burn_npts)
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
     logical,      intent(in   ) :: initial_call
@@ -148,9 +147,6 @@ contains
     !linitial = initial_call
 
     if (reset) call bdf_reset(ts, y0, dt0, reuse)
-    !do m=1,2
-    !   ts%temp_data(m,1) = y0(m,1)
-    !end do
 
     ierr = BDF_ERR_SUCCESS
 
@@ -335,30 +331,10 @@ contains
     !$acc routine(dgesl) seq
     use feval, only: f_rhs_vec, jac_vec
     type(bdf_ts), intent(inout) :: ts
-    !interface
-    !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-    !     !$acc routine seq
-    !     import dp_t
-    !     integer,  intent(in   ) :: neq, npt
-    !     real(dp_t), intent(in   ) :: y(neq,npt), t
-    !     real(dp_t), intent(  out) :: yd(neq,npt)
-    !     real(dp_t), intent(inout) :: upar(:,:)
-    !   end subroutine f_rhs_vec
-    !   subroutine jac_vec(neq, npt, y, t, J, upar)
-    !     !$acc routine seq
-    !     import dp_t
-    !     integer,  intent(in   ) :: neq, npt
-    !     real(dp_t), intent(in   ) :: y(neq,npt), t
-    !     real(dp_t), intent(  out) :: J(neq, neq,npt)
-    !     real(dp_t), intent(inout) :: upar(:,:)
-    !   end subroutine jac_vec
-    !end interface
-
-    !include 'LinAlg.inc'
 
     integer  :: k, m, n, p, info
     real(dp_t) :: c, dt_adj, dt_rat, inv_l1
-    logical  :: rebuild, iterating(ts%npt)
+    logical  :: rebuild, iterating(burn_npts)
 
     inv_l1 = 1.0_dp_t / ts%l(1)
     do p = 1, ts%npt
@@ -385,7 +361,7 @@ contains
           if (ts%ncse > 0  .and. (dt_rat < 0.2d0 .or. dt_rat > 5.d0)) rebuild = .false.
 
           if (rebuild) then
-             call jac_vec(ts%neq, ts%npt, ts%y, ts%t, ts%J, ts%upar)
+             call jac_vec(ts%y, ts%t, ts%J, ts%upar)
              ts%nje   = ts%nje + 1*ts%npt
              ts%j_age = 0
           end if
@@ -410,7 +386,7 @@ contains
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
-       call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
+       call f_rhs_vec(ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
 
        do p = 1, ts%npt
@@ -530,8 +506,9 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
-    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax
-    real(dp_t) :: cxe1(ts%neq, ts%npt), emcxe1(ts%neq, ts%npt), delta(ts%npt)
+    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(burn_npts), etaminmax
+    real(dp_t) :: cxe1(neqs, burn_npts), emcxe1(neqs, burn_npts)
+    real(dp_t) :: delta(burn_npts)
     integer  :: p, m
 
     rescale = 0
@@ -615,20 +592,10 @@ contains
     !$acc routine seq
     use feval, only: f_rhs_vec
     type(bdf_ts), intent(inout) :: ts
-    real(dp_t),   intent(in   ) :: y0(ts%neq, ts%npt), dt
+    real(dp_t),   intent(in   ) :: y0(neqs, burn_npts), dt
     logical,      intent(in   ) :: reuse
     
     integer :: p,m,o
-    !interface
-    !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-    !     !$acc routine seq
-    !     import dp_t
-    !     integer,  intent(in   ) :: neq, npt
-    !     real(dp_t), intent(in   ) :: y(neq,npt), t
-    !     real(dp_t), intent(  out) :: yd(neq,npt)
-    !     real(dp_t), intent(inout) :: upar(:,:)
-    !   end subroutine f_rhs_vec
-    !end interface
 
     ts%nfe = 0
     ts%nje = 0
@@ -653,7 +620,7 @@ contains
     ts%dt_nwt   = ts%dt
     ts%refactor = .true.
 
-    call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
+    call f_rhs_vec(ts%y, ts%t, ts%yd, ts%upar)
     ts%nfe = ts%nfe + 1
 
     !ts%z(:,:,0) = ts%y
@@ -719,6 +686,7 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer  :: j, o, p, m
+    !TODO: Shouldn't 6 be burn_max_order? If so, change all instances
     real(dp_t) :: c(0:6), c_shift(0:6)
 
     if (ts%k > 2) then
@@ -801,6 +769,8 @@ contains
   function alphahat0(k, h) result(a0)
     !$acc routine seq
     integer,  intent(in) :: k
+    !TODO: Will this be treated as automatic array? 
+    !      I don't think so, but make sure
     real(dp_t), intent(in) :: h(0:k)
     real(dp_t) :: a0
     integer  :: j

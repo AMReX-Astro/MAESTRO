@@ -172,7 +172,7 @@ contains
       end do
       t0 = ZERO
       t1 = dt
-      call bdf_advance(ts, neqs, burn_npts, y0, t0, y1, t1, &
+      call bdf_advance(ts, y0, t0, y1, t1, &
                        DT0, reset, reuse, ierr, .true.)
       !y = y1(:,1)
       do i = 1, neqs
