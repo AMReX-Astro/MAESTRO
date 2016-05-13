@@ -128,6 +128,14 @@ contains
     integer :: i
 
     logical :: cell_valid
+    logical :: cell_valid, lmask(lo(1):hi(1))
+
+    if ( present(mask) ) then
+       lmask(lo(1):hi(1)) = mask(lo(1):hi(1))
+    else
+       ! if there's no mask, all cells are valid
+       lmask = .true.
+    endif
 
     do i=lo(1),hi(1)
 
@@ -138,10 +146,7 @@ contains
        endif
 
        ! make sure the cell isn't covered by finer cells
-       cell_valid = .true.
-       if ( present(mask) ) then
-          cell_valid = mask(i)
-       end if
+       cell_valid = lmask(i)
        
        if (cell_valid) then
           pisum = pisum + weight*pi_cc(i)
@@ -167,7 +172,14 @@ contains
     ! local
     integer :: i,j
 
-    logical :: cell_valid
+    logical :: cell_valid, lmask(lo(1):hi(1), lo(2):hi(2))
+
+    if ( present(mask) ) then
+       lmask(lo(1):hi(1), lo(2):hi(2)) = mask(lo(1):hi(1), lo(2):hi(2))
+    else
+       ! if there's no mask, all cells are valid
+       lmask = .true.
+    endif
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
@@ -179,10 +191,7 @@ contains
           endif
 
           ! make sure the cell isn't covered by finer cells
-          cell_valid = .true.
-          if ( present(mask) ) then
-             cell_valid = mask(i,j)
-          end if
+          cell_valid = lmask(i,j)
 
           if (cell_valid) then
              pisum = pisum + weight*pi_cc(i,j)
