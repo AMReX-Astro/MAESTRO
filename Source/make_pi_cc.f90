@@ -209,7 +209,14 @@ contains
     ! local
     integer :: i,j,k
 
-    logical :: cell_valid
+    logical :: cell_valid, lmask(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3))
+
+    if ( present(mask) ) then
+       lmask(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3)) = mask(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3))
+    else
+       ! if there's no mask, all cells are valid
+       lmask = .true.
+    endif
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid) reduction(+:pisum,ncell)
     do k=lo(3),hi(3)
@@ -224,11 +231,8 @@ contains
              endif
              
              ! make sure the cell isn't covered by finer cells
-             cell_valid = .true.
-             if ( present(mask) ) then
-                cell_valid = mask(i,j,k)
-             end if
-             
+             cell_valid = lmask(i,j,k)
+
              if (cell_valid) then
                 pisum = pisum + weight*pi_cc(i,j,k)
                 ncell = ncell + weight
