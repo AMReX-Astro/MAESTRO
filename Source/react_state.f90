@@ -773,7 +773,7 @@ contains
       !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        
 
       call cpu_time(loop_start)
-      !$acc parallel num_gangs(2048)
+      !$acc parallel
 
       !$acc loop gang vector collapse(3) private(rho,x_in,T_in,x_test,x_out) &
       !$acc    private(rhowdot,rhoH,sumX,n)
