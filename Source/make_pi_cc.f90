@@ -122,20 +122,12 @@ contains
     real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:)
     real (kind=dp_t), intent(in   )           :: beta0(lo(1)-ng_b:)
     real (kind=dp_t), intent(inout)           :: ncell,pisum
-    logical         , intent(in   ), optional ::  mask(lo(1):      )
+    logical         , intent(in   ), optional ::  mask(lo(1):hi(1))
 
     ! local
     integer :: i
 
     logical :: cell_valid
-    logical :: cell_valid, lmask(lo(1):hi(1))
-
-    if ( present(mask) ) then
-       lmask(lo(1):hi(1)) = mask(lo(1):hi(1))
-    else
-       ! if there's no mask, all cells are valid
-       lmask = .true.
-    endif
 
     do i=lo(1),hi(1)
 
@@ -146,7 +138,10 @@ contains
        endif
 
        ! make sure the cell isn't covered by finer cells
-       cell_valid = lmask(i)
+       cell_valid = .true.
+       if (present(mask)) then
+          cell_valid = mask(i)
+       endif
        
        if (cell_valid) then
           pisum = pisum + weight*pi_cc(i)
@@ -167,19 +162,12 @@ contains
     real (kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:)
     real (kind=dp_t), intent(in   )           :: beta0(lo(1)-ng_b: ,lo(2)-ng_b:)
     real (kind=dp_t), intent(inout)           :: ncell,pisum
-    logical         , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      )
+    logical         , intent(in   ), optional ::  mask(lo(1):hi(1) ,lo(2):hi(2))
 
     ! local
     integer :: i,j
 
-    logical :: cell_valid, lmask(lo(1):hi(1), lo(2):hi(2))
-
-    if ( present(mask) ) then
-       lmask(lo(1):hi(1), lo(2):hi(2)) = mask(lo(1):hi(1), lo(2):hi(2))
-    else
-       ! if there's no mask, all cells are valid
-       lmask = .true.
-    endif
+    logical :: cell_valid
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
@@ -191,7 +179,10 @@ contains
           endif
 
           ! make sure the cell isn't covered by finer cells
-          cell_valid = lmask(i,j)
+          cell_valid = .true.
+          if (present(mask)) then
+             cell_valid = mask(i,j)
+          endif
 
           if (cell_valid) then
              pisum = pisum + weight*pi_cc(i,j)
@@ -213,19 +204,12 @@ contains
     real(kind=dp_t), intent(inout)           :: pi_cc(lo(1)-ng_pc:,lo(2)-ng_pc:,lo(3)-ng_pc:)
     real(kind=dp_t), intent(inout)           :: beta0(lo(1)-ng_b: ,lo(2)-ng_b: ,lo(3)-ng_b:)
     real(kind=dp_t), intent(inout)           :: ncell,pisum
-    logical        , intent(in   ), optional ::  mask(lo(1):      ,lo(2):      ,lo(3):      )
+    logical        , intent(in   ), optional ::  mask(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
 
     ! local
     integer :: i,j,k
 
-    logical :: cell_valid, lmask(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3))
-
-    if ( present(mask) ) then
-       lmask(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3)) = mask(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3))
-    else
-       ! if there's no mask, all cells are valid
-       lmask = .true.
-    endif
+    logical :: cell_valid
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid) reduction(+:pisum,ncell)
     do k=lo(3),hi(3)
@@ -240,7 +224,10 @@ contains
              endif
              
              ! make sure the cell isn't covered by finer cells
-             cell_valid = lmask(i,j,k)
+             cell_valid = .true.
+             if (present(mask)) then
+                cell_valid = mask(i,j,k)
+             endif
 
              if (cell_valid) then
                 pisum = pisum + weight*pi_cc(i,j,k)
