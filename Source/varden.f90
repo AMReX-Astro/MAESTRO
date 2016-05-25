@@ -153,6 +153,7 @@ subroutine varden()
 
   ! initialize the microphysics modules
   call network_init()
+  call burner_init()
   call eos_init(small_temp=small_temp,small_dens=small_dens)
   call conductivity_init(cond_const=conductivity_constant)
 

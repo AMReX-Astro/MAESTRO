@@ -7,11 +7,13 @@ module burner_module
   use actual_burner_module
   use burn_type_module
 
+  implicit none
+
   logical :: burner_initialized = .false.
 
 contains
 
-  subroutine burner_init() bind(C, name="burner_init")
+  subroutine burner_init()
 
     implicit none
 
@@ -23,58 +25,44 @@ contains
 
 
 
-  function ok_to_burn(state)
+  subroutine burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
 
-    use meth_params_module, only: react_T_min, react_T_max, react_rho_min, react_rho_max, &
-                                  disable_shock_burning
+     !$acc routine seq
 
-    implicit none
+     use network, only: nspec
+     use burn_type_module, only: burn_t
+     use actual_burner_module, only: actual_burner
 
-    logical       :: ok_to_burn
-    type (burn_t) :: state
+     implicit none
 
-    ok_to_burn = .true.
+     real(kind=dp_t), intent(in   ) :: rho, T_in, x_in(nspec), dt
+     real(kind=dp_t), intent(inout) :: x_out(nspec), rhowdot(nspec), rhoH
 
-    if (state % T < react_T_min .or. state % T > react_T_max .or. &
-        state % rho < react_rho_min .or. state % rho > react_rho_max .or. &
-        (disable_shock_burning .eq. 1 .and. state % shock) ) then
+     real(kind=dp_t) :: time
+     integer :: n
+     type (burn_t) :: state_in, state_out
 
-       ok_to_burn = .false.
+     time = 0.0d0
 
-    endif
+     state_in % rho = rho
+     state_in % T   = T_in
+     do n = 1, nspec
+        state_in % xn(n) = x_in(n)
+     enddo
 
-  end function ok_to_burn
+     ! Initialize the outgoing state to be equal to the incoming state.
 
+     state_out = state_in
 
+     call actual_burner(state_in, state_out, dt, time)
 
-  subroutine burner(state_in, state_out, dt, time)
+     do n = 1, nspec
+        x_out(n) = state_out % xn(n)
+        rhowdot(n) = rho * (x_out(n) - x_in(n)) / dt
+     enddo
 
-    implicit none
+     rhoH = rho * (state_out % e - state_in % e) / dt
 
-    type (burn_t), intent(inout) :: state_in
-    type (burn_t), intent(inout) :: state_out
-    double precision, intent(in) :: dt, time
-
-    ! Make sure the network and burner have been initialized.
-
-    if (.NOT. network_initialized) then
-       call bl_error("ERROR in burner: must initialize network first.")
-    endif
-
-    if (.NOT. burner_initialized) then
-       call bl_error("ERROR in burner: must initialize burner first.")
-    endif
-
-    ! Initialize the final state by assuming it does not change.
-
-    state_out = state_in
-
-    ! Do the burning.
-
-    if (ok_to_burn(state_in)) then
-       call actual_burner(state_in, state_out, dt, time)
-    endif
-
-  end subroutine burner
+   end subroutine burner
 
 end module burner_module
