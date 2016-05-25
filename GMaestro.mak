@@ -161,6 +161,13 @@ EXTRAS += $(addprefix $(EXTRA_TOP_DIR2)/, $(EXTRA_DIR2))
 # compile in support for particles
 PARTICLES := t
 
+#-----------------------------------------------------------------------------
+# If we are using OpenACC, add the corresponding preprocessor macro.
+ifdef ACC
+  ifeq ($(ACC), t)
+    FPP_DEFINES += -DACC
+  endif
+endif
 
 #-----------------------------------------------------------------------------
 # Fmpack is the list of all the GPackage.mak files that we need to
