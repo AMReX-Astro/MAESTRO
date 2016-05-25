@@ -81,6 +81,8 @@ contains
 
     initialized = .true.
 
+    !$acc update device(smallt, smalld, mintemp, maxtemp, mindens, maxdens, minye, maxye)
+
   end subroutine eos_init
 
 
@@ -90,6 +92,8 @@ contains
 
 
   subroutine eos(input, state, pt_index)
+
+    !$acc routine seq
 
     implicit none
 
@@ -101,7 +105,9 @@ contains
 
     ! Local variables
 
+#ifndef ACC
     if (.not. initialized) call bl_error('EOS: not initialized')
+#endif
 
     ! Get abar, zbar, etc.
 
@@ -130,6 +136,8 @@ contains
 
   subroutine check_inputs(input, state)
 
+    !$acc routine seq
+
     implicit none
 
     integer,      intent(in   ) :: input
@@ -141,17 +149,23 @@ contains
 
     do n = 1, nspec
        if (state % xn(n) .lt. init_test) then
+#ifndef ACC
           call bl_error('EOS: data not initialized.')
+#endif
        endif
     enddo
 
     if ( state % y_e .lt. minye ) then
+#ifndef ACC
        print *, 'Y_E = ', state % y_e
        call bl_error('EOS: y_e less than minimum possible electron fraction.')
+#endif
     endif
     if ( state % y_e .gt. maxye ) then
+#ifndef ACC
        print *, 'Y_E = ', state % y_e
        call bl_error('EOS: y_e greater than maximum possible electron fraction.')
+#endif
     endif
 
     ! Our strategy for testing the validity of the inputs is as follows.
@@ -210,26 +224,34 @@ contains
 
   subroutine check_rho(state)
 
+    !$acc routine seq
+
     implicit none
 
     type (eos_t), intent(inout) :: state
 
     if (state % rho .lt. init_test) then
+#ifndef ACC
        call bl_error('EOS: rho not initialized.')
+#endif
     endif
 
     if (state % rho .lt. smalld .and. state % check_small) then
        if (state % reset) then
           state % rho = smalld
        else
+#ifndef ACC
           print *, 'DENS = ', state % rho
           call bl_error('EOS: rho smaller than small_dens and we have not chosen to reset.')
+#endif
        endif
     endif
 
     if (state % rho .gt. maxdens) then
+#ifndef ACC
        print *, 'DENS = ', state % rho
        call bl_error('EOS: dens greater than maximum possible density.')
+#endif
     endif
 
   end subroutine check_rho
@@ -238,26 +260,34 @@ contains
 
   subroutine check_T(state)
 
+    !$acc routine seq
+
     implicit none
 
     type (eos_t), intent(inout) :: state
 
     if (state % T .lt. init_test) then
+#ifndef ACC
        call bl_error('EOS: T not initialized.')
+#endif
     endif
 
     if (state % T .lt. smallt .and. state % check_small) then
        if (state % reset) then
           state % T = smallt
        else
+#ifndef ACC
           print *, 'TEMP = ', state % T
           call bl_error('EOS: T smaller than small_temp and we have not chosen to reset.')
+#endif
        endif
     endif
 
     if (state % T .gt. maxdens) then
+#ifndef ACC
        print *, 'TEMP = ', state % T
        call bl_error('EOS: T greater than maximum possible temperature.')
+#endif
     endif
 
   end subroutine check_T
@@ -266,12 +296,16 @@ contains
 
   subroutine check_e(state)
 
+    !$acc routine seq
+
     implicit none
 
     type (eos_t), intent(inout) :: state
 
     if (state % e .lt. init_test) then
+#ifndef ACC
        call bl_error('EOS: energy not initialized.')
+#endif
     endif
 
     if (state % e .lt. ZERO) then
@@ -280,7 +314,9 @@ contains
           state % rho = max(smalld, state % rho)
           call eos_reset(state)
        else
+#ifndef ACC
           call bl_error('EOS: e smaller than zero and we have not chosen to reset.')
+#endif
        endif
     endif
 
@@ -290,12 +326,16 @@ contains
 
   subroutine check_h(state)
 
+    !$acc routine seq
+
     implicit none
 
     type (eos_t), intent(inout) :: state
 
     if (state % h .lt. init_test) then
+#ifndef ACC
        call bl_error('EOS: enthalpy not initialized.')
+#endif
     endif
 
     if (state % h .lt. ZERO) then
@@ -304,7 +344,9 @@ contains
           state % rho = max(smalld, state % rho)
           call eos_reset(state)
        else
+#ifndef ACC
           call bl_error('EOS: h smaller than zero and we have not chosen to reset.')
+#endif
        endif
     endif
 
@@ -314,12 +356,16 @@ contains
 
   subroutine check_s(state)
 
+    !$acc routine seq
+
     implicit none
 
     type (eos_t), intent(inout) :: state
 
     if (state % s .lt. init_test) then
+#ifndef ACC
        call bl_error('EOS: entropy not initialized.')
+#endif
     endif
 
     if (state % s .lt. ZERO) then
@@ -328,7 +374,9 @@ contains
           state % rho = max(smalld, state % rho)
           call eos_reset(state)
        else
+#ifndef ACC
           call bl_error('EOS: s smaller than zero and we have not chosen to reset.')
+#endif
        endif
     endif
 
@@ -338,12 +386,16 @@ contains
 
   subroutine check_p(state)
 
+    !$acc routine seq
+
     implicit none
 
     type (eos_t), intent(inout) :: state
 
     if (state % p .lt. init_test) then
+#ifndef ACC
        call bl_error('EOS: pressure not initialized.')
+#endif
     endif
 
     if (state % p .lt. ZERO) then
@@ -352,7 +404,9 @@ contains
           state % rho = max(smalld, state % rho)
           call eos_reset(state)
        else
+#ifndef ACC
           call bl_error('EOS: p smaller than zero and we have not chosen to reset.')
+#endif
        endif
     endif
 
@@ -366,6 +420,8 @@ contains
   ! on that zone to reset its state values.
 
   subroutine eos_reset(state)
+
+    !$acc routine seq
 
     use actual_eos_module
 
