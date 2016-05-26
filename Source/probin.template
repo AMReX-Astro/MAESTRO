@@ -387,7 +387,11 @@ contains
     call ml_layout_set_strategy(the_ml_layout_strategy)
 
     call destroy(bpt)
-    
+
+    ! Update the value of the parameters on the GPU.
+
+    @@acc@@
+
   end subroutine runtime_init
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
