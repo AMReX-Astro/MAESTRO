@@ -114,6 +114,8 @@ contains
 
   subroutine composition(state)
 
+    !$acc routine seq
+
     use bl_constants_module
     use network
 
@@ -138,6 +140,8 @@ contains
   ! Compute thermodynamic derivatives with respect to xn(:)
 
   subroutine composition_derivatives(state)
+
+    !$acc routine seq
 
     use bl_constants_module
     use network
@@ -171,6 +175,8 @@ contains
   ! and less than one, and they must all sum to unity.
 
   subroutine normalize_abundances(state)
+
+    !$acc routine seq
 
     use bl_constants_module
     use network

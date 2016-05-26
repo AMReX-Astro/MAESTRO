@@ -20,6 +20,7 @@ subroutine varden()
   use bl_types
   use define_bc_module
   use network
+  use burner_module, only: burner_init
   use eos_module
   use react_state_module
   use varden_aux
@@ -82,6 +83,7 @@ subroutine varden()
 
   !Microphysics
   call network_init()
+  call burner_init()
   call eos_init(small_temp=small_temp)
   
   !Initialize the varden_aux reaction data

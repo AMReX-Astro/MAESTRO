@@ -74,31 +74,37 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   EOS_DIR := helmholtz
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
-  Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
-  EOS_PATH := $(EOS_TOP_DIR)/helmholtz
+endif
+
+# All equations of state except gamma_law_general should pull in the Microphysics repository.
+ifneq ($(findstring gamma_law_general, $(EOS_DIR)), gamma_law_general)
+  ifdef MICROPHYSICS_DIR
+    EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+    EOS_PATH := $(EOS_TOP_DIR)/$(EOS_DIR)
+    Fmincludes_ext := $(EOS_TOP_DIR) $(EOS_TOP_DIR)/$(EOS_DIR)
+  else
+    $(error Need to specify the MICROPHYSICS_DIR environment variable if not using gamma_law_general)
+  endif
+else
+  EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+endif
+
+# the helmeos has an include file -- also add a target to link the table
+# into the problem directory.
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   ALL: table
 endif
 
 table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
-ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
-endif
-
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
-
-# locations of the microphysics 
-ifndef EOS_TOP_DIR 
-  EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
-endif
-
-ifndef NETWORK_TOP_DIR 
+# All networks except general_null should pull in the Microphysics repository.
+ifneq ($(findstring general_null, $(NETWORK_DIR)), general_null)
+  NETWORK_TOP_DIR := $(MICROPHYSICS_DIR)/networks
+  Fmincludes_ext += $(NETWORK_TOP_DIR) $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
+else
   NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
 endif
 
@@ -107,9 +113,14 @@ ifndef CONDUCTIVITY_TOP_DIR
 endif
 
 # add in the network, EOS, and conductivity
-MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
+MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
+		  $(MAESTRO_TOP_DIR)/Microphysics/networks \
+		  $(EOS_TOP_DIR) \
+		  $(NETWORK_TOP_DIR) \
+		  $(EOS_TOP_DIR)/$(EOS_DIR) \
                   $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
-                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
+                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) \
+
 
 # get any additional network dependencies
 include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
@@ -150,6 +161,13 @@ EXTRAS += $(addprefix $(EXTRA_TOP_DIR2)/, $(EXTRA_DIR2))
 # compile in support for particles
 PARTICLES := t
 
+#-----------------------------------------------------------------------------
+# If we are using OpenACC, add the corresponding preprocessor macro.
+ifdef ACC
+  ifeq ($(ACC), t)
+    FPP_DEFINES += -DACC
+  endif
+endif
 
 #-----------------------------------------------------------------------------
 # Fmpack is the list of all the GPackage.mak files that we need to
@@ -189,6 +207,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
 # any include directories
+Fmpack += $(foreach dir, $(Fmincludes_ext), $(dir)/GPackage.mak)
 Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir)) $(Fmincludes_ext)
 
 
