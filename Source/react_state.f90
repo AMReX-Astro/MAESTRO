@@ -738,7 +738,7 @@ contains
       logical        , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
       !     Local variables
-      integer            :: i, j, k, n, ii
+      integer            :: i, j, k, n, ii, jj
       real (kind = dp_t) :: rho,T_in,ldt
 
       real (kind = dp_t) :: x_in(nspec)
@@ -749,6 +749,8 @@ contains
       logical            :: cell_valid
       integer, save      :: ispec_threshold
       logical, save      :: firstCall = .true.
+      integer                 :: cycle_size
+      integer(8), allocatable :: cycles(:,:)
 
       real (kind = dp_t) :: sumX, full_start, full_end, loop_start, loop_end
 
@@ -759,6 +761,8 @@ contains
 
       ldt = dt
       call init_pascal()
+      cycle_size = (hi(3) - lo(3)+1) * (hi(2) - lo(2)+1) * (hi(1) - lo(1)+1)
+      allocate(cycles(cycle_size,3))
 
       !!$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) FIRSTPRIVATE(ldt) &
       !!$OMP SCHEDULE(DYNAMIC,1)
@@ -770,7 +774,8 @@ contains
       !$acc      copyin(rho_Hext(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))         &
       !$acc      copyout(snew(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))          &
       !$acc      copyout(rho_omegadot(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:) ) &
-      !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        
+      !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))        &
+      !$acc      copy(cycles)
 
       call cpu_time(loop_start)
       !$acc parallel
@@ -810,11 +815,13 @@ contains
                ! if the threshold species is not in the network, then we burn
                ! normally.  if it is in the network, make sure the mass
                ! fraction is above the cutoff.
+               ii = (i - lo(1))*(hi(3)-lo(3)+1)*(hi(2)-lo(2)+1) + (j - lo(2))*(hi(3)-lo(3)+1) + k - lo(3) + 1
                if (rho > burning_cutoff_density .and.                &
                     ( ispec_threshold < 0 .or.                       &
                     (ispec_threshold > 0 .and.                       &
                     x_test > burner_threshold_cutoff))) then
-                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH, cycles(ii,1:3))
+                  !call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
                else
                   x_out = x_in
                   rhowdot = 0.d0
@@ -869,6 +876,12 @@ contains
       call cpu_time(full_end)
       print *, 'burner loop time (s): ', loop_end-loop_start
       print *, 'burner loop time + data (s): ', full_end-full_start
+      print *, 'cycles max:    ', maxval(cycles(:,1))
+      print *, 'cycles min:    ', minval(cycles(:,1))
+      print *, 'cycles avg:    ', float(sum(cycles(:,1)))/float(cycle_size)
+      print *, 'avg advance %: ', (float(sum(cycles(:,3)))/float(cycle_size)) / (float(sum(cycles(:,1)))/float(cycle_size))
+      print *, 'max advance %: ', (float(maxval(cycles(:,3)))/float(cycle_size)) / (float(maxval(cycles(:,1)))/float(cycle_size))
+      deallocate(cycles)
    end subroutine burner_loop_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
