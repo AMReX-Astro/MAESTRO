@@ -271,6 +271,9 @@ build_info.f90:
            --source_home "$(MAESTRO_TOP_DIR)" \
            --extra_home "$(ASTRODEV_DIR)" \
            --extra_home2 "$(MICROPHYSICS_DIR)" \
+           --network "$(NETWORK_DIR)" \
+           --eos "$(EOS_DIR)" \
+           --conductivity "$(CONDUCTIVITY_DIR)"
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90
