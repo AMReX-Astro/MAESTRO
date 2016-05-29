@@ -50,6 +50,8 @@ contains
         state_in % xn(n) = x_in(n)
      enddo
 
+     state_in % e = 0.0d0
+
      ! Initialize the outgoing state to be equal to the incoming state.
 
      state_out = state_in
