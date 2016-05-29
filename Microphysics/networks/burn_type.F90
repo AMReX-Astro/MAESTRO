@@ -46,7 +46,9 @@ module burn_type_module
     double precision :: e                != init_num
     double precision :: h                != init_num
     double precision :: xn(nspec)        != init_num
+#if naux > 0
     double precision :: aux(naux)        != init_num
+#endif
     double precision :: cv               != init_num
     double precision :: cp               != init_num
     double precision :: y_e              != init_num
@@ -107,8 +109,11 @@ contains
     burn_state % rho  = eos_state % rho
     burn_state % T    = eos_state % T
     burn_state % e    = eos_state % e
+    burn_state % h    = eos_state % h
     burn_state % xn   = eos_state % xn
+#if naux > 0
     burn_state % aux  = eos_state % aux
+#endif
     burn_state % cv   = eos_state % cv
     burn_state % cp   = eos_state % cp
     burn_state % y_e  = eos_state % y_e
@@ -136,8 +141,11 @@ contains
     eos_state % rho  = burn_state % rho
     eos_state % T    = burn_state % T
     eos_state % e    = burn_state % e
+    eos_state % h    = burn_state % h
     eos_state % xn   = burn_state % xn
+#if naux > 0
     eos_state % aux  = burn_state % aux
+#endif
     eos_state % cv   = burn_state % cv
     eos_state % cp   = burn_state % cp
     eos_state % y_e  = burn_state % y_e
