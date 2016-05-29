@@ -191,5 +191,9 @@ subroutine varden()
   deallocate(rho_Hnuc)
   deallocate(rho_Hext)
 
+  call destroy_geometry()
+  call eos_finalize()
+  call network_finalize()
+
   call runtime_close()
 end subroutine varden
