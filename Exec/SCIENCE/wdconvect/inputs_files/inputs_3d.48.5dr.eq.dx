@@ -71,5 +71,6 @@
  use_eos_coulomb = T
 
  plot_trac = F
+ plot_h_with_use_tfromp = F
 
 /
