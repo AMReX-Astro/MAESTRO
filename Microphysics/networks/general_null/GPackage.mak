@@ -20,4 +20,4 @@ actual_network.f90:   $(GENERAL_NET_INPUTS) $(MAESTRO_TOP_DIR)/Microphysics/netw
 # microphysics merge is ancient memory
 clean::
 	$(RM) actual_network.f90
-        $(RM) network.f90
+	$(RM) network.f90
