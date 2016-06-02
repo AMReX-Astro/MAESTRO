@@ -23,6 +23,8 @@ module geometry
   integer   , allocatable, save :: base_cutoff_density_coord(:)
   integer   , allocatable, save :: burning_cutoff_density_coord(:)
   real(dp_t), save :: sin_theta, cos_theta, omega
+  logical   , save :: radial_initialized = .false., cutoff_initialized = .false.
+  logical   , save :: multilevel_initialized = .false.
 
   private
 
@@ -156,6 +158,8 @@ contains
 
     end if
 
+    radial_initialized = .true.
+
   end subroutine init_radial
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -175,6 +179,8 @@ contains
        allocate(   base_cutoff_density_coord(1))
        allocate(burning_cutoff_density_coord(1))
     end if
+
+    cutoff_initialized = .true.
 
   end subroutine init_cutoff
 
@@ -453,6 +459,8 @@ contains
        r_end_coord(1,1) = nr_fine-1
 
     end if
+   
+    multilevel_initialized = .true.
   end subroutine init_multilevel
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -495,8 +503,16 @@ contains
 
   subroutine destroy_geometry()
 
-    deallocate(dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks)
-    deallocate(anelastic_cutoff_coord,base_cutoff_density_coord,burning_cutoff_density_coord)
+    if(radial_initialized) then
+      deallocate(dr, nr, r_cc_loc, r_edge_loc)
+    endif
+    if(cutoff_initialized) then
+      deallocate(anelastic_cutoff_coord,base_cutoff_density_coord)
+      deallocate(burning_cutoff_density_coord)
+    endif
+    if(multilevel_initialized) then
+      deallocate(numdisjointchunks,r_start_coord,r_end_coord)
+    endif
 
   end subroutine destroy_geometry
 
