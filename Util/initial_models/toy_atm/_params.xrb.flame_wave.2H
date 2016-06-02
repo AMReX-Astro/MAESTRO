@@ -2,7 +2,7 @@
 
  model_prefix = "flame_wave"
 
- nx = 1536
+ nx = 2048
 
  dens_base = 2e6
 
@@ -10,7 +10,7 @@
  T_base = 3.81d8
  T_lo   = 5.d7
 
- H_star = 3000.d0
+ H_star = 5000.d0
  delta  = 12.0
 
  fuel1_name = "helium-4"
@@ -23,7 +23,7 @@
 
 
  xmin = 0.0
- xmax = 61440.0
+ xmax = 20480.0
 
  g_const = -2.0e14
 
