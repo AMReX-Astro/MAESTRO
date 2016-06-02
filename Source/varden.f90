@@ -2,6 +2,7 @@ subroutine varden()
 
   use variables
   use network
+  use burner_module, only: burner_init
   use geometry
   use base_state_module
   use base_io_module
