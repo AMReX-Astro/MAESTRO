@@ -16,5 +16,8 @@ actual_network.f90:   $(GENERAL_NET_INPUTS) $(MAESTRO_TOP_DIR)/Microphysics/netw
 
 
 # remove actual_network.f90 for 'make clean' and therefore 'make realclean'
+# network.f90 is here for backwards compatibility -- remove this once the 
+# microphysics merge is ancient memory
 clean::
 	$(RM) actual_network.f90
+        $(RM) network.f90
