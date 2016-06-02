@@ -1,6 +1,8 @@
 NDEBUG := t
 MPI    := 
 OMP    := t
+ACC    :=
+
 
 COMP := gfortran
 
@@ -26,6 +28,9 @@ CONDUCTIVITY_DIR := timmes_stellar
 #NETWORK_DIR := ignition_chamulak
 #NETWORK_DIR := aprox13
 NETWORK_DIR := ignition_simple
+
+# define the integrator you would like to use, default is VODE
+#INTEGRATOR_DIR := VBDF
 
 # a special case for the test suite
 ifeq ($(NETWORK_DIR), ignition_chamulak)
