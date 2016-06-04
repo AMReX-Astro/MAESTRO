@@ -37,6 +37,8 @@ module actual_network
 
   real(kind=dp_t), save :: aion(nspec), zion(nspec)
 
+  integer, parameter :: nrates = 0
+
 contains
   
   subroutine actual_network_init()
