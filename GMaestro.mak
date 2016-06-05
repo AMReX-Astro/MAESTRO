@@ -121,7 +121,11 @@ ifdef NEED_VODE
 endif
 
 ifdef NEED_BLAS
-  UTIL_CORE += Util/BLAS
+  ifdef SYSTEM_BLAS
+    libraries += -lblas
+  else
+    UTIL_CORE += Util/BLAS
+  endif
 endif
 
 ifdef NEED_LINPACK
