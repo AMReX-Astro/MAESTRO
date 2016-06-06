@@ -360,7 +360,7 @@ contains
     eos_state%rho   = dens
     eos_state%xn(:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
 
-    call eos(eos_input_flag, eos_state, .false.)
+    call eos(eos_input_flag, eos_state)
 
     dens_pert = eos_state%rho
     rhoh_pert = eos_state%rho * eos_state%h

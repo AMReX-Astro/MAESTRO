@@ -1,0 +1,33 @@
+&params
+
+ model_prefix = "flame_wave"
+
+ nx = 2048
+
+ dens_base = 2e6
+
+ T_star = 1.d8
+ T_base = 3.81d8
+ T_lo   = 5.d7
+
+ H_star = 5000.d0
+ delta  = 12.0
+
+ fuel1_name = "helium-4"
+ fuel1_frac = 1.0d0
+
+ ash1_name  = "iron-56"
+ ash1_frac = 1.0d0
+
+
+
+
+ xmin = 0.0
+ xmax = 20480.0
+
+ g_const = -2.0e14
+
+ low_density_cutoff = 1.d-4
+
+ index_base_from_temp = T
+/

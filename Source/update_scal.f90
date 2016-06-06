@@ -182,7 +182,7 @@ contains
              pt_index(:) = (/i, -1, -1/)
              
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
              
              snew(i,rhoh_comp) = snew(i,rho_comp) * eos_state%h
              
@@ -302,7 +302,7 @@ contains
                 pt_index(:) = (/i, j, -1/)
                 
                 ! (rho,P) --> T,h
-                call eos(eos_input_rp, eos_state, .false., pt_index)
+                call eos(eos_input_rp, eos_state, pt_index)
                 
                 snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
                 
@@ -435,7 +435,7 @@ contains
                    pt_index(:) = (/i, j, k/)
 
                    ! (rho,P) --> T,h
-                   call eos(eos_input_rp, eos_state, .false., pt_index)
+                   call eos(eos_input_rp, eos_state, pt_index)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 
@@ -577,7 +577,7 @@ contains
                    pt_index(:) = (/i, j, k/)
 
                    ! (rho,P) --> T,h
-                   call eos(eos_input_rp, eos_state, .false., pt_index)
+                   call eos(eos_input_rp, eos_state, pt_index)
 
                    snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 

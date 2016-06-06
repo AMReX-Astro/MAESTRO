@@ -8,7 +8,7 @@ program init_1d
   use bl_constants_module
   use bl_error_module
   use eos_module, only: eos, eos_input_rt, eos_init
-  use eos_type_module
+  use eos_type_module, only: eos_t
   use extern_probin_module, only: use_eos_coulomb
   use network
   use fundamental_constants_module, only: Gconst
@@ -191,7 +191,7 @@ program init_1d
   eos_state%xn(:) = xn_base(:)
 
   ! (t, rho) -> (p, s)    
-  call eos(eos_input_rt, eos_state, .false.)
+  call eos(eos_input_rt, eos_state)
 
   ! make the initial guess be completely uniform
   model_hse(:,idens) = eos_state%rho
@@ -256,7 +256,7 @@ program init_1d
               eos_state%xn(:) = xn(:)
               
               ! (t, rho) -> (p, s)    
-              call eos(eos_input_rt, eos_state, .false.)
+              call eos(eos_input_rt, eos_state)
 
               entropy = eos_state%s
               pres_zone = eos_state%p
@@ -328,7 +328,7 @@ program init_1d
               eos_state%xn(:) = xn(:)
         
               ! (t, rho) -> (p, s)
-              call eos(eos_input_rt, eos_state, .false.)
+              call eos(eos_input_rt, eos_state)
         
               entropy = eos_state%s
               pres_zone = eos_state%p
@@ -391,7 +391,7 @@ program init_1d
      eos_state%xn(:) = xn(:)
 
      ! (t, rho) -> (p, s)    
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 

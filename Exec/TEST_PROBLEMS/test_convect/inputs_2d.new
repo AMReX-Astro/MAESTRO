@@ -33,10 +33,10 @@
  cflfac = 0.9d0
  init_shrink = 1.d0
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = 14
- bcy_hi = 12
+xlo_boundary_type = "periodic"
+xhi_boundary_type = "periodic"
+ylo_boundary_type = "slip wall"
+yhi_boundary_type = "outlet"
 
 
     verbose = 1

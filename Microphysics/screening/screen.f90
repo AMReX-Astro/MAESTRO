@@ -1,5 +1,5 @@
 subroutine screenz (t,d,z1,z2,a1,a2,ymass,aion,zion,nion,scfac, dscfacdt)
-
+  !$acc routine seq
   implicit none
 
   integer nion

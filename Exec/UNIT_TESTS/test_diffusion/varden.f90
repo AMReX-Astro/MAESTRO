@@ -59,7 +59,7 @@ subroutine varden()
   call init_variables()
 
   call network_init()
-  call eos_init(gamma_in=FIVE3RD)
+  call eos_init()
 
   call conductivity_init(cond_const=thermal_conductivity)
 

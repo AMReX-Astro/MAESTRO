@@ -57,7 +57,7 @@ program testjacobian
   eos_state%T   = temp
   eos_state%xn  = Xin
 
-  call eos(eos_input_rt,eos_state,.false.)
+  call eos(eos_input_rt, eos_state)
 
   rpar(irp_cp) = eos_state%cp
   rpar(irp_dhdX:irp_dhdX+nspec-1) = eos_state%dhdX

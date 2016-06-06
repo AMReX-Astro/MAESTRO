@@ -59,7 +59,7 @@ contains
 
     integer                     :: stencil_order,dm,nlevs
     integer                     :: i,n,comp
-    type(bndry_reg)             :: fine_flx(2:mla%nlevel)
+    type(bndry_reg)             :: fine_flx(mla%nlevel)
     real(dp_t)                  :: abs_eps, abs_solver_eps, rel_solver_eps
 
     type(bl_prof_timer), save :: bpt
@@ -71,7 +71,7 @@ contains
 
     stencil_order = 2
 
-    do n = 2,nlevs
+    do n = 1,nlevs
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
 
@@ -372,7 +372,7 @@ contains
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,rel_solver_eps,abs_solver_eps)
 
-    do n=2,nlevs
+    do n = 1,nlevs
        call destroy(fine_flx(n))
     end do
 

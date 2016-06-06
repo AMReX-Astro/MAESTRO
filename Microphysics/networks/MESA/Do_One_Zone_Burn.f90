@@ -179,7 +179,7 @@ subroutine Do_One_Zone_Burn(density, temperature, tstop, x_mesa_in, &
    !------------------------------------------------------------ 
    ! eos call to get eta
    !------------------------------------------------------------ 
-   call eos(eos_input, eos_state, do_eos_diag)
+   call eos(eos_input, eos_state)
    eta = eos_state%eta
    
    allocate(rate_factors(num_reactions), category_factors(num_categories), &

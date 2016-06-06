@@ -1,0 +1,51 @@
+changes since last merge with master:
+
+
+
+previous releases:
+
+16.06
+
+ * Major changes:
+
+   -- We've switched over to the version of the Helmholtz stellar
+      equation of state in the separate Microphysics/ repo.  This
+      allows for code reuse with other BoxLib astro codes.
+
+      Also with this change, the following EOS changes were inherited:
+
+      * The minimum temperature allowable in the EOS is now a
+        separately saved variable in the EOS structure and is strictly
+        enforced by the limits of the interpolation table. The user
+        can also specify small_temp/small_dens inside MAESTRO or
+        CASTRO; if it is larger than that, it will be respected, but
+        if smaller, you still cannot go lower than the lower end of
+        the table. A similar statement applies for the maximum
+        density/temperature.
+
+      * The range of temperature is 10**3 K < T < 10**13 K and the
+        range of density is 10**-12 g/cc < rho < 10**15 g/cc, which is
+        wider than it used to be before.
+
+      * The absolute values of the EOS quantities are also slightly
+        different (at the ~1e-5 level) due to an update in the
+        physical constants used to construct the table.
+
+      * Previously, if the pressure was detected to be negative as a
+        result of adding Coulomb corrections, all Coulomb corrections
+        for all state variables were disabled. This trigger now also
+        occurs if the energy goes negative.
+
+      NOTE: this change means you now need the Microphysics repo
+      (https://github.com/BoxLib-Codes/Microphysics) to use any
+      equation of state other than the gamma-law EOS.
+
+ * Minor changes:
+
+   -- All inputs files have been switched over to use the string
+      version of the boundary condition runtime parameters for clarity
+
+   -- A workaround for a compiler bug in the Cray 8.4.x compilers was
+      implemented, and these compilers are now supported
+
+

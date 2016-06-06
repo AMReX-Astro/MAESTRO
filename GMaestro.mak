@@ -5,11 +5,16 @@ NEED := 3.81
 OK := $(filter $(NEED),$(firstword $(sort $(MAKE_VERSION) $(NEED))))
 
 ifndef OK
-  $(error your version of GNU make is too old.  You need atleast version $(NEED))
+   $(error your version of GNU make is too old.  You need atleast version $(NEED))
 endif
 
-ifeq ($(findstring ~, $(BOXLIB_HOME)), ~)
-   $(error you cannot include the ~ character in your BOXLIB_HOME variable)
+# Make sure we have BoxLib and that the build system will find it
+ifdef BOXLIB_HOME
+   ifeq ($(findstring ~, $(BOXLIB_HOME)), ~)
+      $(error you cannot include the ~ character in your BOXLIB_HOME variable)
+   endif
+else
+   $(error Maestro requires BoxLib. Please ensure that you have downloaded it and set $$BOXLIB_HOME appropriately)
 endif
 
 # include the main Makefile stuff
@@ -68,6 +73,24 @@ UTIL_CORE += Util/simple_log
 
 #-----------------------------------------------------------------------------
 # microphysics
+
+# the helmeos has an include file -- also add a target to link the table
+# into the problem directory.
+ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
+  EOS_DIR := helmholtz
+  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+  Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
+  EOS_PATH := $(EOS_TOP_DIR)/helmholtz
+  ALL: table
+endif
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
+
+ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
+  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+endif
+
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
 # locations of the microphysics 
@@ -106,18 +129,6 @@ endif
 ifdef NEED_VBDF
   UTIL_CORE += Util/VBDF
 endif
-
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  Fmincludes := Microphysics/EOS/helmeos
-  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
-  ALL: table
-endif
-
-
-table:
-	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 
 #-----------------------------------------------------------------------------
@@ -178,7 +189,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
 # any include directories
-Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
+Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir)) $(Fmincludes_ext)
 
 
 # include the necessary GPackage.mak files that define this setup
@@ -260,6 +271,9 @@ build_info.f90:
            --source_home "$(MAESTRO_TOP_DIR)" \
            --extra_home "$(ASTRODEV_DIR)" \
            --extra_home2 "$(MICROPHYSICS_DIR)" \
+           --network "$(NETWORK_DIR)" \
+           --eos "$(EOS_DIR)" \
+           --conductivity "$(CONDUCTIVITY_DIR)"
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90

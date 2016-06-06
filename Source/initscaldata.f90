@@ -300,7 +300,7 @@ contains
 
              pt_index = (/ i, j, k /)
 
-             call eos(eos_input_rp, eos_state, .false., pt_index)
+             call eos(eos_input_rp, eos_state, pt_index)
 
              s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
              s(i,j,k,temp_comp) = eos_state%T

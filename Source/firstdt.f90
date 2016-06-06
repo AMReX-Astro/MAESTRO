@@ -251,7 +251,7 @@ contains
        pt_index(:) = (/i, -1, -1/)
 
        ! dens, temp, and xmass are inputs
-       call eos(eos_input_rt, eos_state, .false., pt_index)
+       call eos(eos_input_rt, eos_state, pt_index)
        
        spdx    = max(spdx,eos_state%cs)
        pforcex = max(pforcex,abs(force(i)))
@@ -365,7 +365,7 @@ contains
           pt_index(:) = (/i, j, -1/)
           
           ! dens, temp, and xmass are inputs
-          call eos(eos_input_rt, eos_state, .false., pt_index)
+          call eos(eos_input_rt, eos_state, pt_index)
           
           spdx    = max(spdx,eos_state%cs)
           spdy    = max(spdy,eos_state%cs)
@@ -493,7 +493,7 @@ contains
              pt_index(:) = (/i, j, k/)
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              spdx    = max(spdx,eos_state%cs)
              spdy    = max(spdy,eos_state%cs)
@@ -638,7 +638,7 @@ contains
              pt_index(:) = (/i, j, k/)
              
              ! dens, temp, and xmass are inputs
-             call eos(eos_input_rt, eos_state, .false., pt_index)
+             call eos(eos_input_rt, eos_state, pt_index)
              
              spdx    = max(spdx,eos_state%cs)
              spdy    = max(spdy,eos_state%cs)

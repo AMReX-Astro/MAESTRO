@@ -36,7 +36,7 @@ contains
     integer i
 
     ! call the EOS, passing through the arguments we called conducteos with
-    call eos(input, eos_state, do_diag)
+    call eos(input, eos_state)
 
     !..one *must* always call the eos before calling the opacity routine 
     !..since some of the required input must come from an eos

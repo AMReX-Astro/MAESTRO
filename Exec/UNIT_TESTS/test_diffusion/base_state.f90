@@ -65,7 +65,7 @@ contains
     eos_state%xn(ic12)  = ambient_c12
     eos_state%xn(ife56) = ambient_fe56
 
-    call eos(eos_input_rh, eos_state, .false.)
+    call eos(eos_input_rh, eos_state)
 
     diffusion_coefficient = thermal_conductivity / (eos_state%cp * ambient_dens)
 

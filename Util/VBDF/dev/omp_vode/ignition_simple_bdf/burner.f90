@@ -201,16 +201,15 @@ contains
     rpar(irp_o16)  = Xin(io16)
 
     ! call the integration routine
-    if (use_vbdf) then
-       call bdf_wrap(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
-                     istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
-                     rpar, ipar)
+    !if (use_vbdf) then
+    !   call bdf_wrap(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
+    !                 istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
+    !                 rpar, ipar)
 
-    else
-       call    dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
-                     istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
-                     rpar, ipar)
-    endif
+    !else
+    call    dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &
+                  istate, IOPT, rwork, LRW, iwork, LIW, jac, MF_ANALYTIC_JAC, &
+                  rpar, ipar)
     
     if (istate < 0) then
        print *, 'ERROR: integration failed in net'

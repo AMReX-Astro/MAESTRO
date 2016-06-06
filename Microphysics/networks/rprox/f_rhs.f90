@@ -51,7 +51,7 @@ subroutine f_rhs(n, t, y, ydot, rpar, ipar)
      eos_state%rho = dens
      eos_state%xn = ymol*aion
 
-     call eos(eos_input_rt,eos_state,.false.)
+     call eos(eos_input_rt, eos_state)
 
      rpar(irp_T9_eos) = T9_eos
      rpar(irp_cp) = eos_state%cp
