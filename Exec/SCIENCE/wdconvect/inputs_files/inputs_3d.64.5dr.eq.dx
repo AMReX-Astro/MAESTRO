@@ -37,12 +37,12 @@
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
 
- bcx_lo = 12
- bcx_hi = 12
- bcy_lo = 12
- bcy_hi = 12
- bcz_lo = 12
- bcz_hi = 12
+xlo_boundary_type = "outlet"
+xhi_boundary_type = "outlet"
+ylo_boundary_type = "outlet"
+yhi_boundary_type = "outlet"
+zlo_boundary_type = "outlet"
+zhi_boundary_type = "outlet"
 
 
     verbose = 1

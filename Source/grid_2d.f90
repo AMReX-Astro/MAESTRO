@@ -3,9 +3,9 @@ program grid_2d
   integer :: i, j
 
   integer, parameter :: nx = 8
-  integer, parameter :: ny = 15
-  integer, parameter :: nzonesx = 512
-  integer, parameter :: nzonesy = 960
+  integer, parameter :: ny = 32
+  integer, parameter :: nzonesx = 384
+  integer, parameter :: nzonesy = 1536
   integer, parameter :: iyoff = 0
 
   integer :: ix, iy

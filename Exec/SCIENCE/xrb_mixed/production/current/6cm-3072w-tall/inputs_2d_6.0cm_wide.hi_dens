@@ -36,10 +36,10 @@
  prob_hi_x = 3072.0d0
  prob_hi_y = 5760.0d0
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = 14
- bcy_hi = 12
+xlo_boundary_type = "periodic"
+xhi_boundary_type = "periodic"
+ylo_boundary_type = "slip wall"
+yhi_boundary_type = "outlet"
 
 
  !----------------------------------------------------------------------------

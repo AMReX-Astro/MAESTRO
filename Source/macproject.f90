@@ -832,8 +832,6 @@ contains
          end do
       end do
 
-      call destroy(bpt)
-
     end subroutine mkumac
 
     subroutine mkumac_1d(umac,ng_um,phi,ng_p,betax,ng_b,lo_x_flx,hi_x_flx,lo,hi,dx,press_bc)
