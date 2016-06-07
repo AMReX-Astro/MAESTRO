@@ -122,9 +122,6 @@ MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) \
 
 
-# get any additional network dependencies
-include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
-
 ifdef NEED_VODE
   UTIL_CORE += Util/VODE 
   NEED_BLAS := t
