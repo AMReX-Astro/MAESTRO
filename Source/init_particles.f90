@@ -36,16 +36,14 @@ contains
     
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     
-    integer :: lo(mla%dim),hi(mla%dim),i,n,dm,nlevs
+    integer :: lo(mla%dim),hi(mla%dim),i,n,nlevs
     integer :: ng_s
     
     type(bl_prof_timer), save :: bpt
     
     call build(bpt, "init_particles")
     
-    dm = mla%dim
     nlevs = mla%nlevel
-    
     ng_s  = nghost(s(1))
 
     do n=1,nlevs
@@ -55,54 +53,37 @@ contains
           
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
-          
-          select case (dm)
-          case (1)
-             call init_particles_1d(n, sop(:,1,1,:), ng_s, &
-                                    rho0(n,:), rhoh0(n,:), &
-                                    p0(n,:), tempbar(n,:), lo, hi, &
-                                    particles, dx, mla, &
-                                    init_mode)
 
-          case (2)
-             call init_particles_2d(n, sop(:,:,1,:), ng_s, &
-                                    rho0(n,:), rhoh0(n,:), &
-                                    p0(n,:), tempbar(n,:), lo, hi, &
-                                    particles, dx, mla, &
-                                    init_mode)
-
-          case (3)
-             if (spherical .eq. 1) then
-                call bl_error("ERROR: spherical init_particles not written")
-
-             else
-                call init_particles_3d_cart(n, sop(:,:,:,:), ng_s, &
-                                            rho0(n,:), rhoh0(n,:), &
-                                            p0(n,:), tempbar(n,:), lo, hi, &
-                                            particles, dx, mla, &
-                                            init_mode)
-             end if
-          end select
-
+          if (spherical == 1) then
+             call init_particles_sph(n, sop(:,:,:,:), ng_s, &
+                                     rho0(1,:), rhoh0(1,:), &
+                                     p0(1,:), tempbar(1,:), lo, hi, &
+                                     particles, dx, mla, &
+                                     init_mode)
+          else
+             call init_particles_cart(n, sop(:,:,:,:), ng_s, &
+                                      rho0(n,:), rhoh0(n,:), &
+                                      p0(n,:), tempbar(n,:), lo, hi, &
+                                      particles, dx, mla, &
+                                      init_mode)
+          endif
        end do
-
     enddo
 
     call destroy(bpt)
 
   end subroutine init_particles
 
-  subroutine init_particles_1d(n, s, ng_s, &
-                               rho0, rhoh0, &
-                               p0, tempbar, lo, hi, &
-                               particles, dx, mla, &
-                               init_mode)
+  subroutine init_particles_sph(n, s, ng_s, &
+                                 rho0, rhoh0, &
+                                 p0, tempbar, lo, hi, &
+                                 particles, dx, mla, &
+                                 init_mode)
 
     use probin_module, only: prob_lo
-    use variables, only: rho_comp
 
-    integer,                  intent(in) :: n, lo(:), hi(:), ng_s
-    real (kind = dp_t),       intent(in   ) ::     s(lo(1)-ng_s :,:)  
+    integer,                  intent(in   ) :: n, lo(:), hi(:), ng_s
+    real (kind = dp_t),       intent(in   ) :: s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real (kind = dp_t),       intent(in   ) :: rho0(0:), rhoh0(0:), p0(0:), tempbar(0:)
     type(particle_container), intent(inout) :: particles
     type(ml_layout),          intent(inout) :: mla
@@ -110,101 +91,109 @@ contains
     integer,                  intent(in   ) :: init_mode
 
     ! local variables
-    integer :: i
-    real(kind=dp_t) :: x
-    real(kind=dp_t) :: point(1)
-
-
-    do i = lo(1), hi(1)
-       x = prob_lo(1) + (dble(i) + HALF) * dx(n,1)
-       
-       ! point(1) = x
-       
-       ! call add(particles,point,mla,dx,prob_lo)
-
-    enddo
-
-  end subroutine init_particles_1d
-  
-  subroutine init_particles_2d(n, s, ng_s, &
-                               rho0, rhoh0, &
-                               p0, tempbar, lo, hi, &
-                               particles, dx, mla, &
-                               init_mode)
-
-    use probin_module, only : prob_lo
-    use variables, only: temp_comp
-
-    integer,                  intent(in) :: n, lo(:), hi(:), ng_s
-    real (kind = dp_t),       intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,:)  
-    real (kind = dp_t),       intent(in   ) :: rho0(0:), rhoh0(0:), p0(0:), tempbar(0:)
-    type(particle_container), intent(inout) :: particles
-    type(ml_layout),          intent(inout) :: mla
-    real(kind=dp_t),          intent(in   ) :: dx(:,:)    
-    integer,                  intent(in   ) :: init_mode
-
-    ! local variables
-    integer :: i, j
-    real(kind=dp_t) :: x, y
-    real(kind=dp_t) :: point(2)
-
-   
-    do j = lo(2), hi(2)
-       y = prob_lo(2) + (dble(j) + HALF) * dx(n,2)
-
-       do i = lo(1), hi(1)
-          x = prob_lo(1) + (dble(i) + HALF) * dx(n,1)
-
-          ! point(1) = x
-          ! point(2) = y
-
-          ! call add(particles,point,mla,dx,prob_lo)
-       
-       enddo
-    enddo
-
-  end subroutine init_particles_2d
-  
-  subroutine init_particles_3d_cart(n, s, ng_s, &
-                                    rho0, rhoh0, &
-                                    p0, tempbar, lo, hi, &
-                                    particles, dx, mla, &
-                                    init_mode)
-
-    use probin_module, only: prob_lo
-    use variables, only: rho_comp
-
-    integer,                  intent(in) :: n, lo(:), hi(:), ng_s
-    real (kind = dp_t),       intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
-    real (kind = dp_t),       intent(in   ) :: rho0(0:), rhoh0(0:), p0(0:), tempbar(0:)
-    type(particle_container), intent(inout) :: particles
-    type(ml_layout),          intent(inout) :: mla
-    real(kind=dp_t),          intent(in   ) :: dx(:,:)    
-    integer,                  intent(in   ) :: init_mode
-
-    ! local variables
-    integer :: i, j, k
+    integer :: i, j, k, dm
     real(kind=dp_t) :: x, y, z
-    real(kind=dp_t) :: point(3)
+    real(kind=dp_t) :: point(mla%dm)
+
+    !NOTE: For this stub code, init_particles_sph and init_particles_cart are
+    !identical.  We maintain the two because for particular implementations
+    !these may differ and we want the stub code to be a useful template.
+     
+    dm = mla%dm
 
     do k = lo(3), hi(3)
-       z = prob_lo(3) + (dble(k) + HALF) * dx(n,3)
-
        do j = lo(2), hi(2)
-          y = prob_lo(2) + (dble(j) + HALF) * dx(n,2)
-
           do i = lo(1), hi(1)
              x = prob_lo(1) + (dble(i) + HALF) * dx(n,1)
 
-             ! point(1) = x
-             ! point(2) = y
-             
-             ! call add(particles,point,mla,dx,prob_lo)
+             select case (dm)
+             case (1)
+                ! point(1) = x
+                
+                ! call add(particles,point,mla,dx,prob_lo)
+             case (2)
+                y = prob_lo(2) + (dble(j) + HALF) * dx(n,2)
+                
+                ! point(1) = x
+                ! point(2) = y
+                
+                ! call add(particles,point,mla,dx,prob_lo)
+             case (3)
+                z = prob_lo(3) + (dble(k) + HALF) * dx(n,3)
+                y = prob_lo(2) + (dble(j) + HALF) * dx(n,2)
+                
+                ! point(1) = x
+                ! point(2) = y
+                ! point(3) = z
+                
+                ! call add(particles,point,mla,dx,prob_lo)
+             end select
     
           enddo
        enddo
     enddo
 
-  end subroutine init_particles_3d_cart
+  end subroutine init_particles_sph
+
+  subroutine init_particles_cart(n, s, ng_s, &
+                                 rho0, rhoh0, &
+                                 p0, tempbar, lo, hi, &
+                                 particles, dx, mla, &
+                                 init_mode)
+
+     use probin_module, only: prob_lo
+
+     integer,                  intent(in   ) :: n, lo(:), hi(:), ng_s
+     real (kind = dp_t),       intent(in   ) :: s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+     real (kind = dp_t),       intent(in   ) :: rho0(0:), rhoh0(0:), p0(0:), tempbar(0:)
+     type(particle_container), intent(inout) :: particles
+     type(ml_layout),          intent(inout) :: mla
+     real(kind=dp_t),          intent(in   ) :: dx(:,:)    
+     integer,                  intent(in   ) :: init_mode
+
+     ! local variables
+     integer :: i, j, k, dm
+     real(kind=dp_t) :: x, y, z
+     real(kind=dp_t) :: point(mla%dm)
+
+     !NOTE: For this stub code, init_particles_sph and init_particles_cart are
+     !identical.  We maintain the two because for particular implementations
+     !these may differ and we want the stub code to be a useful template.
+      
+     dm = mla%dm
+
+     do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)
+              x = prob_lo(1) + (dble(i) + HALF) * dx(n,1)
+
+              select case (dm)
+              case (1)
+                 ! point(1) = x
+                 
+                 ! call add(particles,point,mla,dx,prob_lo)
+              case (2)
+                 y = prob_lo(2) + (dble(j) + HALF) * dx(n,2)
+                 
+                 ! point(1) = x
+                 ! point(2) = y
+                 
+                 ! call add(particles,point,mla,dx,prob_lo)
+              case (3)
+                 z = prob_lo(3) + (dble(k) + HALF) * dx(n,3)
+                 y = prob_lo(2) + (dble(j) + HALF) * dx(n,2)
+                 
+                 ! point(1) = x
+                 ! point(2) = y
+                 ! point(3) = z
+                 
+                 ! call add(particles,point,mla,dx,prob_lo)
+              end select
+     
+           enddo
+        enddo
+     enddo
+
+  end subroutine init_particles_cart
   
 end module init_particles_module
