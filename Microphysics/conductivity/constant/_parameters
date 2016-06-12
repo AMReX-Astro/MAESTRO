@@ -1,0 +1,4 @@
+# the constant conductivity (only applies if the conductivity/constant
+# module is used)
+conductivity_constant               real               1.0d0
+
