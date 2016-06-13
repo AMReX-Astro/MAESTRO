@@ -225,7 +225,7 @@ contains
 
     use bl_constants_module
     use network
-    use probin_module, only: small_x
+    use extern_probin_module, only: small_x
 
     implicit none
 

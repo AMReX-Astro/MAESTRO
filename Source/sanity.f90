@@ -147,8 +147,8 @@ contains
              if (n .eq. nlevs) then
                 call sanity_3d_sph(n,newtime,dx(n,:), &
                                    sp, lbound(sp),ubound(sp), &
-                                   rho0(n,:),rhoh0(n,:), &
-                                   p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                   rho0(1,:),rhoh0(1,:), &
+                                   p0(1,:),tempbar(1,:),gamma1bar(1,:), &
                                    up, lbound(up),ubound(up), &
                                    w0rp(:,:,:,1), ng_w, &
                                    w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
@@ -159,8 +159,8 @@ contains
                 mp => dataptr(mla%mask(n), i)
                 call sanity_3d_sph(n,newtime,dx(n,:), &
                                    sp, lbound(sp),ubound(sp), &
-                                   rho0(n,:),rhoh0(n,:), &
-                                   p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                   rho0(1,:),rhoh0(1,:), &
+                                   p0(1,:),tempbar(1,:),gamma1bar(1,:), &
                                    up, lbound(up),ubound(up), &
                                    w0rp(:,:,:,1), ng_w, &
                                    w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &
