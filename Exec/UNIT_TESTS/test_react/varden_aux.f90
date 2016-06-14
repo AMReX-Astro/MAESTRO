@@ -47,11 +47,11 @@ contains
 
     !Init reaction multifab
     allocate(react_s(nlevs))
-  
+
     do n = 1,nlevs
       call multifab_build(react_s(n), mla%la(n), ncomps, 0)
     end do
-  
+
     react_is_init = .true.
   end subroutine react_init
 
@@ -80,15 +80,15 @@ contains
     call read_a_hgproj_grid(mba, test_set)
     print *, 'calling layout_build, ', pmask
     call ml_layout_build(mla,mba,pmask)
-    
+
     !Check for proper nesting
     if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
        call bl_error('ERROR: fixed_grids not properly nested')
     end if
-    
+
     !Initialize nlevs
     nlevs = mla%nlevel
-    
+
     if (nlevs .ne. 1) then
       call bl_error('ERROR: only 1 level of refinement currently supported')
     end if
@@ -102,14 +102,14 @@ contains
 
     !Initialize dm
     dm = mla%dim
-    
+
     if (dm /= 3 .or. spherical_in /= 0) then
        call bl_error('ERROR: grid must be Cartesian and three-dimensional')
     endif
 
     !Initialize_dx
     call initialize_dx(dx,mba,nlevs)
- 
+
     !Initialize base state grid properties
     !These need to be initialized before calling average()
     nr_fine = extent(mla%mba%pd(nlevs),dm)
@@ -124,11 +124,11 @@ contains
     !Modules
     use variables
     use probin_module, only: dens_max, temp_max, dens_min, temp_min, &
-                             prob_hi, prob_lo 
+                             prob_hi, prob_lo
     use network, only: nspec, spec_names
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
-    use layout_module   , only: get_pd   
+    use layout_module   , only: get_pd
 
     !Args
     type(ml_layout),              intent(in   ) :: mla
@@ -168,12 +168,12 @@ contains
     !-- Initialization of the full thermodynamic grid --
     do n = 1, nlevs
        do i = 1, nfabs(s(n))
-    
+
           sp  => dataptr(s(n), i)
- 
+
           lo = lwb(get_box(s(n), i))
           hi = upb(get_box(s(n), i))
-        
+
           do kk = lo(3), hi(3)
              do jj = lo(2), hi(2)
                 !Set the temperature
@@ -182,14 +182,14 @@ contains
                 do ii = lo(1), hi(1)
                    !Set the density
                    dens_zone = 10.0_dp_t**(log10(dens_min) + dble(ii)*dlogrho)
-                   
+
                    !Call the EoS w/ rho, temp, & X as inputs
                    eos_state%T     = temp_zone
                    eos_state%rho   = dens_zone
                    eos_state%xn(:) = xn_zone(:,kk)
-                   
+
                    call eos(eos_input_rt, eos_state)
-    
+
                    !Initialize this element of the state
                    sp(ii,jj,kk,rho_comp)                    = dens_zone
                    sp(ii,jj,kk,rhoh_comp)                   = dens_zone * eos_state%h
@@ -201,7 +201,7 @@ contains
 
        enddo
     enddo
-    
+
   end subroutine therm_init
 
   subroutine varden_close()
@@ -213,7 +213,7 @@ contains
     do n=1, nlevs
        call multifab_destroy(react_s(n))
     end do
-    
+
     deallocate(react_s)
     deallocate(varnames)
 
@@ -243,7 +243,7 @@ contains
     character(len=*), intent(in )   :: pref
     type(bc_tower)  , intent(in )   :: the_bc_tower
 
-    !Local variables 
+    !Local variables
     real(kind=dp_t), pointer :: rsp(:,:,:,:), snp(:,:,:,:), sop(:,:,:,:), &
                                 rwp(:,:,:,:), rnp(:,:,:,:), rep(:,:,:,:)
     real(kind=dp_t)          :: cur_rho, dxn
@@ -262,45 +262,45 @@ contains
     !Loop through cell by cell
     do n = 1, nlevs
        do i = 1, nfabs(react_s(n))
-    
+
           rsp => dataptr(react_s(n),      i)
           snp => dataptr(snew(n),         i)
           sop => dataptr(sold(n),         i)
           rwp => dataptr(rho_omegadot(n), i)
           rnp => dataptr(rho_Hnuc(n),     i)
           rep => dataptr(rho_Hext(n),     i)
-          
+
           lo = lwb(get_box(react_s(n), i))
           hi = upb(get_box(react_s(n), i))
-          
+
           do kk = lo(3), hi(3)
              do jj = lo(2), hi(2)
                 do ii = lo(1), hi(1)
                    cur_rho = snp(ii,jj,kk,rho_comp)
 
                    !Consistency checks
-                   !1) Check that omegadot * dt = (change in mass fraction) 
+                   !1) Check that omegadot * dt = (change in mass fraction)
                    !   for each species
                    do j=0, nspec-1
                       dxn = (snp(ii,jj,kk,spec_comp + j) / snp(ii,jj,kk,rho_comp)) - &
-                           (sop(ii,jj,kk,spec_comp + j) / sop(ii,jj,kk,rho_comp))  
+                           (sop(ii,jj,kk,spec_comp + j) / sop(ii,jj,kk,rho_comp))
                       rsp(ii,jj,kk,dxn_con_c + j) = (rwp(ii,jj,kk,j + 1) / cur_rho) * dt - dxn
                    enddo
-        
-                   !2) Check that h_new = (h_old + Hnuc * dt + Hext * dt) 
+
+                   !2) Check that h_new = (h_old + Hnuc * dt + Hext * dt)
                    rsp(ii,jj,kk,h_con_c) = snp(ii,jj,kk,rhoh_comp)   / cur_rho                   &
                                        - ((sop(ii,jj,kk,rhoh_comp) / sop(ii,jj,kk,rho_comp)) &
                                        + rnp(ii,jj,kk,1) / cur_rho * dt                           &
                                        + rep(ii,jj,kk,1) / cur_rho * dt)
-           
-                   !3) Check H_nuc and H_ext 
+
+                   !3) Check H_nuc and H_ext
                    if(.not. do_heating .and. (rep(ii,jj,kk,1) /= ZERO) ) then
                       print *, 'ERROR: Non-zero H_ext with no heating'
                    endif
                    if(.not. do_burning .and. (rnp(ii,jj,kk,1) /= ZERO) ) then
                       print *, 'ERROR: Non-zero H_nuc with no burning'
                    endif
- 
+
                    !Store reaction data
                    rsp(ii,jj,kk,rho_c) = cur_rho
                    rsp(ii,jj,kk,h_c)   = snp(ii,jj,kk,rhoh_comp) / cur_rho
@@ -329,17 +329,17 @@ contains
                                    trim(run_prefix) // trim(pref), names=varnames, time=dt)
 
     call write_job_info(trim(run_prefix) // trim(pref), mla%mba, the_bc_tower, -ONE)
-    
+
   end subroutine react_write
 
   !======= Private helper routines ======
   subroutine keys_init()
     use network, only: nspec
 
-    rho_c      = 1 
+    rho_c      = 1
     h_c        = 2
     spec_c     = 3
-    t_c        = spec_c     + nspec 
+    t_c        = spec_c     + nspec
     omegadot_c = t_c        + 1
     hnuc_c     = omegadot_c + nspec
     lhnuc_c    = hnuc_c     + 1
@@ -358,16 +358,13 @@ contains
   subroutine names_init()
     use network, only: nspec, spec_names
     integer :: i
-    character(len=20) :: temp_buf
-    
+
     allocate(varnames(ncomps))
     varnames(rho_c)        = 'density'
     varnames(h_c)          = 'enthalpy'
     do i = 0, nspec - 1
-       write(temp_buf, *) i+1
-       temp_buf = adjustl(temp_buf)
        varnames(spec_c     + i) = 'X_' // adjustl(trim(spec_names(i+1)))
-       varnames(omegadot_c + i) = 'wdot(' // adjustl(trim(spec_names(i+1))) // ')'  
+       varnames(omegadot_c + i) = 'wdot(' // adjustl(trim(spec_names(i+1))) // ')'
        varnames(dxn_con_c  + i) = adjustl(trim(spec_names(i+1))) // ' consistency'
     enddo
     varnames(t_c)          = 'temperature'
@@ -390,10 +387,10 @@ contains
 
     !Local data
     integer         :: un
-    integer         :: i 
+    integer         :: i
     real(kind=dp_t) :: summ, usr_in
     character (len=1024) :: line
-    
+
     !=== Execution ===
     if (xin_file .eq. 'uniform') then
        summ = ZERO
@@ -430,7 +427,7 @@ contains
           ! skip comments
           if (index(line, '#') == 1) cycle
 
-          ! parse the line 
+          ! parse the line
           read(line,*) xn_zone(i,:)
 
           i = i + 1
