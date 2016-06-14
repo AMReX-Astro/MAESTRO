@@ -275,8 +275,7 @@ build_info.f90:
            --link_line "$(LINK.f90)" \
            --boxlib_home "$(BOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
-           --extra_home "$(ASTRODEV_DIR)" \
-           --extra_home2 "$(MICROPHYSICS_DIR)" \
+           --extra_home "$(MICROPHYSICS_DIR)" \
            --network "$(NETWORK_DIR)" \
            --eos "$(EOS_DIR)" \
            --conductivity "$(CONDUCTIVITY_DIR)"
