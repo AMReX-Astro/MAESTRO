@@ -107,8 +107,7 @@ def make_tex_table(param_info):
     line = f.readline()
     while line:
 
-
-        # we assume that parrameter files have a descriptive heading
+        # we assume that parameter files have a descriptive heading
         # before the parameters start in those cases, we want to skip
         # everything before the first blank line.  the next comment
         # will then be interpreted either as the category or as the
