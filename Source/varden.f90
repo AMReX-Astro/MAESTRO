@@ -154,7 +154,7 @@ subroutine varden()
   ! initialize the microphysics modules
   call network_init()
   call eos_init(small_temp=small_temp,small_dens=small_dens)
-  call conductivity_init(cond_const=conductivity_constant)
+  call conductivity_init()
 
   ! setup the plotfiles
   call init_plot_variables(plt(1), plot_int, plot_deltat, plot_base_name)

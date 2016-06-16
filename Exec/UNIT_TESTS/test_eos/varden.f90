@@ -37,7 +37,6 @@ subroutine varden()
   integer :: i, n
   integer :: ii, jj, kk
 
-  integer :: ng_s
   integer :: nlevs, dm
 
   type(ml_layout) :: mla
@@ -118,10 +117,7 @@ subroutine varden()
   dlogT     = (log10(temp_max) - log10(temp_min))/(extent(mla%mba%pd(1),2) - 1)
   dmetal    = (metalicity_max  - ZERO           )/(extent(mla%mba%pd(1),3) - 1)
 
-
   ! initialize the thermodynamic cube and do the initial EOS call
-  ng_s  = nghost(s(1))
-
   ih1 = network_species_index('hydrogen-1')
   ihe4 = network_species_index('helium-4')
 

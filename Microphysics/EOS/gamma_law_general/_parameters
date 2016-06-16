@@ -1,2 +1,8 @@
-eos_gamma            real     0.d0
+# the runtime parameters for the gamma_law_general EOS
+
+# the constant ratio of specific heats ($\gamma$)
+eos_gamma            real     5.d0/3.d0
+
+# do we assume that all the species are neutral atoms? otherwise, we
+# assume complete ionization
 eos_assume_neutral   logical  .true.

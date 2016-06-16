@@ -103,8 +103,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,*) " "
      write (99,1001) "MAESTRO      git hash: ", trim(source_git_hash)
      write (99,1001) "BoxLib       git hash: ", trim(boxlib_git_hash)
-     write (99,1001) "AstroDev     git hash: ", trim(extra_git_hash)
-     write (99,1001) "Microphysics git hash: ", trim(extra_git_hash2)
+     write (99,1001) "Microphysics git hash: ", trim(extra_git_hash)
      if (different_build_tree) then
         write (99,1001) "build tree git hash: ", trim(build_git_hash)     
      endif
