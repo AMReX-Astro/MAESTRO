@@ -93,13 +93,13 @@ contains
     ! local variables
     integer :: i, j, k, dm
     real(kind=dp_t) :: x, y, z
-    real(kind=dp_t) :: point(mla%dm)
+    real(kind=dp_t) :: point(mla%dim)
 
     !NOTE: For this stub code, init_particles_sph and init_particles_cart are
     !identical.  We maintain the two because for particular implementations
     !these may differ and we want the stub code to be a useful template.
      
-    dm = mla%dm
+    dm = mla%dim
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -154,13 +154,13 @@ contains
      ! local variables
      integer :: i, j, k, dm
      real(kind=dp_t) :: x, y, z
-     real(kind=dp_t) :: point(mla%dm)
+     real(kind=dp_t) :: point(mla%dim)
 
      !NOTE: For this stub code, init_particles_sph and init_particles_cart are
      !identical.  We maintain the two because for particular implementations
      !these may differ and we want the stub code to be a useful template.
       
-     dm = mla%dm
+     dm = mla%dim
 
      do k = lo(3), hi(3)
         do j = lo(2), hi(2)
