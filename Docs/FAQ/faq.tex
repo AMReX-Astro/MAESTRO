@@ -142,11 +142,12 @@
   {\tt make PROF=t}.  A file containing a summary of the timings will
   be output in the run directory.
 
-  An alternate way to get single-processor timings, when using 
-  the GCC compilers is to add {\tt -pg} to the compilation flags
-  for both {\tt gfortran} and {\tt gcc}.  Upon completion, a
-  file names {\tt gmon.out} will be produced.  This can be 
-  processed by {\tt gprof} running 
+  An alternate way to get single-processor timings, when using the GCC
+  compilers is to add {\tt -pg} to the compilation flags for both {\tt
+    gfortran} and {\tt gcc} (this can be accomplished by setting {\tt
+    GPROF := t} in your {\tt GNUmakefile}.  Upon completion, a file
+  names {\tt gmon.out} will be produced.  This can be processed by
+  {\tt gprof} running
 
   {\tt~~~ gprof} {\em exec-name}
   
