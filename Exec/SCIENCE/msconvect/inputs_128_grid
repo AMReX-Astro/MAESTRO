@@ -1,0 +1,83 @@
+&PROBIN
+ model_file = "model_file"
+ drdxfac = 5
+
+ max_levs = 1
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 128
+ max_grid_size = 32
+
+ anelastic_cutoff = 1.e3
+ base_cutoff_density = 1.e3
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
+
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+ spherical_in = 1
+ dm_in = 3
+ do_sponge = .true.
+
+ prob_hi_x = 2.e10
+ prob_hi_y = 2.e10
+ prob_hi_z = 2.e10
+
+ max_step  = 100
+ init_iter = 1
+
+ stop_time = 30000.
+
+ plot_int  = 10
+ plot_deltat = 10.0d0
+ chk_int   = 100
+
+ cflfac = 0.7d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.1d0
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+ bcz_lo = 12
+ bcz_hi = 12
+
+
+    verbose = 4
+ mg_verbose = 4
+ cg_verbose = 4
+
+ do_initial_projection = T
+ init_divu_iter = 3
+
+ drive_initial_convection = T
+ stop_initial_convection = 20
+ do_burning = F
+ do_heating = T
+ plot_Hext = T
+
+ velpert_amplitude = 1.d6
+ velpert_radius = 2.d7
+ velpert_scale = 1.d7
+ velpert_steep = 1.d5
+ 
+ enthalpy_pred_type = 1
+ evolve_base_state = F
+
+ dpdt_factor = 0.0d0
+
+ use_tfromp = T
+
+ single_prec_plotfiles = T
+
+ use_eos_coulomb = T
+
+ plot_trac = F
+
+/

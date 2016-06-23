@@ -37,8 +37,8 @@ program init_1d
   real (kind=dp_t), parameter :: M_sun = 1.9891e33
 
   ! we'll get the composition indices from the network module
-  integer, save :: ic12, io16, img24, iash
-  real (kind=dp_t) :: cfrac
+  integer, save :: c12, o16, h1, he4
+  real (kind=dp_t) :: Cfrac, Ofrac, Xfrac, Yfrac
 
   integer :: narg
   character(len=128) :: params_file
@@ -79,7 +79,7 @@ program init_1d
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
        xmin, xmax, &
-       cfrac, prefix
+       Cfrac, Ofrac, Xfrac, Yfrac, prefix
   
 
   ! determine if we specified a runtime parameters file or use the default
@@ -131,28 +131,19 @@ program init_1d
 
 
   ! get the species indices
-  ic12  = network_species_index("carbon-12")
-  io16  = network_species_index("oxygen-16")
+  h1  = network_species_index("hydrogen-1")
+  he4  = network_species_index("helium-4")
 
-  img24 = network_species_index("magnesium-24")
-  iash = network_species_index("ash")
+  c12 = network_species_index("carbon-12")
+  o16 = network_species_index("oxygen-16")
 
 
-  if (ic12 < 0 .or. io16 < 0) then
-     call bl_error("ERROR: species not defined")
-  endif
-
-  if (.not. (img24 > 0 .or. iash > 0)) then
-     call bl_error("ERROR: species not defined")
-  endif
-
-  if (cfrac < 0.0_dp_t .or. cfrac > 1.0_dp_t) then
-     call bl_error("ERROR: cfrac must be between 0 and 1")
-  endif
 
   xn_base(:) = 0.0_dp_t
-  xn_base(ic12) = cfrac
-  xn_base(io16) = 1.0_dp_t - cfrac
+  xn_base(h1) = Xfrac
+  xn_base(he4) = Yfrac
+  xn_base(o16) = Ofrac
+  xn_base(c12) = Cfrac
 
   
 

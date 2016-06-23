@@ -17,7 +17,7 @@ MAESTRO_TOP_DIR = ../../..
 EOS_DIR := helmeos
 
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/xrb.net
+GENERAL_NET_INPUTS := $(MICROPHYSICS_DIR)/networks/$(NETWORK_DIR)/aproxMS.net
 
 
 

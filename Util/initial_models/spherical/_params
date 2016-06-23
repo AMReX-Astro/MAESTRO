@@ -1,18 +1,22 @@
 &params 
 
  nx = 1280
- dens_base = 2.6e9
- temp_base = 6.0e8
+ dens_base = 3.6e1
+ temp_base = 3.0e7
 
- dens_conv_zone = 1.3e8
+ dens_conv_zone = 1.0e1
 
  low_density_cutoff = 1.e-3
- temp_fluff = 1.e7
+ temp_fluff = 1.e6
 
  xmin = 0.0
- xmax = 5.e8
+ xmax = 5.e10
 
- cfrac = 0.3
+ Cfrac = 0.005
+ Ofrac = 0.015
+ Xfrac = 0.70
+ Yfrac = 0.28
+ prefix = "test"
 /
 
   
