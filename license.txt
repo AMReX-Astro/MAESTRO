@@ -1,5 +1,5 @@
 SOURCE CODE LICENSE AGREEMENT
-Castro, Copyright (c) 2015, 
+Maestro, Copyright (c) 2016, 
 The Regents of the University of California, 
 through Lawrence Berkeley National Laboratory 
 (subject to receipt of any required approvals from the U.S.
