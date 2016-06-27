@@ -820,8 +820,8 @@ contains
                     ( ispec_threshold < 0 .or.                       &
                     (ispec_threshold > 0 .and.                       &
                     x_test > burner_threshold_cutoff))) then
-                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH, cycles(ii,1:3))
-                  !call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+                  !call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH, cycles(ii,1:3))
+                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
                else
                   x_out = x_in
                   rhowdot = 0.d0

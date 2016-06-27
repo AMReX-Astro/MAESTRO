@@ -287,7 +287,7 @@ contains
       !   
       !   firstCall = .false.
       !endif
-      clockt_start = clock64
+      !clockt_start = clock64
 
       
       ! set the tolerances.  We will be more relaxed on the temperature
@@ -316,9 +316,9 @@ contains
       enddo
       
       ! Build the bdf_ts time-stepper object
-      clockb_start = clock64
+      !clockb_start = clock64
       call bdf_ts_build(ts, rtol, atol, upar)
-      cycs(2) = clock64 - clockb_start
+      !cycs(2) = clock64 - clockb_start
 
       ! abundances are the first nspec_advance values and temperature is the last
       y(ic12_) = Xin(ic12_)
@@ -352,12 +352,12 @@ contains
       end do
       t0 = ZERO
       t1 = dt
-      clocka_start = clock64
+      !clocka_start = clock64
       !TODO: Add temporary ints for cycles counting to ts, store in cycs to
       !profile
       call bdf_advance(ts, y0, t0, y1, t1, &
                        DT0, reset, reuse, ierr, .true.)
-      cycs(3) = clock64 - clocka_start
+      !cycs(3) = clock64 - clocka_start
       !y = y1(:,1)
       do i = 1, neqs
          y(i) = y1(i,1)
@@ -403,6 +403,6 @@ contains
       !nje = nje + iwork(13)
       !nlu = nlu + iwork(19)
       !nit = nit + iwork(20)
-      cycs(1) = clock64 - clockt_start
+      !cycs(1) = clock64 - clockt_start
    end subroutine burner_cyc
 end module burner_module
