@@ -115,11 +115,17 @@ MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
 include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
 
 ifdef NEED_VODE
-  UTIL_CORE += Util/VODE Util/LINPACK Util/BLAS
+  UTIL_CORE += Util/VODE 
+  NEED_BLAS := t
+  NEED_LINPACK := t
 endif
 
 ifdef NEED_BLAS
-  UTIL_CORE += Util/BLAS
+  ifdef SYSTEM_BLAS
+    libraries += -lblas
+  else
+    UTIL_CORE += Util/BLAS
+  endif
 endif
 
 ifdef NEED_LINPACK
@@ -240,7 +246,7 @@ endif
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
-EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE)
+EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
@@ -269,8 +275,10 @@ build_info.f90:
            --link_line "$(LINK.f90)" \
            --boxlib_home "$(BOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
-           --extra_home "$(ASTRODEV_DIR)" \
-           --extra_home2 "$(MICROPHYSICS_DIR)" \
+           --extra_home "$(MICROPHYSICS_DIR)" \
+           --network "$(NETWORK_DIR)" \
+           --eos "$(EOS_DIR)" \
+           --conductivity "$(CONDUCTIVITY_DIR)"
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90

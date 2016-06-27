@@ -9,9 +9,7 @@ module conductivity_module
 
 contains
 
-  subroutine conductivity_init(cond_const)
-
-    real (kind=dp_t), optional :: cond_const
+  subroutine conductivity_init()
 
   end subroutine conductivity_init
 

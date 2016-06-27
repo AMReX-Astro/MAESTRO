@@ -22,8 +22,8 @@ contains
     use eos_type_module
     use network, only: network_species_index
     use probin_module, only: ambient_h, ambient_dens, &
-                             ambient_he4, ambient_c12, ambient_fe56, &
-                             thermal_conductivity
+                             ambient_he4, ambient_c12, ambient_fe56
+    use extern_probin_module, only: conductivity_constant
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp,  &
                          trac_comp, ntrac
     use geometry, only: nr
@@ -67,7 +67,7 @@ contains
 
     call eos(eos_input_rh, eos_state)
 
-    diffusion_coefficient = thermal_conductivity / (eos_state%cp * ambient_dens)
+    diffusion_coefficient = conductivity_constant / (eos_state%cp * ambient_dens)
 
     do r = 0, nr(n) - 1
 

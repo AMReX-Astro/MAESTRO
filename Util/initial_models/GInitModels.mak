@@ -49,6 +49,10 @@ ifndef CONDUCTIVITY_TOP_DIR
   CONDUCTIVITY_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/conductivity
 endif
 
+ifndef CONDUCTIVITY_DIR
+  CONDUCTIVITY_DIR = constant
+endif
+
 # add in the network, EOS, and conductivity
 MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
                   $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
@@ -58,7 +62,7 @@ MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
 include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
 
 ifdef NEED_VODE
-  Fmdirs += Util/VODE
+  Fmdirs += Util/VODE Util/LINPACK Util/BLAS
 endif
 
 ifdef NEED_BLAS
@@ -76,26 +80,8 @@ endif
 Fmdirs += Util/model_parser Util/simple_log
 
 
-MICROPHYS_CORE := $(EOS_TOP_DIR)/$(EOS_DIR) \
-                  $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
-
 # explicitly add in any source defined in the build directory
 f90sources += $(MODEL_SOURCES)
-
-
-
-#-----------------------------------------------------------------------------
-# the helmeos has an include file
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  Fmincludes := Microphysics/EOS/helmeos
-  EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
-  ALL: table
-endif
-
-
-table:
-	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
-
 
 
 #-----------------------------------------------------------------------------
@@ -125,7 +111,7 @@ f90sources += probin.f90
 
 PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
 PROBIN_PARAMETER_DIRS = $(MAESTRO_TOP_DIR)/Util/initial_models/
-EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE)
+EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
 
 
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))

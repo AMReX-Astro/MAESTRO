@@ -1,7 +1,3 @@
-
-# constant diffusion coefficient (default is a guess)
-thermal_conductivity                real               1.d7
-
 # t0 used in the initialization of Gaussian pulse (c.f. Swesty \& Myra, ApJSS 181, 1-52 (2009))
 t0                                  real               1.d-9
 

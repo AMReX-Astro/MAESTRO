@@ -26,11 +26,29 @@ the PDF here:
 
 http://bender.astro.sunysb.edu/Maestro/staging/MAESTRO/Docs/MaestroUsersGuide.pdf
 
+
 ## Call Tree:
 
 doxygen-generated call trees are available here:
 
 http://bender.astro.sunysb.edu/Maestro/staging/MAESTRO/html/
+
+
+## Development Model:
+
+New features are committed to the `development` branch.  Nightly
+regression testing is used to ensure that no answers change (or if
+they do, that the changes were expected).  No changes should ever
+be pushed directly into `master`.
+
+On the first workday of each month, we perform a merge of
+`development` into `master`, in coordination with `BoxLib`, `Castro`,
+and `Microphysics`.  For this merge to take place, we need to be
+passing the regression tests.  To accommodate this need, we close the
+merge window into `development` a few days before the merge day.
+While the merge window is closed, only bug fixes should be pushed into
+`development`.  Once the merge from `development` -> `master` is done,
+the merge window reopens.
 
 
 ## Mailing list:

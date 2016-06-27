@@ -569,10 +569,6 @@ temp_diffusion_formulation          integer            2
 # In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.
 thermal_diffusion_type              integer            1
 
-# the constant conductivity (only applies if the conductivity/constant
-# module is used)
-conductivity_constant               real               1.0d0
-
 # apply the conductivity limiting---if T, then we set the thermal coefficients
 # all to 0 for $\rho <$ {\tt buoyancy\_cutoff\_factor} * {\tt base\_cutoff\_density}
 limit_conductivity                  logical            .false.
@@ -607,9 +603,6 @@ reaction_sum_tol                    real               1.d-10
 small_temp                          real               5.d6
 
 small_dens                          real               1.d-5
-
-# cutoff for species mass fractions
-small_x                              real               0.0
 
 # When updating temperature, use $T=T(\rho,p_0,X) $ rather than
 # $T=T(\rho,h,X)$.

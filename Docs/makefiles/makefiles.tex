@@ -257,10 +257,18 @@ From \boxlib, we alway include:
 \item {\tt Util/random}
 \end{itemize}
 
-The microphysics, as described above is also included.  For the networks,
-we include a file called {\tt NETWORK\_REQUIRES} into {\tt GMaestro.mak}
-that tells us whether to also include {\tt Util/VODE} (if {\tt NEED\_VODE := t})
-or {\tt Util/BLAS} (if {\tt NEED\_BLAS := t}).
+The microphysics, as described above is also included.  For the
+networks, we include a file called {\tt NETWORK\_REQUIRES} into {\tt
+  GMaestro.mak} that tells us whether to also include {\tt Util/VODE}
+(if {\tt NEED\_VODE := t}).  It is assumed in this case that we need
+BLAS and LINPACK, so these are compiled in from {\tt Util/BLAS}  and
+{\tt Util/LINPACK}.  
+
+You can instead link in a system-wide optimized BLAS library by setting
+{\tt SYSTEM\_BLAS := t}\otherindex{{\tt GNUmakefile}}{BLAS} in the {\tt GNUmakefile}.  This adds {\tt -lblas}
+to the link line, and assumes that the library is in your path.  Note
+that for some systems, you should have the static BLAS libraries 
+available. 
 
 
 From {\tt MAESTRO/}, we add

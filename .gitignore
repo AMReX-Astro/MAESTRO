@@ -55,7 +55,11 @@ react_*_mode?
 
 # python
 *.pyc
-Untitled0.ipynb
-Untitled.ipynb
-.ipynb_checkpoints
 
+# eos
+helm_table.dat
+
+
+# ipython
+*.ipynb_checkpoints/
+Untitled0.ipynb
