@@ -1,5 +1,15 @@
 changes since last merge with master:
 
+ * Minor changes:
+
+   -- The runtime parameter small_x is now owned by the network module.
+   
+   -- The conductivity_constant runtime parameter is now owned by
+      Microphysics/conductivity/constant.
+
+   -- If SYSTEM_BLAS is defined, we will attempt to link in a
+      system-wide BLAS library (-lblas) rather than compiling the BLAS
+      routines ourselves.
 
 
 previous releases:
