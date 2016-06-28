@@ -343,19 +343,65 @@ generated source files.  Any other builds are left unchanged.
 Typing `{\tt make realclean}' deletes the object and module files for
 all builds---i.e., the entire {\tt t/} directory is removed.
 
+
+\section{Special Debugging Executables}
+
+\boxlib\ has several options that produce executables that can help
+track down memory issues, uninitialized variables, NaNs, etc.
+
+\begin{itemize}
+
+\item {\tt NDEBUG} 
+
+  \otherindex{{\tt GNUmakefile}}{NDEBUG} To generate an executable
+  with debugging information included in the executable (e.g., to be
+  interpreted by the debugger, {\tt gdb}), compile with {\tt NDEBUG
+    :=\ }.  This will usually add {\tt -g} to the compile line and
+  also lower the optimization.  For {\tt gfortran} it will add several
+  options to catch uninitialize variables, bounds errors, etc.
+
+
+\item {\tt TEST}
+
+  Setting {\tt TEST := t}\otherindex{{\tt GNUmakefile}}{TEST=t} will
+  enable routines in \boxlib\ that intercept floating point
+  exceptions, including NaNs, divide by zero, and overflow.  When one
+  of these is hit, the code will abort, and the backtrace information
+  will be output to a file {\tt Backtrace.N}, where {\tt N} is the
+  processor number.  BoxLib will also initialize \multifab s with
+  signaliing NaNs to help uncover any floating point issues.
+
+  This is also useful to diagnose deadlocks in parallel regions.
+  If the code is hanging, doing ``control-C'' will be intercepted
+  and the code will generate a backtrace which will identify
+  where in the code there was a deadlock.
+
+  Behind the scenes, \boxlib\ implements this capability via the
+  Linux/Unix {\tt feenableexcept} function (this is in {\tt
+    backtrace\_c.cpp} in \boxlib).
+
+\item {\tt FSANITIZER}
+
+  For {\tt gfortran}, {\tt gcc}, {\tt g++}, setting {\tt FSANITIZER :=
+    t}\otherindex{{\tt GNUmakefile}}{FSANITIZER} will enable the
+  address sanitizer support built into GCC.  This is enabled through
+  integration with \url{https://github.com/google/sanitizers} in GCC.
+
+\end{itemize}
+
+
 \section{Extending the Build System}
 
 \subsection{Adding a Compiler}
 
-Properties for different compilers are already defined in 
-{\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.
-Each compiler is given its own file.  The appropriate file is included
-into {\tt GMakedefs.mak} by looking at the {\tt COMP} variable and the
-operating system.  These compiler files define the compiler flags for
-both optimized and debug compiling.  Additionally, the variable {\tt
-FCOMP\_VERSION} should be defined there, based on the output from the
-compiler, to provide the compiler version for output into the {\tt
-job\_info} file at runtime.
+Properties for different compilers are already defined in {\tt
+  \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.  Each compiler is given its
+own file.  The appropriate file is included into {\tt GMakedefs.mak}
+by looking at the {\tt COMP} variable and the operating system.  These
+compiler files define the compiler flags for both optimized and debug
+compiling.  Additionally, the variable {\tt FCOMP\_VERSION} should be
+defined there, based on the output from the compiler, to provide the
+compiler version for output into the {\tt job\_info} file at runtime.
 
 
 \subsection{Parallel (MPI) Builds}
