@@ -74,11 +74,19 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
+# for backward compatibility -- MICROPHYSICS_DIR is deprecated
+ifndef MICROPHYSICS_HOME
+  ifdef MICROPHYSICS_DIR
+    MICROPHYSICS_HOME := MICROPHYSICS_DIR
+    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
+  endif 
+endif
+
 # the helmeos has an include file -- also add a target to link the table
 # into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   EOS_DIR := helmholtz
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/eos
   Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
@@ -88,7 +96,7 @@ table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/eos
 endif
 
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
@@ -275,7 +283,7 @@ build_info.f90:
            --link_line "$(LINK.f90)" \
            --boxlib_home "$(BOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
-           --extra_home "$(MICROPHYSICS_DIR)" \
+           --extra_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
            --eos "$(EOS_DIR)" \
            --conductivity "$(CONDUCTIVITY_DIR)"
