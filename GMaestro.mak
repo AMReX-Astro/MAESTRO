@@ -77,7 +77,7 @@ UTIL_CORE += Util/simple_log
 # for backward compatibility -- MICROPHYSICS_DIR is deprecated
 ifndef MICROPHYSICS_HOME
   ifdef MICROPHYSICS_DIR
-    MICROPHYSICS_HOME := MICROPHYSICS_DIR
+    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
     $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
   endif 
 endif
