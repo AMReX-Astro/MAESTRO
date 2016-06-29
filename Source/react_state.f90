@@ -790,6 +790,8 @@ contains
                !removed.  Once it's working, we should see if we want to bring
                !back the masking or not.
 
+               !NOTE: tiling directive?
+
                rho = sold(i,j,k,rho_comp)
                ii = 1
                do n = spec_comp, spec_comp+nspec-1
