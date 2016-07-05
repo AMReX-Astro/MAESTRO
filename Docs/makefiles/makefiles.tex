@@ -344,7 +344,9 @@ Typing `{\tt make realclean}' deletes the object and module files for
 all builds---i.e., the entire {\tt t/} directory is removed.
 
 
-\section{Special Debugging Executables}
+\section{Special Debugging Modes}
+
+\label{ch:makefiles:special}
 
 \boxlib\ has several options that produce executables that can help
 track down memory issues, uninitialized variables, NaNs, etc.
@@ -363,11 +365,32 @@ track down memory issues, uninitialized variables, NaNs, etc.
 
 \item {\tt TEST}
 
-  Setting {\tt TEST := t}\otherindex{{\tt GNUmakefile}}{TEST=t} will
-  enable routines in \boxlib\ that intercept floating point
-  exceptions, including NaNs, divide by zero, and overflow.  When one
-  of these is hit, the code will abort, and the backtrace information
-  will be output to a file {\tt Backtrace.N}, where {\tt N} is the
+  Setting {\tt TEST := t}\otherindex{{\tt GNUmakefile}}{TEST} will
+  enable routines in \boxlib\ initialize multifabs and arrays 
+  allowed via {\tt bl\_allocate} to signalliing NaNs.  This behavior
+  is the same as {\tt NDEBUG :=}, but {\tt TEST := t} uses the 
+  same compiler optimizations as a normal build.  
+
+  This can be useful with compiler flags that trap floating point
+  exceptions (FPEs), but checks on floating point exceptions can also
+  be enabled through runtime parameters passed to \boxlib's
+  backtrace functionlity:
+  \begin{itemize}
+  \item \runparam{boxlib\_fpe\_invalid}: enabling FPE trapping for
+    invalid operations (e.g. {\tt 0 * inf}, {\tt sqrt(-1)})
+
+  \item \runparam{boxlib\_fpe\_zero}: enable FPE trapping for
+    divide-by-zero
+
+  \item \runparam{boxlib\_fpe\_overflow}: enable FPE trapping for
+    overflow
+  \end{itemize}
+
+\item backtracing
+
+  When exception trapping is enabled (either via \boxlib\ or the
+  compiler), the code will abort, and the backtrace information will
+  be output to a file {\tt Backtrace.N}, where {\tt N} is the
   processor number.  BoxLib will also initialize \multifab s with
   signaliing NaNs to help uncover any floating point issues.
 
@@ -386,6 +409,9 @@ track down memory issues, uninitialized variables, NaNs, etc.
     t}\otherindex{{\tt GNUmakefile}}{FSANITIZER} will enable the
   address sanitizer support built into GCC.  This is enabled through
   integration with \url{https://github.com/google/sanitizers} in GCC.
+
+  Note: you will need to have the libraries {\tt libasan} and {\tt
+    libubsan} installed on your machine to use this functionality.
 
 \end{itemize}
 

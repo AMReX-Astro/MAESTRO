@@ -674,3 +674,18 @@ sdc_iters                           integer            1
 
 # recompute MAC velocity at the beginning of each SDC iter
 sdc_couple_mac_velocity             logical            .false.
+
+
+
+#-----------------------------------------------------------------------------
+# category: debugging
+#-----------------------------------------------------------------------------
+
+# enable floating point exception trapping for invalid
+boxlib_fpe_invalid                  logical            .false.
+
+# enable floating point exception trapping for divide by zero
+boxlib_fpe_zero                     logical            .false.
+
+# enable floating point exception trapping for overflow
+boxlib_fpe_overflow                 logical            .false.
