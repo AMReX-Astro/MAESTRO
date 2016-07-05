@@ -1,5 +1,9 @@
 changes since last merge with master:
 
+previous releases:
+
+16.07
+
  * Major changes:
 
    -- For the general microphysics solvers, we now use the environment
@@ -18,9 +22,6 @@ changes since last merge with master:
    -- If SYSTEM_BLAS is defined, we will attempt to link in a
       system-wide BLAS library (-lblas) rather than compiling the BLAS
       routines ourselves.
-
-
-previous releases:
 
 16.06
 
