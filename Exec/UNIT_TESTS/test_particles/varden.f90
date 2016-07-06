@@ -33,6 +33,10 @@ subroutine varden()
 
   implicit none
 
+  integer, parameter :: NCOMPS = 1   !Number of components in state multifab
+  integer, parameter :: NUMGHOST = 1 !Number of ghost cells
+  integer, parameter :: MV_COMP = 1  !Index for velocity magnitude
+
   integer :: i,n,comp
   integer :: ng_s, ng_um
   integer :: nlevs, dm
@@ -117,13 +121,12 @@ subroutine varden()
   endif
 
 
-
   ! build MAC velocity
   do n = 1,nlevs
-     call multifab_build(s(n), mla%la(n), 1, 1)
+     call multifab_build(s(n), mla%la(n), NCOMPS, NUMGHOST)
 
      do comp=1,dm
-        call multifab_build_edge(umac(n,comp), mla%la(n),1,1,comp)
+        call multifab_build_edge(umac(n,comp), mla%la(n),NCOMPS,NUMGHOST,comp)
      end do
   end do
 
@@ -131,12 +134,9 @@ subroutine varden()
   ! initialize_dx
   call initialize_dx(dx,mba,nlevs)
 
-
   ! other allocations
   allocate(lo(dm))
   allocate(hi(dm))
-
-
 
   ! initialize the particles
   call build(particles)
@@ -157,9 +157,6 @@ subroutine varden()
      call add(particles,point,mla,dx,prob_lo)
   enddo
 
-  call timestamp(particles, 'timestamp', s, &
-                (/1/), (/"magvel"/), ZERO)
-
 
   ! initialize the MAC velocity field  ! negative velocity  
   ng_um = nghost(umac(1,1))
@@ -178,8 +175,8 @@ subroutine varden()
         
         select case (dm)
         case (2)
-           call init_umac_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                              sp(:,:,1,1), ng_s, &
+           call init_umac_2d(ump(:,:,1,MV_COMP), vmp(:,:,1,MV_COMP), ng_um, &
+                              sp(:,:,1,MV_COMP), ng_s, &
                              lo, hi, dx(n,:))
 
         case (3)
@@ -190,8 +187,10 @@ subroutine varden()
   enddo
 
 
-  ! write out a plotfile that contains the magnitude of the velocity
-  ! field
+  ! write out a plotfile and timestamp that contains the 
+  ! magnitude of the velocity field
+  call timestamp(particles, 'timestamp', s, &
+                (/MV_COMP/), (/"magvel"/), ZERO)
   call fabio_ml_multifab_write_d(s,mla%mba%rr(:,1), &
                                  "magvel_field")
 
@@ -220,7 +219,7 @@ subroutine varden()
 
      ! write out a particle timestamp
      call timestamp(particles, 'timestamp', s, &
-                    (/1/), (/"magvel"/), t)
+                    (/MV_COMP/), (/"magvel"/), t)
 
         
      ! adjust the timestep, if necessary
@@ -235,6 +234,7 @@ subroutine varden()
 
   ! clean-up
   do n = 1,nlevs
+     call destroy(s(n))
      do comp=1,dm
         call destroy(umac(n,comp))
      end do
@@ -243,6 +243,7 @@ subroutine varden()
   call destroy(mla)
   call destroy(mba)
 
+  deallocate(s)
   deallocate(umac)
 
   call bc_tower_destroy(the_bc_tower)

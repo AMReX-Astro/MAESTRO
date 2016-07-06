@@ -257,10 +257,18 @@ From \boxlib, we alway include:
 \item {\tt Util/random}
 \end{itemize}
 
-The microphysics, as described above is also included.  For the networks,
-we include a file called {\tt NETWORK\_REQUIRES} into {\tt GMaestro.mak}
-that tells us whether to also include {\tt Util/VODE} (if {\tt NEED\_VODE := t})
-or {\tt Util/BLAS} (if {\tt NEED\_BLAS := t}).
+The microphysics, as described above is also included.  For the
+networks, we include a file called {\tt NETWORK\_REQUIRES} into {\tt
+  GMaestro.mak} that tells us whether to also include {\tt Util/VODE}
+(if {\tt NEED\_VODE := t}).  It is assumed in this case that we need
+BLAS and LINPACK, so these are compiled in from {\tt Util/BLAS}  and
+{\tt Util/LINPACK}.  
+
+You can instead link in a system-wide optimized BLAS library by setting
+{\tt SYSTEM\_BLAS := t}\otherindex{{\tt GNUmakefile}}{BLAS} in the {\tt GNUmakefile}.  This adds {\tt -lblas}
+to the link line, and assumes that the library is in your path.  Note
+that for some systems, you should have the static BLAS libraries 
+available. 
 
 
 From {\tt MAESTRO/}, we add
@@ -335,19 +343,91 @@ generated source files.  Any other builds are left unchanged.
 Typing `{\tt make realclean}' deletes the object and module files for
 all builds---i.e., the entire {\tt t/} directory is removed.
 
+
+\section{Special Debugging Modes}
+
+\label{ch:makefiles:special}
+
+\boxlib\ has several options that produce executables that can help
+track down memory issues, uninitialized variables, NaNs, etc.
+
+\begin{itemize}
+
+\item {\tt NDEBUG} 
+
+  \otherindex{{\tt GNUmakefile}}{NDEBUG} To generate an executable
+  with debugging information included in the executable (e.g., to be
+  interpreted by the debugger, {\tt gdb}), compile with {\tt NDEBUG
+    :=\ }.  This will usually add {\tt -g} to the compile line and
+  also lower the optimization.  For {\tt gfortran} it will add several
+  options to catch uninitialize variables, bounds errors, etc.
+
+
+\item {\tt TEST}
+
+  Setting {\tt TEST := t}\otherindex{{\tt GNUmakefile}}{TEST} will
+  enable routines in \boxlib\ initialize multifabs and arrays 
+  allowed via {\tt bl\_allocate} to signalliing NaNs.  This behavior
+  is the same as {\tt NDEBUG :=}, but {\tt TEST := t} uses the 
+  same compiler optimizations as a normal build.  
+
+  This can be useful with compiler flags that trap floating point
+  exceptions (FPEs), but checks on floating point exceptions can also
+  be enabled through runtime parameters passed to \boxlib's
+  backtrace functionlity:
+  \begin{itemize}
+  \item \runparam{boxlib\_fpe\_invalid}: enabling FPE trapping for
+    invalid operations (e.g. {\tt 0 * inf}, {\tt sqrt(-1)})
+
+  \item \runparam{boxlib\_fpe\_zero}: enable FPE trapping for
+    divide-by-zero
+
+  \item \runparam{boxlib\_fpe\_overflow}: enable FPE trapping for
+    overflow
+  \end{itemize}
+
+\item backtracing
+
+  When exception trapping is enabled (either via \boxlib\ or the
+  compiler), the code will abort, and the backtrace information will
+  be output to a file {\tt Backtrace.N}, where {\tt N} is the
+  processor number.  BoxLib will also initialize \multifab s with
+  signaliing NaNs to help uncover any floating point issues.
+
+  This is also useful to diagnose deadlocks in parallel regions.
+  If the code is hanging, doing ``control-C'' will be intercepted
+  and the code will generate a backtrace which will identify
+  where in the code there was a deadlock.
+
+  Behind the scenes, \boxlib\ implements this capability via the
+  Linux/Unix {\tt feenableexcept} function (this is in {\tt
+    backtrace\_c.cpp} in \boxlib).
+
+\item {\tt FSANITIZER}
+
+  For {\tt gfortran}, {\tt gcc}, {\tt g++}, setting {\tt FSANITIZER :=
+    t}\otherindex{{\tt GNUmakefile}}{FSANITIZER} will enable the
+  address sanitizer support built into GCC.  This is enabled through
+  integration with \url{https://github.com/google/sanitizers} in GCC.
+
+  Note: you will need to have the libraries {\tt libasan} and {\tt
+    libubsan} installed on your machine to use this functionality.
+
+\end{itemize}
+
+
 \section{Extending the Build System}
 
 \subsection{Adding a Compiler}
 
-Properties for different compilers are already defined in 
-{\tt \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.
-Each compiler is given its own file.  The appropriate file is included
-into {\tt GMakedefs.mak} by looking at the {\tt COMP} variable and the
-operating system.  These compiler files define the compiler flags for
-both optimized and debug compiling.  Additionally, the variable {\tt
-FCOMP\_VERSION} should be defined there, based on the output from the
-compiler, to provide the compiler version for output into the {\tt
-job\_info} file at runtime.
+Properties for different compilers are already defined in {\tt
+  \$\{BOXLIB\_HOME\}/Tools/F\_mk/comps/}.  Each compiler is given its
+own file.  The appropriate file is included into {\tt GMakedefs.mak}
+by looking at the {\tt COMP} variable and the operating system.  These
+compiler files define the compiler flags for both optimized and debug
+compiling.  Additionally, the variable {\tt FCOMP\_VERSION} should be
+defined there, based on the output from the compiler, to provide the
+compiler version for output into the {\tt job\_info} file at runtime.
 
 
 \subsection{Parallel (MPI) Builds}

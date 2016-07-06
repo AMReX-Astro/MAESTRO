@@ -61,7 +61,7 @@ subroutine varden()
   call network_init()
   call eos_init()
 
-  call conductivity_init(cond_const=thermal_conductivity)
+  call conductivity_init()
 
   time = ZERO
 

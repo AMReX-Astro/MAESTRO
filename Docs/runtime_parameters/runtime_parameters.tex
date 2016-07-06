@@ -1,11 +1,6 @@
 
 \label{ch:parameters}
 
-
-%%%%%%%%%%%%%%%%
-% symbol table
-%%%%%%%%%%%%%%%%
-
 \begin{landscape}
 
 
@@ -43,10 +38,9 @@
 \verb=  small_dens  = &    &  1.d-5 \\
 \verb=  small_temp  = &    &  5.d6 \\
 \rowcolor{tableShade}
-\verb=  small_x  = &   cutoff for species mass fractions  &  0.0 \\
 \verb=  use_eos_e_instead_of_h  = &   In deriving the temperature from the $h$, first subtract off $p_0/\rho$ to define $e$, and use that as the input to the EOS.  &  .false. \\
-\rowcolor{tableShade}
 \verb=  use_pprime_in_tfromp  = &    &  .false. \\
+\rowcolor{tableShade}
 \verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
 
 
@@ -772,12 +766,10 @@
 
 
 \rowcolor{tableShade}
-\verb=  conductivity_constant  = &   the constant conductivity (only applies if the conductivity/constant module is used)  &  1.0d0 \\
 \verb=  limit_conductivity  = &   apply the conductivity limiting---if T, then we set the thermal coefficients all to 0 for $\rho <$ {\tt buoyancy\_cutoff\_factor} * {\tt base\_cutoff\_density}  &  .false. \\
-\rowcolor{tableShade}
 \verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term.  \newline 1 = in terms of $T$; \newline 2 = in terms of $\rho,p_0,X$.  &  2 \\
-\verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
 \rowcolor{tableShade}
+\verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
 \verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
 
 
@@ -834,6 +826,118 @@
 \verb=  use_divu_firstdt  = &   Use the divu constraint when computing the first time step.  &  .false. \\
 \rowcolor{tableShade}
 \verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
+
+
+\end{longtable}
+\end{center}
+
+} % ends \small
+
+
+{\small
+
+\renewcommand{\arraystretch}{1.5}
+%
+\begin{center}
+\begin{longtable}{|l|p{5.25in}|l|}
+\caption[gamma law general  EOS parameters.]{gamma law general  EOS parameters.} \label{table: gamma law general  EOS parameters. runtime} \\
+%
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{}---continued}} \\
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endhead
+
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
+\endfoot
+
+\hline 
+\endlastfoot
+
+
+\rowcolor{tableShade}
+\verb=  eos_assume_neutral  = &   do we assume that all the species are neutral atoms? otherwise, we assume complete ionization  &  .true. \\
+\verb=  eos_gamma  = &   the constant ratio of specific heats ($\gamma$)  &  5.d0/3.d0 \\
+
+
+\end{longtable}
+\end{center}
+
+} % ends \small
+
+
+{\small
+
+\renewcommand{\arraystretch}{1.5}
+%
+\begin{center}
+\begin{longtable}{|l|p{5.25in}|l|}
+\caption[generic network parameters parameters.]{generic network parameters parameters.} \label{table: generic network parameters parameters. runtime} \\
+%
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{}---continued}} \\
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endhead
+
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
+\endfoot
+
+\hline 
+\endlastfoot
+
+
+\rowcolor{tableShade}
+\verb=  small_x  = &   cutoff for species mass fractions  &  0.0 \\
+
+
+\end{longtable}
+\end{center}
+
+} % ends \small
+
+
+{\small
+
+\renewcommand{\arraystretch}{1.5}
+%
+\begin{center}
+\begin{longtable}{|l|p{5.25in}|l|}
+\caption[constant conductivity parameters.]{constant conductivity parameters.} \label{table: constant conductivity parameters. runtime} \\
+%
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{}---continued}} \\
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endhead
+
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
+\endfoot
+
+\hline 
+\endlastfoot
+
+
+\rowcolor{tableShade}
+\verb=  conductivity_constant  = &   the constant conductivity (only applies if the conductivity/constant module is used)  &  1.0d0 \\
 
 
 \end{longtable}

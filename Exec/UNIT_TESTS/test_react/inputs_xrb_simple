@@ -21,9 +21,8 @@ zhi_boundary_type = "periodic"
 
   do_heating = .false.
 
-  xin_file   = "xin.approx8"
-  run_prefix = "omp_approx8_"
-!  run_prefix = "approx8_"
+  xin_file   = "xin.xrb_simple"
+  run_prefix = "react_xrb_simple_"
   
   base_cutoff_density = 1.e-5
 

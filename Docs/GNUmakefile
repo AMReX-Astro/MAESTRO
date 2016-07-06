@@ -70,6 +70,8 @@ clean:
 	$(RM) $(pdf_source) MaestroUsersGuide.dvi 
 	$(RM) MaestroUsersGuide.blg MaestroUsersGuide.log 
 	$(RM) MaestroUsersGuide.toc MaestroUsersGuide.lof
+	$(RM) MaestroUsersGuide.idx  MaestroUsersGuide.ind  
+	$(RM) MaestroUsersGuide.ilg  MaestroUsersGuide.lot
 	$(RM) MaestroUsersGuide.aux MaestroUsersGuide.ps MaestroUsersGuide.bbl
 	$(RM) *~
 

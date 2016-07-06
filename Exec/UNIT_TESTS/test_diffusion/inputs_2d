@@ -7,7 +7,7 @@
 
  thermal_diffusion_type = 1
 
- thermal_conductivity = 1.d7
+ conductivity_constant = 1.d7
 
  fixed_dt = 1.0d-3
 

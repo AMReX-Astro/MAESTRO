@@ -21,7 +21,7 @@ Fmdirs := Microphysics/EOS
 # into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   EOS_DIR := helmholtz
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/eos
   Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
@@ -31,7 +31,7 @@ table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/eos
 endif
 
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
@@ -111,7 +111,7 @@ f90sources += probin.f90
 
 PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
 PROBIN_PARAMETER_DIRS = $(MAESTRO_TOP_DIR)/Util/initial_models/
-EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE)
+EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
 
 
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))

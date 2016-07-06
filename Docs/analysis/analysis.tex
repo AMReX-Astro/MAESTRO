@@ -36,6 +36,10 @@ provide usage examples.
   Compare two plotfiles, zone-by-zone to machine precision, and report
   the L2-norm of the error (both absolute and relative) for each
   variable.  This assumes that the grids are identical. \\[-3mm]
+ 
+  With the optional {\tt --zone\_info var} argument, where {\tt var}
+  is the name of a variable, it will also report the full state
+  for the zone where {\tt var} has the largest error.
 
   This is used by in the regression test suite in {\tt
   Parallel/util/regtests/}.
