@@ -817,6 +817,7 @@ contains
                ! if the threshold species is not in the network, then we burn
                ! normally.  if it is in the network, make sure the mass
                ! fraction is above the cutoff.
+               print *, 'pre-burn'
                ii = (i - lo(1))*(hi(3)-lo(3)+1)*(hi(2)-lo(2)+1) + (j - lo(2))*(hi(3)-lo(3)+1) + k - lo(3) + 1
                if (rho > burning_cutoff_density .and.                &
                     ( ispec_threshold < 0 .or.                       &
@@ -829,6 +830,7 @@ contains
                   rhowdot = 0.d0
                   rhoH = 0.d0
                endif
+               print *, 'post-burn'
                
                ! check if sum{X_k} = 1
                sumX = ZERO

@@ -22,7 +22,8 @@ module bdf
 
   use bl_types, only: dp_t
   use bl_constants_module
-  use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
+  !use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
+  use rpar_indices, only: neqs, burn_max_order, burn_npts, n_rpar_comps
 
   implicit none
 
@@ -857,7 +858,7 @@ contains
     !$acc routine seq
     !NOTE: Using this is redundant as we already do at the top of the module,
     !but I like it here for clarity
-    use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
+    !use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
 
     type(bdf_ts),   intent(inout) :: ts
     real(dp_t),     intent(in   ) :: rtol(neqs), atol(neqs)
