@@ -9,7 +9,8 @@ module feval
   
    private
    public :: f_rhs_vec, jac_vec
-   integer :: PT_INDEX = 1
+
+
 contains
  
 
@@ -51,9 +52,13 @@ contains
      real(kind=dp_t) :: dens, cp, dhdx(nspec), T9_eos, dT_crit, t9
      real(kind=dp_t) :: ymol(nspec), yd_sum
    
+     integer :: PT_INDEX
      !type(eos_t) :: eos_state
      
-     ydot = ZERO
+     do n = 1, nspec
+        ydot(n,PT_INDEX) = ZERO
+     enddo
+     PT_INDEX = 1
    
      ! several thermodynamic quantities come in via rpar
      dens = rpar(irp_dens,PT_INDEX)
@@ -140,7 +145,9 @@ contains
                                    
      type (temp_t) :: tfactors
      integer :: n
-    
+     integer :: PT_INDEX
+   
+     PT_INDEX = 1
      !rpar(irp_rates:irp_drtdt-1+nrat) = ZERO ! rates and dratesdt
      do n=irp_rates, irp_drtdt-1+nrat 
         rpar(n,PT_INDEX) = ZERO        ! rates and dratesdt
@@ -151,7 +158,8 @@ contains
         rpar(n,PT_INDEX) = ZERO
      enddo
    
-     tfactors = calc_tfactors(t9)
+     !tfactors = calc_tfactors(t9)
+     call calc_tfactors(t9, tfactors)
    
      ! some common parameters
      rpar(irp_rates-1+irLweak,PT_INDEX) = Lweak
@@ -314,12 +322,17 @@ contains
      real(kind=dp_t), intent(INOUT) :: rpar(n_rpar_comps,burn_npts)
      real(kind=dp_t), intent(  OUT) :: dydt(nspec,burn_npts)
      
-     integer :: irp_start
+     integer :: irp_start, n
      real(kind=dp_t) :: delta1, delta2
      real(kind=dp_t) :: dens
+     integer :: PT_INDEX
    
      ! initialize
-     dydt = ZERO
+     PT_INDEX = 1
+     !dydt = ZERO
+     do n=1, nspec
+        dydt(n,PT_INDEX) = ZERO
+     enddo
      dens = rpar(irp_dens,PT_INDEX)
    
      ! check to see if we are doing this with the t-derivatives
@@ -458,9 +471,11 @@ contains
      real(kind=dp_t) :: psum
      integer :: it9
      integer :: i, j
+     integer :: PT_INDEX
    
    
      ! initialize
+     PT_INDEX=1
      pd(:,:,:)  = ZERO
      ymol = y(1:nspec,PT_INDEX)
      it9 = neqs

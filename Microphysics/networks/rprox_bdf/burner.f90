@@ -36,7 +36,7 @@ contains
     type(eos_t)  :: eos_state
     type(bdf_ts) :: ts
 
-    real(kind=dp_t), parameter :: DT0 = 1.0d-9 !Initial dt to be used in getting from 
+    real(kind=dp_t), parameter :: DT0 = 1.0d-10 !Initial dt to be used in getting from 
                                                !t to tout.  This is arbitrary,
                                                !multiple values should be
                                                !explored, or an optimal value
@@ -197,7 +197,6 @@ contains
        rpar(irp_dhdX:irp_dhdX+nspec-1,1) = eos_state%dhdX
 
        ! Build the bdf_ts time-stepper object
-       print *, 'build'
        call bdf_ts_build(ts, rtol, atol, rpar)
 
        ts%upar(irp_dens,1) = dens
@@ -217,10 +216,8 @@ contains
        end do
        t0 = ZERO
        t1 = dt
-       print *, 'advance'
        call bdf_advance(ts, y0, t0, y1, t1, &
                         DT0, reset, reuse, istate, .true.)
-       print *, 'post-advance'
 
        ! call the integration routine
        !call dvode(f_rhs, NEQ, y, time, dt, ITOL, rtol, atol, ITASK, &

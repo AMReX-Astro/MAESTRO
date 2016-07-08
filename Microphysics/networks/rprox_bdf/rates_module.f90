@@ -29,10 +29,12 @@ module rates_module
 
 contains
 
-  function calc_tfactors(t9) result (tfactors)
+  !function calc_tfactors(t9) result (tfactors)
+  subroutine calc_tfactors(t9, tfactors)
+  !$acc routine seq
 
     real (kind=dp_t), intent(in   ) :: t9
-    type (temp_t) :: tfactors
+    type (temp_t),    intent(inout) :: tfactors
 
     tfactors%t9 = t9
     tfactors%t9i = 1.d0 / tfactors%t9
@@ -41,10 +43,12 @@ contains
     tfactors%t953 = tfactors%t9 * tfactors%t913 * tfactors%t913
     tfactors%lnt9 = log(tfactors%t9)
 
-  end function calc_tfactors
+  !end function calc_tfactors
+  end subroutine calc_tfactors
 
 
   subroutine rate_p_c12_to_n13(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -106,6 +110,7 @@ contains
 
 
   subroutine rate_f17_to_p_o16(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -150,6 +155,7 @@ contains
 
 
   subroutine rate_f17_to_o17(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -163,6 +169,7 @@ contains
 
 
   subroutine rate_p_f17_to_ne18(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -230,6 +237,7 @@ contains
 
 
   subroutine rate_he4_he4_he4_to_c12(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -317,6 +325,7 @@ contains
 
 
   subroutine rate_p_n14_to_o15(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -400,6 +409,7 @@ contains
 
 
   subroutine rate_he4_ne18_to_p_na21(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -510,6 +520,7 @@ contains
 
 
   subroutine rate_ne18_to_f18(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -523,6 +534,7 @@ contains
 
 
   subroutine rate_ne19_to_f19(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -536,6 +548,7 @@ contains
 
 
   subroutine rate_p_ne19_to_na20(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
@@ -597,6 +610,7 @@ contains
 
 
   subroutine rate_he4_o14_to_p_f17(tfactors,rate,dratedt)
+  !$acc routine seq
 
     type (temp_t),    intent(in   ) :: tfactors
     real (kind=dp_t), intent(  out) :: rate
