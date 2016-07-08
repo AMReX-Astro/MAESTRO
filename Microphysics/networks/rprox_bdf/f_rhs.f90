@@ -54,7 +54,8 @@ contains
    
      integer :: PT_INDEX
      !type(eos_t) :: eos_state
-     
+    
+     PT_INDEX = 1 
      do n = 1, nspec
         ydot(n,PT_INDEX) = ZERO
      enddo
