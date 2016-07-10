@@ -429,6 +429,32 @@ squeue -u username -M all
 
 \subsection{Batch visualization using \yt}
 
+\yt\ can be built using the {\tt install\_script.sh}.  It has been
+tested using the build of {\tt yt} from source and dependencies via conda,
+by setting:
+\begin{verbatim}
+INST_CONDA=1
+INST_YT_SOURCE=1
+\end{verbatim}
+in the {\tt install\_script.sh}.  Once these are set, run:
+\begin{verbatim}
+source install_script.sh
+\end{verbatim}
+Note: installation was done in the home directory.
+
+This way of building \yt\ installs it's own python and support
+libraries in a directory, {\tt yt-conda}.  You need to make sure that
+your start-up files (typically {\tt .bashrc.ext} at NERSC) don't {\tt
+  module load} python or any python libraries, as this will interfere
+with the conda installation.  The install script will direct you to
+add the install location to your path.
+
+At the moment, it seems that this does not actually build the yt source,
+so a second step is needed, in {\tt yt-conda/bin/src/yt-hg}, do
+\begin{verbatim}
+python setup.py develop --user
+\end{verbatim}
+
 The scripts {\tt parallel-yt} and {\tt process-edison.run} in {\tt
 Util/job\_scripts/edison} show how to invoke \yt\ to loop over a 
 series of plotfiles and do visualization.  A number of tasks are
