@@ -455,12 +455,17 @@ so a second step is needed, in {\tt yt-conda/bin/src/yt-hg}, do
 python setup.py develop --user
 \end{verbatim}
 
-The scripts {\tt parallel-yt} and {\tt process-edison.run} in {\tt
-Util/job\_scripts/edison} show how to invoke \yt\ to loop over a 
-series of plotfiles and do visualization.  A number of tasks are
-run at once on the node, each operating on a separate file.  Note:
-it is important that {\tt aprun} be used to launch the \yt\ script
-to ensure that it is run on the compute node.
+The scripts {\tt parallel-yt} and {\tt process-edison.slurm} in {\tt
+  Util/job\_scripts/edison} show how to invoke \yt\ to loop over a
+series of plotfiles and do visualization.  A number of tasks are run
+at once on the node, each operating on a separate file.  The {\tt
+  parallel-yt} script then calls {\tt vol.py} to do the volume
+rendering with \yt.  Note: it is important that {\tt srun} be used to
+launch the \yt\ script to ensure that it is run on the compute node.
+
+A simple {\tt test-yt.slurm} script shows how to just call the
+\yt\ python script directly, using one node and 24 threads, again
+using {\tt srun} to execute on the compute node.
 
 \subsection{Using the {\tt AmrPostprocesing} python plotting scripts on hopper}
 
