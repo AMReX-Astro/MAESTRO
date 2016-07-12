@@ -27,7 +27,7 @@ analysis=./vol.py
 fname=vz
 
 # activate yt
-source /global/homes/z/zingale/yt/yt-x86_64/bin/activate
+#source /global/homes/z/zingale/yt/yt-x86_64/bin/activate
 
 
 #----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ function process_files
 
 	if [ ! -f xrb_vol_${fname}_${root}.png ]; then
            # do processing
-           aprun ${analysis} $1 ${fname} 
+           srun -n 1 ${analysis} $1 ${fname} 
 	fi
 
         # this sleep line is not necessary if the analysis takes any 
@@ -119,9 +119,8 @@ do
   fi
 
 
-  filelist1=$(find . -maxdepth 1 -type d -name "${data_prefix}?????" -print | sort)
-  filelist2=$(find . -maxdepth 1 -type d -name "${data_prefix}??????" -print | sort)
-
+  filelist1=$(find . -maxdepth 1 -type d -name "*${data_prefix}?????" -print | sort)
+  filelist2=$(find . -maxdepth 1 -type d -name "*${data_prefix}??????" -print | sort)
 
   for file in ${filelist1} ${filelist2}
   do
@@ -133,7 +132,7 @@ do
           sleep 1
           freecpus
       done
-      
+      echo ${file}      
       process_files ${file} &
 
       sleep 1
