@@ -844,9 +844,14 @@ gets the information about the fluid species from the \code{network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
-Presently there are 3 equations of state that work with \maestro:
+Presently there is a single EOS that comes with \maestro, {tt gamma\_law\_general},
+but many more are available through the external \microphysics\ repo\footnote{\microphysics\ is
+available at \url{https://github.com/BoxLib-Codes/Microphysics}.  \maestro\ will
+find it via the {\tt MICROPHYSICS\_HOME} environment variable}.  The \microphysics\
+EOSs share the same interface and can be compiled into \maestro\ directly.  
+Here are the more popular EOSs:
 \begin{itemize}
-\item {\tt helmeos/} represents a general stellar equation 
+\item {\tt helmeos} represents a general stellar equation 
       of state, consisting of nuclei (as an ideal gas), radiation,
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.
