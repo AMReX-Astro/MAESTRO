@@ -33,22 +33,6 @@ gfortran is probably the best-supported compiler for \maestro.  Here are some
 version-specific notes:
 
 \begin{itemize}
-\item {\em gfortran 4.5.x}: gfortran 4.5 has no known issues.
-
-\item {\em gfortran 4.6.x}: gfortran 4.6.1--4.6.3 on Fedora 
-(15 and 16) have a bug that shows up in multi-processor, multilevel
-runs ({\tt toy\_convect} on 4 processors, with {\tt
-inputs\_2d\_ml.test} for instance).  The symptom is a crash during
-initialization with the message that ``message sizes do not match
-across processes in the collective'' in a {\tt parallel\_bcast} call.
-This is in {\tt cluster\_f.f90}, and the issue seems to be a
-multiplication error in computing the size to allocate {\tt bxs}.  The
-bug is not present when you compile in debug mode, so it seems to be
-related to optimization.
-
-\item {\em gfortran 4.7.x}: gfortran 4.7.1 (prerelease) seems to have 
-fixed the above issue, but now wdconvect with 2-level, effective
-768$^3$ dies due to an unknown seg fault at the beginning of the run.
 
 \item {\em gfortran 4.8.x}: This typically works well, but sometimes we get
 an error allocating memory in {\tt cluster\_f.f90}.  This
@@ -67,9 +51,17 @@ GCC manual says,
 Perform partial redundancy elimination (PRE) on trees. This flag is enabled by default at {\tt -O2} and {\tt -O3}.
 \end{quote}
 
+gfortran 4.8.5 appears to work without issues
+
+
 \item {\em gfortran 5.1.1}: These compilers have no known issues.
 
 \item {\em gfortran 5.3.x}: These compilers have no known issues.
+
+\item {\em gfortran 6.1.1}: These compilers have a bug in producing
+  optimized code for \boxlib's {\tt init\_layout\_tilearray}.  At the
+  moment, this is worked around in \boxlib\ by changing the routine
+  from a function to a subroutine.
 
 \end{itemize}
 
