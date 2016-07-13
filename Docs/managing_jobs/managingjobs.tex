@@ -63,6 +63,9 @@ gfortran 4.8.5 appears to work without issues
   moment, this is worked around in \boxlib\ by changing the routine
   from a function to a subroutine.
 
+
+  gfortran 6.1.1 is used for nightly regression testing.
+
 \end{itemize}
 
 \subsection{PGI compilers}
@@ -71,6 +74,8 @@ The \boxlib\ floating point exception trapping is disabled with PGI
 compilers earlier than version 16, due to problems with PGI using the
 system header files.  From version 16 onward, things should work.
 
+There are no known issues with PGI 16.5 compilers---these are used
+for nightly regression testing.
 
 
 \section{Working at OLCF (ORNL)}
@@ -332,16 +337,14 @@ PGI and Cray also work well
 \item Intel 16.x currently has issues with the linear solvers in \boxlib\
   and should be avoided.
 
-\item Cray 8.4.3 triggers a backtrace error in {\tt make\_pi\_cc.f90}---this is 
-  likely an optimization issue, and may be 2-d specific.  
-
-  Previously,  Cray 8.4.0 worked well on edison/NERSC with MPI/OpenMP.
+\item Cray 8.4.x has worked in the past, but it has not been used
+  at NERSC in a while.
 
 \end{itemize}
 
 Note: in order to compile, you will need to ensure that both the {\tt
 python} and {\tt python\_base} modules are loaded (via the {\tt
-module} command).
+module} command).  \MarginPar{this may have changed with the migration of NERSC to anaconda?}
 
 \subsection{Running Jobs}
 
