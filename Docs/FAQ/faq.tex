@@ -144,14 +144,20 @@
 
   An alternate way to get single-processor timings, when using the GCC
   compilers is to add {\tt -pg} to the compilation flags for both {\tt
-    gfortran} and {\tt gcc} (this can be accomplished by setting {\tt
-    GPROF := t} in your {\tt GNUmakefile}.  Upon completion, a file
+    gfortran} and {\tt gcc}.  This can be accomplished by setting:
+  \begin{verbatim}
+    GPROF := t
+\end{verbatim}
+  in your {\tt GNUmakefile}.  Upon completion, a file
   names {\tt gmon.out} will be produced.  This can be processed by
   {\tt gprof} running
 
-  {\tt~~~ gprof} {\em exec-name}
-  
-  where {\em exec-name} is the name of the executable.
+  \begin{verbatim}
+    gprof exec-name
+\end{verbatim}
+  where {\em exec-name} is the name of the executable.  More detailed
+  line-by-line timings can be obtained by using the {\tt -l} argument
+  to {\tt gprof}.
 
 \item{\em How can I force \maestro\ to abort?}
 
