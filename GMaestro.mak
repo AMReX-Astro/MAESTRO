@@ -82,10 +82,15 @@ ifndef MICROPHYSICS_HOME
   endif 
 endif
 
+
+ifeq ($(EOS_DIR), helmeos)
+  EOS_DIR := helmholtz
+  $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
+endif
+
 # the helmeos has an include file -- also add a target to link the table
 # into the problem directory.
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  EOS_DIR := helmholtz
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
   Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz

@@ -17,7 +17,7 @@ ifndef MICROPHYSICS_HOME
 endif
 
 # define the physics packages to build this problem
-EOS_DIR := helmeos
+EOS_DIR := helmholtz
 CONDUCTIVITY_DIR := timmes_stellar
 
 #NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
