@@ -1,0 +1,44 @@
+Comparison of MAESTRO networks to the Microphysics nets
+
+
+-- rprox (2016-07-17)
+
+   excellent agreement when using VODE and burning_mode = 0 in Microphysics 
+   and zeroing out ydot for T in Maestro.
+
+   Microphysics output (Microphysics/networks/rprox/test/)
+
+ Xin / Xout:
+    0.5000000075E-01     0.4158432629E-01
+     0.000000000         0.9818282554E-02
+     0.000000000         0.5321222353E-08
+     0.000000000         0.1615563103E-22
+     0.000000000         0.2030942961E-16
+     0.000000000         0.1061441464E-22
+     0.000000000         0.3834887201E-27
+     0.000000000         0.1000000011E-29
+    0.2500000000         0.2500000028    
+    0.6999999881         0.6985973830    
+ Hnuc:    4.4454490179984392E+019
+
+
+   MAESTRO rprox output (MAESTRO/Microphysics/networks/rprox/test/
+   with dydt(n) = 0.0 in f_rhs.f90)
+
+ Xin / Xout:
+    0.5000000075E-01     0.4158432696E-01
+     0.000000000         0.9818281766E-02
+     0.000000000         0.5321225122E-08
+     0.000000000         0.1615549628E-22
+     0.000000000         0.2030944017E-16
+     0.000000000         0.1061432520E-22
+     0.000000000         0.3835349804E-27
+     0.000000000         0.9619151226E-33
+    0.2500000000         0.2500000028    
+    0.6999999881         0.6985973832    
+   4.4454720339242312E+019
+
+
+
+
+   
