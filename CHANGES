@@ -1,5 +1,14 @@
 changes since last merge with master:
 
+ * Major changes:
+
+ * Minor changes:
+
+   -- Chosing the general Helmholtz stellar equation of state is now done
+      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
+      actual name of the directory in the Microphysics repo.
+
+
 previous releases:
 
 16.07
