@@ -92,7 +92,6 @@ endif
 # into the problem directory.
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
-  Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
 endif
@@ -208,7 +207,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
 # any include directories
-Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir)) $(Fmincludes_ext)
+Fmincs := 
 
 
 # include the necessary GPackage.mak files that define this setup
