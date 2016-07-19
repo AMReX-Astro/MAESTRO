@@ -113,7 +113,7 @@ from them.  This process is defined in {\tt GMakerules.mak}.
 A few files use explicit `{\tt include}' statements to include Fortran
 source in other source files.  Any include file locations should be
 added to {\tt Fmincludes} variable in the problem's {\tt GNUmakefile}.
-This does not occur frequently.  For the case of the {\tt helmeos}
+This does not occur frequently.  For the case of the {\tt helmholtz}
 equation of state, this is done automatically in {\tt GMaestro.mak}.
 
 
@@ -196,7 +196,7 @@ in the problem's {\tt GNUmakefile}.
   Microphysics/EOS/}) of the equation of state used for the build.
   Choices that work with \maestro\ are:
   \begin{itemize}
-  \item {\tt helmeos}
+  \item {\tt helmholtz}
   \item {\tt gamma\_law\_general}
   \item {\tt multigamma}
   \end{itemize}

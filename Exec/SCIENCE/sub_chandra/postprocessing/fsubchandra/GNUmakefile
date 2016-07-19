@@ -31,7 +31,7 @@ Fmincludes :=
 
 ifdef NEED_EOS_NETWORK
   EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
-  EOS_DIR := helmeos
+  EOS_DIR := helmholtz
 
   NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
   NETWORK_DIR := triple_alpha_plus_cago
