@@ -318,7 +318,9 @@ the various microphysics routines.
 
 \section{Special Targets}
 
-\subsection{Debugging ({\tt print-*})}
+\subsection{Debugging}
+
+\subsubsection{({\tt print-*})}
 
 To see the contents of any variable in the build system, you can build
 the special target {\tt print-{\em varname}}, where {\tt {\em
@@ -332,6 +334,21 @@ This would give (for {\tt gfortran}, for example):
 FFLAGS is -Jt/Linux.gfortran/m -I t/Linux.gfortran/m -O2 -fno-range-check
 \end{verbatim}
 This functionality is useful for debugging the makefiles.
+
+\subsubsection{{\tt file\_locations}}
+
+Source files are found by searching through the {\tt make} {\tt
+  vpath}.  The first instance of the file found in the {\tt vpath}
+is used in the build.  To see which files are used and their locations,
+do:
+\begin{verbatim}
+make file_locations
+\end{verbatim}
+
+This will also show any files that aren't found.  Some are expected
+(e.g., {\tt build\_info.f90} and {\tt probin.f90} are created at
+compile time), but other files that are not found could indicate
+an incomplete {\tt vpath}.
 
 \subsection{{\tt clean} and {\tt realclean}}
 
