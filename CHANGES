@@ -1,5 +1,26 @@
 changes since last merge with master:
 
+ * Major changes:
+
+ * Minor changes:
+
+   -- Chosing the general Helmholtz stellar equation of state is now done
+      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
+      actual name of the directory in the Microphysics repo.
+
+
+previous releases:
+
+16.07
+
+ * Major changes:
+
+   -- For the general microphysics solvers, we now use the environment
+      variable MICROPHYSICS_HOME instead of MICROPHYSICS_DIR.  The
+      latter is deprecated and you will see a warning when building if
+      this is set.  This change is to promote uniformity among the
+      code bases.
+
  * Minor changes:
 
    -- The runtime parameter small_x is now owned by the network module.
@@ -10,9 +31,6 @@ changes since last merge with master:
    -- If SYSTEM_BLAS is defined, we will attempt to link in a
       system-wide BLAS library (-lblas) rather than compiling the BLAS
       routines ourselves.
-
-
-previous releases:
 
 16.06
 

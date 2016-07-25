@@ -13,7 +13,7 @@ MKVERBOSE := t
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
 # define the physics packages to build this problem
-MICROPHYSICS_DIR := /home/ajacobs/Codebase/MAESTRO/Microphysics
+MICROPHYSICS_HOME := /home/ajacobs/Codebase/MAESTRO/Microphysics
 EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 

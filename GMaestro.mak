@@ -74,12 +74,24 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
+# for backward compatibility -- MICROPHYSICS_DIR is deprecated
+ifndef MICROPHYSICS_HOME
+  ifdef MICROPHYSICS_DIR
+    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
+    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
+  endif 
+endif
+
+
+ifeq ($(EOS_DIR), helmeos)
+  EOS_DIR := helmholtz
+  $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
+endif
+
 # the helmeos has an include file -- also add a target to link the table
 # into the problem directory.
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  EOS_DIR := helmholtz
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
-  Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
 endif
@@ -88,7 +100,7 @@ table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
@@ -195,7 +207,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
 # any include directories
-Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir)) $(Fmincludes_ext)
+Fmincs := 
 
 
 # include the necessary GPackage.mak files that define this setup
@@ -275,7 +287,7 @@ build_info.f90:
            --link_line "$(LINK.f90)" \
            --boxlib_home "$(BOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
-           --extra_home "$(MICROPHYSICS_DIR)" \
+           --extra_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
            --eos "$(EOS_DIR)" \
            --conductivity "$(CONDUCTIVITY_DIR)"

@@ -1,15 +1,18 @@
 #!/usr/bin/env python
+
+from __future__ import print_function
+
 import os
 import sys
 
 # tex format stuff
-Mheader=r"""
+Mheader = r"""
 \label{ch:parameters}
 
 \begin{landscape}
 """
 
-header=r"""
+header = r"""
 {\small
 
 \renewcommand{\arraystretch}{1.5}
@@ -18,27 +21,27 @@ header=r"""
 \begin{longtable}{|l|p{5.25in}|l|}
 \caption[@@catname@@]{@@catname@@} \label{table: @@catname@@ runtime} \\
 %
-\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
-       \multicolumn{1}{ c|}{\textbf{description}} & 
-       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} &
+       \multicolumn{1}{ c|}{\textbf{description}} &
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline
 \endfirsthead
 
 \multicolumn{3}{c}%
 {{\tablename\ \thetable{}---continued}} \\
-\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
-       \multicolumn{1}{ c|}{\textbf{description}} & 
-       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} &
+       \multicolumn{1}{ c|}{\textbf{description}} &
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline
 \endhead
 
 \multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
 \endfoot
 
-\hline 
+\hline
 \endlastfoot
 
 """
 
-footer=r"""
+footer = r"""
 
 \end{longtable}
 \end{center}
@@ -46,7 +49,7 @@ footer=r"""
 } % ends \small
 """
 
-Mfooter=r"""
+Mfooter = r"""
 \end{landscape}
 
 %
@@ -55,7 +58,7 @@ Mfooter=r"""
 
 maestro_top = "../../"
 
-# we list the files to parse here in a tuple, consisting of the display name 
+# we list the files to parse here in a tuple, consisting of the display name
 # (for the LaTeX table) and the path
 param_paths = [("main Maestro parameters", "Source/"),
                (r"gamma law general  EOS", "Microphysics/EOS/gamma_law_general/"),
@@ -65,7 +68,7 @@ param_paths = [("main Maestro parameters", "Source/"),
 
 class Parameter(object):
     # container class for the parameters
-    
+
     def __init__(self):
         self.var = ""
         self.default = ""
@@ -92,50 +95,28 @@ def make_tex_table(param_info):
     # open the file
     try: f = open(param_file, "r")
     except IOError:
-        print "ERROR: %s does not exist" % param_file
-        sys.exit(2)
+        sys.exit("ERROR: {} does not exist".format(param_file))
 
     # local storage for the parameters
-    params_list=[]
-    descr=r""
-    category=""
+    params_list = []
+    descr = r""
+    category = ""
 
     # read in the file
-    # skip all lines before the first empty line
-    found_first_param = False
-
     line = f.readline()
     while line:
 
-        # we assume that parameter files have a descriptive heading
-        # before the parameters start in those cases, we want to skip
-        # everything before the first blank line.  the next comment
-        # will then be interpreted either as the category or as the
-        # description for the parameter
-
-        if not found_first_param:
-            if line.isspace():
-                # this is the first empty line and we begin reading the file 
-                # from here on out
-                found_first_param = True
-                line = f.readline()
-                continue
-
-            # no blank line found yet, keep going
+        # we assume that parameters have an optional descriptive
+        # heading before them without any blank line between the
+        # description and the parameter definition.  Therefore,
+        # if we encounter a blank line, zero out the description.
+        if line.strip() == "":
+            descr =  r""
             line = f.readline()
             continue
 
-        # land here once we have found the first parameter
-        current_param = Parameter()
-        
-        # skip blank lines
-        if line.isspace(): 
-            line = f.readline()
-            continue
-
-    
         # look for category definition
-        elif line.startswith("#------"):
+        if line.startswith("#------"):
 
             # the next line should be the category definition
             line = f.readline()
@@ -151,28 +132,27 @@ def make_tex_table(param_info):
             continue
 
         # find the description
-        elif line.startswith("#"):
+        if line.startswith("#"):
 
             # handle descriptions here
-            descr+=line[1:].rstrip().replace("@@",r"\newline")
+            descr += line[1:].rstrip().replace("@@",r"\newline")
             line = f.readline()
             continue
 
         else:
+            current_param = Parameter()
+            line_list = line.split()
 
-            lineList = line.split()
-
-            current_param.var = lineList[0]
-            current_param.default = lineList[2].replace("_","\_")
+            current_param.var = line_list[0]
+            current_param.default = line_list[2].replace("_", "\_")
             current_param.description = descr
             current_param.category = category
 
-            descr=r""
+            descr = r""
 
-        
         # store the current parameter in the list
         params_list.append(current_param)
-        
+
         line = f.readline()
 
 
@@ -184,7 +164,7 @@ def make_tex_table(param_info):
 
         if not param.category == current_category:
             if not start == 1:
-                print footer
+                print(footer)
 
             current_category = param.category
             odd = 1
@@ -192,32 +172,27 @@ def make_tex_table(param_info):
                 cat_header = header.replace("@@catname@@", display_name + " parameters.")
             else:
                 cat_header = header.replace("@@catname@@", param.category + " parameters.")
-            print cat_header
+            print(cat_header)
             start = 0
 
         if odd == 1:
-            print "\\rowcolor{tableShade}"
+            print(r"\rowcolor{tableShade}")
             odd = 0
         else:
             odd = 1
 
-        print "\\verb= ", \
-            param.var, \
-            " = & ", \
-            param.description, \
-            " & ", \
-            param.default, \
-            r"\\"
+        print(r"\verb= {} = & {} & {} \\".format(
+            param.var, param.description, param.default))
 
     # dump the footer
-    print footer
+    print(footer)
 
 if __name__ == "__main__":
 
     # dump the main header
-    print Mheader
+    print(Mheader)
 
     for p in param_paths:
         make_tex_table(p)
 
-    print Mfooter
+    print(Mfooter)
