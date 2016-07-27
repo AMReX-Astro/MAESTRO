@@ -19,8 +19,6 @@ def doit(plotfile):
     ds = yt.load(plotfile)
     ds.periodicity = (True, True, True)
 
-    cm = "coolwarm"
-
     field = ('boxlib', 'radial_velocity')
     ds._get_field_info(field).take_log = False
         
@@ -34,6 +32,8 @@ def doit(plotfile):
     #dd = ds.sphere(center, R)
 
     vol = VolumeSource(ds, field=field)
+    vol.use_ghost_zones = True
+
     sc.add_source(vol)
 
 
@@ -63,7 +63,6 @@ def doit(plotfile):
                            north_vector=[0., 0., 1.])
     cam.set_width(ds.domain_width)
 
-    sc.camera = cam
     #sc.annotate_axes(alpha=0.05)
     #sc.annotate_domain(ds, color=np.array([0.05, 0.05, 0.05, 0.05]))
     #sc.annotate_grids(ds, alpha=0.05)
