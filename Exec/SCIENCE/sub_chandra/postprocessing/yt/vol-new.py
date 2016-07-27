@@ -54,8 +54,17 @@ def doit(plotfile):
     cam.resolution = (1080, 1080)
     cam.position = 1.0*ds.domain_right_edge
     
-    # look toward the center -- we are dealing with an octant
-    center = ds.domain_left_edge
+    # look toward the center -- we set this depending on whether the plotfile
+    # indicates it was an octant
+    try: octant = ds.parameters["octant"]
+    except: octant = True
+
+    if octant:
+        center = ds.domain_left_edge
+    else:
+        center = 0.5*(ds.domain_left_edge + ds.domain_right_edge)
+
+    # unit vector connecting center and camera
     normal = (center - cam.position)
     normal /= np.sqrt(normal.dot(normal))
 
