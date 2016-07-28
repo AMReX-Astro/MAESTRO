@@ -166,6 +166,8 @@ job.
 
 \subsubsection{Rhea---preferred method}
 
+{\color{red} this section needs to be updated.  See the titan section}
+
 The best way to do visualization is to use rhea, the OLCF vis machine.
 You need to build \yt\ via the {\tt install\_script.sh} script {\em on
 rhea}.  It also must be on a {\em Lustre filesystem}, so it is seen by
@@ -195,25 +197,55 @@ correct \yt\ installation path.
 
 \subsubsection{Titan}
 
-You can also run \yt\ python scripts in the titan batch queues to do your
+You can run \yt\ python scripts in the titan batch queues to do your
 visualization.  You need to install \yt\ and all its dependencies
 manually somewhere on a {\em Lustre filesystem}---this ensures that the
 compute nodes can see it.  A good choice is the project space, since
-that has a longer purge window.
+that has a longer purge window.  The following procedure will setup
+the development version of \yt\ (from source)
+\begin{itemize}
+\item create a directory in your {\tt \$PROJWORK} directory named {\tt yt/}
 
-Once \yt\ is install by the {\tt install\_script.sh} script, it will
-tell you what script to source to define the necessary paths.
+\item in {\tt yt/}, down load the \yt\ install script:
+\begin{verbatim}
+wget https://bitbucket.org/yt_analysis/yt/raw/yt/doc/install_script.sh
+\end{verbatim}
 
-The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in {\tt
-MAESTRO/Util/job\_scripts/titan/} will manage the \yt jobs by calling a
-python script for each file that matches a pattern.  Make sure you set
-the proper path for the \yt\ {\tt activate} script in {\tt
-parallel-yt-new}---this ensures that the paths to the various libraries
-are set on the compute nodes.
+\item edit the script to use Conda to get the necessary dependencies
+and to build \yt\ from source.  This is accomplished by setting the 
+following variables near the top of the script:
+\begin{verbatim}
+INST_CONDA=1
+INST_YT_SOURCE=1
+\end{verbatim}
 
+\item run the script:
+\begin{verbatim}
+source install_script.sh
+\end{verbatim}
+\end{itemize}
+
+When the script is done, you will have a new python installation in a sub-directory
+called {\tt yt-conda/} and the script will tell you how to modify your path
+in your {\tt .bashrc}
+
+{\bfseries Important: make sure that you are not loading any other
+  python environments in your {\tt .bashrc}, e.g., via modules.}
+
+To test thing out, start up the python shell, and try doing {\tt
+  import yt}.  If there are no errors, then you are good.
+
+The python code {\tt vol.py} and submission script {\tt
+  yt-vis-titan.run} in {\tt MAESTRO/Util/job\_scripts/titan/vis/} show
+how to do a simple visualization in the batch queue using yt.  Note
+that {\tt vol.py} is executable, and that we run it via {\tt aprun} to
+ensure that it is launched on the compute node.
+
+The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in that
+same directorywill manage the \yt jobs by calling a
+python script for each file that matches a pattern.  
 Note that the actual visualization command itself is launched by
-{\tt parallel-yt-new} using the {\tt aprun} command.  This is the
-only way to get a job to run on the compute nodes on titan.  But
+{\tt parallel-yt-new}, again using the {\tt aprun} command.  But
 {\tt aprun} can only launch a single job at a time, so this means
 we cannot easily do (trivally) parallel visualization on a node.  For
 this reason, running on rhea is preferred.
@@ -440,17 +472,12 @@ source install_script.sh
 Note: installation was done in the home directory.
 
 This way of building \yt\ installs it's own python and support
-libraries in a directory, {\tt yt-conda}.  You need to make sure that
-your start-up files (typically {\tt .bashrc.ext} at NERSC) don't {\tt
-  module load} python or any python libraries, as this will interfere
-with the conda installation.  The install script will direct you to
-add the install location to your path.
+libraries in a directory, {\tt yt-conda}.  {\bf Important: } You need
+to make sure that your start-up files (typically {\tt .bashrc.ext} at
+NERSC) don't {\tt module load} python or any python libraries, as this
+will interfere with the conda installation.  The install script will
+direct you to add the install location to your path.
 
-At the moment, it seems that this does not actually build the yt source,
-so a second step is needed, in {\tt yt-conda/bin/src/yt-hg}, do
-\begin{verbatim}
-python setup.py develop --user
-\end{verbatim}
 
 The scripts {\tt parallel-yt} and {\tt process-edison.slurm} in {\tt
   Util/job\_scripts/edison} show how to invoke \yt\ to loop over a
@@ -463,6 +490,18 @@ launch the \yt\ script to ensure that it is run on the compute node.
 A simple {\tt test-yt.slurm} script shows how to just call the
 \yt\ python script directly, using one node and 24 threads, again
 using {\tt srun} to execute on the compute node.
+
+If you want to keep up with the development version of \yt, then you
+can update the source in {\tt yt-conda/bin/src/yt-hg}, using:
+\begin{verbatim}
+hg pull
+hg update yt
+\end{verbatim}
+and then rebuild it via:
+\begin{verbatim}
+python setup.py develop --user
+\end{verbatim}
+
 
 \subsection{Using the {\tt AmrPostprocesing} python plotting scripts on hopper}
 

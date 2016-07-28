@@ -1,0 +1,17 @@
+#!/bin/sh
+#PBS -A ast106
+#PBS -N visualization
+#PBS -j oe
+#PBS -q debug
+#PBS -l walltime=00:05:00,nodes=1
+
+# this script runs with yt to volume render
+#
+
+export OMP_NUM_THREADS=16
+
+cd $PBS_O_WORKDIR
+
+aprun ./vol.py
+
+

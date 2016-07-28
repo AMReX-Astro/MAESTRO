@@ -19,8 +19,6 @@ def doit(plotfile):
     ds = yt.load(plotfile)
     ds.periodicity = (True, True, True)
 
-    cm = "coolwarm"
-
     field = ('gas', 'velocity_z')
     ds._get_field_info(field).take_log = False
         
@@ -34,6 +32,8 @@ def doit(plotfile):
     #dd = ds.sphere(center, R)
 
     vol = VolumeSource(ds, field=field)
+    vol.use_ghost_zones = True
+
     sc.add_source(vol)
 
 
