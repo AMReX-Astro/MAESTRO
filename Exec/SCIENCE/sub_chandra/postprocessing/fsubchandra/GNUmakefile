@@ -33,18 +33,23 @@ ifdef NEED_EOS_NETWORK
   EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
   EOS_DIR := helmholtz
 
-  NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
+  #NETWORK_TOP_DIR := $(ASTRODEV_DIR)/networks
+  NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
   NETWORK_DIR := triple_alpha_plus_cago
 
 
   MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS
 
-  MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
+  #MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
+  #                  $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
+  MICROPHYS_CORE += $(EOS_TOP_DIR) \
                     $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
 
-  ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-    Fmincludes += Microphysics/EOS/helmeos
-    EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
+  #ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
+  ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+    Fmincludes += ../Microphysics/EOS/helmholtz
+    #EOS_PATH := $(MAESTRO_TOP_DIR)/Microphysics/EOS/$(strip $(EOS_DIR))
+    EOS_PATH := $(MICROPHYSICS_HOME)/EOS/$(strip $(EOS_DIR))
     ##ALL: table
 	 #programs += table
   endif
@@ -76,6 +81,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 #Microphysics
 Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
+Fmpack += $(MICROPHYS_CORE/GPackage.mak)
 Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
 
 # any include files
