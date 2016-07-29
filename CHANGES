@@ -4,6 +4,10 @@ changes since last merge with master:
 
  * Minor changes:
 
+   -- added runtime parameters for boxlib backtracing.  Now
+      boxlib_fpe_invalid, boxlib_fpe_zero, and boxlib_fpe_overflow
+      turn on/off FPE handling through the boxlib backtrace module
+
    -- Chosing the general Helmholtz stellar equation of state is now done
       with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
       actual name of the directory in the Microphysics repo.
