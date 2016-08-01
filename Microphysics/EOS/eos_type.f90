@@ -14,7 +14,7 @@ module eos_type_module
   integer, parameter :: eos_input_ph = 7  ! p, h are inputs
   integer, parameter :: eos_input_th = 8  ! T, h are inputs
 
-  ! these are used to allow for a generic interface to the 
+  ! these are used to allow for a generic interface to the
   ! root finding
   integer, parameter :: itemp = 1
   integer, parameter :: idens = 2
@@ -101,54 +101,55 @@ module eos_type_module
 
   type :: eos_t
 
-    real(kind=dp_t) :: rho         
-    real(kind=dp_t) :: T           
-    real(kind=dp_t) :: p           
-    real(kind=dp_t) :: e           
-    real(kind=dp_t) :: h           
-    real(kind=dp_t) :: s           
-    real(kind=dp_t) :: dpdT        
-    real(kind=dp_t) :: dpdr        
-    real(kind=dp_t) :: dedT        
-    real(kind=dp_t) :: dedr        
-    real(kind=dp_t) :: dhdT        
-    real(kind=dp_t) :: dhdr        
-    real(kind=dp_t) :: dsdT        
-    real(kind=dp_t) :: dsdr        
-    real(kind=dp_t) :: dpde        
-    real(kind=dp_t) :: dpdr_e      
+    real(kind=dp_t) :: rho
+    real(kind=dp_t) :: T
+    real(kind=dp_t) :: p
+    real(kind=dp_t) :: e
+    real(kind=dp_t) :: h
+    real(kind=dp_t) :: s
+    real(kind=dp_t) :: dpdT
+    real(kind=dp_t) :: dpdr
+    real(kind=dp_t) :: dedT
+    real(kind=dp_t) :: dedr
+    real(kind=dp_t) :: dhdT
+    real(kind=dp_t) :: dhdr
+    real(kind=dp_t) :: dsdT
+    real(kind=dp_t) :: dsdr
+    real(kind=dp_t) :: dpde
+    real(kind=dp_t) :: dpdr_e
 
-    real(kind=dp_t) :: xn(nspec)   
-    real(kind=dp_t) :: aux(naux)   
-    real(kind=dp_t) :: cv          
-    real(kind=dp_t) :: cp          
-    real(kind=dp_t) :: xne         
-    real(kind=dp_t) :: xnp         
-    real(kind=dp_t) :: eta         
-    real(kind=dp_t) :: pele        
-    real(kind=dp_t) :: ppos        
-    real(kind=dp_t) :: mu          
-    real(kind=dp_t) :: mu_e        
-    real(kind=dp_t) :: y_e         
-    real(kind=dp_t) :: dedX(nspec) 
-    real(kind=dp_t) :: dpdX(nspec) 
-    real(kind=dp_t) :: dhdX(nspec) 
-    real(kind=dp_t) :: gam1        
-    real(kind=dp_t) :: cs          
+    real(kind=dp_t) :: xn(nspec)
+    real(kind=dp_t) :: aux(naux)
+    real(kind=dp_t) :: cv
+    real(kind=dp_t) :: cp
+    real(kind=dp_t) :: xne
+    real(kind=dp_t) :: xnp
+    real(kind=dp_t) :: eta
+    real(kind=dp_t) :: pele
+    real(kind=dp_t) :: ppos
+    real(kind=dp_t) :: mu
+    real(kind=dp_t) :: mu_e
+    real(kind=dp_t) :: y_e
+    real(kind=dp_t) :: dedX(nspec)
+    real(kind=dp_t) :: dpdX(nspec)
+    real(kind=dp_t) :: dhdX(nspec)
+    real(kind=dp_t) :: gam1
+    real(kind=dp_t) :: cs
 
-    real(kind=dp_t) :: abar        
-    real(kind=dp_t) :: zbar        
-    real(kind=dp_t) :: dpdA        
+    real(kind=dp_t) :: abar
+    real(kind=dp_t) :: zbar
+    real(kind=dp_t) :: dpdA
 
-    real(kind=dp_t) :: dpdZ        
-    real(kind=dp_t) :: dedA        
-    real(kind=dp_t) :: dedZ        
-    
+    real(kind=dp_t) :: dpdZ
+    real(kind=dp_t) :: dedA
+    real(kind=dp_t) :: dedZ
+
     real(kind=dp_t) :: smallt
     real(kind=dp_t) :: smalld
 
-    logical :: reset               
-    logical :: check_small         
+    logical :: reset
+    logical :: check_small
+    logical :: check_inputs
 
   end type eos_t
 
