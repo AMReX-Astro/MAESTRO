@@ -34,39 +34,39 @@ RANDOM := t
 
 #-----------------------------------------------------------------------------
 # core MAESTRO directories
-MAESTRO_CORE := 
+MAESTRO_CORE :=
 
 # path to SDC files -- note this must come before Source/ in the vpath
-SDC_CORE := 
+SDC_CORE :=
 
 ifdef SDC
   SDC_CORE += $(MAESTRO_TOP_DIR)/Source_SDC
 endif
 
-# next look for the files in Source/ itself 
+# next look for the files in Source/ itself
 #
 #   Note: a unit test (UNIT_TEST := t) tests only a single component
 #   of the MAESTRO algorithm, so we don't, in general, want to build
 #   all of the source in the MAESTRO/Source directory.  So, for unit
 #   tests, we leave it off the list of core directories, but do
-#   include it in the VPATH 
+#   include it in the VPATH
 #
 #   Setting BOXLIB_ONLY := t means that we don't even want the
 #   MAESTRO/Source directory in our VPATH
 
-ifndef UNIT_TEST 
-  ifndef BOXLIB_ONLY 
-    MAESTRO_CORE += Source 
-  endif 
+ifndef UNIT_TEST
+  ifndef BOXLIB_ONLY
+    MAESTRO_CORE += Source
+  endif
 endif
 
 
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
-UTIL_CORE := 
+UTIL_CORE :=
 
 ifndef BOXLIB_ONLY
-  UTIL_CORE := Util/model_parser 
+  UTIL_CORE := Util/model_parser
 endif
 
 UTIL_CORE += Util/simple_log
@@ -79,7 +79,7 @@ ifndef MICROPHYSICS_HOME
   ifdef MICROPHYSICS_DIR
     MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
     $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
-  endif 
+  endif
 endif
 
 
@@ -128,38 +128,15 @@ MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) \
 
 
-# ifdef NEED_VODE
-#   UTIL_CORE += Util/VODE 
-#   NEED_BLAS := t
-#   NEED_LINPACK := t
-# endif
-
-# ifdef NEED_BLAS
-#   ifdef SYSTEM_BLAS
-#     libraries += -lblas
-#   else
-#     UTIL_CORE += Util/BLAS
-#   endif
-# endif
-
-# ifdef NEED_LINPACK
-#   UTIL_CORE += Util/LINPACK
-# endif
-
-# ifdef NEED_VBDF
-#   UTIL_CORE += Util/VBDF
-# endif
-
-
 #-----------------------------------------------------------------------------
 # extra directory
-ifndef EXTRA_TOP_DIR 
+ifndef EXTRA_TOP_DIR
   EXTRA_TOP_DIR := $(MAESTRO_TOP_DIR)/
 endif
 
 EXTRAS := $(addprefix $(EXTRA_TOP_DIR)/, $(EXTRA_DIR))
 
-ifndef EXTRA_TOP_DIR2 
+ifndef EXTRA_TOP_DIR2
   EXTRA_TOP_DIR2 := $(MAESTRO_TOP_DIR)/
 endif
 
@@ -216,7 +193,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
 # any include directories
-Fmincs := 
+Fmincs :=
 
 
 # include the necessary GPackage.mak files that define this setup
@@ -257,9 +234,9 @@ else
 endif
 
 # list of the directories to search for _parameters files
-PROBIN_PARAMETER_DIRS = ./ 
+PROBIN_PARAMETER_DIRS = ./
 
-ifndef BOXLIB_ONLY 
+ifndef BOXLIB_ONLY
   PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)/Source
 endif
 
@@ -283,7 +260,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 # build_info stuff
 deppairs: build_info.f90
 
-build_info.f90: 
+build_info.f90:
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
 	$(BOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
@@ -320,15 +297,12 @@ print-%: ; @echo $* is $($*)
 
 
 #-----------------------------------------------------------------------------
-# cleaning.  Add more actions to 'clean' and 'realclean' to remove 
+# cleaning.  Add more actions to 'clean' and 'realclean' to remove
 # probin.f90 and build_info.f90 -- this is where the '::' in make comes
 # in handy
-clean:: 
-	$(RM) probin.f90 
+clean::
+	$(RM) probin.f90
 	$(RM) build_info.f90
 
 realclean ::
 	$(RM) helm_table.dat
-
-
-
