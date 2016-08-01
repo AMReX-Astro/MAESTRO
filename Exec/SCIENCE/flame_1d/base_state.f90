@@ -23,7 +23,7 @@ contains
 
     use bl_constants_module
     use bl_error_module
-    use network
+    use network, only: nspec, ic12, io16, img24
     use eos_module, only: eos, eos_input_tp, eos_input_rt
     use eos_type_module
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &
@@ -42,20 +42,11 @@ contains
 
     ! local
     real(kind=dp_t) :: rlen, rloc
-    integer :: r, ic12, io16, img24
+    integer :: r
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
     real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
-    
+
     type (eos_t) :: eos_state
-
-    ! figure out the indices for different species
-    ic12  = network_species_index("carbon-12")
-    io16  = network_species_index("oxygen-16")
-    img24  = network_species_index("magnesium-24")    
-
-    if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
-       call bl_error("ERROR: species indices not defined")
-    end if
 
     ! length of the domain
     rlen = (prob_hi(size(dx)) - prob_lo(size(dx)))
@@ -80,7 +71,7 @@ contains
     ! ash
     xn_ash(:)     = ZERO
     xn_ash(ic12)  = ZERO
-    xn_ash(io16)  = 1.d0 - xc12_fuel    
+    xn_ash(io16)  = 1.d0 - xc12_fuel
     xn_ash(img24) = xc12_fuel
 
     eos_state%rho   = dens_fuel    ! initial guess
@@ -100,26 +91,26 @@ contains
 
        rloc = prob_lo(size(dx)) + (dble(r)+0.5d0)*dr(n)
 
-       ! the flame propagates in the -y direction.  The fuel/ash division 
+       ! the flame propagates in the -y direction.  The fuel/ash division
        ! is interface_pos_frac through the domain
        if (rloc < prob_lo(size(dx)) + interface_pos_frac*rlen) then
-          
+
           ! fuel
           s0_init(r,rho_comp)  = dens_fuel
           s0_init(r,rhoh_comp) = rhoh_fuel
           !s0_init(r,temp_comp) = temp_fuel
           s0_init(r,spec_comp:spec_comp+nspec-1) = dens_fuel*xn_fuel(:)
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-          
+
        else
-          
+
           ! ash
           s0_init(r,rho_comp)  = dens_ash
           s0_init(r,rhoh_comp) = rhoh_ash
           !s0_init(r,temp_comp) = temp_ash
           s0_init(r,spec_comp:spec_comp+nspec-1) = dens_ash*xn_ash(:)
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-          
+
        endif
 
        ! give the temperature a smooth profile
@@ -138,7 +129,7 @@ contains
        xn_smooth(io16) = xn_fuel(io16)
        xn_smooth(img24) = 1.d0 - xn_smooth(ic12) - xn_smooth(io16)
 
-       ! get the new density and enthalpy 
+       ! get the new density and enthalpy
        eos_state%rho   = s0_init(r,rho_comp)
        eos_state%T     = s0_init(r,temp_comp)
        eos_state%xn(:) = xn_smooth(:)
