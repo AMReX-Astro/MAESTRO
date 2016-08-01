@@ -103,18 +103,10 @@ ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
   EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
-ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
-  ALL: table
-endif
-
-table:
-	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 # All networks except general_null should pull in the Microphysics repository.
 ifneq ($(findstring general_null, $(NETWORK_DIR)), general_null)
-  NETWORK_TOP_DIR := $(MICROPHYSICS_DIR)/networks
+  NETWORK_TOP_DIR := $(MICROPHYSICS_HOME)/networks
   include $(NETWORK_TOP_DIR)/GNetwork.mak
 else
   NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
