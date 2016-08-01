@@ -83,25 +83,26 @@ ifndef MICROPHYSICS_HOME
 endif
 
 
+# default to $(MICROPHYSICS_HOME) for the EOS unless we are gamma_law_general
+ifeq ($(EOS_DIR), gamma_law_general)
+  EOS_TOP_DIR := $(MAESTRO_HOME)/Microphysics/EOS
+else
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
+endif
+
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
 endif
 
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
+# link to the table for helmholtz
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
-  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
 endif
 
 table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
-
-ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
-endif
 
 
 # All networks except general_null should pull in the Microphysics repository.
