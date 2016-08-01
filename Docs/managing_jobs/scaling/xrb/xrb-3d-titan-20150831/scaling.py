@@ -111,7 +111,7 @@ def scaling():
 
     plt.tight_layout()
 
-    plt.savefig("titan_xrb_scaling.png")
+    plt.savefig("titan_xrb_scaling.pdf")
 
 
 if __name__== "__main__":

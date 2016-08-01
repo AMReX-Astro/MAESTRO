@@ -1,8 +1,43 @@
 changes since last merge with master:
 
 
-
 previous releases:
+
+16.08
+
+ * Major changes:
+
+ * Minor changes:
+
+   -- added runtime parameters for boxlib backtracing.  Now
+      boxlib_fpe_invalid, boxlib_fpe_zero, and boxlib_fpe_overflow
+      turn on/off FPE handling through the boxlib backtrace module
+
+   -- Chosing the general Helmholtz stellar equation of state is now done
+      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
+      actual name of the directory in the Microphysics repo.
+
+
+16.07
+
+ * Major changes:
+
+   -- For the general microphysics solvers, we now use the environment
+      variable MICROPHYSICS_HOME instead of MICROPHYSICS_DIR.  The
+      latter is deprecated and you will see a warning when building if
+      this is set.  This change is to promote uniformity among the
+      code bases.
+
+ * Minor changes:
+
+   -- The runtime parameter small_x is now owned by the network module.
+   
+   -- The conductivity_constant runtime parameter is now owned by
+      Microphysics/conductivity/constant.
+
+   -- If SYSTEM_BLAS is defined, we will attempt to link in a
+      system-wide BLAS library (-lblas) rather than compiling the BLAS
+      routines ourselves.
 
 16.06
 

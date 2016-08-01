@@ -569,10 +569,6 @@ temp_diffusion_formulation          integer            2
 # In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.
 thermal_diffusion_type              integer            1
 
-# the constant conductivity (only applies if the conductivity/constant
-# module is used)
-conductivity_constant               real               1.0d0
-
 # apply the conductivity limiting---if T, then we set the thermal coefficients
 # all to 0 for $\rho <$ {\tt buoyancy\_cutoff\_factor} * {\tt base\_cutoff\_density}
 limit_conductivity                  logical            .false.
@@ -678,3 +674,18 @@ sdc_iters                           integer            1
 
 # recompute MAC velocity at the beginning of each SDC iter
 sdc_couple_mac_velocity             logical            .false.
+
+
+
+#-----------------------------------------------------------------------------
+# category: debugging
+#-----------------------------------------------------------------------------
+
+# enable floating point exception trapping for invalid
+boxlib_fpe_invalid                  logical            .false.
+
+# enable floating point exception trapping for divide by zero
+boxlib_fpe_zero                     logical            .false.
+
+# enable floating point exception trapping for overflow
+boxlib_fpe_overflow                 logical            .false.

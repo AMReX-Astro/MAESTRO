@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import string
 import getopt
 import os
 
@@ -20,7 +19,7 @@ Header="""
 #=============================================================================
 # the species class holds the properties of a single species
 #=============================================================================
-class species:
+class Species(object):
 
     def __init__(self):
         self.name = ""
@@ -30,15 +29,15 @@ class species:
 
 
 #=============================================================================
-# getNextLine returns the next, non-blank line, with comments stripped
+# get_next_line returns the next, non-blank line, with comments stripped
 #=============================================================================
-def getNextLine(fin):
+def get_next_line(fin):
 
     line = fin.readline()
 
     pos = str.find(line, "#")
 
-    while ((pos == 0) or (str.strip(line) == "") and line):
+    while (pos == 0 or str.strip(line) == "") and line:
 
         line = fin.readline()
         pos = str.find(line, "#")
@@ -50,55 +49,50 @@ def getNextLine(fin):
 
 
 #=============================================================================
-# getSpeciesIndex looks through the list and returns the index corresponding to
+# get_species_index looks through the list and returns the index corresponding to
 # the species specified by name
 #=============================================================================
-def getSpeciesIndex(speciesList, name):
+def get_species_index(species, name):
 
     index = -1
 
-    n = 0
-    while (n < len(speciesList)):
-        
-        if (speciesList[n].name == name):
+    for n in range(len(species)):
+        if species[n].name == name:
             index = n
             break
-
-        n += 1
 
     return index
 
 
-
 #=============================================================================
-# parseNetFile read all the species listed in a given network inputs file
+# parse_net_file read all the species listed in a given network inputs file
 # and adds the valid species to the species list
 #=============================================================================
-def parseNetFile(speciesList, netFile):
+def parse_net_file(species, net_file):
 
     err = 0
 
-    try: f = open(netFile, "r")
+    try: f = open(net_file, "r")
     except IOError:
 
-        print("write_network.py: ERROR: file "+str(netFile)+" does not exist")
+        print("write_network.py: ERROR: file "+str(net_file)+" does not exist")
         sys.exit(2)
         
-    print("write_network.py: working on network file "+str(netFile)+"...")
+    print("write_network.py: working on network file "+str(net_file)+"...")
 
-    line = getNextLine(f)
+    line = get_next_line(f)
 
-    while (line and not err):
+    while line and not err:
 
         fields = line.split()
 
-        if (not (len(fields) == 4)):
+        if not (len(fields) == 4):
             print(line)
             print("write_network.py: ERROR: missing one or more fields in species definition.")
             err = 1
             continue
 
-        currentSpecies = species()
+        currentSpecies = Species()
             
         currentSpecies.name      = fields[0]
         currentSpecies.shortName = fields[1]
@@ -107,18 +101,18 @@ def parseNetFile(speciesList, netFile):
 
 
         # check to see if this species is defined in the current list
-        index = getSpeciesIndex(speciesList, currentSpecies.name)
+        index = get_species_index(species, currentSpecies.name)
 
-        if (index >= 0):
+        if index >= 0:
             print("write_network.py: ERROR: species %s already defined." % 
                   (currentSpecies.name))
             err = 1                
 
 
             
-        speciesList.append(currentSpecies)
+        species.append(currentSpecies)
 
-        line = getNextLine(f)
+        line = get_next_line(f)
 
     return err
 
@@ -138,120 +132,100 @@ def abort(outfile):
 
 #=============================================================================
 # write_network will read through the list of species and output the 
-# new outFile
+# new out_file
 #=============================================================================
-def write_network(networkTemplate, netFile, outFile):
+def write_network(network_template, net_file, out_file):
 
-    speciesList = []
+    species = []
 
     print(" ")
-    print("write_network.py: creating %s" % (outFile))
+    print("write_network.py: creating %s" % (out_file))
 
 
     #-------------------------------------------------------------------------
-    # read the species defined in the netFile
+    # read the species defined in the net_file
     #-------------------------------------------------------------------------
-    err = parseNetFile(speciesList, netFile)
+    err = parse_net_file(species, net_file)
         
-    if (err):
-        abort(outFile)
+    if err:
+        abort(out_file)
 
 
     #-------------------------------------------------------------------------
     # open up the template
     #-------------------------------------------------------------------------
-    try: ftemplate = open(networkTemplate, "r")
+    try: ftemplate = open(network_template, "r")
     except IOError:
-        print("write_network.py: ERROR: file "+str(networkTemplate)+" does not exist")
+        print("write_network.py: ERROR: file "+str(network_template)+" does not exist")
         sys.exit(2)
     else:
         ftemplate.close()
 
-    ftemplate = open(networkTemplate, "r")
+    ftemplate = open(network_template, "r")
 
-    templateLines = []
+    template_lines = []
     line = ftemplate.readline()
-    while (line):
-        templateLines.append(line)
+    while line:
+        template_lines.append(line)
         line = ftemplate.readline()
 
 
     #-------------------------------------------------------------------------
     # output the template, inserting the species info in between the @@...@@
     #-------------------------------------------------------------------------
-    fout = open(outFile, "w")
+    fout = open(out_file, "w")
 
     fout.write(Header)
 
-    for line in templateLines:
+    for line in template_lines:
 
         index = line.find("@@")
 
-        if (index >= 0):
+        if index >= 0:
             index2 = line.rfind("@@")
 
             keyword = line[index+len("@@"):index2]
             indent = index*" "
 
-            if (keyword == "NSPEC"):
+            if keyword == "NSPEC":
 
-                fout.write(string.replace(line,"@@NSPEC@@", str(len(speciesList))))
+                fout.write(line.replace("@@NSPEC@@", str(len(species))))
 
-            elif (keyword == "SPEC_NAMES"):
+            elif keyword == "SPEC_NAMES":
 
-                n = 0
-                while (n < len(speciesList)):
-
+                for n in range(len(species)):
                     fout.write("%sspec_names(%d) = \"%s\"\n" % 
-                               (indent, n+1, speciesList[n].name))
+                               (indent, n+1, species[n].name))
 
-                    n += 1
+            elif keyword == "SHORT_SPEC_NAMES":
 
-
-            elif (keyword == "SHORT_SPEC_NAMES"):
-
-                n = 0
-                while (n < len(speciesList)):
+                for n in range(len(species)):
 
                     fout.write("%sshort_spec_names(%d) = \"%s\"\n" % 
-                               (indent, n+1, speciesList[n].shortName))
+                               (indent, n+1, species[n].shortName))
 
-                    n += 1
+            elif keyword == "AION":
 
-
-            elif (keyword == "AION"):
-
-                n = 0
-                while (n < len(speciesList)):
+                for n in range(len(species)):
 
                     fout.write("%saion(%d) = %s\n" % 
-                               (indent, n+1, speciesList[n].A))
+                               (indent, n+1, species[n].A))
 
-                    n += 1
+            elif keyword == "ZION":
 
-
-            elif (keyword == "ZION"):
-
-                n = 0
-                while (n < len(speciesList)):
+                for n in range(len(species)):
 
                     fout.write("%szion(%d) = %s\n" % 
-                               (indent, n+1, speciesList[n].Z))
+                               (indent, n+1, species[n].Z))
 
-                    n += 1
-
-            elif (keyword == "NAME"):
-                fout.write(string.replace(line,"@@NAME@@", "\"general-"+os.path.basename(netFile)+"\""))
+            elif keyword == "NAME":
+                fout.write(line.replace("@@NAME@@", "\"general-"+os.path.basename(net_file)+"\""))
                    
         else:
             fout.write(line)
 
-
-    
     print(" ")
     fout.close()
-
-
 
 
 if __name__ == "__main__":
@@ -262,27 +236,24 @@ if __name__ == "__main__":
         print("write_network.py: invalid calling sequence")
         sys.exit(2)
 
-    networkTemplate = ""
-    outFile = ""
-    netFile = ""
+    network_template = ""
+    out_file = ""
+    net_file = ""
 
     for o, a in opts:
 
         if o == "-t":
-            networkTemplate = a
+            network_template = a
 
         if o == "-o":
-            outFile = a
+            out_file = a
 
         if o == "-s":
-            netFile = a
+            net_file = a
 
 
-    if (networkTemplate == "" or outFile == ""):
+    if network_template == "" or out_file == "":
         print("write_probin.py: ERROR: invalid calling sequence")
         sys.exit(2)
 
-    write_network(networkTemplate, netFile, outFile)
-
-
-
+    write_network(network_template, net_file, out_file)

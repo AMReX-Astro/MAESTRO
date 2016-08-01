@@ -66,7 +66,6 @@ contains
 
   subroutine runtime_init()
 
-    use f2kcli
     use parallel
     use bl_IO_module
     use bl_prof_module
@@ -78,7 +77,8 @@ contains
     use ml_layout_module
     use pred_parameters
     use bc_module
-    
+    use backtrace_module, only : set_fpe_trap
+
     integer    :: narg, farg
 
     character(len=128) :: fname
@@ -196,6 +196,12 @@ contains
        farg = farg + 1
     end do
 
+
+
+    !-------------------------------------------------------------------------
+    ! enable desired floating point exception handling
+    !-------------------------------------------------------------------------
+    call set_fpe_trap(boxlib_fpe_invalid, boxlib_fpe_zero, boxlib_fpe_overflow)
 
     !-------------------------------------------------------------------------
     ! some sanity checks and set some defaults

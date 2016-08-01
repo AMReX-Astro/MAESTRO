@@ -122,9 +122,9 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
     \end{itemize}
 
-  \item {\tt Microphysics/}
+  \item {\tt Microphysics/}\footnote{Note: many more compatible routines are available in the separate \microphysics\ git repo}
 
-    The core microphysics routines used by \maestro.  These are organized
+    The basic microphysics routines used by \maestro.  These are organized
     into the following sub-directories.
 
     \begin{itemize}
@@ -135,16 +135,12 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
     \item {\tt EOS/}
 
-      A collection of various EOSes for use with the code.  The two
-      important ones for \maestro\ are {\tt helmeos/} and {\tt
-        gamma\_law\_general/}.
+      The {\tt gamma\_law\_general/}.
 
     \item {\tt networks/}
 
-      Various reaction networks for \maestro\ problems.  In addition
-      to providing a routine to evolve the nuclear species due to
-      reactions, the networks also define the species that are
-      advected by the code.
+      The basic {\tt general\_null} network that defines arbitrary
+      non-reacting species.
 
     \end{itemize}
 
@@ -334,14 +330,14 @@ multigrid solver, an EOS, a reaction network, etc.).  The core
 to define the EOS, reaction network, and conductivities to
 use, as well as any extra, problem-specific files.  
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-EOS_DIR := helmeos   
+EOS_DIR := helmholtz   
 CONDUCTIVITY_DIR := constant
 NETWORK_DIR := ignition_simple
 
 EXTRA_DIR := Util/random
 \end{lstlisting}
 Note that the microphysics packages are listed simply by the name of 
-the directory containing the specific implementation (e.g. {\tt helmeos}).
+the directory containing the specific implementation (e.g. {\tt helmholtz}).
 By default, the build system will look in {\tt Microphysics/EOS/} for
 the EOS, {\tt Microphysics/conductivity/} for the conductivity routine,
 and {\tt Microphysics/networks/} for the reaction network.  To
@@ -361,12 +357,12 @@ directory will always be put first in the {\tt VPATH}, so any source
 files placed there override those with the same name found elsewhere
 in the source tree.  
 
-Some packages (for instance, the {\tt helmeos}
+Some packages (for instance, the {\tt helmholtz}
 EOS) require Fortran include files.  The {\tt Fmincludes} variable
 lists all those directories that contain include files that are
 inserted into the Fortran source at compile time via the {\tt include}
 statement.  Presently, the only instance of this is with the Helmholtz
-general equation of state found in {\tt Microphysics/EOS/helmeos/}.  This is
+general equation of state found in {\tt Microphysics/EOS/helmholtz/}.  This is
 automatically handled by the {\tt GMaestro.mak} instructions.
 
 Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
@@ -844,9 +840,14 @@ gets the information about the fluid species from the \code{network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
-Presently there are 3 equations of state that work with \maestro:
+Presently there is a single EOS that comes with \maestro, {tt gamma\_law\_general},
+but many more are available through the external \microphysics\ repo\footnote{\microphysics\ is
+available at \url{https://github.com/BoxLib-Codes/Microphysics}.  \maestro\ will
+find it via the {\tt MICROPHYSICS\_HOME} environment variable}.  The \microphysics\
+EOSs share the same interface and can be compiled into \maestro\ directly.  
+Here are the more popular EOSs:
 \begin{itemize}
-\item {\tt helmeos/} represents a general stellar equation 
+\item {\tt helmholtz} represents a general stellar equation 
       of state, consisting of nuclei (as an ideal gas), radiation,
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.

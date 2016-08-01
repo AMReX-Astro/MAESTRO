@@ -142,15 +142,22 @@
   {\tt make PROF=t}.  A file containing a summary of the timings will
   be output in the run directory.
 
-  An alternate way to get single-processor timings, when using 
-  the GCC compilers is to add {\tt -pg} to the compilation flags
-  for both {\tt gfortran} and {\tt gcc}.  Upon completion, a
-  file names {\tt gmon.out} will be produced.  This can be 
-  processed by {\tt gprof} running 
+  An alternate way to get single-processor timings, when using the GCC
+  compilers is to add {\tt -pg} to the compilation flags for both {\tt
+    gfortran} and {\tt gcc}.  This can be accomplished by setting:
+  \begin{verbatim}
+    GPROF := t
+\end{verbatim}
+  in your {\tt GNUmakefile}.  Upon completion, a file
+  names {\tt gmon.out} will be produced.  This can be processed by
+  {\tt gprof} running
 
-  {\tt~~~ gprof} {\em exec-name}
-  
-  where {\em exec-name} is the name of the executable.
+  \begin{verbatim}
+    gprof exec-name
+\end{verbatim}
+  where {\em exec-name} is the name of the executable.  More detailed
+  line-by-line timings can be obtained by using the {\tt -l} argument
+  to {\tt gprof}.
 
 \item{\em How can I force \maestro\ to abort?}
 
@@ -207,26 +214,8 @@ where {\tt inputs} is the desired inputs file {\em in each} {\tt xterm}.
 \item {\em How can I get more information about floating point exceptions?}
 
 \boxlib\ can intercept floating point exceptions and provide a helpful
-backtrace that shows you where they were generated.  Compile with {\tt
-  TEST=t} \otherindex{{\tt GNUmakefile}}{TEST=t} in your {\tt GNUmakefile} (this is also
-activated in debug-mode, with {\tt NDEBUG= }).  The floating point
-exceptions include NaNs, divide by zero, and overflow.  When one of
-these is hit, the code will abort, and the backtrace information will
-be output to a file {\tt Backtrace.N}, where {\tt N} is the processor
-number.  BoxLib will also initialize \multifab s with signaliing NaNs
-to help uncover any floating point issues.
-
-Handling of seg faults and interruption by control-C are always
-enabled, so you can get a backtrace from the code by interrupting its
-execution on the commandline (this can be useful for investigating
-deadlocks).
-
-Behind the scenes, \boxlib\ implements this capability via the
-Linux/Unix {\tt feenableexcept} function (this is in {\tt
-  backtrace\_c.cpp} in \boxlib).
-
-Note that due to issues with header files, this backtrace capability
-is not supported with the PGI compilers.
+backtrace that shows you where they were generated.  See \S
+\ref{ch:makefiles:special}.
 
 
 \end{enumerate}

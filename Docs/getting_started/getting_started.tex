@@ -19,177 +19,202 @@ paper~3.
 
 \item {\em Get a copy of \maestro}.
 
-If you don't already have a copy of \maestro, you can obtain one from
-the project's {\sf github}
-page: \url{https://github.com/BoxLib-Codes/MAESTRO}\, .  There are
-several options: you can fork it directly on {\sf github} (recommended
-if you intend to develop the code) or clone it using {\tt git} from
-the project page.
+  If you don't already have a copy of \maestro, you can obtain one
+  from the project's {\sf github} page:
+  \url{https://github.com/BoxLib-Codes/MAESTRO}\, .  There are several
+  options: you can fork it directly on {\sf github} (recommended if
+  you intend to develop the code) or clone it using {\tt git} from the
+  project page.
 
-\maestro\ is under active development, so you will want to keep in 
-sync with the changes by periodically pulling from the repository.  Simply
-type
-\begin{verbatim}
+  \maestro\ is under active development, so you will want to keep in
+  sync with the changes by periodically pulling from the repository.
+  Simply type
+  \begin{verbatim}
 git pull
-\end{verbatim}
-in the {\tt MAESTRO/} directory.
+  \end{verbatim}
+  in the {\tt MAESTRO/} directory.
 
+\item {\em Get a copy of \microphysics}.
+
+  \maestro\ and its compressible counterpart \castro\ share a
+  common-set of microphysics solvers (nuclear reaction networks and
+  equations of state).  These are kept in a separate repo.
+  \microphysics\ is also available on github and can be obtained 
+  via:
+  \begin{verbatim}
+git clone https://github.com/BoxLib-Codes/Microphysics.git
+  \end{verbatim}
+
+  You will periodic want to update \microphysics\ by doing
+  \begin{verbatim}
+git pull
+  \end{verbatim}
+  in the {\tt Microphysics/} directory
+.
 \item {\em Get a copy of \boxlib}.
 
-\maestro\ requires the \boxlib\ library to manage the grids and 
-parallelization.  We also rely on the build system in \boxlib\ to
-build a \maestro\ executable.  \boxlib\ is also available on
-github and can be obtained:
-\begin{verbatim}
+  \maestro\ requires the \boxlib\ library to manage the grids and
+  parallelization.  We also rely on the build system in \boxlib\ to
+  build a \maestro\ executable.  \boxlib\ is also available on github
+  and can be obtained via:
+  \begin{verbatim}
 git clone https://github.com/BoxLib-Codes/BoxLib.git
-\end{verbatim}
+  \end{verbatim}
 
-You will periodic want to update \boxlib\ by doing
-\begin{verbatim}
+  You will periodic want to update \boxlib\ by doing
+  \begin{verbatim}
 git pull
-\end{verbatim}
-in the {\tt BoxLib/} directory.
+  \end{verbatim}
+  in the {\tt BoxLib/} directory.
 
 
 \item {\em Setup your shell environment}.
 
-\maestro\ needs to know where to find \boxlib\, by specifying the 
-{\tt BOXLIB\_HOME} environment variable.  
+  \maestro\ needs to know where to find \boxlib, by specifying the
+  {\tt BOXLIB\_HOME} environment variable, and where
+  to find \microphysics, bt specifying the {\tt
+  MICROPHYSICS\_HOME} environment variable.
 
-If your shell is {\tt Bash}, add
-\begin{verbatim}
+  If your shell is {\tt Bash}, add
+  \begin{verbatim}
 export BOXLIB_HOME="/path/to/BoxLib/"
-\end{verbatim}
-to your {\tt .bashrc}. 
+export MICROPHYSICS_HOME="/path/to/Microphysics/"
+  \end{verbatim}
+  to your {\tt .bashrc}. 
 
-If your shell is {\tt Csh/Tcsh}, add
-\begin{verbatim}
+  If your shell is {\tt Csh/Tcsh}, add
+  \begin{verbatim}
 setenv BOXLIB_HOME /path/to/BoxLib/
-\end{verbatim}
-to your {\tt .cshrc}.  
+setenv MICROPHYSICS_HOME /path/to/Microphysics/
+  \end{verbatim}
+  to your {\tt .cshrc}.  
 
-Note: you must specify the full path to the BoxLib directory.  Do not
-use ``$\sim$'' to refer to your home directory---the scripts used by
-the build system will not be able to process this.
+  Note: you must specify the full path to the {\tt BoxLib/} and {\tt
+    Microphysics/} directory.  Do not use ``$\sim$'' to refer to your
+  home directory---the scripts used by the build system will not be
+  able to process this.
 
 \item {\em Setup the problem's {\tt GNUmakefile}}.
 
-In \maestro, each problem lives under one of three sub-directories of
-{\tt MAESTRO/Exec}: {\tt SCIENCE/}, {\tt TEST\_PROBLEMS/}, or {\tt
-UNIT\_TESTS/}.  This problem sub-directory will contain any
-problem-specific files as well as the {\tt GNUmakefile} that specifies
-how to build the executable.  Note: we rely on features of GNU {\tt
-make}.  Full details of the {\tt GNUmakefile} can be found
-in \S~\ref{sec:adding_problems}.  Here we will configure for a serial
-build.
+  In \maestro, each problem lives under one of three sub-directories
+  of {\tt MAESTRO/Exec}: {\tt SCIENCE/}, {\tt TEST\_PROBLEMS/}, or
+  {\tt UNIT\_TESTS/}.  This problem sub-directory will contain any
+  problem-specific files as well as the {\tt GNUmakefile} that
+  specifies how to build the executable.  Note: we rely on features of
+  GNU {\tt make}.  Full details of the {\tt GNUmakefile} can be found
+  in \S~\ref{sec:adding_problems}.  Here we will configure for a
+  serial build.
 
-Change directory to {\tt MAESTRO/Exec/TEST\_PROBLEMS/reacting\_bubble/}.    
-We only need to worry about the options at the very top of the
-{\tt GNUmakefile} for now.  These should be set as follows:
-\begin{itemize}
-\item {\tt NDEBUG := t}
+  Change directory to {\tt
+    MAESTRO/Exec/TEST\_PROBLEMS/reacting\_bubble/}.  We only need to
+  worry about the options at the very top of the {\tt GNUmakefile} for
+  now.  These should be set as follows:
+  \begin{itemize}
+  \item {\tt NDEBUG := t}
 
-This option determines whether we compile with support for debugging
-(usually also enabling some runtime checks).  Setting {\tt NDEBUG := t}
-turns off debugging.
+    This option determines whether we compile with support for
+    debugging (usually also enabling some runtime checks).  Setting
+    {\tt NDEBUG := t} turns off debugging.
 
-\item {\tt MPI := }
+  \item {\tt MPI := }
 
-This determines whether we are doing a parallel build, using the Message
-Passing Interface (MPI) library.  For now, we leave this option empty,
-disabling MPI.  This will build \maestro\ in serial mode, so no MPI
-library needs to be present on the host system.
+    This determines whether we are doing a parallel build, using the
+    Message Passing Interface (MPI) library.  For now, we leave this
+    option empty, disabling MPI.  This will build \maestro\ in serial
+    mode, so no MPI library needs to be present on the host system.
 
-\item {\tt OMP := }
+  \item {\tt OMP := }
 
-This determines whether we are using OpenMP to do parallelism within a
-shared memory node.  OpenMP is used together with MPI, with MPI
-distributing the grids across the processors and within a
-shared-memory node, OpenMP allows many cores to operate on the same
-grid.  For now, we leave this option empty, disabling OpenMP.
+    This determines whether we are using OpenMP to do parallelism
+    within a shared memory node.  OpenMP is used together with MPI,
+    with MPI distributing the grids across the processors and within a
+    shared-memory node, OpenMP allows many cores to operate on the
+    same grid.  For now, we leave this option empty, disabling OpenMP.
 
-\item {\tt SDC := }
+  \item {\tt SDC := }
 
-This option determines whether we want to use the alternate SDC
-(Spectral Deferred Corrections) source for \maestro\ (see
-Chapter \ref{ch:sdc}).  This is experimental, and this option not present
-in all problems.  We leave this blank so we compile the
-default \maestro\ source.
+    This option determines whether we want to use the alternate SDC
+    (Spectral Deferred Corrections) source for \maestro\ (see Chapter
+    \ref{ch:sdc}).  This is experimental, and this option not present
+    in all problems.  We leave this blank so we compile the default
+    \maestro\ source.
 
-\item {\tt COMP := gfortran}
+  \item {\tt COMP := gfortran}
 
-This option specifies the Fortran compiler.  We will use {\tt
-gfortran}, which is the preferred compiler for \maestro.  Specifying
-this compiler will automatically pull in the compiler settings as
-specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.  (Alternate compiler
-choices include {\tt Intel}, {\tt PGI}, {\tt PathScale}, {\tt Cray}.)
+    This option specifies the Fortran compiler.  We will use {\tt
+      gfortran}, which is the preferred compiler for \maestro.
+    Specifying this compiler will automatically pull in the compiler
+    settings as specified in {\tt BOXLIB\_HOME/Tools/F\_mk/}.
+    (Alternate compiler choices include {\tt Intel}, {\tt PGI}, {\tt
+      PathScale}, {\tt Cray}.)
 
-\end{itemize}
+  \end{itemize}
 
 
 \item {\em Build the executable}.
 
-Type {\tt make}.  The build system will first find the dependencies
-amongst all the source files and then build the executable.  When
-finished, the executable will have a name like {\tt
-main.Linux.gfortran.exe}, where the specific parts of the name depend
-on the compilers and OS used.
+  Type {\tt make}.  The build system will first find the dependencies
+  amongst all the source files and then build the executable.  When
+  finished, the executable will have a name like {\tt
+    main.Linux.gfortran.exe}, where the specific parts of the name
+  depend on the compilers and OS used.
 
-Note, at the end of the build process, a link will be made in the
-current directory to the data table needed for the equation of state
-({\tt Microphysics/EOS/helmeos/helm\_table.dat}).
+  Note, at the end of the build process, a link will be made in the
+  current directory to the data table needed for the equation of state
+  ({\tt Microphysics/EOS/helmholtz/helm\_table.dat}).
 
 
 \item {\em Run!}
 
-Each problem requires an input file.  The inputs file (a Fortran
-namelist) consists of
-lines of the form {\em parameter = value}, where {\em parameter} is
-one of the many runtime parameters \maestro\ knows, and {\em value}
-overrides the default value for that parameter.  For the {\tt reacting\_bubble}
-problem, we will use the inputs file {\tt inputs\_2d}.  An overview of
-some of the more common runtime parameters is given
-in \S~\ref{sec:gettingstarted:runtime}, and a full list of
-all \maestro\ runtime parameters and their default values is given in
-Chapter~\ref{ch:runtimeparameters}.
+  Each problem requires an input file.  The inputs file (a Fortran
+  namelist) consists of lines of the form {\em parameter = value},
+  where {\em parameter} is one of the many runtime parameters
+  \maestro\ knows, and {\em value} overrides the default value for
+  that parameter.  For the {\tt reacting\_bubble} problem, we will use
+  the inputs file {\tt inputs\_2d}.  An overview of some of the more
+  common runtime parameters is given in
+  \S~\ref{sec:gettingstarted:runtime}, and a full list of all
+  \maestro\ runtime parameters and their default values is given in
+  Chapter~\ref{ch:runtimeparameters}.
 
-\maestro\ is run simply as:
-\begin{verbatim}
+  \maestro\ is run simply as:
+  \begin{verbatim}
  ./main.Linux.Intel.exe inputs_2d
-\end{verbatim}
-We can also override the default value of any runtime parameter by specifying
-it on the commandline as
-\begin{verbatim}
+  \end{verbatim}
+  We can also override the default value of any runtime parameter by
+  specifying it on the commandline as
+  \begin{verbatim}
  ./main.Linux.Intel.exe inputs_2d --parameter value
-\end{verbatim}
+  \end{verbatim}
 
-As the code runs, a lot of information will pass through the screen.
-For each timestep, each of the steps 1 through 12 shown in
-the \maestro\ flowchart (Chapter~\ref{ch:flowchart}) will be shown
-along with diagnostic information about the solution.  Upon completion
-some memory usage information is printed.
+  As the code runs, a lot of information will pass through the screen.
+  For each timestep, each of the steps 1 through 12 shown in the
+  \maestro\ flowchart (Chapter~\ref{ch:flowchart}) will be shown along
+  with diagnostic information about the solution.  Upon completion
+  some memory usage information is printed.
 
 
 \item {\em Examine the output}.
+  
+  As the code runs, it will output both plotfiles and checkpoints as
+  well as one or more text diagnostic files ({\tt maestro\_diag.out}
+  by default) with integral or extrema information (like maximum Mach
+  number) from each timestep.
 
-As the code runs, it will output both plotfiles and checkpoints as
-well as one or more text diagnostic files ({\tt maestro\_diag.out} by
-default) with integral or extrema information (like maximum Mach
-number) from each timestep.
+  By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
+  the number {\em nnnnn} is the timestep number when the file was
+  outputted.  Similarly, the checkpoints are named {\tt chk}{\em
+    nnnnn}.  \boxlib\ plotfiles and checkpoints are actually
+  directories, with the data stored in sub-directories grouped by
+  refinement level.  Details of the simulation (build information,
+  number of processors used, output date, output directory, runtime
+  parameter values, ...)  are stored in the plaintext {\tt job\_info}
+  file in each plotfile directory.
 
-By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
-the number {\em nnnnn} is the timestep number when the file was
-outputted.  Similarly, the checkpoints are named {\tt chk}{\em
-nnnnn}.  \boxlib\ plotfiles and checkpoints are actually directories,
-with the data stored in sub-directories grouped by refinement level.
-Details of the simulation (build information, number of processors
-used, output date, output directory, runtime parameter values, ...)
-are stored in the plaintext {\tt job\_info} file in each plotfile directory.
+  {\bf Note: unless otherwise specified all quantities in
+    \maestro\ are assumed to be in CGS units.}
 
-{\bf Note: unless otherwise specified all quantities in \maestro\ are
-assumed to be in CGS units.}
-
-Visualization of results is described in the next section.
+  Visualization of results is described in the next section.
 
 
 \end{enumerate}
@@ -550,6 +575,21 @@ where $\Delta x$ on the base grid is computed as $({\tt prob\_hi\_x}
 number of zones on the finest grid in the $x$ direction will be
 ${\tt n\_cellx} \cdot 2^{({\tt max\_levels} -1)}$.
 
+
+\section{Development Model}
+
+When you clone \maestro\ from github, you will be on the {\tt master}
+branch of the repo.  New changes to \maestro\ are first introduced
+into the {\tt development} branch in the \maestro\ git repository.
+Nightly regression tests are run on {\tt development} to ensure that
+our answers don't change.  Around the first work day of each month, we
+merge from {\tt development} $\rightarrow$ {\tt master} (assuming
+tests pass) and tag the state of the code with a date-based tag {\tt
+  YY-MM}.  We do this on all the other repos in the \boxlib-ecosystem,
+including {\tt BoxLib/}, {\tt Microphysics/}, and {\tt Castro/}.  
+
+If you want to contribute to \maestro's development, issue a pull-request
+through github onto the {\tt development} branch.
 
 
 \section{Parallel Jobs}

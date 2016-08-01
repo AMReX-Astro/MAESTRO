@@ -74,21 +74,33 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
-  EOS_DIR := helmholtz
+# for backward compatibility -- MICROPHYSICS_DIR is deprecated
+ifndef MICROPHYSICS_HOME
+  ifdef MICROPHYSICS_DIR
+    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
+    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
+  endif 
 endif
 
-# All equations of state except gamma_law_general should pull in the Microphysics repository.
-ifneq ($(findstring gamma_law_general, $(EOS_DIR)), gamma_law_general)
-  ifdef MICROPHYSICS_DIR
-    EOS_TOP_DIR := $(MICROPHYSICS_DIR)/eos
-    EOS_PATH := $(EOS_TOP_DIR)/$(EOS_DIR)
-    Fmincludes_ext := $(EOS_TOP_DIR) $(EOS_TOP_DIR)/$(EOS_DIR)
-  else
-    $(error Need to specify the MICROPHYSICS_DIR environment variable if not using gamma_law_general)
-  endif
-else
-  EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
+
+ifeq ($(EOS_DIR), helmeos)
+  EOS_DIR := helmholtz
+  $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
+endif
+
+# the helmeos has an include file -- also add a target to link the table
+# into the problem directory.
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
+  EOS_PATH := $(EOS_TOP_DIR)/helmholtz
+  ALL: table
+endif
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
+
+ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
 # the helmeos has an include file -- also add a target to link the table
@@ -212,8 +224,7 @@ Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
 
 
 # any include directories
-Fmpack += $(foreach dir, $(Fmincludes_ext), $(dir)/GPackage.mak)
-Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir)) $(Fmincludes_ext)
+Fmincs := 
 
 
 # include the necessary GPackage.mak files that define this setup
@@ -293,8 +304,7 @@ build_info.f90:
            --link_line "$(LINK.f90)" \
            --boxlib_home "$(BOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
-           --extra_home "$(ASTRODEV_DIR)" \
-           --extra_home2 "$(MICROPHYSICS_DIR)" \
+           --extra_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
            --eos "$(EOS_DIR)" \
            --conductivity "$(CONDUCTIVITY_DIR)"

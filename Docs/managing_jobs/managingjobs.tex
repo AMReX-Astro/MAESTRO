@@ -33,22 +33,6 @@ gfortran is probably the best-supported compiler for \maestro.  Here are some
 version-specific notes:
 
 \begin{itemize}
-\item {\em gfortran 4.5.x}: gfortran 4.5 has no known issues.
-
-\item {\em gfortran 4.6.x}: gfortran 4.6.1--4.6.3 on Fedora 
-(15 and 16) have a bug that shows up in multi-processor, multilevel
-runs ({\tt toy\_convect} on 4 processors, with {\tt
-inputs\_2d\_ml.test} for instance).  The symptom is a crash during
-initialization with the message that ``message sizes do not match
-across processes in the collective'' in a {\tt parallel\_bcast} call.
-This is in {\tt cluster\_f.f90}, and the issue seems to be a
-multiplication error in computing the size to allocate {\tt bxs}.  The
-bug is not present when you compile in debug mode, so it seems to be
-related to optimization.
-
-\item {\em gfortran 4.7.x}: gfortran 4.7.1 (prerelease) seems to have 
-fixed the above issue, but now wdconvect with 2-level, effective
-768$^3$ dies due to an unknown seg fault at the beginning of the run.
 
 \item {\em gfortran 4.8.x}: This typically works well, but sometimes we get
 an error allocating memory in {\tt cluster\_f.f90}.  This
@@ -67,9 +51,20 @@ GCC manual says,
 Perform partial redundancy elimination (PRE) on trees. This flag is enabled by default at {\tt -O2} and {\tt -O3}.
 \end{quote}
 
+gfortran 4.8.5 appears to work without issues
+
+
 \item {\em gfortran 5.1.1}: These compilers have no known issues.
 
 \item {\em gfortran 5.3.x}: These compilers have no known issues.
+
+\item {\em gfortran 6.1.1}: These compilers have a bug in producing
+  optimized code for \boxlib's {\tt init\_layout\_tilearray}.  At the
+  moment, this is worked around in \boxlib\ by changing the routine
+  from a function to a subroutine.
+
+
+  gfortran 6.1.1 is used for nightly regression testing.
 
 \end{itemize}
 
@@ -79,6 +74,8 @@ The \boxlib\ floating point exception trapping is disabled with PGI
 compilers earlier than version 16, due to problems with PGI using the
 system header files.  From version 16 onward, things should work.
 
+There are no known issues with PGI 16.5 compilers---these are used
+for nightly regression testing.
 
 
 \section{Working at OLCF (ORNL)}
@@ -169,6 +166,8 @@ job.
 
 \subsubsection{Rhea---preferred method}
 
+{\color{red} this section needs to be updated.  See the titan section}
+
 The best way to do visualization is to use rhea, the OLCF vis machine.
 You need to build \yt\ via the {\tt install\_script.sh} script {\em on
 rhea}.  It also must be on a {\em Lustre filesystem}, so it is seen by
@@ -198,25 +197,55 @@ correct \yt\ installation path.
 
 \subsubsection{Titan}
 
-You can also run \yt\ python scripts in the titan batch queues to do your
+You can run \yt\ python scripts in the titan batch queues to do your
 visualization.  You need to install \yt\ and all its dependencies
 manually somewhere on a {\em Lustre filesystem}---this ensures that the
 compute nodes can see it.  A good choice is the project space, since
-that has a longer purge window.
+that has a longer purge window.  The following procedure will setup
+the development version of \yt\ (from source)
+\begin{itemize}
+\item create a directory in your {\tt \$PROJWORK} directory named {\tt yt/}
 
-Once \yt\ is install by the {\tt install\_script.sh} script, it will
-tell you what script to source to define the necessary paths.
+\item in {\tt yt/}, down load the \yt\ install script:
+\begin{verbatim}
+wget https://bitbucket.org/yt_analysis/yt/raw/yt/doc/install_script.sh
+\end{verbatim}
 
-The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in {\tt
-MAESTRO/Util/job\_scripts/titan/} will manage the \yt jobs by calling a
-python script for each file that matches a pattern.  Make sure you set
-the proper path for the \yt\ {\tt activate} script in {\tt
-parallel-yt-new}---this ensures that the paths to the various libraries
-are set on the compute nodes.
+\item edit the script to use Conda to get the necessary dependencies
+and to build \yt\ from source.  This is accomplished by setting the 
+following variables near the top of the script:
+\begin{verbatim}
+INST_CONDA=1
+INST_YT_SOURCE=1
+\end{verbatim}
 
+\item run the script:
+\begin{verbatim}
+source install_script.sh
+\end{verbatim}
+\end{itemize}
+
+When the script is done, you will have a new python installation in a sub-directory
+called {\tt yt-conda/} and the script will tell you how to modify your path
+in your {\tt .bashrc}
+
+{\bfseries Important: make sure that you are not loading any other
+  python environments in your {\tt .bashrc}, e.g., via modules.}
+
+To test thing out, start up the python shell, and try doing {\tt
+  import yt}.  If there are no errors, then you are good.
+
+The python code {\tt vol.py} and submission script {\tt
+  yt-vis-titan.run} in {\tt MAESTRO/Util/job\_scripts/titan/vis/} show
+how to do a simple visualization in the batch queue using yt.  Note
+that {\tt vol.py} is executable, and that we run it via {\tt aprun} to
+ensure that it is launched on the compute node.
+
+The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in that
+same directorywill manage the \yt jobs by calling a
+python script for each file that matches a pattern.  
 Note that the actual visualization command itself is launched by
-{\tt parallel-yt-new} using the {\tt aprun} command.  This is the
-only way to get a job to run on the compute nodes on titan.  But
+{\tt parallel-yt-new}, again using the {\tt aprun} command.  But
 {\tt aprun} can only launch a single job at a time, so this means
 we cannot easily do (trivally) parallel visualization on a node.  For
 this reason, running on rhea is preferred.
@@ -337,19 +366,19 @@ PGI and Cray also work well
 \begin{itemize}
 \item Intel 15.0.1 works well on edison/NERSC with MPI/OpenMP
 
-\item Intel 16.x currently has issues with the linear solvers in \boxlib\
-  and should be avoided.
+\item Intel 16.0.0 and 16.0.1 have issues compiling the linear solvers
+  in \boxlib\ and should be avoided.
 
-\item Cray 8.4.3 triggers a backtrace error in {\tt make\_pi\_cc.f90}---this is 
-  likely an optimization issue, and may be 2-d specific.  
+  Intel 16.0.2 works fine.
 
-  Previously,  Cray 8.4.0 worked well on edison/NERSC with MPI/OpenMP.
+\item Cray 8.4.x has worked in the past, but it has not been used
+  at NERSC in a while.
 
 \end{itemize}
 
 Note: in order to compile, you will need to ensure that both the {\tt
 python} and {\tt python\_base} modules are loaded (via the {\tt
-module} command).
+module} command).  \MarginPar{this may have changed with the migration of NERSC to anaconda?}
 
 \subsection{Running Jobs}
 
@@ -429,12 +458,50 @@ squeue -u username -M all
 
 \subsection{Batch visualization using \yt}
 
-The scripts {\tt parallel-yt} and {\tt process-edison.run} in {\tt
-Util/job\_scripts/edison} show how to invoke \yt\ to loop over a 
-series of plotfiles and do visualization.  A number of tasks are
-run at once on the node, each operating on a separate file.  Note:
-it is important that {\tt aprun} be used to launch the \yt\ script
-to ensure that it is run on the compute node.
+\yt\ can be built using the {\tt install\_script.sh}.  It has been
+tested using the build of {\tt yt} from source and dependencies via conda,
+by setting:
+\begin{verbatim}
+INST_CONDA=1
+INST_YT_SOURCE=1
+\end{verbatim}
+in the {\tt install\_script.sh}.  Once these are set, run:
+\begin{verbatim}
+source install_script.sh
+\end{verbatim}
+Note: installation was done in the home directory.
+
+This way of building \yt\ installs it's own python and support
+libraries in a directory, {\tt yt-conda}.  {\bf Important: } You need
+to make sure that your start-up files (typically {\tt .bashrc.ext} at
+NERSC) don't {\tt module load} python or any python libraries, as this
+will interfere with the conda installation.  The install script will
+direct you to add the install location to your path.
+
+
+The scripts {\tt parallel-yt} and {\tt process-edison.slurm} in {\tt
+  Util/job\_scripts/edison} show how to invoke \yt\ to loop over a
+series of plotfiles and do visualization.  A number of tasks are run
+at once on the node, each operating on a separate file.  The {\tt
+  parallel-yt} script then calls {\tt vol.py} to do the volume
+rendering with \yt.  Note: it is important that {\tt srun} be used to
+launch the \yt\ script to ensure that it is run on the compute node.
+
+A simple {\tt test-yt.slurm} script shows how to just call the
+\yt\ python script directly, using one node and 24 threads, again
+using {\tt srun} to execute on the compute node.
+
+If you want to keep up with the development version of \yt, then you
+can update the source in {\tt yt-conda/bin/src/yt-hg}, using:
+\begin{verbatim}
+hg pull
+hg update yt
+\end{verbatim}
+and then rebuild it via:
+\begin{verbatim}
+python setup.py develop --user
+\end{verbatim}
+
 
 \subsection{Using the {\tt AmrPostprocesing} python plotting scripts on hopper}
 

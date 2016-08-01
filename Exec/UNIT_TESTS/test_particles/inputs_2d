@@ -17,9 +17,9 @@
  prob_hi_x = 1.0
  prob_hi_y = 1.0
 
-xlo_boundary_type = "periodic"
-xhi_boundary_type = "periodic"
-ylo_boundary_type = "periodic"
-yhi_boundary_type = "periodic"
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+ ylo_boundary_type = "periodic"
+ yhi_boundary_type = "periodic"
 
 /

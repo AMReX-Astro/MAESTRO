@@ -51,7 +51,7 @@ contains
     if (eos_gamma > ZERO) then
        gamma_const = eos_gamma
     else
-       gamma_const = FIVE3RD
+       call bl_error("eos_gamma cannot be < 0")
     endif
 
     assume_neutral = eos_assume_neutral
