@@ -1,8 +1,7 @@
 module burn_type_module
 
   use bl_constants_module, only: ZERO
-  use actual_network, only: nspec, nspec_evolve, naux
-  use actual_network_data, only: nrates
+  use actual_network, only: nspec, nspec_evolve, naux, nrates
   use eos_module, only: eos_t
 
   implicit none
@@ -45,6 +44,7 @@ module burn_type_module
     double precision :: cp               != init_num
     double precision :: y_e              != init_num
     double precision :: eta              != init_num
+    double precision :: t_sound          != init_num
     double precision :: dedX(nspec)      != init_num
     double precision :: dhdX(nspec)      != init_num
     double precision :: abar             != init_num

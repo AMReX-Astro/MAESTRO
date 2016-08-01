@@ -39,12 +39,12 @@
  prob_hi_y = 2304.0d0
  prob_hi_z = 9216.0d0
 
- bcx_lo = -1
- bcx_hi = -1
- bcy_lo = -1
- bcy_hi = -1
- bcz_lo = 14
- bcz_hi = 12
+xlo_boundary_type = "periodic"
+xhi_boundary_type = "periodic"
+ylo_boundary_type = "periodic"
+yhi_boundary_type = "periodic"
+zlo_boundary_type = "slip wall"
+zhi_boundary_type = "outlet"
 
 
  !----------------------------------------------------------------------------

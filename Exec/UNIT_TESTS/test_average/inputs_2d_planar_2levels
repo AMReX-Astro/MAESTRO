@@ -8,10 +8,10 @@
  prob_hi_x = 5.e8
  prob_hi_y = 5.e8
 
- bcx_lo = 12
- bcx_hi = 12
- bcy_lo = 12
- bcy_hi = 12
+xlo_boundary_type = "outlet"
+xhi_boundary_type = "outlet"
+ylo_boundary_type = "outlet"
+yhi_boundary_type = "outlet"
 
 
  use_eos_coulomb = F

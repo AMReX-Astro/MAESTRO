@@ -21,6 +21,7 @@ subroutine varden()
   use define_bc_module
   use network
   use burner_module, only: burner_init
+  use actual_rhs_module, only: actual_rhs_init
   use eos_module
   use react_state_module
   use varden_aux
@@ -84,6 +85,7 @@ subroutine varden()
 
   !Microphysics
   call network_init()
+  call actual_rhs_init()
   call burner_init()
   call eos_init(small_temp=small_temp)
   

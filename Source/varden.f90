@@ -3,6 +3,7 @@ subroutine varden()
   use variables
   use network
   use burner_module, only: burner_init
+  use actual_rhs_module, only: actual_rhs_init
   use geometry
   use base_state_module
   use base_io_module
@@ -154,6 +155,7 @@ subroutine varden()
 
   ! initialize the microphysics modules
   call network_init()
+  call actual_rhs_init()
   call burner_init()
   call eos_init(small_temp=small_temp,small_dens=small_dens)
   call conductivity_init(cond_const=conductivity_constant)

@@ -103,43 +103,48 @@ table:
 # All networks except general_null should pull in the Microphysics repository.
 ifneq ($(findstring general_null, $(NETWORK_DIR)), general_null)
   NETWORK_TOP_DIR := $(MICROPHYSICS_DIR)/networks
-  Fmincludes_ext += $(NETWORK_TOP_DIR) $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
+  include $(NETWORK_TOP_DIR)/GNetwork.mak
 else
   NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
+  MICROPHYS_CORE += $(NETWORK_TOP_DIR) $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
 endif
+
 
 ifndef CONDUCTIVITY_TOP_DIR
   CONDUCTIVITY_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/conductivity
 endif
 
+
+
 # add in the network, EOS, and conductivity
 MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
 		  $(MAESTRO_TOP_DIR)/Microphysics/networks \
 		  $(EOS_TOP_DIR) \
-		  $(NETWORK_TOP_DIR) \
 		  $(EOS_TOP_DIR)/$(EOS_DIR) \
-                  $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) \
 
 
-# get any additional network dependencies
-include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
+# ifdef NEED_VODE
+#   UTIL_CORE += Util/VODE 
+#   NEED_BLAS := t
+#   NEED_LINPACK := t
+# endif
 
-ifdef NEED_VODE
-  UTIL_CORE += Util/VODE Util/LINPACK Util/BLAS
-endif
+# ifdef NEED_BLAS
+#   ifdef SYSTEM_BLAS
+#     libraries += -lblas
+#   else
+#     UTIL_CORE += Util/BLAS
+#   endif
+# endif
 
-ifdef NEED_BLAS
-  UTIL_CORE += Util/BLAS
-endif
+# ifdef NEED_LINPACK
+#   UTIL_CORE += Util/LINPACK
+# endif
 
-ifdef NEED_LINPACK
-  UTIL_CORE += Util/LINPACK
-endif
-
-ifdef NEED_VBDF
-  UTIL_CORE += Util/VBDF
-endif
+# ifdef NEED_VBDF
+#   UTIL_CORE += Util/VBDF
+# endif
 
 
 #-----------------------------------------------------------------------------
@@ -259,7 +264,7 @@ endif
 PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
-EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE)
+EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
 EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
@@ -290,6 +295,9 @@ build_info.f90:
            --source_home "$(MAESTRO_TOP_DIR)" \
            --extra_home "$(ASTRODEV_DIR)" \
            --extra_home2 "$(MICROPHYSICS_DIR)" \
+           --network "$(NETWORK_DIR)" \
+           --eos "$(EOS_DIR)" \
+           --conductivity "$(CONDUCTIVITY_DIR)"
 	@echo " "
 
 $(odir)/build_info.o: build_info.f90

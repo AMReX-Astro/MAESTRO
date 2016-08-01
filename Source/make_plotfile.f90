@@ -536,7 +536,7 @@ contains
                               tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
           endif
 
-          if ( p%icomp_tfromH > 0 .or. p%icomp_tpert > 0 .or. p%icomp_dp > 0 ) then
+          if ( p%icomp_tfromH > 0 .or. p%icomp_dp > 0 ) then
              call make_tfromH(plotdata(n),p%icomp_tfromH,p%icomp_tpert, &
                               p%icomp_dp,s(n),p0(1,:), &
                               tempbar(1,:),dx(n,:))
@@ -552,7 +552,7 @@ contains
                               tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
           endif
 
-          if ( p%icomp_tfromH > 0 .or. p%icomp_tpert > 0 .or. p%icomp_dp > 0 ) then
+          if ( p%icomp_tfromH > 0 .or. p%icomp_dp > 0 ) then
              call make_tfromH(plotdata(n),p%icomp_tfromH,p%icomp_tpert, &
                               p%icomp_dp,s(n),p0(n,:), &
                               tempbar(n,:),dx(n,:))
