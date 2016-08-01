@@ -1,5 +1,10 @@
 changes since last merge with master:
 
+
+previous releases:
+
+16.08
+
  * Major changes:
 
  * Minor changes:
@@ -12,8 +17,6 @@ changes since last merge with master:
       with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
       actual name of the directory in the Microphysics repo.
 
-
-previous releases:
 
 16.07
 
