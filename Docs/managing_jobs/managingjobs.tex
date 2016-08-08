@@ -161,6 +161,153 @@ The {\tt chainsub.sh} script can be used to automatically launch a
 number of jobs depending on a single, currently queued (or running)
 job.
 
+\subsection{Profiling and Debugging on GPUs}
+To get an idea of how code performs on Titan's GPUs, there are a few tools
+available.  We'll overview a few here.
+
+\subsubsection{{\tt Score-P} with {\tt CUBE} and {\tt vampir}}
+
+{\tt Score-P} is a profiling and tracing tool that can be used to instrument
+code to generate data for other tools to analyze, such as {\tt CUBE} and 
+{\tt vampir}.  These tools have been developed to analyze performance of HPC
+codes that run on several nodes, not specifically for analyzing GPU usage.
+Still, they do support some GPU analysis.  In the next section, we'll discuss
+NVIDA's tools specifically for analyzing GPU usage.
+At the time of writing, {\tt Score-P} usage is fairly well documented on OLCF's
+website here: \url{https://www.olcf.ornl.gov/kb_articles/software-scorep/}.
+We'll review the essentials here, but please see the link for more details.
+
+To instrument a code with {\tt Score-P} you must re-compile.  First, your
+desired modules will need to be loaded.  Please note that \emph{order is
+important} --- you need to load modules needed for compilation before loading 
+{\tt Score-P}.  The {\tt Score-P} module is designed to detect the loaded
+environment and will configure itself based on that.  These tools have been
+tested with the PGI 16.3.0 compilers, and we will use them in our examples.
+One possible set of module loads is
+
+\begin{lstlisting}[language=bash,mathescape=false]
+$ module load PrgEnv-pgi
+$ module swap pgi/15.7.0 pgi/16.3.0
+$ module load cudatoolkit
+$ module load scorep/3.0-rc1
+\end{lstlisting}
+
+In the above we've loaded version 3.0, release candidate 1, which added some
+support for analyzing OpenACC code.  The next step is to compile.  You
+essentially preface your normal compile (and link) line with the {\tt Score-P}
+executable and options.  As an example using the Fortran wrapper required on
+Titan, we have
+
+\begin{lstlisting}[language=bash,mathescape=false]
+$ scorep --cuda --openacc -v ftn program.f90
+\end{lstlisting}
+
+One way to achieve this in \maestro\ is to modify the appropriate make file.  For
+PGI, this would be {\tt \$BOXLIB\_HOME/Tools/F\_mk/comps/Linux\_pgi.mak}.  If
+this proves useful, it may be worth it to build {\tt Score-P} into the build
+infrastructure.
+
+Once compiled, we are ready to generate profiling and tracing data.  Among those
+that develop these tools, note that they draw a distinction between profiling
+and tracing.  Profiling generates a timing (or perhaps other metric) summary of
+the entire program's execution while tracing produces a timeline of the
+execution. {\tt Score-P}'s analysis is configured with environment variables.
+Some of the key configuration variables used in testing include
+
+\begin{lstlisting}[language=bash,mathescape=false]
+export SCOREP_ENABLE_PROFILING=yes
+export SCOREP_ENABLE_TRACING=yes
+export SCOREP_EXPERIMENT_DIRECTORY=profile-trace
+export SCOREP_CUDA_ENABLE=yes,kernel_counter,flushatexit
+export SCOREP_CUDA_BUFFER=200M
+export SCOREP_TOTAL_MEMORY=1G
+export SCOREP_OPENACC_ENABLE=yes
+\end{lstlisting}
+
+For a full listing and definition of configuration variables, execute
+\begin{lstlisting}[language=bash,mathescape=false]
+$ scorep-info config-vars --full 
+\end{lstlisting}
+
+Except for very simple codes, you will never want to enable both tracing and
+profiling.  The overhead is too high, and the code will likely crash or be
+excessively slow.  Typically, it's best to profile first and then trace.  The
+profiling data can be used to help configure tracing (as we'll see shortly).
+
+Once the configuration is set, simply run the code as you normally would.
+Experience suggests you will need to load the same modules that were loaded for
+compilation when executing.  If analysis is being done through a batch script,
+note that you cannot do a simple {\tt module load ...} in the script.  First you
+need to do {\tt source /opt/modules/default/init/bash} in the script, and then
+module loads will work as usual.
+
+After executing, analysis data will be stored in the specified
+{\tt SCOREP\_EXPERIMENT\_DIRECTORY}.  With profiling, you
+will see a file like profile.cubex.  This can be opened with cube 
+(module load cube).  
+
+As mentioned, the profiling data can be used to get
+recommended settings for tracing.  Running
+\begin{lstlisting}[language=bash,mathescape=false]
+$ scorep-score -r profile.cubex
+\end{lstlisting}
+will yield output showing estimated sizes for e.g.~{\tt SCOREP\_TOTAL\_MEMORY}.  It
+can also suggest functions to that are called a lot to be filtered out of the
+trace.  If you don't care about them and they're slowing scorep down (or making
+an outrageously large output file), this is useful to do.
+
+Running with tracing enabled will generate a traces.otf2 file that can be
+inspected with vampir (module load vampir)
+
+\subsubsection{{\tt nvprof} and {\tt nvvp}}
+
+NVIDIA provides tools for specifically analyzing how your code utilizing their
+GPUs.  {\tt Score-P} is a fully-featured profiling with some CUDA and OpenACC
+support.  It can be useful for providing context for GPU execution and it allows
+you to, for example, see line numbers for OpenACC directives that are executed.
+{\tt nvprof} will only analyze GPU execution, but in exchange you get much more
+detail than is available with {\tt Score-P}.  {\tt nvvp} is NVIDIA's visual
+profiler.  It can be used to read data generated by {\tt nvprof}.  Most useful
+is the guided analysis it will perform, which analyzes your code's GPU
+performance for bottlenecks and suggests ways to improve performance.  Both are
+provided when you load the {\tt cudatoolkit} module.
+
+With {\tt nvprof}, no instrumentation is necessary.  Instead, you compile
+normally and then run {\tt nvprof} on the executable.  As before, be sure when
+executing to load the modules used for compilation.  Executing {\tt nvprof} on
+Titan's compute nodes requires some unexpected options having to do with how
+{\tt aprun} and {\tt nvprof} interact.
+
+To get a basic overview printed to the terminal on Titan's compute node, execute
+\begin{lstlisting}[language=bash,mathescape=false]
+$ aprun -b nvprof --profile-child-processes ./gpuprogram.exe arg1 arg2... 
+\end{lstlisting}
+
+To generate tracing data for {\tt nvvp}, execute
+\begin{lstlisting}[language=bash,mathescape=false]
+$ aprun -b nvprof --profile-child-processes -o nvprof.timeline.out%p 
+  ./gpuprogram.exe arg1 arg2... 
+\end{lstlisting}
+{\tt nvvp} can then be used to read {\tt nvprof.timeline.out\%p}, where the 
+{\tt \%p} will be replaced with the process ID.
+
+To generate profile-like metric data for {\tt nvvp}, execute
+\begin{lstlisting}[language=bash,mathescape=false]
+$ aprun -b nvprof --profile-child-processes --analysis-metrics 
+  -o nvprof.metrics.out%p ./gpuprogram.exe arg1 arg2... 
+\end{lstlisting}
+This is the output needed for {\tt nvvp}'s guided analysis.
+
+\subsubsection{Target Metrics}
+The output from profilers may be difficult to makes sense of.  The purpose of
+this section is to note different metrics and reasonable targets for them.
+Note that these may be specific to the k20x hardware in Titan.
+\begin{itemize}
+   \item Threads per block: 256-512.  Note that if your code requires many
+      registers per thread, then this will limit the number of threads per block.
+   \item Occupancy: 60\% is a reasonable target.  We have had success with codes
+      even achieving only 23\% occupancy.  
+\end{itemize}
 
 \subsection{Batch Submission of \yt\ Visualization Scripts}
 
