@@ -199,7 +199,7 @@ executable and options.  As an example using the Fortran wrapper required on
 Titan, we have
 
 \begin{lstlisting}[language=bash,mathescape=false]
-$ scorep --cuda --openacc -v ftn program.f90
+$ scorep --cuda --openacc -v ftn gpuprogram.f90
 \end{lstlisting}
 
 One way to achieve this in \maestro\ is to modify the appropriate make file.  For
@@ -243,26 +243,43 @@ module loads will work as usual.
 
 After executing, analysis data will be stored in the specified
 {\tt SCOREP\_EXPERIMENT\_DIRECTORY}.  With profiling, you
-will see a file like profile.cubex.  This can be opened with cube 
-(module load cube).  
+will see a file like {\tt profile.cubex}.  This can be opened with cube 
+({\tt module load cube}).  
 
-As mentioned, the profiling data can be used to get
-recommended settings for tracing.  Running
+As mentioned, the profiling data can be used to get recommended settings for
+tracing.  Running
 \begin{lstlisting}[language=bash,mathescape=false]
 $ scorep-score -r profile.cubex
 \end{lstlisting}
-will yield output showing estimated sizes for e.g.~{\tt SCOREP\_TOTAL\_MEMORY}.  It
-can also suggest functions to that are called a lot to be filtered out of the
-trace.  If you don't care about them and they're slowing scorep down (or making
-an outrageously large output file), this is useful to do.
+will yield output showing estimated sizes for e.g.~{\tt SCOREP\_TOTAL\_MEMORY}.
+It also list functions that are called many times.  If you don't care about
+them and they're slowing {\tt Score-P} down (or making an outrageously large output
+file), you can configure {\tt Score-P} to ignore them in its analysis.  To filter a set
+of functions, you need to provide a filter file, for example
+\begin{lstlisting}[language=bash,mathescape=false]
+$ export SCOREP_FILTERING_FILE=scorep.filter
+\end{lstlisting}
+where
+\begin{lstlisting}[language=bash,mathescape=false]
+$ cat scorep.filter
+SCOREP_REGION_NAMES_BEGIN
+ EXCLUDE
+   matmul_sub
+   matvec_sub
+SCOREP_REGION_NAMES_END
+\end{lstlisting}
+This would tell {\tt Score-P} not to trace the routines {\tt matmul\_sub} and 
+{\tt matvec\_sub}.  See the OLCF KnowledgeBase article and/or {\tt Score-P}'s
+help for more, but this doesn't seem to be the best-documented aspect of the
+program.
 
 Running with tracing enabled will generate a traces.otf2 file that can be
 inspected with vampir (module load vampir)
 
 \subsubsection{{\tt nvprof} and {\tt nvvp}}
 
-NVIDIA provides tools for specifically analyzing how your code utilizing their
-GPUs.  {\tt Score-P} is a fully-featured profiling with some CUDA and OpenACC
+NVIDIA provides tools for specifically analyzing how your code utilizes their
+GPUs.  {\tt Score-P} is a fully-featured profiler with some CUDA and OpenACC
 support.  It can be useful for providing context for GPU execution and it allows
 you to, for example, see line numbers for OpenACC directives that are executed.
 {\tt nvprof} will only analyze GPU execution, but in exchange you get much more
@@ -274,7 +291,7 @@ provided when you load the {\tt cudatoolkit} module.
 
 With {\tt nvprof}, no instrumentation is necessary.  Instead, you compile
 normally and then run {\tt nvprof} on the executable.  As before, be sure when
-executing to load the modules used for compilation.  Executing {\tt nvprof} on
+executing to load the modules used at compile-time.  Executing {\tt nvprof} on
 Titan's compute nodes requires some unexpected options having to do with how
 {\tt aprun} and {\tt nvprof} interact.
 
@@ -289,7 +306,9 @@ $ aprun -b nvprof --profile-child-processes -o nvprof.timeline.out%p
   ./gpuprogram.exe arg1 arg2... 
 \end{lstlisting}
 {\tt nvvp} can then be used to read {\tt nvprof.timeline.out\%p}, where the 
-{\tt \%p} will be replaced with the process ID.
+{\tt \%p} will be replaced with the process ID.  You \emph{must} include \%p in
+the output file's name or the code will crash, even if you're not running a
+multi-process code.
 
 To generate profile-like metric data for {\tt nvvp}, execute
 \begin{lstlisting}[language=bash,mathescape=false]
