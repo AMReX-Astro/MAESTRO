@@ -328,6 +328,17 @@ Note that these may be specific to the k20x hardware in Titan.
       even achieving only 23\% occupancy.  
 \end{itemize}
 
+One very useful tool for determining target metrics and what is limiting your
+performance is a spreadsheet developed by NVIDIA to calculate occupancy.  Every
+installation of the CUDA Toolkit should have this occupancy calculator in a
+tools subdirectory.  At time of writing, the calculator is also available at
+this link:
+\url{http://developer.download.nvidia.com/compute/cuda/CUDA_Occupancy_calculator.xls}.
+The document is actually  more than a simple calculator.  It contains quite a
+bit of interesting insight into optimizing a GPU code.  More on occupancy can be
+found here:
+\url{http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#occupancy}.
+
 \subsection{Batch Submission of \yt\ Visualization Scripts}
 
 \subsubsection{Rhea---preferred method}
