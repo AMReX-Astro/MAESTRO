@@ -37,21 +37,28 @@ module eos_type_module
   integer, parameter :: ierr_out_of_bounds   = 11
   integer, parameter :: ierr_not_implemented = 12
 
-  ! Smallest possible temperature and density permitted by the user.
+  ! Minimum and maximum thermodynamic quantities permitted by the EOS.
 
-  double precision, save :: smallt = 1.d-200
-  double precision, save :: smalld = 1.d-200
+  real(dp_t), save :: mintemp = 1.d-200
+  real(dp_t), save :: maxtemp = 1.d200
+  real(dp_t), save :: mindens = 1.d-200
+  real(dp_t), save :: maxdens = 1.d200
+  real(dp_t), save :: minx    = 1.d-200
+  real(dp_t), save :: maxx    = 1.d0 + 1.d-12
+  real(dp_t), save :: minye   = 1.d-200
+  real(dp_t), save :: maxye   = 1.d0 + 1.d-12
+  real(dp_t), save :: mine    = 1.d-200
+  real(dp_t), save :: maxe    = 1.d200
+  real(dp_t), save :: minp    = 1.d-200
+  real(dp_t), save :: maxp    = 1.d200
+  real(dp_t), save :: mins    = 1.d-200
+  real(dp_t), save :: maxs    = 1.d200
+  real(dp_t), save :: minh    = 1.d-200
+  real(dp_t), save :: maxh    = 1.d200
 
-  ! Minimum and maximum temperature, density, and ye permitted by the EOS.
-
-  double precision, save :: mintemp = 1.d-200
-  double precision, save :: maxtemp = 1.d200
-  double precision, save :: mindens = 1.d-200
-  double precision, save :: maxdens = 1.d200
-  double precision, save :: minye   = 1.d-200
-  double precision, save :: maxye   = 1.d0 + 1.d-12
-
-  !$acc declare create(smallt, smalld, mintemp, maxtemp, mindens, maxdens, minye, maxye)
+  !$acc declare &
+  !$acc create(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
+  !$acc create(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
 
   ! A generic structure holding thermodynamic quantities and their derivatives,
   ! plus some other quantities of interest.
@@ -92,64 +99,51 @@ module eos_type_module
   ! dedA     -- d energy/ d abar
   ! dedZ     -- d energy/ d zbar
 
-  ! Initialize the main quantities to an unphysical number
-  ! so that we know if the user forgot to initialize them
-  ! when calling the EOS in a particular mode.
-
-  real(kind=dp_t), parameter :: init_num  = -1.0e200_dp_t
-  real(kind=dp_t), parameter :: init_test = -1.0e199_dp_t
-
   type :: eos_t
 
-    real(kind=dp_t) :: rho
-    real(kind=dp_t) :: T
-    real(kind=dp_t) :: p
-    real(kind=dp_t) :: e
-    real(kind=dp_t) :: h
-    real(kind=dp_t) :: s
-    real(kind=dp_t) :: dpdT
-    real(kind=dp_t) :: dpdr
-    real(kind=dp_t) :: dedT
-    real(kind=dp_t) :: dedr
-    real(kind=dp_t) :: dhdT
-    real(kind=dp_t) :: dhdr
-    real(kind=dp_t) :: dsdT
-    real(kind=dp_t) :: dsdr
-    real(kind=dp_t) :: dpde
-    real(kind=dp_t) :: dpdr_e
+    real(dp_t) :: rho
+    real(dp_t) :: T
+    real(dp_t) :: p
+    real(dp_t) :: e
+    real(dp_t) :: h
+    real(dp_t) :: s
+    real(dp_t) :: xn(nspec)
+    real(dp_t) :: aux(naux)
 
-    real(kind=dp_t) :: xn(nspec)
-    real(kind=dp_t) :: aux(naux)
-    real(kind=dp_t) :: cv
-    real(kind=dp_t) :: cp
-    real(kind=dp_t) :: xne
-    real(kind=dp_t) :: xnp
-    real(kind=dp_t) :: eta
-    real(kind=dp_t) :: pele
-    real(kind=dp_t) :: ppos
-    real(kind=dp_t) :: mu
-    real(kind=dp_t) :: mu_e
-    real(kind=dp_t) :: y_e
-    real(kind=dp_t) :: dedX(nspec)
-    real(kind=dp_t) :: dpdX(nspec)
-    real(kind=dp_t) :: dhdX(nspec)
-    real(kind=dp_t) :: gam1
-    real(kind=dp_t) :: cs
+    real(dp_t) :: dpdT
+    real(dp_t) :: dpdr
+    real(dp_t) :: dedT
+    real(dp_t) :: dedr
+    real(dp_t) :: dhdT
+    real(dp_t) :: dhdr
+    real(dp_t) :: dsdT
+    real(dp_t) :: dsdr
+    real(dp_t) :: dpde
+    real(dp_t) :: dpdr_e
 
-    real(kind=dp_t) :: abar
-    real(kind=dp_t) :: zbar
-    real(kind=dp_t) :: dpdA
+    real(dp_t) :: cv
+    real(dp_t) :: cp
+    real(dp_t) :: xne
+    real(dp_t) :: xnp
+    real(dp_t) :: eta
+    real(dp_t) :: pele
+    real(dp_t) :: ppos
+    real(dp_t) :: mu
+    real(dp_t) :: mu_e
+    real(dp_t) :: y_e
+    real(dp_t) :: dedX(nspec)
+    real(dp_t) :: dpdX(nspec)
+    real(dp_t) :: dhdX(nspec)
+    real(dp_t) :: gam1
+    real(dp_t) :: cs
 
-    real(kind=dp_t) :: dpdZ
-    real(kind=dp_t) :: dedA
-    real(kind=dp_t) :: dedZ
+    real(dp_t) :: abar
+    real(dp_t) :: zbar
+    real(dp_t) :: dpdA
 
-    real(kind=dp_t) :: smallt
-    real(kind=dp_t) :: smalld
-
-    logical :: reset
-    logical :: check_small
-    logical :: check_inputs
+    real(dp_t) :: dpdZ
+    real(dp_t) :: dedA
+    real(dp_t) :: dedZ
 
   end type eos_t
 
@@ -217,6 +211,7 @@ contains
   end subroutine composition_derivatives
 
 
+
   ! Normalize the mass fractions: they must be individually positive
   ! and less than one, and they must all sum to unity.
 
@@ -224,18 +219,107 @@ contains
 
     !$acc routine seq
 
-    use bl_constants_module
-    use network
+    use bl_constants_module, only: ONE
     use extern_probin_module, only: small_x
 
     implicit none
 
     type (eos_t), intent(inout) :: state
 
-    state % xn(:) = max(small_x, min(ONE, state % xn(:)))
+    state % xn = max(small_x, min(ONE, state % xn))
 
-    state % xn(:) = state % xn(:) / sum(state % xn(:))
+    state % xn = state % xn / sum(state % xn)
 
   end subroutine normalize_abundances
+
+
+
+  ! Ensure that inputs are within reasonable limits.
+
+  subroutine clean_state(state)
+
+    !$acc routine seq
+
+    implicit none
+
+    type (eos_t), intent(inout) :: state
+
+    state % T = min(maxtemp, max(mintemp, state % T))
+    state % rho = min(maxdens, max(mindens, state % rho))
+
+  end subroutine clean_state
+
+
+
+  ! Print out details of the state.
+
+  subroutine print_state(state)
+
+    implicit none
+
+    type (eos_t), intent(in) :: state
+
+    print *, 'DENS = ', state % rho
+    print *, 'TEMP = ', state % T
+    print *, 'X    = ', state % xn
+    print *, 'Y_E  = ', state % y_e
+
+  end subroutine print_state
+
+
+
+  subroutine eos_get_small_temp(small_temp_out)
+
+    !$acc routine seq
+
+    implicit none
+
+    real(dp_t), intent(out) :: small_temp_out
+
+    small_temp_out = mintemp
+
+  end subroutine eos_get_small_temp
+
+
+
+  subroutine eos_get_small_dens(small_dens_out)
+
+    !$acc routine seq
+
+    implicit none
+
+    real(dp_t), intent(out) :: small_dens_out
+
+    small_dens_out = mindens
+
+  end subroutine eos_get_small_dens
+
+
+
+  subroutine eos_get_max_temp(max_temp_out)
+
+    !$acc routine seq
+
+    implicit none
+
+    real(dp_t), intent(out) :: max_temp_out
+
+    max_temp_out = maxtemp
+
+  end subroutine eos_get_max_temp
+
+
+
+  subroutine eos_get_max_dens(max_dens_out)
+
+    !$acc routine seq
+
+    implicit none
+
+    real(dp_t), intent(out) :: max_dens_out
+
+    max_dens_out = maxdens
+
+  end subroutine eos_get_max_dens
 
 end module eos_type_module
