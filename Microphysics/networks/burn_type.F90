@@ -1,8 +1,8 @@
 module burn_type_module
 
+  use bl_types
   use bl_constants_module, only: ZERO
   use actual_network, only: nspec, nspec_evolve, naux
-  use eos_module, only: eos_t
 
   implicit none
 
@@ -12,8 +12,8 @@ module burn_type_module
   ! so that we know if the user forgot to initialize them
   ! when calling the burner.
 
-  double precision, parameter :: init_num  = -1.0d200
-  double precision, parameter :: init_test = -1.0d199
+  real(dp_t), parameter :: init_num  = -1.0d200
+  real(dp_t), parameter :: init_test = -1.0d199
 
   ! Set the number of independent variables -- this should be
   ! temperature, enuc + the number of species which participate
@@ -28,32 +28,29 @@ module burn_type_module
 
   type :: burn_t
 
-    double precision :: rho              != init_num
-    double precision :: T                != init_num
-    double precision :: e                != init_num
-    double precision :: xn(nspec)        != init_num
+    real(dp_t) :: rho              != init_num
+    real(dp_t) :: T                != init_num
+    real(dp_t) :: e                != init_num
+    real(dp_t) :: xn(nspec)        != init_num
 #if naux > 0
-    double precision :: aux(naux)        != init_num
+    real(dp_t) :: aux(naux)        != init_num
 #endif
-    double precision :: cv               != init_num
-    double precision :: cp               != init_num
-    double precision :: y_e              != init_num
-    double precision :: eta              != init_num
-    double precision :: cs               != init_num
-    double precision :: dx               != init_num
-    double precision :: abar             != init_num
-    double precision :: zbar             != init_num
 
-    integer :: i
-    integer :: j
-    integer :: k
+    real(dp_t) :: cv               != init_num
+    real(dp_t) :: cp               != init_num
+    real(dp_t) :: y_e              != init_num
+    real(dp_t) :: eta              != init_num
+    real(dp_t) :: cs               != init_num
+    real(dp_t) :: dx               != init_num
+    real(dp_t) :: abar             != init_num
+    real(dp_t) :: zbar             != init_num
 
     ! Last temperature we evaluated the EOS at
-    double precision :: T_old            != init_num
+    real(dp_t) :: T_old            != init_num
 
     ! Temperature derivatives of specific heat
-    double precision :: dcvdT            != init_num
-    double precision :: dcpdT            != init_num
+    real(dp_t) :: dcvdT            != init_num
+    real(dp_t) :: dcpdT            != init_num
 
     ! The following are the actual integration data.
     ! To avoid potential incompatibilities we won't
@@ -61,18 +58,26 @@ module burn_type_module
     ! It can be reconstructed from all of the above
     ! data, particularly xn, e, and T.
 
-    double precision :: ydot(neqs)       != ZERO
-    double precision :: jac(neqs, neqs)  != ZERO
+    real(dp_t) :: ydot(neqs)       != ZERO
+    real(dp_t) :: jac(neqs, neqs)  != ZERO
 
     ! Whether we are self-heating or not.
 
     logical          :: self_heat        != .true.
 
-    ! Whether we are inside a shock.
+    ! Zone index information.
 
-    logical          :: shock            != .false.
+    integer :: i
+    integer :: j
+    integer :: k
 
-    double precision :: time
+    ! diagnostics
+    integer :: n_rhs
+    integer :: n_jac
+
+    ! Integration time.
+
+    real(dp_t) :: time
 
   end type burn_t
 
@@ -83,6 +88,8 @@ contains
   subroutine eos_to_burn(eos_state, burn_state)
 
     !$acc routine seq
+
+    use eos_module, only: eos_t
 
     implicit none
 
@@ -100,6 +107,7 @@ contains
     burn_state % cp   = eos_state % cp
     burn_state % y_e  = eos_state % y_e
     burn_state % eta  = eos_state % eta
+    burn_state % cs   = eos_state % cs
     burn_state % abar = eos_state % abar
     burn_state % zbar = eos_state % zbar
 
@@ -111,6 +119,8 @@ contains
   subroutine burn_to_eos(burn_state, eos_state)
 
     !$acc routine seq
+
+    use eos_module, only: eos_t
 
     implicit none
 
@@ -128,6 +138,7 @@ contains
     eos_state % cp   = burn_state % cp
     eos_state % y_e  = burn_state % y_e
     eos_state % eta  = burn_state % eta
+    eos_state % cs   = burn_state % cs
     eos_state % abar = burn_state % abar
     eos_state % zbar = burn_state % zbar
 
