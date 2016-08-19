@@ -300,7 +300,7 @@ program init_1d
 
               endif
 
-              if (dens_zone < dens_conv_zone) then
+              if (dens_zone < dens_conv_zone .and. isentropic) then
 
                  i_conv = i                 
                  isentropic = .false.
@@ -408,7 +408,7 @@ program init_1d
           FOUR3RD*M_PI*(xznr(i) - xznl(i))* &
             (xznr(i)**2 +xznl(i)*xznr(i) + xznl(i)**2)*model_hse(i,idens)
 
-     if (M_enclosed(i) > M_conv_zone*M_sun) then
+     if (M_enclosed(i) > M_conv_zone*M_sun .and. isentropic) then
 
         i_conv = i                 
         isentropic = .false.
