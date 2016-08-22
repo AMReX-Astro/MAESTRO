@@ -1,0 +1,538 @@
+****** New MaxWrn =10000 (old =  200)
+****** WARNING COUNTERS RESET ******
+****** New MaxWrn =  100 (old =10000)
+****** WARNING COUNTERS RESET ******
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+  OKAPPA > out table:  7 lg T=  4.025 lg R=-10.714 CAP= -0.463  2
+  OKAPPA > out table: 12 lg T=  4.025 lg R=-10.714 CAP= -0.604  2
+  OKAPPA > out table: 13 lg T=  4.025 lg R=-10.714 CAP= -0.502  2
+  OKAPPA > out table: 14 lg T=  4.025 lg R=-10.714 CAP= -0.458  2
+  OKAPPA > out table: 19 lg T=  4.025 lg R=-10.714 CAP= -0.601  2
+  OKAPPA > out table: 20 lg T=  4.025 lg R=-10.714 CAP= -0.500  2
+  OKAPPA > out table: 21 lg T=  4.025 lg R=-10.714 CAP= -0.456  2
+  OKAPPA > out table:  5 lg T=  4.025 lg R=-10.714 CAP= -0.608  2
+  OKAPPA > out table:  6 lg T=  4.025 lg R=-10.714 CAP= -0.507  2
+
+ ******** LAST WARNING ISSUED BY OKAPPA ***********
+
+****** New MaxWrn =10000 (old =  100)
+****** WARNING COUNTERS RESET ******
+     3  1   8  OP-EOS         >Old EOS from 1 to 233 
+     4  1   7  OP-EOS         >Old EOS from 1 to 334 
+     5  1   7  OP-EOS         >Old EOS from 1 to 435 
+     6  1   7  OP-EOS         >Old EOS from 1 to 536 
+     7  1   7  OP-EOS         >Old EOS from 1 to 636 
+     8  1   7  OP-EOS         >Old EOS from 1 to 736 
+     9  1   6  OP-EOS         >Old EOS from 1 to 836 
+     9  1   6  STRUCTUR(   1) >Failed BOOST GCorr = 1.316m5 >> C *l <<
+    10  1   7  OP-EOS         >Old EOS from 1 to 936 
+    11  1   7  OP-EOS         >Old EOS from 1 to 1037 
+    12  1   7  OP-EOS         >Old EOS from 1 to 195 
+    13  1   6  OP-EOS         >Old EOS from 1 to 220 
+    14  1   5  OP-EOS         >Old EOS from 1 to 248 
+    15  1   5  OP-EOS         >Old EOS from 1 to 252 
+    16  1   5  OP-EOS         >Old EOS from 1 to 222 
+    16  1   5  STRUCTUR(   2) >Failed BOOST GCorr = 7.577m5 >>T *l <<
+    17  1   6  OP-EOS         >Old EOS from 1 to 227 
+    18  1   5  OP-EOS         >Old EOS from 1 to 220 
+    18  1   5  STRUCTUR(   3) >Failed BOOST GCorr = 4.310m5 >>T *l <<
+    19  1   6  OP-EOS         >Old EOS from 1 to 225 
+    20  1   5  OP-EOS         >Old EOS from 1 to 223 
+    20  1   5  STRUCTUR(   4) >Failed BOOST GCorr = 2.289m5 >>T *l <<
+    21  1   7  OP-EOS         >Old EOS from 1 to 226 
+    22  1   6  OP-EOS         >Old EOS from 1 to 224 
+    23  1   6  OP-EOS         >Old EOS from 1 to 225 
+    24  1   5  OP-EOS         >Old EOS from 1 to 224 
+    24  1   5  STRUCTUR(   5) >Failed BOOST GCorr = 2.307m5 >>T *s <<
+    25  1   6  OP-EOS         >Old EOS from 1 to 225 
+    26  1   8  OP-EOS         >Old EOS from 1 to 225 
+    27  1   6  OP-EOS         >Old EOS from 1 to 226 
+    28  1   5  OP-EOS         >Old EOS from 1 to 225 
+    28  1   5  STRUCTUR(   6) >Failed BOOST GCorr = 5.041m5 >>T *l <<
+    29  1   6  OP-EOS         >Old EOS from 1 to 227 
+    30  1   5  OP-EOS         >Old EOS from 1 to 225 
+    30  1   5  STRUCTUR(   7) >Failed BOOST GCorr = 2.943m5 >>T *s <<
+    31  1   6  OP-EOS         >Old EOS from 1 to 226 
+    32  1   5  OP-EOS         >Old EOS from 1 to 227 
+    33  1   5  OP-EOS         >Old EOS from 1 to 225 
+    33  1   5  STRUCTUR(   8) >Failed BOOST GCorr = 2.956m5 >>T *s <<
+    34  1   6  OP-EOS         >Old EOS from 1 to 229 
+    35  1   5  OP-EOS         >Old EOS from 1 to 228 
+    35  1   5  STRUCTUR(   9) >Failed BOOST GCorr = 2.964m5 >>T *l <<
+    36  1   6  OP-EOS         >Old EOS from 1 to 229 
+    37  1   5  OP-EOS         >Old EOS from 1 to 230 
+    38  1   5  OP-EOS         >Old EOS from 1 to 228 
+    38  1   5  STRUCTUR(  10) >Failed BOOST GCorr = 2.976m5 >>T *s <<
+    39  1   6  OP-EOS         >Old EOS from 1 to 229 
+    40  1   5  OP-EOS         >Old EOS from 1 to 230 
+    41  1   5  OP-EOS         >Old EOS from 1 to 228 
+    41  1   5  STRUCTUR(  11) >Failed BOOST GCorr = 2.986m5 >>T *s <<
+    42  1   6  OP-EOS         >Old EOS from 1 to 233 
+    43  1   5  OP-EOS         >Old EOS from 1 to 234 
+    44  1   5  OP-EOS         >Old EOS from 1 to 231 
+    44  1   5  STRUCTUR(  12) >Failed BOOST GCorr = 2.996m5 >>T *s <<
+    45  1   6  OP-EOS         >Old EOS from 1 to 234 
+    46  1   5  OP-EOS         >Old EOS from 1 to 236 
+    47  1   5  OP-EOS         >Old EOS from 1 to 237 
+    48  1   5  OP-EOS         >Old EOS from 1 to 231 
+    48  1   5  STRUCTUR(  13) >Failed BOOST GCorr = 3.011m5 >>T *s <<
+    49  1   7  OP-EOS         >Old EOS from 1 to 237 
+    50  1   6  OP-EOS         >Old EOS from 1 to 240 
+    51  1   5  OP-EOS         >Old EOS from 1 to 242 
+    52  1   5  OP-EOS         >Old EOS from 1 to 244 
+    53  1   7  OP-EOS         >Old EOS from 1 to 250 
+    54  1   6  OP-EOS         >Old EOS from 1 to 261 
+    55  1   5  OP-EOS         >Old EOS from 1 to 270 
+    56  1   7  OP-EOS         >Old EOS from 1 to 238 
+    57  1   6  OP-EOS         >Old EOS from 1 to 244 
+    58  1   5  OP-EOS         >Old EOS from 1 to 241 
+    58  1   5  STRUCTUR(  14) >Failed BOOST GCorr = 8.098m5 >> *l <<
+    59  1   7  OP-EOS         >Old EOS from 1 to 242 
+    60  1   7  OP-EOS         >Old EOS from 1 to 243 
+    61  1   7  OP-EOS         >Old EOS from 1 to 245 
+    62  1   6  OP-EOS         >Old EOS from 1 to 248 
+    63  1   6  OP-EOS         >Old EOS from 1 to 254 
+    64  1   6  OP-EOS         >Old EOS from 1 to 256 
+    65  1   6  OP-EOS         >Old EOS from 1 to 256 
+    66  1   6  OP-EOS         >Old EOS from 1 to 255 
+    67  1   6  OP-EOS         >Old EOS from 1 to 254 
+    68  1   6  OP-EOS         >Old EOS from 1 to 256 
+    69  1   6  OP-EOS         >Old EOS from 1 to 255 
+    70  1   6  OP-EOS         >Old EOS from 1 to 255 
+    71  1   6  OP-EOS         >Old EOS from 1 to 255 
+    72  1   6  OP-EOS         >Old EOS from 1 to 254 
+    73  1   6  OP-EOS         >Old EOS from 1 to 255 
+    74  1   6  OP-EOS         >Old EOS from 1 to 256 
+    75  1   6  OP-EOS         >Old EOS from 1 to 256 
+    76  1   6  OP-EOS         >Old EOS from 1 to 256 
+    77  1   6  OP-EOS         >Old EOS from 1 to 256 
+    78  1   6  OP-EOS         >Old EOS from 1 to 256 
+    79  1   6  OP-EOS         >Old EOS from 1 to 256 
+    80  1   6  OP-EOS         >Old EOS from 1 to 256 
+    81  1   6  OP-EOS         >Old EOS from 1 to 256 
+    82  1   6  OP-EOS         >Old EOS from 1 to 256 
+    83  1   6  OP-EOS         >Old EOS from 1 to 257 
+    84  1   6  OP-EOS         >Old EOS from 1 to 256 
+    85  1   6  OP-EOS         >Old EOS from 1 to 257 
+    86  1   6  OP-EOS         >Old EOS from 1 to 257 
+    87  1   6  OP-EOS         >Old EOS from 1 to 257 
+    88  1   6  OP-EOS         >Old EOS from 1 to 257 
+    89  1   6  OP-EOS         >Old EOS from 1 to 257 
+    90  1   6  OP-EOS         >Old EOS from 1 to 257 
+    91  1   6  OP-EOS         >Old EOS from 1 to 257 
+    92  1   6  OP-EOS         >Old EOS from 1 to 257 
+    93  1   6  OP-EOS         >Old EOS from 1 to 258 
+    94  1   6  OP-EOS         >Old EOS from 1 to 258 
+    95  1   6  OP-EOS         >Old EOS from 1 to 258 
+    96  1   6  OP-EOS         >Old EOS from 1 to 258 
+    97  1   6  OP-EOS         >Old EOS from 1 to 258 
+    98  1   6  OP-EOS         >Old EOS from 1 to 258 
+    99  1   6  OP-EOS         >Old EOS from 1 to 258 
+   100  1   6  OP-EOS         >Old EOS from 1 to 258 
+   101  1   6  OP-EOS         >Old EOS from 1 to 258 
+   102  1   6  OP-EOS         >Old EOS from 1 to 258 
+   103  1   6  OP-EOS         >Old EOS from 1 to 258 
+   104  1   6  OP-EOS         >Old EOS from 1 to 258 
+   105  1   6  OP-EOS         >Old EOS from 1 to 258 
+   106  1   6  OP-EOS         >Old EOS from 1 to 258 
+   107  1   6  OP-EOS         >Old EOS from 1 to 258 
+   108  1   6  OP-EOS         >Old EOS from 1 to 258 
+   109  1   6  OP-EOS         >Old EOS from 1 to 258 
+   110  1   6  OP-EOS         >Old EOS from 1 to 258 
+   111  1   6  OP-EOS         >Old EOS from 1 to 258 
+   112  1   6  OP-EOS         >Old EOS from 1 to 259 
+   113  1   6  OP-EOS         >Old EOS from 1 to 259 
+   114  1   6  OP-EOS         >Old EOS from 1 to 259 
+   115  1   6  OP-EOS         >Old EOS from 1 to 259 
+   116  1   6  OP-EOS         >Old EOS from 1 to 259 
+   117  1   6  OP-EOS         >Old EOS from 1 to 258 
+   118  1   4  OP-EOS         >Old EOS from 1 to 257 
+   118  1   4  STRUCTUR(  15) >Failed BOOST GCorr = 2.647m5 >>TC *B <<
+   119  1   7  OP-EOS         >Old EOS from 1 to 268 
+   120  1   4  OP-EOS         >Old EOS from 1 to 257 
+   120  1   4  STRUCTUR(  16) >Failed BOOST GCorr = 2.644m5 >>TC *B <<
+   121  1   6  OP-EOS         >Old EOS from 1 to 270 
+   122  1   6  OP-EOS         >Old EOS from 1 to 274 
+   123  1   6  OP-EOS         >Old EOS from 1 to 292 
+   124  1   4  OP-EOS         >Old EOS from 1 to 258 
+   125  1   3  OP-EOS         >Old EOS from 1 to 258 
+   125  1   3  STRUCTUR(  17) >Failed BOOST GCorr = 2.516m4 >>T *l <<
+   126  1   7  OP-EOS         >Old EOS from 1 to 329 
+   127  1   5  OP-EOS         >Old EOS from 1 to 258 
+   128  1   7  OP-EOS         >Old EOS from 1 to 273 
+   129  1   5  OP-EOS         >Old EOS from 1 to 258 
+   130  1   4  OP-EOS         >Old EOS from 1 to 262 
+   130  1   4  STRUCTUR(  18) >Failed BOOST GCorr = 8.017m5 >>T *l <<
+   131  1   5  OP-EOS         >Old EOS from 1 to 258 
+   132  1   4  OP-EOS         >Old EOS from 1 to 258 
+   133  1   4  OP-EOS         >Old EOS from 1 to 258 
+   134  1   4  OP-EOS         >Old EOS from 1 to 258 
+   135  1   4  OP-EOS         >Old EOS from 1 to 258 
+   136  1   4  OP-EOS         >Old EOS from 1 to 258 
+   137  1   4  OP-EOS         >Old EOS from 1 to 258 
+   138  1   4  OP-EOS         >Old EOS from 1 to 258 
+   139  1   4  OP-EOS         >Old EOS from 1 to 258 
+   140  1   4  OP-EOS         >Old EOS from 1 to 258 
+   141  1   4  OP-EOS         >Old EOS from 1 to 258 
+   142  1   4  OP-EOS         >Old EOS from 1 to 258 
+   143  1   4  OP-EOS         >Old EOS from 1 to 258 
+   144  1   4  OP-EOS         >Old EOS from 1 to 257 
+   145  1   4  OP-EOS         >Old EOS from 1 to 257 
+   146  1   4  OP-EOS         >Old EOS from 1 to 258 
+   147  1   4  OP-EOS         >Old EOS from 1 to 258 
+   148  1   4  OP-EOS         >Old EOS from 1 to 258 
+   149  1   4  OP-EOS         >Old EOS from 1 to 258 
+   150  1   4  OP-EOS         >Old EOS from 1 to 258 
+   151  1   4  OP-EOS         >Old EOS from 1 to 258 
+   152  1   4  OP-EOS         >Old EOS from 1 to 257 
+   153  1   4  OP-EOS         >Old EOS from 1 to 257 
+   154  1   4  OP-EOS         >Old EOS from 1 to 257 
+   155  1   4  OP-EOS         >Old EOS from 1 to 257 
+   156  1   4  OP-EOS         >Old EOS from 1 to 257 
+   157  1   4  OP-EOS         >Old EOS from 1 to 257 
+   158  1   4  OP-EOS         >Old EOS from 1 to 256 
+   159  1   4  OP-EOS         >Old EOS from 1 to 256 
+   160  1   4  OP-EOS         >Old EOS from 1 to 256 
+   161  1   4  OP-EOS         >Old EOS from 1 to 256 
+   162  1   4  OP-EOS         >Old EOS from 1 to 256 
+   163  1   4  OP-EOS         >Old EOS from 1 to 255 
+   164  1   4  OP-EOS         >Old EOS from 1 to 255 
+   165  1   4  OP-EOS         >Old EOS from 1 to 254 
+   166  1   4  OP-EOS         >Old EOS from 1 to 254 
+   167  1   4  OP-EOS         >Old EOS from 1 to 254 
+   167  1   4  STRUCTUR(  19) >Failed BOOST GCorr = 1.178m5 >> *l <<
+   168  1   6  OP-EOS         >Old EOS from 1 to 253 
+   169  1   5  OP-EOS         >Old EOS from 1 to 252 
+   170  1   5  OP-EOS         >Old EOS from 1 to 252 
+   171  1   5  OP-EOS         >Old EOS from 1 to 251 
+   172  1   5  OP-EOS         >Old EOS from 1 to 250 
+   173  1   5  OP-EOS         >Old EOS from 1 to 248 
+   174  1   5  OP-EOS         >Old EOS from 1 to 247 
+   175  1   5  OP-EOS         >Old EOS from 1 to 246 
+   176  1   4  OP-EOS         >Old EOS from 1 to 247 
+   177  1   4  OP-EOS         >Old EOS from 1 to 246 
+   178  1   4  OP-EOS         >Old EOS from 1 to 246 
+   179  1   4  OP-EOS         >Old EOS from 1 to 246 
+   180  1   4  OP-EOS         >Old EOS from 1 to 245 
+   181  1   4  OP-EOS         >Old EOS from 1 to 245 
+   182  1   4  OP-EOS         >Old EOS from 1 to 244 
+   183  1   4  OP-EOS         >Old EOS from 1 to 244 
+   184  1   4  OP-EOS         >Old EOS from 1 to 244 
+   185  1   4  OP-EOS         >Old EOS from 1 to 243 
+   186  1   4  OP-EOS         >Old EOS from 1 to 243 
+   187  1   4  OP-EOS         >Old EOS from 1 to 243 
+   188  1   4  OP-EOS         >Old EOS from 1 to 243 
+   189  1   4  OP-EOS         >Old EOS from 1 to 243 
+   190  1   4  OP-EOS         >Old EOS from 1 to 243 
+   191  1   4  OP-EOS         >Old EOS from 1 to 243 
+   192  1   4  OP-EOS         >Old EOS from 1 to 244 
+   193  1   4  OP-EOS         >Old EOS from 1 to 244 
+   194  1   4  OP-EOS         >Old EOS from 1 to 244 
+   195  1   4  OP-EOS         >Old EOS from 1 to 243 
+   196  1   4  OP-EOS         >Old EOS from 1 to 243 
+   196  1   4  STRUCTUR(  20) >Failed BOOST GCorr = 2.121m5 >>T *s <<
+   197  1   7  OP-EOS         >Old EOS from 1 to 244 
+   198  1   5  OP-EOS         >Old EOS from 1 to 244 
+   199  1   5  OP-EOS         >Old EOS from 1 to 244 
+   200  1   5  OP-EOS         >Old EOS from 1 to 244 
+   201  1   5  OP-EOS         >Old EOS from 1 to 244 
+   202  1   5  OP-EOS         >Old EOS from 1 to 244 
+   203  1   5  OP-EOS         >Old EOS from 1 to 244 
+   204  1   4  OP-EOS         >Old EOS from 1 to 243 
+   204  1   4  STRUCTUR(  21) >Failed BOOST GCorr = 2.071m5 >>T *l <<
+   205  1   7  OP-EOS         >Old EOS from 1 to 248 
+   206  1   6  OP-EOS         >Old EOS from 1 to 251 
+   207  1   4  OP-EOS         >Old EOS from 1 to 243 
+   207  1   4  STRUCTUR(  22) >Failed BOOST GCorr = 2.074m5 >>TC *B <<
+   208  1   7  OP-EOS         >Old EOS from 1 to 252 
+   209  1   6  OP-EOS         >Old EOS from 1 to 266 
+   210  1   6  OP-EOS         >Old EOS from 1 to 245 
+   211  1   8  OP-EOS         >Old EOS from 1 to 248 
+   212  1   7  OP-EOS         >Old EOS from 1 to 249 
+   213  1   6  OP-EOS         >Old EOS from 1 to 249 
+   214  1   6  OP-EOS         >Old EOS from 1 to 251 
+   215  1   6  OP-EOS         >Old EOS from 1 to 253 
+   216  1   6  OP-EOS         >Old EOS from 1 to 254 
+   217  1   6  OP-EOS         >Old EOS from 1 to 257 
+   218  1   6  OP-EOS         >Old EOS from 1 to 259 
+   219  1   6  OP-EOS         >Old EOS from 1 to 265 
+   220  1   6  OP-EOS         >Old EOS from 1 to 318 
+   221  1   8  OP-EOS         >Old EOS from 1 to 279 
+   222  1   7  OP-EOS         >Old EOS from 1 to 294 
+   223  1   6  OP-EOS         >Old EOS from 1 to 303 
+   224  1   6  OP-EOS         >Old EOS from 1 to 311 
+   225  1   6  OP-EOS         >Old EOS from 1 to 318 
+   226  1   6  OP-EOS         >Old EOS from 1 to 277 
+   227  1   6  OP-EOS         >Old EOS from 1 to 317 
+   228  1   6  OP-EOS         >Old EOS from 1 to 273 
+   229  1   8  OP-EOS         >Old EOS from 1 to 270 
+   230  1   7  OP-EOS         >Old EOS from 1 to 269 
+   231  1   6  OP-EOS         >Old EOS from 1 to 271 
+   232  1   6  OP-EOS         >Old EOS from 1 to 269 
+   233  1   6  OP-EOS         >Old EOS from 1 to 269 
+   234  1   6  OP-EOS         >Old EOS from 1 to 269 
+   235  1   6  OP-EOS         >Old EOS from 1 to 269 
+   236  1   6  OP-EOS         >Old EOS from 1 to 269 
+   237  1   6  OP-EOS         >Old EOS from 1 to 269 
+   238  1   6  OP-EOS         >Old EOS from 1 to 269 
+   239  1   6  OP-EOS         >Old EOS from 1 to 269 
+   240  1   6  OP-EOS         >Old EOS from 1 to 270 
+   241  1   8  OP-EOS         >Old EOS from 1 to 270 
+   242  1   7  OP-EOS         >Old EOS from 1 to 270 
+   243  1   6  OP-EOS         >Old EOS from 1 to 270 
+   244  1   6  OP-EOS         >Old EOS from 1 to 270 
+   245  1   6  OP-EOS         >Old EOS from 1 to 271 
+   246  1   6  OP-EOS         >Old EOS from 1 to 270 
+   247  1   6  OP-EOS         >Old EOS from 1 to 271 
+   248  1   8  OP-EOS         >Old EOS from 1 to 271 
+   249  1   7  OP-EOS         >Old EOS from 1 to 272 
+   250  1   6  OP-EOS         >Old EOS from 1 to 272 
+   251  1   6  OP-EOS         >Old EOS from 1 to 272 
+   252  1   6  OP-EOS         >Old EOS from 1 to 272 
+   253  1   6  OP-EOS         >Old EOS from 1 to 272 
+   254  1   6  OP-EOS         >Old EOS from 1 to 273 
+   255  1   6  OP-EOS         >Old EOS from 1 to 273 
+   256  1   6  OP-EOS         >Old EOS from 1 to 273 
+   257  1   6  OP-EOS         >Old EOS from 1 to 273 
+   258  1   6  OP-EOS         >Old EOS from 1 to 273 
+   259  1   6  OP-EOS         >Old EOS from 1 to 275 
+   260  1   6  OP-EOS         >Old EOS from 1 to 274 
+   261  1   6  OP-EOS         >Old EOS from 1 to 274 
+   262  1   6  OP-EOS         >Old EOS from 1 to 275 
+   263  1   6  OP-EOS         >Old EOS from 1 to 275 
+   264  1   6  OP-EOS         >Old EOS from 1 to 275 
+   265  1   6  OP-EOS         >Old EOS from 1 to 275 
+   266  1   6  OP-EOS         >Old EOS from 1 to 276 
+   267  1   6  OP-EOS         >Old EOS from 1 to 276 
+   268  1   6  OP-EOS         >Old EOS from 1 to 276 
+   269  1   6  OP-EOS         >Old EOS from 1 to 276 
+   270  1   6  OP-EOS         >Old EOS from 1 to 277 
+   271  1   6  OP-EOS         >Old EOS from 1 to 277 
+   272  1   6  OP-EOS         >Old EOS from 1 to 277 
+   273  1   6  OP-EOS         >Old EOS from 1 to 277 
+   274  1   6  OP-EOS         >Old EOS from 1 to 278 
+   275  1   6  OP-EOS         >Old EOS from 1 to 278 
+   276  1   6  OP-EOS         >Old EOS from 1 to 279 
+   277  1   6  OP-EOS         >Old EOS from 1 to 278 
+   278  1   6  OP-EOS         >Old EOS from 1 to 279 
+   279  1   6  OP-EOS         >Old EOS from 1 to 279 
+   280  1   6  OP-EOS         >Old EOS from 1 to 279 
+   281  1   6  OP-EOS         >Old EOS from 1 to 280 
+   282  1   6  OP-EOS         >Old EOS from 1 to 280 
+   283  1   6  OP-EOS         >Old EOS from 1 to 280 
+   284  1   6  OP-EOS         >Old EOS from 1 to 280 
+   285  1   6  OP-EOS         >Old EOS from 1 to 281 
+   286  1   6  OP-EOS         >Old EOS from 1 to 281 
+   287  1   6  OP-EOS         >Old EOS from 1 to 282 
+   288  1   6  OP-EOS         >Old EOS from 1 to 281 
+   289  1   6  OP-EOS         >Old EOS from 1 to 282 
+   290  1   6  OP-EOS         >Old EOS from 1 to 282 
+   291  1   6  OP-EOS         >Old EOS from 1 to 282 
+   292  1   6  OP-EOS         >Old EOS from 1 to 283 
+   293  1   6  OP-EOS         >Old EOS from 1 to 282 
+   294  1   6  OP-EOS         >Old EOS from 1 to 284 
+   295  1   6  OP-EOS         >Old EOS from 1 to 284 
+   296  1   6  OP-EOS         >Old EOS from 1 to 284 
+   297  1   6  OP-EOS         >Old EOS from 1 to 285 
+   298  1   6  OP-EOS         >Old EOS from 1 to 285 
+   299  1   6  OP-EOS         >Old EOS from 1 to 285 
+   300  1   6  OP-EOS         >Old EOS from 1 to 285 
+   301  1   6  OP-EOS         >Old EOS from 1 to 286 
+   302  1   6  OP-EOS         >Old EOS from 1 to 285 
+   303  1   6  OP-EOS         >Old EOS from 1 to 289 
+   304  1   6  OP-EOS         >Old EOS from 1 to 289 
+   305  1   6  OP-EOS         >Old EOS from 1 to 289 
+   306  1   6  OP-EOS         >Old EOS from 1 to 290 
+   307  1   6  OP-EOS         >Old EOS from 1 to 290 
+   308  1   6  OP-EOS         >Old EOS from 1 to 291 
+   309  1   6  OP-EOS         >Old EOS from 1 to 290 
+   310  1   6  OP-EOS         >Old EOS from 1 to 291 
+   311  1   6  OP-EOS         >Old EOS from 1 to 291 
+   312  1   6  OP-EOS         >Old EOS from 1 to 291 
+   313  1   6  OP-EOS         >Old EOS from 1 to 291 
+   314  1   6  OP-EOS         >Old EOS from 1 to 296 
+   315  1   6  OP-EOS         >Old EOS from 1 to 296 
+   316  1   6  OP-EOS         >Old EOS from 1 to 296 
+   317  1   6  OP-EOS         >Old EOS from 1 to 296 
+   318  1   6  OP-EOS         >Old EOS from 1 to 296 
+   319  1   6  OP-EOS         >Old EOS from 1 to 296 
+   320  1   6  OP-EOS         >Old EOS from 1 to 297 
+   321  1   6  OP-EOS         >Old EOS from 1 to 297 
+   322  1   6  OP-EOS         >Old EOS from 1 to 297 
+   323  1   6  OP-EOS         >Old EOS from 1 to 297 
+   324  1   6  OP-EOS         >Old EOS from 1 to 301 
+   325  1   6  OP-EOS         >Old EOS from 1 to 302 
+   326  1   6  OP-EOS         >Old EOS from 1 to 302 
+   327  1   6  OP-EOS         >Old EOS from 1 to 302 
+   328  1   6  OP-EOS         >Old EOS from 1 to 302 
+   329  1   6  OP-EOS         >Old EOS from 1 to 302 
+   330  1   6  OP-EOS         >Old EOS from 1 to 302 
+   331  1   6  OP-EOS         >Old EOS from 1 to 303 
+   332  1   6  OP-EOS         >Old EOS from 1 to 302 
+   333  1   6  OP-EOS         >Old EOS from 1 to 304 
+   334  1   6  OP-EOS         >Old EOS from 1 to 304 
+   335  1   6  OP-EOS         >Old EOS from 1 to 304 
+   336  1   6  OP-EOS         >Old EOS from 1 to 304 
+   337  1   6  OP-EOS         >Old EOS from 1 to 305 
+   338  1   6  OP-EOS         >Old EOS from 1 to 305 
+   339  1   6  OP-EOS         >Old EOS from 1 to 305 
+   340  1   6  OP-EOS         >Old EOS from 1 to 305 
+   341  1   6  OP-EOS         >Old EOS from 1 to 306 
+   342  1   6  OP-EOS         >Old EOS from 1 to 305 
+   343  1   6  OP-EOS         >Old EOS from 1 to 306 
+   344  1   6  OP-EOS         >Old EOS from 1 to 307 
+   345  1   6  OP-EOS         >Old EOS from 1 to 308 
+   346  1   6  OP-EOS         >Old EOS from 1 to 308 
+   347  1   6  OP-EOS         >Old EOS from 1 to 308 
+   348  1   6  OP-EOS         >Old EOS from 1 to 308 
+   349  1   6  OP-EOS         >Old EOS from 1 to 309 
+   350  1   6  OP-EOS         >Old EOS from 1 to 308 
+   351  1   6  OP-EOS         >Old EOS from 1 to 309 
+   352  1   6  OP-EOS         >Old EOS from 1 to 309 
+   353  1   6  OP-EOS         >Old EOS from 1 to 309 
+   354  1   6  OP-EOS         >Old EOS from 1 to 309 
+   355  1   6  OP-EOS         >Old EOS from 1 to 309 
+   356  1   6  OP-EOS         >Old EOS from 1 to 312 
+   357  1   6  OP-EOS         >Old EOS from 1 to 312 
+   358  1   6  OP-EOS         >Old EOS from 1 to 312 
+   359  1   6  OP-EOS         >Old EOS from 1 to 312 
+   360  1   6  OP-EOS         >Old EOS from 1 to 312 
+   361  1   6  OP-EOS         >Old EOS from 1 to 313 
+   362  1   6  OP-EOS         >Old EOS from 1 to 313 
+   363  1   6  OP-EOS         >Old EOS from 1 to 313 
+   364  1   6  OP-EOS         >Old EOS from 1 to 313 
+   365  1   6  OP-EOS         >Old EOS from 1 to 313 
+   366  1   6  OP-EOS         >Old EOS from 1 to 313 
+   367  1   6  OP-EOS         >Old EOS from 1 to 313 
+   368  1   6  OP-EOS         >Old EOS from 1 to 313 
+   369  1   6  OP-EOS         >Old EOS from 1 to 314 
+   370  1   6  OP-EOS         >Old EOS from 1 to 316 
+   371  1   6  OP-EOS         >Old EOS from 1 to 317 
+   372  1   6  OP-EOS         >Old EOS from 1 to 317 
+   373  1   6  OP-EOS         >Old EOS from 1 to 318 
+   374  1   6  OP-EOS         >Old EOS from 1 to 317 
+   375  1   6  OP-EOS         >Old EOS from 1 to 318 
+   376  1   6  OP-EOS         >Old EOS from 1 to 317 
+   377  1   6  OP-EOS         >Old EOS from 1 to 318 
+   378  1   6  OP-EOS         >Old EOS from 1 to 318 
+   379  1   6  OP-EOS         >Old EOS from 1 to 318 
+   380  1   6  OP-EOS         >Old EOS from 1 to 318 
+   381  1   6  OP-EOS         >Old EOS from 1 to 318 
+   382  1   6  OP-EOS         >Old EOS from 1 to 318 
+   383  1   6  OP-EOS         >Old EOS from 1 to 318 
+   384  1   6  OP-EOS         >Old EOS from 1 to 319 
+   385  1   6  OP-EOS         >Old EOS from 1 to 318 
+   386  1   6  OP-EOS         >Old EOS from 1 to 319 
+   387  1   6  OP-EOS         >Old EOS from 1 to 319 
+   388  1   6  OP-EOS         >Old EOS from 1 to 322 
+   389  1   6  OP-EOS         >Old EOS from 1 to 322 
+   390  1   6  OP-EOS         >Old EOS from 1 to 322 
+   391  1   6  OP-EOS         >Old EOS from 1 to 322 
+   392  1   6  OP-EOS         >Old EOS from 1 to 322 
+   393  1   6  OP-EOS         >Old EOS from 1 to 322 
+   394  1   6  OP-EOS         >Old EOS from 1 to 322 
+   395  1   6  OP-EOS         >Old EOS from 1 to 323 
+   396  1   6  OP-EOS         >Old EOS from 1 to 323 
+   397  1   6  OP-EOS         >Old EOS from 1 to 323 
+   398  1   6  OP-EOS         >Old EOS from 1 to 323 
+   399  1   6  OP-EOS         >Old EOS from 1 to 323 
+   400  1   6  OP-EOS         >Old EOS from 1 to 323 
+   401  1   6  OP-EOS         >Old EOS from 1 to 323 
+   402  1   6  OP-EOS         >Old EOS from 1 to 323 
+
+
+          ****** T O T A L   W A R N I N G S: ******
+
+OP-EOS  :     0
+STRUCTUR:    22

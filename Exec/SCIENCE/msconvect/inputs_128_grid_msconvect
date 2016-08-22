@@ -1,7 +1,7 @@
 &PROBIN
 
 !Input
- model_file = "model_file"
+ model_file = "model_modn_200"
 
  
  
@@ -39,8 +39,14 @@
  
  
 !AMR 
- max_levs = 1
- 
+ max_levs = 4
+ ref_ratio = 2
+ regrid_int = 2
+ lo_dens_tag = 10.0d0
+ hi_dens_tag = 38.0d0
+ steep_tag = 0.1d0
+ dump_grid_file = T
+
  
  
 !Solver 
@@ -68,20 +74,16 @@
  
 
 !Cutoff densities + sponge 
- anelastic_cutoff = 1.d-3
- base_cutoff_density = 0.5d-3
-
- do_sponge = .true.
-
- sponge_center_density = 1.5d-1
+ anelastic_cutoff = 1.0
+ base_cutoff_density = .5
+ sponge_center_density = 2.5
  sponge_start_factor = 3.333d0
  sponge_kappa = 10.0d0
  
  
- 
 !Initialization 
 
- perturb_model = F
+ perturb_model = T
  use_soundspeed_firstdt = T
  use_divu_firstdt = T
  
@@ -90,7 +92,11 @@
 
  drive_initial_convection = F
  stop_initial_convection = 2
-
+ 
+ velpert_amplitude = 5.d1                
+ velpert_radius = 1.d10              
+ velpert_scale = 1.1d10               
+ velpert_steep = 1.d0
  
   
 !Timestepping

@@ -96,8 +96,9 @@ contains
     rho_Hext = 0.0_dp_t
     Hmax = 0.0_dp_t
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,rho,xspec,T_in,rho_Hext) FIRSTPRIVATE(ldt) &
-    !$OMP SCHEDULE(DYNAMIC,1)
+    !$OMP PARALLEL DO &
+    !$OMP PRIVATE(i,j,k,rho,xspec,T_in,T9,gpp,epp,xcno,gcno,ecno) &
+    !$OMP SCHEDULE(DYNAMIC,1) 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -118,7 +119,7 @@ contains
 	   
 	   
 	   ! approximate cno energy generation without screening according to Kippenhahn, Weigert, Weiss textbook
-	    xcno = xspec(3) + xspec(4)
+	    xcno = xspec(3)
 	    gcno = 1.0 - 2.00 * T9 + 3.41 * T9 ** TWO - 2.43 * T9 ** THREE
 	    ecno = 8.24E25 * gcno * xcno * xspec(1) * rho * T9 ** ( -TWO3RD) * euler ** (-15.231 * T9 ** (-THIRD) - (1.25 *T9 ) ** TWO )
 	   

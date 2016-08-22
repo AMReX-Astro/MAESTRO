@@ -1,6 +1,6 @@
-NDEBUG := f
+NDEBUG := t
 MPI    := t
-OMP    := 
+OMP    := t
 
 HYPRE :=
 

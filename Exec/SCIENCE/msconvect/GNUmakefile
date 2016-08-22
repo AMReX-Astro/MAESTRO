@@ -1,10 +1,10 @@
 NDEBUG := f
 MPI    := t
-OMP    := 
+OMP    := t 
 
 HYPRE :=
 
-COMP := gfortran
+COMP := Intel
 
 MKVERBOSE := t
 
@@ -16,7 +16,7 @@ EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 NETWORK_DIR := general_null
 
-GENERAL_NET_INPUTS := $(MICROPHYSICS_DIR)/networks/$(NETWORK_DIR)/aproxMS.net
+GENERAL_NET_INPUTS := $(MICROPHYSICS_HOME)/networks/$(NETWORK_DIR)/aproxCNOsolar.net
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
