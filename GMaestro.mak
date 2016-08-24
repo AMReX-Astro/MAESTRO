@@ -104,6 +104,15 @@ endif
 table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
+# For the URCA network in Microphysics, link the rate tables
+ifeq ($(findstring URCA-simple, $(NETWORK_DIR)), URCA-simple)
+  ALL: urcatables
+endif
+
+urcatables:
+	@if [ ! -f 23Ne-23Na_betadecay.dat ]; then echo ${bold}Linking 23Ne-23Na_betadecay.dat${normal}; ln -s $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/23Ne-23Na_betadecay.dat .;  fi
+	@if [ ! -f 23Na-23Ne_electroncapture.dat ]; then echo ${bold}Linking 23Na-23Ne_electroncapture.dat${normal}; ln -s $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/23Na-23Ne_electroncapture.dat .;  fi
+
 
 # All networks except general_null should pull in the Microphysics repository.
 ifneq ($(findstring general_null, $(NETWORK_DIR)), general_null)
