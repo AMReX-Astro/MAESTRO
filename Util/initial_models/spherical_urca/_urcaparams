@@ -8,8 +8,8 @@
 &params 
 
  nx = 2560
- dens_base = 5.5e9
- temp_base = 3.0e8
+ dens_base = 4.5e9
+ temp_base = 2.0e8
 
  dens_conv_zone = -1.0
  M_conv_zone = 0.5
@@ -39,7 +39,7 @@
 ! Following 0.5 Ye and Log10(rho*Ye)=8.92 from Toki+ 2013:
  urca_23_dens = 1.66e9 
 
- prefix = "WD_urca_nuc_M-0.5_"
+ prefix = "WD_urca_nuc_M-0.5_hot"
 
 /
 
