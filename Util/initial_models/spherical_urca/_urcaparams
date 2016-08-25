@@ -9,7 +9,7 @@
 
  nx = 2560
  dens_base = 4.5e9
- temp_base = 2.0e8
+ temp_base = 3.0e8
 
  dens_conv_zone = -1.0
  M_conv_zone = 0.5
