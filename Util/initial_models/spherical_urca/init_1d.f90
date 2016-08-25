@@ -15,7 +15,7 @@ program init_1d
 
   implicit none
 
-  integer :: i, n
+  integer :: i, j, n
 
   integer :: nx
       
@@ -441,6 +441,9 @@ program init_1d
      model_hse(i,idens) = dens_zone
      model_hse(i,itemp) = temp_zone
      model_hse(i,ipres) = pres_zone
+     do j = 1, nspec
+        model_hse(i,ispec-1+j) = eos_state%xn(j)
+     enddo
 
      print *, i, dens_zone, temp_zone
      
