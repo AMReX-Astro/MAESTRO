@@ -98,7 +98,7 @@ contains
                call multifab_div_div_s(rho_Hext(n),dt)
             enddo
          endif
-      else ! not burning, so we ZERO rho_Hext
+      else ! not heating, so we ZERO rho_Hext
          do n = 1, nlevs
             call setval(rho_Hext(n),ZERO,all=.true.)
          enddo
