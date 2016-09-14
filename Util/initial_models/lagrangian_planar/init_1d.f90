@@ -12,7 +12,7 @@ program init_1d
   use bl_constants_module
   use bl_error_module
   use eos_module, only: eos_input_rt, eos, eos_init
-  use eos_type_module, only: eos_t
+  use eos_type_module
   use extern_probin_module, only: use_eos_coulomb
   use network, only : nspec, network_species_index, spec_names, network_init
   use fundamental_constants_module, only: Gconst
@@ -20,7 +20,7 @@ program init_1d
 
   implicit none
 
-  integer :: i, n, j
+  integer :: i, n
 
   character(len=128) :: params_file
 
@@ -42,7 +42,7 @@ program init_1d
 
   real (kind=dp_t) :: p_want, drho, dtemp, delx
   
-  real (kind=dp_t) :: g_zone, g_const, M_enclosed, M_shell
+  real (kind=dp_t) :: g_zone, g_const, M_enclosed
   logical :: do_invsq_grav
 
   real (kind=dp_t), parameter :: TOL = 1.e-10
@@ -71,8 +71,6 @@ program init_1d
   integer :: narg
 
   type (eos_t) :: eos_state
-  
-  real (kind=dp_t) :: pi = 3.141592653589793d0
 
   namelist /params/ nx, model_file, xmin, xmax, g_const, &
                     temp_cutoff, do_invsq_grav, &
@@ -169,13 +167,13 @@ program init_1d
            model_hse(i,n) = interpolate(xzn_hse(i), n)
         endif
      enddo
-     
+
      ! make it all thermodynamically consistent
      eos_state%rho = model_hse(i,idens_model)
      eos_state%T = model_hse(i,itemp_model)
      eos_state%xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
 
-     call eos(eos_input_rt, eos_state)
+     call eos(eos_input_rt, eos_state, .false.)
 
      model_hse(i,ipres_model) = eos_state%p
   enddo
@@ -195,14 +193,7 @@ program init_1d
   if (index_base == -1) then
      call bl_error('ERROR: invalid base_height')
   endif
-  
-  !set the index_base to the point where density drops below 1
-  !do i = 2, nx
-  !   if (model_hse(i,idens_model) .lt. 1. .and. model_hse(i-1,idens_model) .ge. 1.) then
-  !      index_base = i
-  !   endif
-  !enddo
-  index_base = nx-1
+
   print *, 'index_base = ', index_base
 
   ! make the base thermodynamics consistent for this base point -- that is
@@ -211,7 +202,7 @@ program init_1d
   eos_state%T = model_hse(index_base,itemp_model)
   eos_state%xn(:) = model_hse(index_base,ispec_model:ispec_model-1+nspec)
 
-  call eos(eos_input_rt, eos_state)
+  call eos(eos_input_rt, eos_state, .false.)
 
   model_hse(index_base,ipres_model) = eos_state%p
   
@@ -230,19 +221,9 @@ program init_1d
   do i = index_base+1, nx
 
      delx = xzn_hse(i) - xzn_hse(i-1)
-     
-     M_enclosed = 0.0d0
+
      ! compute the gravitation acceleration at the lower edge
      if (do_invsq_grav) then
-        do j = 1, i
-         if (j .eq. 1) then
-           M_enclosed = 4.0/3.0 * pi *  xznl_hse(j)**3
-         else
-           M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznl_hse(j)**3 - xznl_hse(j-1)**3) )
-           M_enclosed = M_enclosed + M_shell
-           endif
-        enddo
         g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
      else
         g_zone = g_const
@@ -273,7 +254,7 @@ program init_1d
         eos_state%rho = dens_zone
         eos_state%xn(:) = xn(:)
 
-        call eos(eos_input_rt, eos_state)
+        call eos(eos_input_rt, eos_state, .false.)
               
         entropy = eos_state%s
         pres_zone = eos_state%p
@@ -316,7 +297,7 @@ program init_1d
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state)
+     call eos(eos_input_rt, eos_state, .false.)
 
      pres_zone = eos_state%p
      
@@ -340,17 +321,8 @@ program init_1d
      delx = xzn_hse(i+1) - xzn_hse(i)
 
      ! compute the gravitation acceleration at the upper edge
-     M_enclosed = 0.0d0
      if (do_invsq_grav) then
-        do j = 1, i
-         if (j .eq. 1) then
-           M_enclosed = 4.0/3.0 * pi *  xznl_hse(j)**3
-         else
-           M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznl_hse(j)**3 - xznl_hse(j-1)**3) )
-           M_enclosed = M_enclosed + M_shell
-           endif
-        enddo
+        g_zone = -Gconst*M_enclosed/xznr_hse(i)**2
      else
         g_zone = g_const
      endif
@@ -392,7 +364,7 @@ program init_1d
         eos_state%rho   = dens_zone
         eos_state%xn(:) = xn(:)
 
-        call eos(eos_input_rt, eos_state)
+        call eos(eos_input_rt, eos_state, .false.)
         
         pres_zone = eos_state%p
         
@@ -432,7 +404,7 @@ program init_1d
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state)
+     call eos(eos_input_rt, eos_state, .false.)
 
      pres_zone = eos_state%p
      
@@ -487,7 +459,7 @@ program init_1d
      eos_state%T = model_hse(i,itemp_model)
      eos_state%xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
 
-     call eos(eos_input_rt, eos_state)
+     call eos(eos_input_rt, eos_state, .false.)
 
      model_hse(i,ipres_model) = eos_state%p
 
@@ -499,18 +471,9 @@ program init_1d
 
   do i = 2, nx-1
 
-     M_enclosed = 0.0d0
      ! compute the gravitation acceleration at the lower edge
      if (do_invsq_grav) then
-        do j = 1, i
-         if (j .eq. 1) then
-           M_enclosed = 4.0/3.0 * pi *  xznl_hse(j)**3
-         else
-           M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznl_hse(j)**3 - xznl_hse(j-1)**3) )
-           M_enclosed = M_enclosed + M_shell
-           endif
-        enddo
+        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
      else
         g_zone = g_const
      endif
@@ -520,7 +483,6 @@ program init_1d
 
      if (dpdr /= ZERO .and. model_hse(i+1,idens_model) > low_density_cutoff) then
         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
-        write(lun2,'(g26.16)') abs(dpdr - rhog)/abs(dpdr)
      endif
 
   enddo

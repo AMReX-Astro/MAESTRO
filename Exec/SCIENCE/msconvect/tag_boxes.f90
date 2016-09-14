@@ -13,7 +13,8 @@ module tag_boxes_module
 contains
 
   subroutine tag_boxes(mf,tagboxes,dx,lev,aux_tag_mf)
-    
+
+    use bl_constants_module
     use variables, only: rho_comp
     use probin_module, only: lo_dens_tag, hi_dens_tag, steep_tag
                                  
@@ -44,8 +45,13 @@ contains
        lo =  lwb(bx)
        hi =  upb(bx)
        
-       lo_tag = (1. + (steep_tag ** (lev-1.))) * lo_dens_tag
-       hi_tag = (1. - (steep_tag ** (lev-1.))) * hi_dens_tag
+       if (lev .eq. 1) then 
+        lo_tag = lo_dens_tag
+        hi_tag = hi_dens_tag
+       else 
+	lo_tag = (hi_dens_tag + lo_dens_tag) / TWO - (ONE / (steep_tag * dble(lev)) * (hi_dens_tag - lo_dens_tag))
+	hi_tag = (hi_dens_tag + lo_dens_tag) / TWO + (ONE / (steep_tag * dble(lev)) * (hi_dens_tag - lo_dens_tag))
+       end if
        
        mfp => dataptr(mf, i)
        tp  => dataptr(tagboxes, i)
