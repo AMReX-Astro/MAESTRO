@@ -10,14 +10,12 @@ MKVERBOSE := t
 
 
 # location of top-level MAESTRO directory
-MAESTRO_TOP_DIR = ../../..
-
+MAESTRO_TOP_DIR = $(MAESTRO_HOME)
 
 # EOS and network
 EOS_DIR := helmeos
-
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MICROPHYSICS_DIR)/networks/$(NETWORK_DIR)/aproxCNOsolar.net
+GENERAL_NET_INPUTS := $(MAESTRO_HOME)/Microphysics/networks/$(NETWORK_DIR)/triple_alpha_plus_o.net 
 
 
 

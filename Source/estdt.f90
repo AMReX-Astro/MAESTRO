@@ -4,6 +4,7 @@
 !    2. the force constraint
 !    3. a div{U} constraint
 !    4. a dS/dt constraint
+!    5. a constraint from the brunt vaisaila frequency (only implemented for spherical case)
 !
 ! the differences between firstdt and estdt are as follows:
 !   firstdt does not use the base state velocity w0 since it's supposed to be 0
@@ -34,8 +35,10 @@ contains
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use mk_vel_force_module
+    use make_brunt_freq_module
     use fill_3d_module
-    use probin_module, only: evolve_base_state, small_dt
+    use parallel
+    use probin_module, only: evolve_base_state, small_dt, use_grav_dt
 
     type(ml_layout), intent(inout) :: mla
     type(bc_tower) , intent(in   ) :: the_bc_tower
@@ -59,6 +62,9 @@ contains
     type(multifab) :: w0_force_cart_dummy(mla%nlevel)
     type(multifab) :: normal_dummy(mla%nlevel)
 
+    type(multifab) ::      brunt(mla%nlevel)
+    type(multifab) :: normal(mla%nlevel)
+    
     logical :: is_final_update
 
     real(kind=dp_t), allocatable :: w0_force_dummy(:,:)
@@ -66,6 +72,7 @@ contains
     real(kind=dp_t), pointer::   uop(:,:,:,:)
     real(kind=dp_t), pointer::   sop(:,:,:,:)
     real(kind=dp_t), pointer::    fp(:,:,:,:)
+    real(kind=dp_t), pointer::    bp(:,:,:,:)
     real(kind=dp_t), pointer::   dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
     real(kind=dp_t), pointer::   wxp(:,:,:,:)
@@ -73,11 +80,12 @@ contains
     real(kind=dp_t), pointer::   wzp(:,:,:,:)
     
     integer :: lo(mla%dim),hi(mla%dim),i,n,comp,dm,nlevs
-    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w
+    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w, ng_b
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
+    real(kind=dp_t) :: dt_grav, dt_grav_grid, dt_grav_proc
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
     real(kind=dp_t) :: umax,umax_grid,umax_proc,umax_lev
-    real(kind=dp_t) :: dts_local(2), dts_global(2)
+    real(kind=dp_t) :: dts_local(3), dts_global(3)
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
 
@@ -108,7 +116,12 @@ contains
        ! create a dummy normal also for the vel routine -- this is not
        ! used if we don't add the utilde force
        call multifab_build(normal_dummy(n), mla%la(n), dm, 1)
-
+       
+      if (use_grav_dt) then
+	!create the multifab needed for the brunt vaisaila frequency
+	call multifab_build(brunt(n), mla%la(n), 1, 1)
+	call multifab_build(normal(n),mla%la(n), dm, 1)
+      endif
     end do
 
     if (spherical .eq. 1) then
@@ -140,6 +153,17 @@ contains
        call destroy(normal_dummy(n))
     end do
 
+    if (use_grav_dt) then
+      call make_normal(normal,dx)
+      call make_brunt_freq(brunt,s,rho0,p0,normal,dx)
+      
+      do n=1, nlevs
+	call destroy(normal(n))
+      enddo
+      
+      ng_b  = nghost(brunt(1))
+    endif
+    
     ng_u  = nghost(u(1))
     ng_s  = nghost(s(1))
     ng_f  = nghost(force(1))
@@ -151,6 +175,7 @@ contains
        dt_adv_proc  = 1.d99
        dt_divu_proc = 1.d99
        dt_start     = 1.d99
+       dt_grav_proc = 1.d99
        umax_grid    = 0.d0
        umax_proc    = 0.d0
 
@@ -162,8 +187,11 @@ contains
           dSdtp => dataptr(dSdt(n), i)
           lo =  lwb(get_box(u(n), i))
           hi =  upb(get_box(u(n), i))
-
+          if (use_grav_dt) then
+	    bp    => dataptr(brunt(n), i)
+          endif
           dt_adv_grid   = HUGE(dt_adv_grid)
+          dt_grav_grid   = HUGE(dt_grav_grid)
           dt_divu_grid  = HUGE(dt_divu_grid)
 
           select case (dm)
@@ -186,11 +214,11 @@ contains
                 wyp => dataptr(w0mac(n,2), i)
                 wzp => dataptr(w0mac(n,3), i)
                 call estdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                                   fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
+                                   fp(:,:,:,:), ng_f ,bp(:,:,:,1) ,ng_b , dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, &
                                    w0(1,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
                                    p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
-                                   rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+                                   rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
              else
                 call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
@@ -202,6 +230,7 @@ contains
 
           dt_adv_proc  = min( dt_adv_proc,  dt_adv_grid)
           dt_divu_proc = min(dt_divu_proc, dt_divu_grid)
+          dt_grav_proc = min(dt_grav_proc, dt_grav_grid)
           umax_proc    = max(   umax_proc,    umax_grid)
 
        end do
@@ -209,16 +238,18 @@ contains
        ! This sets dt to be the min of dt_proc over all processors.
        dts_local(1) = dt_adv_proc
        dts_local(2) = dt_divu_proc
+       dts_local(3) = dt_grav_proc
        call parallel_reduce( dts_global,  dts_local, MPI_MIN)
        dt_adv = dts_global(1)
        dt_divu = dts_global(2)
+       dt_grav = dts_global(3)
 
        ! we could pack this in the MIN reduce by looking at 1/umax_proc
        call parallel_reduce(umax_lev,    umax_proc, MPI_MAX)
 
        umax = max(umax,umax_lev)
 
-       dt_lev = min(dt_adv,dt_divu)
+       dt_lev = min(dt_adv,dt_divu,dt_grav)
 
        if (dt_lev .eq. dt_start) then
           if (dm .eq. 1) then 
@@ -230,7 +261,15 @@ contains
        end if
 
        dt = min(dt,dt_lev)
-
+ 
+       if (parallel_IOProcessor()) then
+              print*,''
+              print*,"Call to estdt in level", n
+              print*,"gives dt_adv =",dt_adv
+              print*,"gives dt_divu =",dt_divu
+              print*,"gives dt_grav =",dt_grav
+              print*,""
+       end if
     end do   ! end loop over levels
 
     if (dt < small_dt) then
@@ -241,6 +280,9 @@ contains
 
      do n=1,nlevs
         call destroy(force(n))
+        if (use_grav_dt) then
+	  call destroy(brunt(n))
+	endif
      end do
 
      if (spherical .eq. 1) then
@@ -626,19 +668,21 @@ contains
     
   end subroutine estdt_3d_cart
   
-  subroutine estdt_3d_sphr(u, ng_u, s, ng_s, force, ng_f, &
+  subroutine estdt_3d_sphr(u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
                            w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, &
-                           lo, hi, dx, rho_min, dt_adv, dt_divu, umax, cfl)
+                           lo, hi, dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
+    use probin_module, only: use_grav_dt
     use fill_3d_module
     
-    integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_w
+    integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_w,ng_b
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)  
+    real (kind = dp_t), intent(in   ) ::  brunt(lo(1)-ng_b :,lo(2)-ng_b :,lo(3)-ng_b :)  
     real (kind = dp_t), intent(in   ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::   dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:,lo(3)-ng_dS:)
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
@@ -647,13 +691,13 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, umax
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
     
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
 
     real (kind = dp_t) :: gp0(0:nr_fine)
 
-    real (kind = dp_t) :: spdx, spdy, spdz, spdr, gp_dot_u, gamma1bar_p_avg
+    real (kind = dp_t) :: spdx, spdy, spdz, spdr, gp_dot_u, gamma1bar_p_avg,bm
     real (kind = dp_t) :: fx, fy, fz, eps, denom, a, b, c
     integer            :: i,j,k,r
 
@@ -666,6 +710,7 @@ contains
     spdz = ZERO 
     spdr = ZERO
     umax = ZERO
+    
     !
     ! Limit dt based on velocity terms
     !
@@ -777,6 +822,24 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
+    if (use_grav_dt) then
+      !
+      ! Limit dt based on brunt vaisaila frequency
+      !
+      
+      bm = ZERO
+      
+      !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdx)
+      do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+	bm = max(bm ,abs(brunt(i,j,k)))
+      enddo; enddo; enddo
+      !$OMP END PARALLEL DO
+      
+      
+      if (bm > eps) dt_grav = min(dt_grav, 1/sqrt(bm))
+      dt_grav = dt_grav * cfl
+    endif
+    
     deallocate(gp0_cart)
 
   end subroutine estdt_3d_sphr

@@ -82,6 +82,8 @@ use_soundspeed_firstdt              logical            .false.
 # Use the divu constraint when computing the first time step.
 use_divu_firstdt                    logical            .false.
 
+# Use an additional time constraint due to the brunt-vaisala frequency (gravity waves)
+use_grav_dt                         logical            .false.
 
 #-----------------------------------------------------------------------------
 # category: grid
@@ -320,6 +322,15 @@ plot_processors                     logical            .false.
 
 # plot pi * div(U) -- this is a measure of conservation of energy
 plot_pidivu                         logical            .false.
+
+# plot the brunt-vasaila frequency
+plot_brunt_freq                     logical            .false.
+
+# plot the gravitational acceleration
+plot_grav                           logical            .false.
+
+# plot the pressure scale height
+plot_hp                             logical            .false.
 
 
 # names of specific variables to store in the mini plotfile

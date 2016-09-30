@@ -45,7 +45,7 @@ program init_1d
   integer :: lun1, lun2
 
   real (kind=dp_t) :: xmin, xmax, dCoord, xmin_smooth, xmax_smooth
-  real (kind=dp_t), allocatable :: brunt(:) 
+  real (kind=dp_t), allocatable :: brunt(:), s(:)
 
   real (kind=dp_t) :: sumx, sumrho
   real (kind=dp_t), DIMENSION(nspec) :: sumxn
@@ -53,8 +53,14 @@ program init_1d
   integer :: comp
 
   real (kind=dp_t) :: dens_zone, temp_zone, pres_zone, entropy, s_zone
-  real (kind=dp_t) :: dpd, dpdt, dsdt, dsdrho, dtdr
-
+  real (kind=dp_t) :: dpd, dpdt, dsdt, dsdrho, dtdr, gam, Hp, dpda, adiab
+  real (kind=dp_t) :: prev_mu, prev_p, prev_temp, prev_dtdr, prev_adiab
+  real (kind=dp_t) :: grad_temp, grad_ad, grad_mu
+  real (kind=dp_t) :: chi_rho, chi_temp, chi_mu    
+  
+  
+  
+  
   real (kind=dp_t) :: p_want, drho, dtemp, delx, s_want
   
   real (kind=dp_t) :: g_zone, g_const, M_enclosed, M_shell
@@ -71,7 +77,7 @@ program init_1d
   real (kind=dp_t) :: low_density_cutoff, temp_cutoff, smallx, max_T
   real (kind=dp_t) :: model_shift
 
-  integer :: index_base, conv_base, min_base, max_base, cent_base
+  integer :: index_base, conv_base, min_base, max_base, cent_base, smoothness, csmooth
 
   character (len=256) :: outfile, outfile2
   character (len=8) :: num
@@ -92,7 +98,7 @@ program init_1d
   namelist /params/ nx, model_file, xmin, xmax, g_const, &
                     temp_cutoff, do_invsq_grav, &
                     low_density_cutoff, model_prefix, model_shift, smooth, &
-                    xmin_smooth, xmax_smooth
+                    xmin_smooth, xmax_smooth, smoothness
 
   ! determine if we specified a runtime parameters file or use the default      
   narg = command_argument_count()
@@ -126,6 +132,7 @@ program init_1d
 
   smallx = 1.d-10
   smooth = .false.
+  smoothness = 4
 
   ! this comes in via extern_probin_module -- override the default
   ! here if we want
@@ -175,7 +182,7 @@ program init_1d
   allocate(xznr_hse(nx))
   allocate(model_hse(nx,nvars_model))
   allocate(brunt(nx))
-
+  allocate(s(nx))
 
 
   ! compute the coordinates of the new gridded function
@@ -250,6 +257,22 @@ program init_1d
   !compute the brunt-vaisala frequency at each zone
   brunt(1) = 0
   
+  dens_zone = model_hse(1,idens_model)
+  temp_zone = max(temp_cutoff, model_hse(1,itemp_model))
+  xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
+  
+  eos_state%T = temp_zone
+  eos_state%rho = dens_zone
+  eos_state%xn(:) = xn(:)
+    
+  call eos(eos_input_rt, eos_state)
+  
+  prev_p = eos_state%p
+  prev_mu = eos_state%abar
+  prev_temp = temp_zone
+  prev_dtdr = huge(0.0)
+  prev_adiab = huge(0.0)
+  
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
@@ -275,10 +298,33 @@ program init_1d
     
     call eos(eos_input_rt, eos_state)
     
-     
-     
-    dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
-    brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
+    
+    dpd = eos_state%dpdr
+    dpdt = eos_state%dpdt
+    dpda = eos_state%dpda
+    gam = eos_state%gam1
+    pres_zone = eos_state%p
+    chi_rho = dens_zone * dpd / pres_zone
+    chi_temp = temp_zone * dpdt / pres_zone
+    chi_mu = eos_state%abar * dpda/ pres_zone
+    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
+    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_ad = (gam - chi_rho)/(chi_temp*gam)
+    
+    dtdr = (temp_zone-prev_temp) / delx 
+    adiab = (temp_zone-prev_temp) / delx - grad_temp
+    s(i) = - prev_dtdr / dtdr * (adiab/prev_adiab)
+    brunt(i) = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
+!     dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
+!     brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
+    
+    prev_adiab = adiab
+    prev_dtdr = dtdr
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+
   enddo
   
   
@@ -288,7 +334,7 @@ program init_1d
 
 
   write (lun1,2002), 'Initial interpolated profile: '
-  write (lun1,2001), 'radius','entropy','pressure','density','X(H1)', 'N^2'
+  write (lun1,2001), 'radius','entropy','pressure','density','X(H1)', 'N^2', 'Stiffness'
   do i = 1, nx
     dens_zone = model_hse(i,idens_model)
     temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
@@ -300,7 +346,7 @@ program init_1d
     
     call eos(eos_input_rt, eos_state)
     
-    write (lun1,2000), xzn_hse(i), eos_state%s, eos_state%p, eos_state%rho, eos_state%xn(1), brunt(i)
+    write (lun1,2000), xzn_hse(i), eos_state%s, eos_state%p, eos_state%rho, eos_state%xn(1), brunt(i), s(i)
   enddo
 
 
@@ -453,6 +499,7 @@ program init_1d
     enddo 
   
   
+  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
 ! now smooth the density and composition profile by a moving average between xmin_smooth and xmax_smooth
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -491,29 +538,42 @@ program init_1d
     print *, '' 
     
     
-    do i = min_base+4, cent_base
-      sumrho = sum(model_hse(i-4:i+4,idens_model))
-      do j = 1, nspec-1
-	sumxn(j) = sum(model_hse(i-4:i+4,ispec_model-1+j))
-      enddo
+    do i = min_base+1, cent_base
+      if ((i-min_base)*2 - 1 .lt. smoothness) then
+        csmooth = (i-min_base)*2 -1
+      else
+        csmooth = smoothness
+      endif
 
-      model_hse(i,idens_model) = sumrho / 9.0
+      sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
       do j = 1, nspec-1
-	model_hse(i,ispec_model-1+j) = sumxn(j) / 9.0
-      enddo     
+	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
+      enddo
+      
+      model_hse(i,idens_model) = sumrho / DBLE(csmooth*2+1)
+      do j = 1, nspec-1
+	model_hse(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
+      enddo    
+
     enddo
 
-    do i = max_base-4, cent_base, -1
-      sumrho = sum(model_hse(i-4:i+4,idens_model))
+    do i = max_base-1, cent_base, -1
+      if ((max_base-i )*2 - 1 .lt. smoothness) then
+	csmooth = (max_base-i )*2 -1
+      else
+        csmooth = smoothness
+      endif
+      
+      sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
       do j = 1, nspec-1
-	sumxn(j) = sum(model_hse(i-4:i+4,ispec_model-1+j))
+	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
       enddo
       
       
       
-      model_hse(i,idens_model) = sumrho / 9.0
+      model_hse(i,idens_model) = sumrho / DBLE(csmooth*2+1)
       do j = 1, nspec-1
-	model_hse(i,ispec_model-1+j) = sumxn(j) / 9.0
+	model_hse(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
       enddo   
     enddo  
   endif
@@ -521,6 +581,22 @@ program init_1d
   
   !compute the brunt-vaisala frequency at each zone
   brunt(1) = 0
+  
+  dens_zone = model_hse(1,idens_model)
+  temp_zone = max(temp_cutoff, model_hse(1,itemp_model))
+  xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
+  
+  eos_state%T = temp_zone
+  eos_state%rho = dens_zone
+  eos_state%xn(:) = xn(:)
+    
+  call eos(eos_input_rt, eos_state)
+  
+  prev_p = eos_state%p
+  prev_mu = eos_state%abar
+  prev_temp = temp_zone
+  prev_dtdr = huge(0.0)
+  prev_adiab = huge(0.0)
   
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
@@ -547,10 +623,34 @@ program init_1d
     
     call eos(eos_input_rt, eos_state)
     
-     
-     
-    dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
-    brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
+    
+    dpd = eos_state%dpdr
+    dpdt = eos_state%dpdt
+    dpda = eos_state%dpda
+    gam = eos_state%gam1
+    pres_zone = eos_state%p
+    chi_rho = dens_zone * dpd / pres_zone
+    chi_temp = temp_zone * dpdt / pres_zone
+    chi_mu = eos_state%abar * dpda/ pres_zone
+    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
+    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_ad = (gam - chi_rho)/(chi_temp*gam)
+    
+    dtdr = (temp_zone-prev_temp) / delx 
+    adiab = (temp_zone-prev_temp) / delx - grad_temp
+    s(i) = - prev_dtdr / dtdr * (adiab/prev_adiab)
+    brunt(i) = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
+!     dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
+!     brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
+    
+    prev_adiab = adiab
+    prev_dtdr = dtdr
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+
+
   enddo
   
   !print the newly smoothed profiles into a new file 
@@ -823,7 +923,7 @@ program init_1d
      write (lun1, 1003) "# ", spec_names(n)
   enddo
 
-1000 format (1x, 100(g26.16, 1x))
+1000 format (1x, 100(g36.26, 1x))
 1001 format (a, i5)
 1002 format (a)
 1003 format (a,a)
@@ -836,9 +936,84 @@ program init_1d
 
 
   write (lun2,1001), "# npts = ", nx
-  write (lun2,1001), "# num of variables = ", 2
+  write (lun2,1001), "# num of variables = ", 3
   write (lun2,1002), "# entropy"
   write (lun2,1002), "# c_s"
+  write (lun2,1002), "# N^2"
+  
+    !compute the brunt-vaisala frequency at each zone
+  brunt(1) = 0
+  
+  dens_zone = model_hse(1,idens_model)
+  temp_zone = max(temp_cutoff, model_hse(1,itemp_model))
+  xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
+  
+  eos_state%T = temp_zone
+  eos_state%rho = dens_zone
+  eos_state%xn(:) = xn(:)
+    
+  call eos(eos_input_rt, eos_state)
+  
+  prev_p = eos_state%p
+  prev_mu = eos_state%abar
+  prev_temp = temp_zone
+  prev_dtdr = huge(0.0)
+  prev_adiab = huge(0.0)
+  
+  do i = 2,nx 
+     delx = xzn_hse(i) - xzn_hse(i-1)
+     ! compute the gravitation acceleration at the lower edge
+     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
+     if (do_invsq_grav) then
+        do j = 1, i-1
+           M_shell = model_hse(j,idens_model) * & 
+               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+           M_enclosed = M_enclosed + M_shell
+        enddo
+        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
+     else
+        g_zone = g_const
+     endif
+
+    dens_zone = model_hse(i,idens_model)
+    temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+    xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
+    
+    eos_state%T = temp_zone
+    eos_state%rho = dens_zone
+    eos_state%xn(:) = xn(:)
+    
+    call eos(eos_input_rt, eos_state)
+    
+    
+    dpd = eos_state%dpdr
+    dpdt = eos_state%dpdt
+    dpda = eos_state%dpda
+    gam = eos_state%gam1
+    pres_zone = eos_state%p
+    chi_rho = dens_zone * dpd / pres_zone
+    chi_temp = temp_zone * dpdt / pres_zone
+    chi_mu = eos_state%abar * dpda/ pres_zone
+    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
+    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_ad = (gam - chi_rho)/(chi_temp*gam)
+    
+    dtdr = (temp_zone-prev_temp) / delx 
+    adiab = (temp_zone-prev_temp) / delx - grad_temp
+    s(i) = - prev_dtdr / dtdr * (adiab/prev_adiab)
+    brunt(i) = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
+!     dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
+!     brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
+    
+    prev_adiab = adiab
+    prev_dtdr = dtdr
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+
+
+  enddo
   
   ! test: bulk EOS call -- Maestro will do this once we are mapped, so make
   ! sure that we are in HSE with updated thermodynamics
@@ -851,8 +1026,9 @@ program init_1d
 
      model_hse(i,ipres_model) = eos_state%p
 
-     write (lun2,1000), xzn_hse(i), eos_state%s, eos_state%cs
+     write (lun2,1000), xzn_hse(i), eos_state%s, eos_state%cs, brunt(i)
   enddo
+  
   
   ! compute the maximum HSE error
   max_hse_error = -1.d30

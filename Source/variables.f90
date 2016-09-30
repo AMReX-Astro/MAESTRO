@@ -62,6 +62,10 @@ module variables
      integer :: icomp_part = -1
      integer :: icomp_proc = -1
      integer :: icomp_pidivu = -1
+     integer :: icomp_brunt = -1
+     integer :: icomp_hp = -1
+     integer :: icomp_grav = -1
+     
      integer :: n_plot_comps = 0
 
      integer :: n_species = 0
@@ -128,9 +132,9 @@ contains
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base, use_thermal_diffusion, &
-         plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, &
+         plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, plot_brunt_freq, &
          use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, dm_in, use_particles, &
-         plot_processors, plot_pidivu
+         plot_processors, plot_pidivu, plot_hp, plot_grav
     use geometry, only: spherical
 
     type(plot_t), intent(inout) :: p
@@ -230,6 +234,18 @@ contains
        p%icomp_ad_excess = p%next_index(1)
     endif
 
+    if (plot_brunt_freq) then
+       p%icomp_brunt = p%next_index(1)
+    endif
+
+    if (plot_grav) then
+       p%icomp_grav = p%next_index(1)
+    endif
+    
+    if (plot_hp) then
+       p%icomp_hp = p%next_index(1)
+    endif
+    
     if (use_particles) then
        p%icomp_part = p%next_index(1)
     endif

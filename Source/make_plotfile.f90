@@ -49,7 +49,7 @@ contains
                              plot_Hext, plot_eta, plot_ad_excess, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
                              plot_sponge_fdamp, dm_in, use_particles, &
-                             plot_processors, plot_pidivu
+                             plot_processors, plot_pidivu, plot_brunt_freq
     use geometry, only: spherical
 
     type(plot_t), intent(inout) :: p
@@ -165,6 +165,10 @@ contains
     if (p%icomp_proc > 0) p%names(p%icomp_proc) = "processor_number"
 
     if (p%icomp_pidivu > 0) p%names(p%icomp_pidivu) = "pi_divu"
+    
+    if (p%icomp_brunt > 0) p%names(p%icomp_brunt) = "N^2"
+    if (p%icomp_grav > 0) p%names(p%icomp_grav) = "gravity"
+    if (p%icomp_hp > 0) p%names(p%icomp_hp) = "pressure scale height"
 
   end subroutine get_plot_names
 
@@ -188,7 +192,7 @@ contains
                              evolve_base_state, prob_lo, prob_hi, &
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, &
                              plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles, &
-                             plot_processors, plot_pidivu, use_alt_energy_fix
+                             plot_processors, plot_pidivu, plot_brunt_freq, use_alt_energy_fix
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
          r_start_coord, r_end_coord
     use average_module
@@ -578,7 +582,26 @@ contains
        enddo
     endif
 
-
+    ! BRUNT VAISAILA FREQUENCY
+    if (p%icomp_brunt > 0) then
+      do n=1, nlevs
+         call make_brunt_freq(plotdata(n),p%icomp_brunt,s(n),rho0,p0,normal(n),dx)
+      enddo
+    endif
+    
+    ! Gravity
+    if (p%icomp_grav > 0) then
+     do n=1, nlevs
+      call make_grav_plot(plotdata(n),p%icomp_grav,s(n),rho0,dx)
+     enddo
+    endif
+    ! Pressure Scale Height
+    if (p%icomp_hp > 0) then
+     do n=1, nlevs
+      call make_hp_plot(plotdata(n),p%icomp_hp,s(n),p0,dx)
+     enddo
+    endif    
+    
     ! PARTICLES
     if (p%icomp_part > 0) then
        do n = 1, nlevs
