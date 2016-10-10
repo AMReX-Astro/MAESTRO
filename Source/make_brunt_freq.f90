@@ -62,7 +62,8 @@ module make_brunt_freq_module
 	  case (2)
 	      call make_brunt_2d(cp(:,:,1,1), ng_c, &
 				    sp(:,:,1,:), ng_s, &
-				    lo, hi)
+				    grav(n,:), hp(n,:), &
+				    lo, hi,dx(n,:))
 	  case (3)
 	      if (spherical .eq. 1) then
 		np => dataptr(normal(n), i)       
@@ -95,7 +96,7 @@ module make_brunt_freq_module
 
   end subroutine make_brunt_1d
 
-  subroutine make_brunt_2d(brunt, ng_ad, state, ng_s, lo, hi)
+  subroutine make_brunt_2d(brunt, ng_ad, state, ng_s, grav, hp, lo, hi,dx)
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
@@ -106,7 +107,100 @@ module make_brunt_freq_module
     integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
     real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:)
     real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) ::   hp(0:)
+    real(kind=dp_t), intent(in   ) ::   grav(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: abar(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_rho(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_t(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_mu(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: nabla, nabla_mu
+    real(kind=dp_t) :: dp, dt, dmu
 
+
+    
+    integer :: i, j, c
+
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,eos_state,pt_index)    
+      do j = lo(2), hi(2)
+	  do i = lo(1), hi(1)
+
+	    eos_state%rho   = state(i,j,rho_comp)
+	    eos_state%T     = state(i,j,temp_comp)
+	    eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+	    
+	    pt_index(:) = (/i, j, -1/) 
+	    
+	    call eos(eos_input_rt, eos_state, pt_index)
+      
+	    pres(i,j) = eos_state%p
+	    abar(i,j) = eos_state%abar
+
+	    chi_rho(i,j) = eos_state%rho * eos_state%dpdr / eos_state%p
+	    chi_t(i,j) = eos_state%T * eos_state%dpdt / eos_state%p
+	    chi_mu(i,j) = eos_state%abar * eos_state%dpdA / eos_state%p
+	    nabla_ad(i,j) = (eos_state%gam1 - chi_rho(i,j)) / (chi_t(i,j) * eos_state%gam1)
+
+	  enddo
+      enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,dt,dp,nabla,nabla_mu,dmu)
+
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (state(i,j,rho_comp) <= base_cutoff_density) then
+                nabla = ZERO
+                nabla_mu = ZERO
+             else
+                ! compute gradient
+
+                ! forward difference
+                if (j == lo(2)) then
+                   dt = state(i,j+1,temp_comp) - state(i,j,temp_comp)
+                   dp = pres(i,j+1) - pres(i,j)
+                   dmu = abar(i,j+1) - abar(i,j)
+                  ! backward difference
+                else if (j == hi(2)) then
+                   dt = state(i,j,temp_comp) - state(i,j-1,temp_comp)
+                   dp = pres(i,j) - pres(i,j-1)
+		   dmu = abar(i,j) - abar(i,j-1)
+		  ! centered difference
+                else
+                   dt = state(i,j+1,temp_comp) - state(i,j-1,temp_comp)
+                   dp = pres(i,j+1) - pres(i,j-1)
+		   dmu = abar(i,j+1) - abar(i,j-1)
+                endif
+
+
+                ! prevent Inf
+                if (dp == ZERO) then
+                   nabla = -huge(ZERO)
+                   nabla_mu = -huge(ZERO)
+                else
+                   nabla = pres(i,j)*dt / (dp*state(i,j,temp_comp))
+                   nabla_mu = pres(i,j)*dmu / (dp*abar(i,j))
+                endif
+             endif
+             if (hp(j) == ZERO) then
+              brunt(i,j) = -huge(ZERO)
+             else 
+	      brunt(i,j) = - grav(j)*chi_t(i,j) / (chi_rho(i,j) * hp(j)) * (nabla_ad(i,j) - nabla - nabla_mu * chi_mu(i,j)/chi_t(i,j))
+	     endif
+          enddo
+       enddo
+    !$OMP END PARALLEL DO
+    
+    
+    
   end subroutine make_brunt_2d
 
   subroutine make_brunt_3d(brunt, ng_ad, state, ng_s, lo, hi)
