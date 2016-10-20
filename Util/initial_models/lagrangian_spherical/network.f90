@@ -34,14 +34,14 @@ module network
 
   implicit none
 
-  integer, parameter :: nspec = 4
+  integer, parameter :: nspec = 3
   integer, parameter :: naux = 0
 
   character (len=16), save :: spec_names(nspec) 
   character (len= 5), save :: short_spec_names(nspec)
   character (len= 5), save :: short_aux_names(naux)
 
-  character (len=*), parameter :: network_name = "general-triple_alpha_plus_o.net"
+  character (len=*), parameter :: network_name = "general-aproxCNOsolar.net"
 
   real(kind=dp_t), save :: aion(nspec), zion(nspec)
 
@@ -51,25 +51,21 @@ contains
   
   subroutine network_init()
 
-    spec_names(1) = "helium-4"
-    spec_names(2) = "carbon-12"
-    spec_names(3) = "oxygen-16"
-    spec_names(4) = "iron-56"
+    spec_names(1) = "hydrogen-1"
+    spec_names(2) = "helium-4"
+    spec_names(3) = "cno"
 
-    short_spec_names(1) = "He4"
-    short_spec_names(2) = "C12"
-    short_spec_names(3) = "O16"
-    short_spec_names(4) = "Fe56"
+    short_spec_names(1) = "H1"
+    short_spec_names(2) = "He4"
+    short_spec_names(3) = "cno"
 
-    aion(1) = 4.0
-    aion(2) = 12.0
-    aion(3) = 16.0
-    aion(4) = 56.0
+    aion(1) = 1.0
+    aion(2) = 4.0
+    aion(3) = 14.87
 
-    zion(1) = 2.0
-    zion(2) = 6.0
-    zion(3) = 8.0
-    zion(4) = 26.0
+    zion(1) = 1.0
+    zion(2) = 2.0
+    zion(3) = 7.43
 
     network_initialized = .true.
 

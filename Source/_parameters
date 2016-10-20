@@ -28,6 +28,9 @@ barrier_timers                      logical            .false.
 # category: problem initialization
 #-----------------------------------------------------------------------------
 
+# do we have a binary input file?
+use_binary_input                   logical             .false.
+
 # input model file
 model_file                          character          "model.hse"
 
@@ -36,6 +39,7 @@ perturb_model                       logical            .false.
 
 # print out HSE diagnostics as a function of r for the initial model
 print_init_hse_diag                 logical            .false.
+
 
 
 #-----------------------------------------------------------------------------

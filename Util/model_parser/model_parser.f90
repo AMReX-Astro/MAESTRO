@@ -57,6 +57,7 @@ contains
 
     use bl_constants_module
     use bl_error_module
+    use probin_module, only: use_binary_input  
 
     character(len=*), intent(in   ) :: model_file
 
@@ -65,7 +66,7 @@ contains
     ! local variables
     integer :: nvars_model_file
     integer :: ierr
-
+    integer :: varname_length_binary
     integer :: i, j, comp
 
     real(kind=dp_t) :: grav_const, base_cutoff_density
@@ -73,6 +74,7 @@ contains
     double precision :: rhog, dpdr, max_hse_error
 
     real(kind=dp_t), allocatable :: vars_stored(:)
+    real(kind=dp_t), allocatable :: vars_stored_binary(:,:)
     character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
     logical :: found_model, found_dens, found_temp, found_pres
     logical :: found_spec(nspec)
@@ -91,38 +93,63 @@ contains
        base_cutoff_density = 0.0_dp_t
     endif
        
-
+    
     ! open the model file
-    open(99,file=trim(model_file),status='old',iostat=ierr)
-
+    if (use_binary_input) then
+      open(99, file=trim(model_file),status='old',iostat=ierr,form="unformatted",access="stream")
+    else
+      open(99,file=trim(model_file),status='old',iostat=ierr)
+    endif
     if (ierr .ne. 0) then
        print *,'Couldnt open model_file: ',model_file
        call bl_error('Aborting now -- please supply model_file')
     end if
+    
+    if (use_binary_input) then
+        read(99) npts_model
+	read(99) nvars_model_file
+    else
+      ! the first line has the number of points in the model
+      read (99, '(a256)') header_line
+      ipos = index(header_line, '=') + 1
+      read (header_line(ipos:),*) npts_model
 
-    ! the first line has the number of points in the model
-    read (99, '(a256)') header_line
-    ipos = index(header_line, '=') + 1
-    read (header_line(ipos:),*) npts_model
-
-    ! now read in the number of variables
-    read (99, '(a256)') header_line
-    ipos = index(header_line, '=') + 1
-    read (header_line(ipos:),*) nvars_model_file
-
-    allocate (vars_stored(nvars_model_file))
-    allocate (varnames_stored(nvars_model_file))
-
-    ! now read in the names of the variables
-    do i = 1, nvars_model_file
-       read (99, '(a256)') header_line
-       ipos = index(header_line, '#') + 1
-       varnames_stored(i) = trim(adjustl(header_line(ipos:)))
-    enddo
-
-    ! allocate storage for the model data
+      ! now read in the number of variables
+      read (99, '(a256)') header_line
+      ipos = index(header_line, '=') + 1
+      read (header_line(ipos:),*) nvars_model_file
+    endif
+    
+    if (use_binary_input) then
+      allocate (vars_stored_binary(npts_model,nvars_model_file))
+      allocate (varnames_stored(nvars_model_file))
+      !allocate storage for model_r 
+      allocate (model_r(npts_model))
+      read(99) model_r
+      read(99) vars_stored_binary
+      read(99) varname_length_binary
+      
+      if (varname_length_binary .ne. MAX_VARNAME_LENGTH) then 
+	call bl_error ('string size in binary files does not match expected size')
+      endif
+      read(99) varnames_stored
+    else
+      allocate (vars_stored(nvars_model_file))
+      allocate (varnames_stored(nvars_model_file))
+      !allocate storage for model_r
+      allocate (model_r(npts_model))
+      ! now read in the names of the variables
+      do i = 1, nvars_model_file
+	read (99, '(a256)') header_line
+	ipos = index(header_line, '#') + 1
+	varnames_stored(i) = trim(adjustl(header_line(ipos:)))
+      enddo
+    endif
+    
+    
+    ! allocate storage for the remaining model data
     allocate (model_state(npts_model, nvars_model))
-    allocate (model_r(npts_model))
+
 
 887 format(78('-'))
 889 format(a60)
@@ -134,98 +161,175 @@ contains
        write (*,*)   npts_model, 'points found in the initial model file'
        write (*,*)   nvars_model_file, ' variables found in the initial model file'
     endif
+    
+    if (use_binary_input) then
+      ! ensure that the data is put to the right position in model_state and 
+      ! check wether all variables that MASETRO cares about are there
+      do j = 1,nvars_model_file
+        found_dens = .false.
+	found_temp = .false.
+	found_pres = .false.
+	found_spec(:) = .false.
+	
+	if (varnames_stored(j) == "density") then
+	      model_state(:,idens_model) = vars_stored_binary(:,j)
+	      found_model = .true.
+	      found_dens  = .true.
+
+	    else if (varnames_stored(j) == "temperature") then
+	      model_state(:,itemp_model) = vars_stored_binary(:,j)
+	      found_model = .true.
+	      found_temp  = .true.
+
+	    else if (varnames_stored(j) == "pressure") then
+	      model_state(:,ipres_model) = vars_stored_binary(:,j)
+	      found_model = .true.
+	      found_pres  = .true.
+
+	    else
+	      do comp = 1, nspec
+		  if (varnames_stored(j) == spec_names(comp) .or. &
+		      varnames_stored(j) == short_spec_names(comp)) then
+		    model_state(:,ispec_model-1+comp) = vars_stored_binary(:,j)
+		    found_model = .true.
+		    found_spec(comp) = .true.
+		    exit
+		  endif
+	      enddo
+	    endif
+
+	    ! is the current variable from the model file one that we
+	    ! care about?
+	    if (.NOT. found_model .and. i == 1) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: variable not found: ' // &
+		      trim(varnames_stored(j)))
+	      end if
+	    endif
+      enddo
+      
+      ! were all the variables we care about provided?
+	if (i == 1) then
+	    if (.not. found_dens) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: density not provided in inputs file')
+	      end if
+	    endif
+
+	    if (.not. found_temp) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: temperature not provided in inputs file')
+	      end if
+	    endif
+
+	    if (.not. found_pres) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: pressure not provided in inputs file')
+	      end if
+	    endif
+
+	    do comp = 1, nspec
+	      if (.not. found_spec(comp)) then
+		  if ( parallel_IOProcessor() ) then
+		    call log('WARNING: ' // trim(spec_names(comp)) // &
+			  ' not provided in inputs file')
+		  end if
+	      endif
+	    enddo
+	endif
+      
+    else ! Use a textfile as input
+      ! start reading in the data
+      do i = 1, npts_model
+	read(99,*) model_r(i), (vars_stored(j), j = 1, nvars_model_file)
+	
+	model_state(i,:) = ZERO
+
+	! make sure that each of the variables that MAESTRO cares about
+	! are found
+	found_dens = .false.
+	found_temp = .false.
+	found_pres = .false.
+	found_spec(:) = .false.
+
+	do j = 1,nvars_model_file
+
+	    ! keep track of whether the current variable from the model
+	    ! file is one that MAESTRO cares about
+	    found_model = .false.
 
 
-    ! start reading in the data
-    do i = 1, npts_model
-       read(99,*) model_r(i), (vars_stored(j), j = 1, nvars_model_file)
+	    if (varnames_stored(j) == "density") then
+	      model_state(i,idens_model) = vars_stored(j)
+	      found_model = .true.
+	      found_dens  = .true.
 
-       model_state(i,:) = ZERO
+	    else if (varnames_stored(j) == "temperature") then
+	      model_state(i,itemp_model) = vars_stored(j)
+	      found_model = .true.
+	      found_temp  = .true.
 
-       ! make sure that each of the variables that MAESTRO cares about
-       ! are found
-       found_dens = .false.
-       found_temp = .false.
-       found_pres = .false.
-       found_spec(:) = .false.
+	    else if (varnames_stored(j) == "pressure") then
+	      model_state(i,ipres_model) = vars_stored(j)
+	      found_model = .true.
+	      found_pres  = .true.
 
-       do j = 1,nvars_model_file
+	    else
+	      do comp = 1, nspec
+		  if (varnames_stored(j) == spec_names(comp) .or. &
+		      varnames_stored(j) == short_spec_names(comp)) then
+		    model_state(i,ispec_model-1+comp) = vars_stored(j)
+		    found_model = .true.
+		    found_spec(comp) = .true.
+		    exit
+		  endif
+	      enddo
+	    endif
 
-          ! keep track of whether the current variable from the model
-          ! file is one that MAESTRO cares about
-          found_model = .false.
+	    ! is the current variable from the model file one that we
+	    ! care about?
+	    if (.NOT. found_model .and. i == 1) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: variable not found: ' // &
+		      trim(varnames_stored(j)))
+	      end if
+	    endif
 
+	enddo   ! end loop over nvars_model_file
 
-          if (varnames_stored(j) == "density") then
-             model_state(i,idens_model) = vars_stored(j)
-             found_model = .true.
-             found_dens  = .true.
+	! were all the variables we care about provided?
+	if (i == 1) then
+	    if (.not. found_dens) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: density not provided in inputs file')
+	      end if
+	    endif
 
-          else if (varnames_stored(j) == "temperature") then
-             model_state(i,itemp_model) = vars_stored(j)
-             found_model = .true.
-             found_temp  = .true.
+	    if (.not. found_temp) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: temperature not provided in inputs file')
+	      end if
+	    endif
 
-          else if (varnames_stored(j) == "pressure") then
-             model_state(i,ipres_model) = vars_stored(j)
-             found_model = .true.
-             found_pres  = .true.
+	    if (.not. found_pres) then
+	      if ( parallel_IOProcessor() ) then
+		  call log('WARNING: pressure not provided in inputs file')
+	      end if
+	    endif
 
-          else
-             do comp = 1, nspec
-                if (varnames_stored(j) == spec_names(comp) .or. &
-                    varnames_stored(j) == short_spec_names(comp)) then
-                   model_state(i,ispec_model-1+comp) = vars_stored(j)
-                   found_model = .true.
-                   found_spec(comp) = .true.
-                   exit
-                endif
-             enddo
-          endif
+	    do comp = 1, nspec
+	      if (.not. found_spec(comp)) then
+		  if ( parallel_IOProcessor() ) then
+		    call log('WARNING: ' // trim(spec_names(comp)) // &
+			  ' not provided in inputs file')
+		  end if
+	      endif
+	    enddo
+	endif
 
-          ! is the current variable from the model file one that we
-          ! care about?
-          if (.NOT. found_model .and. i == 1) then
-             if ( parallel_IOProcessor() ) then
-                call log('WARNING: variable not found: ' // &
-                     trim(varnames_stored(j)))
-             end if
-          endif
-
-       enddo   ! end loop over nvars_model_file
-
-       ! were all the variables we care about provided?
-       if (i == 1) then
-          if (.not. found_dens) then
-             if ( parallel_IOProcessor() ) then
-                call log('WARNING: density not provided in inputs file')
-             end if
-          endif
-
-          if (.not. found_temp) then
-             if ( parallel_IOProcessor() ) then
-                call log('WARNING: temperature not provided in inputs file')
-             end if
-          endif
-
-          if (.not. found_pres) then
-             if ( parallel_IOProcessor() ) then
-                call log('WARNING: pressure not provided in inputs file')
-             end if
-          endif
-
-          do comp = 1, nspec
-             if (.not. found_spec(comp)) then
-                if ( parallel_IOProcessor() ) then
-                   call log('WARNING: ' // trim(spec_names(comp)) // &
-                        ' not provided in inputs file')
-                end if
-             endif
-          enddo
-       endif
-
-    end do   ! end loop over npts_model
-
+      end do   ! end loop over npts_model
+    endif
+    
     model_initialized = .true.
 
     !max_hse_error = -1.e33
@@ -246,8 +350,13 @@ contains
     endif
     
     close(99)
-
-    deallocate(vars_stored,varnames_stored)
+    
+    if (use_binary_input) then
+      deallocate(vars_stored_binary)
+    else
+      deallocate(vars_stored)
+    endif
+    deallocate(varnames_stored)
 
   end subroutine read_model_file
 

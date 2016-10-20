@@ -29,7 +29,7 @@ program init_1d
 
   implicit none
 
-  integer :: i, n, j
+  integer :: i, n, j, r
 
   character(len=128) :: params_file
 
@@ -40,10 +40,12 @@ program init_1d
 
   real :: A
 
-  integer ::nx
-
-  integer :: lun1, lun2
-
+  integer, parameter :: var_names_size=80
+  
+  character(len=var_names_size), allocatable :: varnames_stored(:)
+  integer :: lun1, lun2, lun3
+  
+  integer :: nx
   real (kind=dp_t) :: xmin, xmax, dCoord, xmin_smooth, xmax_smooth
   real (kind=dp_t), allocatable :: brunt(:), s(:)
 
@@ -51,7 +53,8 @@ program init_1d
   real (kind=dp_t), DIMENSION(nspec) :: sumxn
   real (kind=dp_t) :: coreX, frhoT, qrhoT 
   integer :: comp
-
+ 
+  real (kind=dp_t) :: rloc, r_r, r_l
   real (kind=dp_t) :: dens_zone, temp_zone, pres_zone, entropy, s_zone
   real (kind=dp_t) :: dpd, dpdt, dsdt, dsdrho, dtdr, gam, Hp, dpda, adiab
   real (kind=dp_t) :: prev_mu, prev_p, prev_temp, prev_dtdr, prev_adiab
@@ -79,7 +82,7 @@ program init_1d
 
   integer :: index_base, conv_base, min_base, max_base, cent_base, smoothness, csmooth
 
-  character (len=256) :: outfile, outfile2
+  character (len=256) :: outfile, outfile2, outfile3
   character (len=8) :: num
   character (len=32) :: dxstr
   character (len=32) :: num_to_unitstring
@@ -276,11 +279,11 @@ program init_1d
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
+     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
      if (do_invsq_grav) then
         do j = 1, i-1
            M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
            M_enclosed = M_enclosed + M_shell
         enddo
         g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
@@ -393,11 +396,11 @@ program init_1d
       delx = xzn_hse(i+1) - xzn_hse(i)
 
       ! compute the gravitation acceleration at the upper edge
-      M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)
+      M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)
       if (do_invsq_grav) then
 	  do j = 1, i
 	    M_shell = model_hse(j,idens_model) * & 
-		(4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+		(four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
 	    M_enclosed = M_enclosed + M_shell
 	  enddo
 	  
@@ -601,11 +604,11 @@ program init_1d
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
+     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
      if (do_invsq_grav) then
         do j = 1, i-1
            M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
            M_enclosed = M_enclosed + M_shell
         enddo
         g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
@@ -698,11 +701,11 @@ program init_1d
      delx = xzn_hse(i) - xzn_hse(i-1)
 
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
+     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
      if (do_invsq_grav) then
         do j = 1, i-1
            M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
            M_enclosed = M_enclosed + M_shell
         enddo
         g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
@@ -802,11 +805,11 @@ program init_1d
      delx = xzn_hse(i+1) - xzn_hse(i)
 
      ! compute the gravitation acceleration at the upper edge
-     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)
+     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)
      if (do_invsq_grav) then
         do j = 1, i
            M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
            M_enclosed = M_enclosed + M_shell
         enddo
         
@@ -909,10 +912,32 @@ program init_1d
 
   outfile = trim(model_prefix) // ".hse" // ".dx_" // trim(adjustl(dxstr))
   outfile2 = trim(outfile) // ".extras"
+  outfile3 = trim(model_prefix) // '.binary.bin'
 
   open (newunit=lun1, file=outfile, status="unknown")
   open (newunit=lun2, file=outfile2, status="unknown")  
+  
+  open (newunit=lun3, file=outfile3, status="unknown", form="unformatted",access="stream")
+  write (lun3) nx
+  write (lun3) nvars_model
 
+  write (lun3) xzn_hse(:)
+  write (lun3) model_hse(:,:)
+  
+  write (lun3) var_names_size
+  allocate(varnames_stored(nspec+3))
+  varnames_stored(1) = "density"
+  varnames_stored(2) = "temperature"
+  varnames_stored(3) = "pressure"
+  
+  do n = 4, nspec+3
+   varnames_stored(n) = spec_names(n-3)
+  enddo
+  write (lun3) varnames_stored(:)
+  
+  close (unit = lun3)  
+  
+  
   write (lun1,1001) "# npts = ", nx
   write (lun1,1001) "# num of variables = ", nvars_model
   write (lun1,1002) "# density"
@@ -963,11 +988,11 @@ program init_1d
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
+     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)  
      if (do_invsq_grav) then
         do j = 1, i-1
            M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
            M_enclosed = M_enclosed + M_shell
         enddo
         g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
@@ -1034,13 +1059,13 @@ program init_1d
   max_hse_error = -1.d30
 
   do i = 2, nx-1
-     
+
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = 4.0/3.0 * pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
+     M_enclosed = four3rd*m_pi *  dCoord**3 * model_hse(1,idens_model)     
      if (do_invsq_grav) then
-        do j = 1, i-1
+        do j = 2, i-1
            M_shell = model_hse(j,idens_model) * & 
-               (4.0/3.0 * pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
+               (four3rd*m_pi * (dCoord) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
            M_enclosed = M_enclosed + M_shell
         enddo
         g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
@@ -1049,7 +1074,7 @@ program init_1d
      endif
      
 
-     dpdr = (model_hse(i,ipres_model) - model_hse(i-1,ipres_model))/delx
+     dpdr = (model_hse(i,ipres_model) - model_hse(i-1,ipres_model))/dCoord
      rhog = HALF*(model_hse(i,idens_model) + model_hse(i-1,idens_model))*g_zone
   !   print *, abs(dpdr - rhog)/abs(dpdr)
      if (dpdr /= ZERO .and. model_hse(i+1,idens_model) > low_density_cutoff) then
@@ -1061,7 +1086,45 @@ program init_1d
 
   print *, 'maximum HSE error = ', max_hse_error
   print *, ' '
+  
+  
+  
+    M_enclosed = zero
+    
+    M_enclosed = four3rd*m_pi*dCoord**3*model_hse(1,idens_model)
 
+    max_hse_error = -1.d30
+
+    do r=2,nx
+       
+       rloc = xmin + (dble(r) - HALF)*dCoord
+       rloc = min(rloc, xmax)
+
+
+          r_r = xmin + dble(r)*dCoord
+          r_l = xmin + dble(r-1)*dCoord
+
+          if (do_invsq_grav) then
+             g_zone = -Gconst*M_enclosed/r_l**2
+             M_enclosed = M_enclosed &
+                  + four3rd*m_pi*dCoord*(r_l**2+r_l*r_r+r_r**2)*model_hse(r,idens_model)
+          else
+                g_zone = g_const
+          endif
+
+          dpdr = (model_hse(r,ipres_model) - model_hse(r-1,ipres_model))/dCoord
+          rhog = HALF*(model_hse(r,idens_model) + model_hse(r-1,idens_model))*g_zone
+
+        ! print *, 'r, dpdr, rhog, err: ', rloc, dpdr, rhog, &
+         !            abs(dpdr - rhog)/abs(rhog)
+          
+         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
+
+    enddo
+    
+    print *, 'maximum HSE error =', max_hse_error
+  
+  
   close (unit=lun1)
   close (unit=lun2)
   

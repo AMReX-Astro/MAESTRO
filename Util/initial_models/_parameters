@@ -1,0 +1,7 @@
+#-----------------------------------------------------------------------------
+# category: problem initialization
+#-----------------------------------------------------------------------------
+
+# do we have a binary input file?
+use_binary_input                   logical             .false.
+
