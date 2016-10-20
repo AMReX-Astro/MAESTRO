@@ -13,7 +13,8 @@
 !!
 !!  where S_CORE is the entropy at the convective boundary
 !!
-!!  after that the now changed density profile get smoothed out by a moving average 
+!!  after that the now changed density and composition profile get smoothed out by a moving average
+!!  this also makes a renormalization of the composition necessary
 
 program init_1d
  
@@ -29,7 +30,7 @@ program init_1d
 
   implicit none
 
-  integer :: i, n, j, r
+  integer :: i, n, j
 
   character(len=128) :: params_file
 
@@ -54,7 +55,6 @@ program init_1d
   real (kind=dp_t) :: coreX, frhoT, qrhoT 
   integer :: comp
  
-  real (kind=dp_t) :: rloc, r_r, r_l
   real (kind=dp_t) :: dens_zone, temp_zone, pres_zone, entropy, s_zone
   real (kind=dp_t) :: dpd, dpdt, dsdt, dsdrho, dtdr, gam, Hp, dpda, adiab
   real (kind=dp_t) :: prev_mu, prev_p, prev_temp, prev_dtdr, prev_adiab
@@ -96,7 +96,6 @@ program init_1d
 
   type (eos_t) :: eos_state
   
-  real (kind=dp_t) :: pi = 3.141592653589793d0
 
   namelist /params/ nx, model_file, xmin, xmax, g_const, &
                     temp_cutoff, do_invsq_grav, &
@@ -163,11 +162,11 @@ program init_1d
   
   ! check if all abundances sum to 1 and normalize if they don't 
   do i = 1, npts_model
-     sumx = 0.0
+     sumx = ZERO
      do comp = 1, nspec
 	sumx = sumx + model_state(i,ispec_model-1+comp)
      enddo
-     if (sumx .ne. 1.0) then
+     if (sumx .ne. ONE) then
 	do comp = 1, nspec
 	  model_state(i,ispec_model-1+comp) = model_state(i,ispec_model-1+comp) / sumx
 	enddo 
@@ -581,6 +580,21 @@ program init_1d
     enddo  
   endif
   
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !Normalize the composition again!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  
+  do i=1,nx
+    sumx = ZERO
+    do j=1,nspec
+      sumx = sumx + model_hse(i,ispec_model-1+j)
+    enddo
+    model_hse(i,ispec_model:ispec_model+nspec-1) = model_hse(i,ispec_model:ispec_model+nspec-1) / sumx
+  enddo
+  
+  
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   !compute the brunt-vaisala frequency at each zone
   brunt(1) = 0
@@ -905,7 +919,9 @@ program init_1d
      model_hse(i,ipres_model) = pres_zone
 
   enddo
-
+  
+  
+  
   write(num,'(i8)') nx
 
   dxstr = num_to_unitstring(dCoord)
@@ -1086,43 +1102,6 @@ program init_1d
 
   print *, 'maximum HSE error = ', max_hse_error
   print *, ' '
-  
-  
-  
-    M_enclosed = zero
-    
-    M_enclosed = four3rd*m_pi*dCoord**3*model_hse(1,idens_model)
-
-    max_hse_error = -1.d30
-
-    do r=2,nx
-       
-       rloc = xmin + (dble(r) - HALF)*dCoord
-       rloc = min(rloc, xmax)
-
-
-          r_r = xmin + dble(r)*dCoord
-          r_l = xmin + dble(r-1)*dCoord
-
-          if (do_invsq_grav) then
-             g_zone = -Gconst*M_enclosed/r_l**2
-             M_enclosed = M_enclosed &
-                  + four3rd*m_pi*dCoord*(r_l**2+r_l*r_r+r_r**2)*model_hse(r,idens_model)
-          else
-                g_zone = g_const
-          endif
-
-          dpdr = (model_hse(r,ipres_model) - model_hse(r-1,ipres_model))/dCoord
-          rhog = HALF*(model_hse(r,idens_model) + model_hse(r-1,idens_model))*g_zone
-
-        ! print *, 'r, dpdr, rhog, err: ', rloc, dpdr, rhog, &
-         !            abs(dpdr - rhog)/abs(rhog)
-          
-         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(rhog))
-
-    enddo
-    
-    print *, 'maximum HSE error =', max_hse_error
   
   
   close (unit=lun1)
