@@ -15,12 +15,12 @@ program init_1d
 
   implicit none
 
-  integer :: i, n
+  integer :: i, j, n
 
   integer :: nx
       
   real (kind=dp_t) :: temp_base, dens_base
-  real (kind=dp_t), DIMENSION(nspec) :: xn_base
+  real (kind=dp_t), DIMENSION(nspec) :: xn_base, xn_in, xn_out
 
   real (kind=dp_t), allocatable :: xzn_hse(:), xznl(:), xznr(:)
   real (kind=dp_t), allocatable :: model_hse(:,:), M_enclosed(:)
@@ -37,9 +37,11 @@ program init_1d
   real (kind=dp_t), parameter :: M_sun = 1.9891e33
 
   ! we'll get the composition indices from the network module
-  integer, save :: ic12, io16, img24, iash
-  real (kind=dp_t) :: cfrac
-
+  integer, save :: ihe4, ic12, io16, ine20, ine23, ina23, img23
+  real (kind=dp_t) :: c12_in, c12_out, o16_in, o16_out
+  real (kind=dp_t) :: ne23_in, ne23_out, na23_in, na23_out
+  real (kind=dp_t) :: urca_23_dens ! transition density for in/out of the A=23 URCA shell
+  
   integer :: narg
   character(len=128) :: params_file
 
@@ -79,7 +81,8 @@ program init_1d
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
        xmin, xmax, &
-       cfrac, prefix
+       c12_in, c12_out, o16_in, o16_out, &
+       ne23_in, ne23_out, na23_in, na23_out, urca_23_dens, prefix
   
 
   ! determine if we specified a runtime parameters file or use the default
@@ -110,7 +113,14 @@ program init_1d
   low_density_cutoff =1.d-4
   temp_fluff = 1.d7
 
-  cfrac = 0.7_dp_t
+  c12_in   = 0.0_dp_t
+  c12_out  = 0.0_dp_t
+  o16_in   = 0.0_dp_t
+  o16_out  = 0.0_dp_t
+  ne23_in  = 0.0_dp_t
+  ne23_out = 0.0_dp_t
+  na23_in  = 0.0_dp_t
+  na23_out = 0.0_dp_t
 
   prefix = "spherical"
 
@@ -131,30 +141,56 @@ program init_1d
 
 
   ! get the species indices
+  ihe4  = network_species_index("helium-4")
   ic12  = network_species_index("carbon-12")
   io16  = network_species_index("oxygen-16")
+  ine20 = network_species_index("neon-20")
+  ine23 = network_species_index("neon-23")
+  ina23 = network_species_index("sodium-23")
+  img23 = network_species_index("magnesium-23")
 
-  img24 = network_species_index("magnesium-24")
-  iash = network_species_index("ash")
-
-
-  if (ic12 < 0 .or. io16 < 0) then
+  if (ihe4 < 0 .or. &
+     ic12 < 0 .or. io16 < 0 .or. ine20 < 0 .or. &
+     ine23 < 0 .or. ina23 < 0 .or. img23 < 0) then
      call bl_error("ERROR: species not defined")
   endif
 
-  if (.not. (img24 > 0 .or. iash > 0)) then
-     call bl_error("ERROR: species not defined")
+  if (c12_in < 0.0_dp_t .or. c12_in > 1.0_dp_t) then
+     call bl_error("ERROR: c12_in must be between 0 and 1")
+  endif
+  if (c12_out < 0.0_dp_t .or. c12_out > 1.0_dp_t) then
+     call bl_error("ERROR: c12_out must be between 0 and 1")
+  endif
+  if (o16_in < 0.0_dp_t .or. o16_in > 1.0_dp_t) then
+     call bl_error("ERROR: o16_in must be between 0 and 1")
+  endif
+  if (o16_out < 0.0_dp_t .or. o16_out > 1.0_dp_t) then
+     call bl_error("ERROR: o16_out must be between 0 and 1")
+  endif
+  if (ne23_in < 0.0_dp_t .or. ne23_in > 1.0_dp_t) then
+     call bl_error("ERROR: ne23_in must be between 0 and 1")
+  endif
+  if (ne23_out < 0.0_dp_t .or. ne23_out > 1.0_dp_t) then
+     call bl_error("ERROR: ne23_out must be between 0 and 1")
+  endif
+  if (na23_in < 0.0_dp_t .or. na23_in > 1.0_dp_t) then
+     call bl_error("ERROR: na23_in must be between 0 and 1")
+  endif
+  if (na23_out < 0.0_dp_t .or. na23_out > 1.0_dp_t) then
+     call bl_error("ERROR: na23_out must be between 0 and 1")
   endif
 
-  if (cfrac < 0.0_dp_t .or. cfrac > 1.0_dp_t) then
-     call bl_error("ERROR: cfrac must be between 0 and 1")
-  endif
-
-  xn_base(:) = 0.0_dp_t
-  xn_base(ic12) = cfrac
-  xn_base(io16) = 1.0_dp_t - cfrac
-
+  xn_in(:) = 0.0_dp_t
+  xn_in(ic12) = c12_in
+  xn_in(io16) = o16_in
+  xn_in(ine23) = ne23_in
+  xn_in(ina23) = na23_in
   
+  xn_out(:) = 0.0_dp_t
+  xn_out(ic12) = c12_out
+  xn_out(io16) = o16_out
+  xn_out(ine23) = ne23_out
+  xn_out(ina23) = na23_out
 
 !-----------------------------------------------------------------------------
 ! Create a 1-d uniform grid that is identical to the mesh that we are
@@ -188,6 +224,7 @@ program init_1d
   ! call the EOS one more time for this zone and then go on to the next
   eos_state%T     = temp_base
   eos_state%rho   = dens_base
+  call set_urca_composition(dens_base, urca_23_dens, xn_base, xn_in, xn_out)
   eos_state%xn(:) = xn_base(:)
 
   ! (t, rho) -> (p, s)    
@@ -223,7 +260,7 @@ program init_1d
      ! zone
      dens_zone = model_hse(i-1,idens)
      temp_zone = model_hse(i-1,itemp)
-     xn(:) = model_hse(i,ispec:nvar)
+     call set_urca_composition(dens_zone, urca_23_dens, xn, xn_in, xn_out)
 
      g_zone = -Gconst*M_enclosed(i-1)/(xznl(i)*xznl(i))
 
@@ -253,6 +290,7 @@ program init_1d
               
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
+              call set_urca_composition(dens_zone, urca_23_dens, xn, xn_in, xn_out)
               eos_state%xn(:) = xn(:)
               
               ! (t, rho) -> (p, s)    
@@ -325,6 +363,7 @@ program init_1d
 
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
+              call set_urca_composition(dens_zone, urca_23_dens, xn, xn_in, xn_out)
               eos_state%xn(:) = xn(:)
         
               ! (t, rho) -> (p, s)
@@ -388,6 +427,7 @@ program init_1d
      ! call the EOS one more time for this zone and then go on to the next
      eos_state%T     = temp_zone
      eos_state%rho   = dens_zone
+     call set_urca_composition(dens_zone, urca_23_dens, xn, xn_in, xn_out)
      eos_state%xn(:) = xn(:)
 
      ! (t, rho) -> (p, s)    
@@ -401,6 +441,9 @@ program init_1d
      model_hse(i,idens) = dens_zone
      model_hse(i,itemp) = temp_zone
      model_hse(i,ipres) = pres_zone
+     do j = 1, nspec
+        model_hse(i,ispec-1+j) = eos_state%xn(j)
+     enddo
 
      print *, i, dens_zone, temp_zone
      
@@ -480,3 +523,15 @@ program init_1d
 
 end program init_1d
 
+subroutine set_urca_composition(dens, urca_dens, xn, xn_in, xn_out)
+  use network
+  real (kind=dp_t) :: dens, urca_dens
+  real (kind=dp_t), DIMENSION(nspec) :: xn, xn_in, xn_out
+  if (dens < urca_dens) then
+     xn(:) = xn_out(:)
+  elseif (dens > urca_dens) then
+     xn(:) = xn_in(:)
+  else
+     xn(:) = 0.5d0*xn_out(:)+0.5d0*xn_in(:)
+  endif
+end subroutine set_urca_composition
