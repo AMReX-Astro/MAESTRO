@@ -512,8 +512,14 @@ program central_angle_average
 
      ! Create column header names
      allocate(column_names(0:numvars))
-     column_names(0) = "r"
-     column_names(1:numvars) = var_names(0:numvars-1)
+     column_names(0) = "[r]"
+     do j = 0, numvars-1
+        if (var_avg_type(j) == rms_perturbation) then
+           column_names(j+1) = "[RMS " // trim(var_names(j)) // "]"
+        else
+           column_names(j+1) = "[" // trim(var_names(j)) // "]"
+        endif
+     enddo
 
      ! Allocate row data
      allocate(row_data(0:numvars))
