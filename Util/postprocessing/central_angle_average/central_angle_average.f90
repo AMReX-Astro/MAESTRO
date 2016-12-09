@@ -178,13 +178,26 @@ program central_angle_average
   magvel_comp = plotfile_var_index(pf, "magvel") 
 
   ! enuc
-  enuc_comp = plotfile_var_index(pf, "enucdot") 
-  
-  if ( dens_comp < 0 ) then
-     call bl_error("ERROR: variable 'density' not defined")
+  enuc_comp = plotfile_var_index(pf, "enucdot")
+
+  ! temperature (here we used T from p0)
+  temp_comp = plotfile_var_index(pf, "tfromp") 
+
+  ! xvel
+  xvel_comp = plotfile_var_index(pf, "x_vel")
+
+  ! yvel
+  yvel_comp = plotfile_var_index(pf, "y_vel") 
+
+  ! zvel
+  zvel_comp = plotfile_var_index(pf, "z_vel") 
+
+  if ( dens_comp < 0 .or. temp_comp < 0 .or. &
+       magvel_comp < 0 .or. enuc_comp < 0 .or. &
+       xvel_comp < 0 .or. yvel_comp < 0 .or. zvel_comp < 0 ) then
+     call bl_error("ERROR: varaible(s) not defined")
   endif
-
-
+  
   ! get dx for the coarse level.  
   dx = plotfile_get_dx(pf, 1)
 
