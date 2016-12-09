@@ -22,3 +22,4 @@ POST_SOURCES := fwdconvect.f90
 
 include ../GPostprocessing.mak
 
+ALL: fwdconvect.$(suf).exe

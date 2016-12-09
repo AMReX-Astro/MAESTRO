@@ -3,9 +3,6 @@
 # include the main Makefile stuff
 include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
-# default target (make just takes the one that appears first)
-ALL: fwdconvect.$(suf).exe
-
 
 #-----------------------------------------------------------------------------
 # core BoxLib directories
