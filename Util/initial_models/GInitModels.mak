@@ -21,8 +21,7 @@ Fmdirs := Microphysics/EOS
 # into the problem directory.
 ifeq ($(findstring helmeos, $(EOS_DIR)), helmeos)
   EOS_DIR := helmholtz
-  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/eos
-  Fmincludes_ext := $(EOS_TOP_DIR)/helmholtz
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
 endif
@@ -31,7 +30,7 @@ table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/eos
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
 MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
