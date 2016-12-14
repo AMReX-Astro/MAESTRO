@@ -898,7 +898,7 @@ contains
       logical        , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
       !     Local variables
-      integer            :: i, j, k, n
+      integer            :: i, j, k, n, ii
       real (kind = dp_t) :: rho,T_in,ldt
 
       real (kind = dp_t) :: x_in(nspec)
@@ -910,7 +910,7 @@ contains
       integer, save      :: ispec_threshold
       logical, save      :: firstCall = .true.
 
-      real (kind = dp_t) :: sumX
+      real (kind = dp_t) :: sumX, full_start, full_end, loop_start, loop_end
 
       if (firstCall) then
          ispec_threshold = network_species_index(burner_threshold_species)
@@ -919,23 +919,46 @@ contains
 
       ldt = dt
 
-      !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) &
-      !$OMP FIRSTPRIVATE(ldt) &
-      !$OMP SCHEDULE(DYNAMIC,1)
+      ! !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) &
+      ! !$OMP FIRSTPRIVATE(ldt) &
+      ! !$OMP SCHEDULE(DYNAMIC,1)
+      call cpu_time(full_start)
+
+      !$acc data copyin(sold(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))               &
+      !$acc      copyin(tempbar_init_cart(lo(1)-ng_tc:,lo(2)-ng_tc:,lo(3)-ng_tc:)) &
+      !$acc      copyin(ldt)                                                       &
+      !$acc      copyin(rho_Hext(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))             &
+      !$acc      copyout(snew(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))              &
+      !$acc      copyout(rho_omegadot(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:) )     &
+      !$acc      copyout(rho_Hnuc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))          
+
+      call cpu_time(loop_start)
+      
+      !$acc parallel
+      !$acc loop gang vector collapse(3) private(rho, x_in(1:nspec), T_in, x_test, x_out(1:nspec))   &
+      !$acc    private(rhowdot(1:nspec), rhoH, sumX, n, ii)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
 
                ! make sure the cell isn't covered by finer cells
-               cell_valid = .true.
-               if ( present(mask) ) then
-                  if ( (.not. mask(i,j,k)) ) cell_valid = .false.
-               endif
+               !TODO: For OpenACC dev, all masking/cell_valid logic has been
+               !removed.  Once it's working, we should see if we want to bring
+               !back the masking or not.
+               ! cell_valid = .true.
+               ! if ( present(mask) ) then
+               !    if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+               ! endif
 
-               if (cell_valid) then
+               ! if (cell_valid) then
 
                   rho = sold(i,j,k,rho_comp)
-                  x_in = sold(i,j,k,spec_comp:spec_comp+nspec-1) / rho
+                  
+                  ii = 1
+                  do n = spec_comp, spec_comp+nspec-1
+                     x_in(ii) = sold(i,j,k,n) / rho
+                     ii = ii + 1
+                  enddo
 
                   if (drive_initial_convection) then
                      T_in = tempbar_init_cart(i,j,k)
@@ -976,35 +999,44 @@ contains
                         sumX = sumX + x_out(n)
                      enddo
                      if (abs(sumX - ONE) > reaction_sum_tol) then
-                        x_out(:) = x_out(:)/sumX
+                        do n = 1, nspec
+                           x_out(n) = x_out(n)/sumX
+                        enddo
                      endif
                   endif
-               
-                  ! check if sum{X_k} = 1
-                  sumX = ZERO
-                  do n = 1, nspec
-                     sumX = sumX + x_out(n)
-                  enddo
 
-                  if (abs(sumX - ONE) > reaction_sum_tol) then
-                     print *, x_out(:)
-                     ! did we burn?
-                     print *, "burned: ", (rho > burning_cutoff_density .and. &
-                          ( ispec_threshold < 0 .or. &
-                           (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
-                     print *, 'density: ', rho, base_cutoff_density
-                     call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
-                  endif
+                  ! ! Commented print and bl_error calls on GPU
+                  ! ! check if sum{X_k} = 1
+                  ! sumX = ZERO
+                  ! do n = 1, nspec
+                  !    sumX = sumX + x_out(n)
+                  ! enddo
+                  ! if (abs(sumX - ONE) > reaction_sum_tol) then
+                  !    print *, x_out(:)
+                  !    ! did we burn?
+                  !    print *, "burned: ", (rho > burning_cutoff_density .and. &
+                  !         ( ispec_threshold < 0 .or. &
+                  !          (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
+                  !    print *, 'density: ', rho, base_cutoff_density
+                  !    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
+                  ! endif
 
                   ! pass the density and pi through
                   snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
                   snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
                   
                   ! update the species
-                  snew(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+                  ii = 1
+                  do n = spec_comp, spec_comp+nspec-1
+                     snew(i,j,k,n) = x_out(ii) * rho
+                     ii = ii + 1
+                  enddo
                   
                   ! store the energy generation and species create quantities
-                  rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+                  do n = 1, nspec
+                     rho_omegadot(i,j,k,n) = rhowdot(n)
+                  enddo
+
                   rho_Hnuc(i,j,k) = rhoH
                   
                   ! update the enthalpy -- include the change due to external heating
@@ -1012,14 +1044,22 @@ contains
                        + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
                   
                   ! pass the tracers through
-                  snew(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                       sold(i,j,k,trac_comp:trac_comp+ntrac-1)
-
-               endif
+                  do n = trac_comp, trac_comp+ntrac-1
+                     snew(i,j,k,n) = sold(i,j,k,n)
+                  enddo
+               ! endif
                
             enddo
          enddo
       enddo
-      !$OMP END PARALLEL DO
+      ! !$OMP END PARALLEL DO
+      !$acc end parallel
+      
+      call cpu_time(loop_end)
+      !$acc end data
+      
+      call cpu_time(full_end)
+      print *, 'burner loop time (s): ', loop_end-loop_start
+      print *, 'burner loop time + data (s): ', full_end-full_start
    end subroutine burner_loop_3d_sph
 end module react_state_module
