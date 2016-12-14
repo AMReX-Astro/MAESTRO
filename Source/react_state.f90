@@ -325,6 +325,7 @@ contains
                              rho_Hext,ng_he,dt,lo,hi)
       use bl_constants_module
       use burner_module
+      use burn_type_module, only: burn_t
       use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
       use network, only: nspec, network_species_index
       use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -351,6 +352,8 @@ contains
       logical, save      :: firstCall = .true.
 
       real (kind = dp_t) :: sumX
+
+      type (burn_t)      :: state_in, state_out
 
 
       if (firstCall) then
@@ -386,8 +389,24 @@ contains
                x_test > burner_threshold_cutoff                      &
               )                                                      &
              )                                                       &
-            ) then
-            call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+             ) then
+            ! Initialize burn state_in and state_out
+            state_in % e   = 0.0d0
+            state_in % rho = rho
+            state_in % T   = T_in
+            do n = 1, nspec
+               state_in % xn(n) = x_in(n)
+            enddo
+            state_out = state_in
+            call burner(state_in, state_out, dt, rhowdot, rhoH)
+            do n = 1, nspec
+               x_out(n) = state_out % xn(n)
+            enddo
+            do n = 1, nspec
+               rhowdot(n) = state_out % rho * &
+                    (state_out % xn(n) - state_in % xn(n)) / dt
+            enddo
+            rhoH = state_out % rho * (state_out % e - state_in % e) / dt
          else
             x_out = x_in
             rhowdot = 0.d0
@@ -428,6 +447,7 @@ contains
                              rho_Hext,ng_he,dt,lo,hi,mask)
       use bl_constants_module
       use burner_module
+      use burn_type_module, only: burn_t
       use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
       use network, only: nspec, network_species_index
       use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -456,6 +476,8 @@ contains
       logical, save      :: firstCall = .true.
 
       real (kind = dp_t) :: sumX
+
+      type (burn_t)      :: state_in, state_out
 
       if (firstCall) then
          ispec_threshold = network_species_index(burner_threshold_species)
@@ -498,7 +520,23 @@ contains
                     ( ispec_threshold < 0 .or.                  &
                     (ispec_threshold > 0 .and.                  &
                     x_test > burner_threshold_cutoff ))) then
-                  call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+                  ! Initialize burn state_in and state_out
+                  state_in % e   = 0.0d0
+                  state_in % rho = rho
+                  state_in % T   = T_in
+                  do n = 1, nspec
+                     state_in % xn(n) = x_in(n)
+                  enddo
+                  state_out = state_in
+                  call burner(state_in, state_out, dt, rhowdot, rhoH)
+                  do n = 1, nspec
+                     x_out(n) = state_out % xn(n)
+                  enddo
+                  do n = 1, nspec
+                     rhowdot(n) = state_out % rho * &
+                          (state_out % xn(n) - state_in % xn(n)) / dt
+                  enddo
+                  rhoH = state_out % rho * (state_out % e - state_in % e) / dt
                else
                   x_out = x_in
                   rhowdot = 0.d0
@@ -544,6 +582,7 @@ contains
 
       use bl_constants_module
       use burner_module
+      use burn_type_module, only: burn_t
       use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
       use network, only: nspec, network_species_index
       use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -575,6 +614,8 @@ contains
       logical, save      :: firstCall = .true.
 
       real (kind = dp_t) :: sumX
+
+      type (burn_t)      :: state_in, state_out
 
       real (kind=dp_t) :: slope_rho, slope_T, slope_X
       real (kind=dp_t) :: Tcoeff(3)
@@ -665,7 +706,23 @@ contains
                        ( ispec_threshold < 0 .or.                  &
                        (ispec_threshold > 0 .and.                  &
                        x_test > burner_threshold_cutoff ))) then
-                     call burner(rho, T_in, x_in, dt, x_out_temp, rhowdot_temp, rhoH_temp)
+                     ! Initialize burn state_in and state_out
+                     state_in % e   = 0.0d0
+                     state_in % rho = rho
+                     state_in % T   = T_in
+                     do n = 1, nspec
+                        state_in % xn(n) = x_in(n)
+                     enddo
+                     state_out = state_in
+                     call burner(state_in, state_out, dt, rhowdot, rhoH)
+                     do n = 1, nspec
+                        x_out(n) = state_out % xn(n)
+                     enddo
+                     do n = 1, nspec
+                        rhowdot(n) = state_out % rho * &
+                             (state_out % xn(n) - state_in % xn(n)) / dt
+                     enddo
+                     rhoH = state_out % rho * (state_out % e - state_in % e) / dt
                   else
                      x_out_temp = x_in
                      rhowdot_temp = 0.d0
@@ -721,6 +778,7 @@ contains
                              rho_Hext,ng_he,dt,lo,hi,mask)
       use bl_constants_module
       use burner_module
+      use burn_type_module, only: burn_t
       use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
       use network, only: nspec, network_species_index
       use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -752,6 +810,8 @@ contains
 
       real (kind = dp_t) :: sumX, full_start, full_end, loop_start, loop_end
 
+      type (burn_t)      :: state_in, state_out
+
       if (firstCall) then
          ispec_threshold = network_species_index(burner_threshold_species)
          firstCall = .false.
@@ -776,7 +836,7 @@ contains
       !$acc parallel
 
       !$acc loop gang vector collapse(3) private(rho,x_in,T_in,x_test,x_out) &
-      !$acc    private(rhowdot,rhoH,sumX,n)
+      !$acc    private(rhowdot, rhoH, sumX, n, state_in, state_out)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
@@ -814,7 +874,23 @@ contains
                     ( ispec_threshold < 0 .or.                       &
                     (ispec_threshold > 0 .and.                       &
                     x_test > burner_threshold_cutoff))) then
-                  call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+                  ! Initialize burn state_in and state_out
+                  state_in % e   = 0.0d0
+                  state_in % rho = rho
+                  state_in % T   = T_in
+                  do n = 1, nspec
+                     state_in % xn(n) = x_in(n)
+                  enddo
+                  state_out = state_in
+                  call burner(state_in, state_out, dt, rhowdot, rhoH)
+                  do n = 1, nspec
+                     x_out(n) = state_out % xn(n)
+                  enddo
+                  do n = 1, nspec
+                     rhowdot(n) = state_out % rho * &
+                          (state_out % xn(n) - state_in % xn(n)) / dt
+                  enddo
+                  rhoH = state_out % rho * (state_out % e - state_in % e) / dt
                else
                   x_out = x_in
                   rhowdot = 0.d0
@@ -881,6 +957,7 @@ contains
 
       use bl_constants_module
       use burner_module
+      use burn_type_module, only: burn_t
       use variables, only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp, trac_comp, ntrac
       use network, only: nspec, network_species_index
       use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -912,6 +989,8 @@ contains
 
       real (kind = dp_t) :: sumX, full_start, full_end, loop_start, loop_end
 
+      type (burn_t)       :: state_in, state_out
+
       if (firstCall) then
          ispec_threshold = network_species_index(burner_threshold_species)
          firstCall = .false.
@@ -935,7 +1014,7 @@ contains
       call cpu_time(loop_start)
       
       !$acc parallel
-      !$acc loop gang vector collapse(3) private(rho, x_in(1:nspec), T_in, x_test, x_out(1:nspec))   &
+      !$acc loop gang vector collapse(3) private(state_in, state_out, x_test)      &
       !$acc    private(rhowdot(1:nspec), rhoH, sumX, n, ii)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
@@ -952,41 +1031,50 @@ contains
 
                ! if (cell_valid) then
 
-                  rho = sold(i,j,k,rho_comp)
+                  ! Initialize ingoing burn state
+                  state_in % e = 0.0d0
+                  state_in % rho = sold(i,j,k,rho_comp)
                   
                   ii = 1
                   do n = spec_comp, spec_comp+nspec-1
-                     x_in(ii) = sold(i,j,k,n) / rho
+                     state_in % xn(ii) = sold(i,j,k,n) / state_in % rho
                      ii = ii + 1
                   enddo
 
                   if (drive_initial_convection) then
-                     T_in = tempbar_init_cart(i,j,k)
+                     state_in % T = tempbar_init_cart(i,j,k)
                   else
-                     T_in = sold(i,j,k,temp_comp)
+                     state_in % T = sold(i,j,k,temp_comp)
                   endif
                
                   ! Fortran doesn't guarantee short-circuit evaluation of logicals 
                   ! so we need to test the value of ispec_threshold before using it 
-                  ! as an index in x_in
+                  ! as an index in state_in % xn
                   if (ispec_threshold > 0) then
-                     x_test = x_in(ispec_threshold)
+                     x_test = state_in % xn(ispec_threshold)
                   else
                      x_test = ZERO
                   endif
+                  
+                  ! Initialize the outgoing state to be equal to the ingoing state.
+                  state_out = state_in
 
                   ! if the threshold species is not in the network, then we burn
                   ! normally.  if it is in the network, make sure the mass
                   ! fraction is above the cutoff.
-                  if (rho > burning_cutoff_density .and.                      &
-                       ( ispec_threshold < 0 .or.                              &
-                       (ispec_threshold > 0 .and.                             &
-                       x_test > burner_threshold_cutoff)                     &
-                       )                                                       &
+                  if (state_in % rho > burning_cutoff_density .and. &
+                       ( ispec_threshold < 0 .or.                   &
+                       (ispec_threshold > 0 .and.                   &
+                       x_test > burner_threshold_cutoff)            &
+                       )                                            &
                        ) then
-                     call burner(rho, T_in, x_in, ldt, x_out, rhowdot, rhoH)
+                     call burner(state_in, state_out, ldt, rhowdot, rhoH)
+                     do n = 1, nspec
+                        rhowdot(n) = state_out % rho * &
+                             (state_out % xn(n) - state_in % xn(n)) / dt
+                     enddo
+                     rhoH = state_out % rho * (state_out % e - state_in % e) / dt
                   else
-                     x_out = x_in
                      rhowdot = 0.d0
                      rhoH = 0.d0
 
@@ -996,11 +1084,11 @@ contains
                      ! can introduce a small error
                      sumX = ZERO
                      do n = 1, nspec
-                        sumX = sumX + x_out(n)
+                        sumX = sumX + state_out % xn(n)
                      enddo
                      if (abs(sumX - ONE) > reaction_sum_tol) then
                         do n = 1, nspec
-                           x_out(n) = x_out(n)/sumX
+                           state_out % xn(n) = state_out % xn(n)/sumX
                         enddo
                      endif
                   endif
@@ -1009,15 +1097,15 @@ contains
                   ! ! check if sum{X_k} = 1
                   ! sumX = ZERO
                   ! do n = 1, nspec
-                  !    sumX = sumX + x_out(n)
+                  !    sumX = sumX + state_out % xn(n)
                   ! enddo
                   ! if (abs(sumX - ONE) > reaction_sum_tol) then
-                  !    print *, x_out(:)
+                  !    print *, state_out % xn(:)
                   !    ! did we burn?
-                  !    print *, "burned: ", (rho > burning_cutoff_density .and. &
+                  !    print *, "burned: ", (state_in % rho > burning_cutoff_density .and. &
                   !         ( ispec_threshold < 0 .or. &
                   !          (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
-                  !    print *, 'density: ', rho, base_cutoff_density
+                  !    print *, 'density: ', state_in % rho, base_cutoff_density
                   !    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
                   ! endif
 
@@ -1028,7 +1116,7 @@ contains
                   ! update the species
                   ii = 1
                   do n = spec_comp, spec_comp+nspec-1
-                     snew(i,j,k,n) = x_out(ii) * rho
+                     snew(i,j,k,n) = state_out % xn(ii) * state_out % rho
                      ii = ii + 1
                   enddo
                   
