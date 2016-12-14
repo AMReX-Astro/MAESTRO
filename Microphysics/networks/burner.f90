@@ -1,12 +1,5 @@
 module burner_module
 
-  use bl_types
-  use bl_constants_module
-  use network
-  use eos_module
-  use actual_burner_module
-  use burn_type_module
-
   implicit none
 
   logical :: burner_initialized = .false.
@@ -14,6 +7,8 @@ module burner_module
 contains
 
   subroutine burner_init()
+
+    use actual_burner_module, only: actual_burner_init
 
     implicit none
 
