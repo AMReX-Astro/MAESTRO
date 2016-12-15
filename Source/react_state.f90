@@ -1014,8 +1014,9 @@ contains
       call cpu_time(loop_start)
       
       !$acc parallel
-      !$acc loop gang vector collapse(3) private(state_in, state_out, x_test)      &
-      !$acc    private(rhowdot(1:nspec), rhoH, sumX, n, ii)
+      !$acc loop gang vector collapse(3)                                           &
+      !$acc      private(state_in, state_out)                                      &
+      !$acc      private(rhowdot(1:nspec), rhoH, sumX, n, ii, x_test)
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
@@ -1071,9 +1072,9 @@ contains
                      call burner(state_in, state_out, ldt, rhowdot, rhoH)
                      do n = 1, nspec
                         rhowdot(n) = state_out % rho * &
-                             (state_out % xn(n) - state_in % xn(n)) / dt
+                             (state_out % xn(n) - state_in % xn(n)) / ldt
                      enddo
-                     rhoH = state_out % rho * (state_out % e - state_in % e) / dt
+                     rhoH = state_out % rho * (state_out % e - state_in % e) / ldt
                   else
                      rhowdot = 0.d0
                      rhoH = 0.d0
