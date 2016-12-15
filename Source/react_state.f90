@@ -998,9 +998,13 @@ contains
 
       ldt = dt
 
-      ! !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,rho,x_in,T_in,x_test,x_out,rhowdot,rhoH,sumX,n) &
-      ! !$OMP FIRSTPRIVATE(ldt) &
-      ! !$OMP SCHEDULE(DYNAMIC,1)
+#ifndef ACC
+      !$OMP PARALLEL DO PRIVATE(i, j, k, n, ii)                                    &
+      !$OMP PRIVATE(cell_valid, x_test, rhowdot, rhoH, sumX)                       &
+      !$OMP PRIVATE(state_in, state_out)                                           &
+      !$OMP FIRSTPRIVATE(ldt)                                                      &
+      !$OMP SCHEDULE(DYNAMIC,1)
+#endif     
       call cpu_time(full_start)
 
       !$acc data copyin(sold(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:))               &
@@ -1141,7 +1145,9 @@ contains
             enddo
          enddo
       enddo
-      ! !$OMP END PARALLEL DO
+#ifndef ACC      
+      !$OMP END PARALLEL DO
+#endif      
       !$acc end parallel
       
       call cpu_time(loop_end)
