@@ -43,16 +43,22 @@ class AngleAveragedProfile(object):
         readColumnLabels = False # True if next line has column labels
         for line in f:
             ls = line.strip()
-            if ls[0] == '#':
+            if ls[0] == '#' or readColumnLabels:
                 if readColumnLabels:
                     cl = []
-                    for ci in ls[2:].split('  '):
+                    if ls[0] == '#':
+                        ls = ls[1:]
+                    for ci in ls.split('  '):
                         ci = ci.strip()
+                        # Need to check because splitting by '  '
+                        # can yield ' ' which strip to ''.
                         if ci:
-                            # Need to check because splitting by '  '
-                            # can yield ' ' which strip to ''.
+                            # If field is enclosed in [ ] brackets, remove them
+                            if ci[0] == '[' and ci[-1] == ']':
+                                ci = ci[1:-1].strip()
                             cl.append(ci) 
                     self.data_keys = cl
+                    print(self.data_keys)
                     for ci in cl:
                         self.data[ci] = []
                     readColumnLabels = False
