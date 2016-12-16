@@ -11,7 +11,7 @@ module plot_variables_module
 
   private
 
-  public :: make_ad_excess, make_brunt_freq
+  public :: make_ad_excess
   public :: make_conductivity
   public :: make_grav_plot, make_hp_plot
   public :: make_tfromH, make_tfromp, make_entropypert
@@ -26,7 +26,7 @@ contains
  !---------------------------------------------------------------------------
   ! make_grav_plot ... this should not be used, just for debugging
   !---------------------------------------------------------------------------
-  subroutine make_grav_plot(plotdata,comp_grav,state,rho0,dx)
+  subroutine make_grav_plot(plotdata,comp_grav,state,rho0,dx,n)
 
     use make_grav_module
     use fill_3d_module
@@ -37,42 +37,70 @@ contains
     type(multifab), intent(in   ) :: state
     real(kind=dp_t), intent(in  ) :: rho0(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    integer, 	    intent(in   ) :: n
     
     real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:), np(:,:,:,:)
     integer :: lo(get_dim(plotdata)), hi(get_dim(plotdata))
     integer :: i,j,l,k
-
+    
+    integer :: dm
     real(kind=dp_t) ::   grav(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t), allocatable ::   grav_cart(:,:,:,:)
     
+    
+    dm = get_dim(plotdata)
     !grav(n,:) where n is the amr level
     call make_grav_cell(grav,rho0)
-
     do i = 1, nfabs(state)
-       sp => dataptr(state, i)
-       cp => dataptr(plotdata, i)
-       lo = lwb(get_box(state, i))
-       hi = upb(get_box(state, i))
-       allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,grav(1,0:),grav_cart,lo,hi,dx(1,:),0)
-       !$OMP PARALLEL DO PRIVATE(i,j,l)    
-       do k = lo(3), hi(3)
-	do j = lo(2), hi(2)
-          do l = lo(1), hi(1)     
-	     cp(l,j,k,comp_grav) = grav_cart(l,j,k,1)
+      sp => dataptr(state, i)
+      cp => dataptr(plotdata, i)
+      lo = lwb(get_box(state, i))
+      hi = upb(get_box(state, i))
+      select case (dm)
+	case (1)
+	  do k = lo(1), hi(1) 
+	    cp(k,1,1,comp_grav) = grav(n,k)
 	  enddo
-	enddo
-       enddo
-      !$OMP END PARALLEL DO
-      
-      deallocate(grav_cart)
-    enddo
+	case (2)
+	  do k = lo(2), hi(2)
+	    do j = lo(1), hi(1)
+	      cp(j,k,1,comp_grav) = grav(n,k)
+	    enddo
+	  enddo
+	case (3)         
+	  if (spherical .eq. 1) then 
+	    allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+	    call put_1d_array_on_cart_3d_sphr(.false.,.false.,grav(n,0:),grav_cart,lo,hi,dx(1,:),0)
+	    !$OMP PARALLEL DO PRIVATE(i,j,l)    
+	    do k = lo(3), hi(3)
+	      do j = lo(2), hi(2)
+		do l = lo(1), hi(1)     
+		  cp(l,j,k,comp_grav) = grav_cart(l,j,k,1)
+		enddo
+	      enddo
+	    enddo
+	    !$OMP END PARALLEL DO
+	      
+	    deallocate(grav_cart)
+	  else 
+	    !$OMP PARALLEL DO PRIVATE(i,j,l) 
+	    do k = lo(3), hi(3)
+	      do j = lo(2), hi(2)
+		do l = lo(1), hi(1)     
+		  cp(l,j,k,comp_grav) = grav(n,k)
+		enddo
+	      enddo
+	    enddo
+	    !$OMP END PARALLEL DO
+	  end if
+      end select    
+     enddo
    end subroutine make_grav_plot
 
  !---------------------------------------------------------------------------
   ! make_hp_plot  ... this should not be used, just for debugging
   !---------------------------------------------------------------------------
-  subroutine make_hp_plot(plotdata,comp_hp,state,p0,dx)
+  subroutine make_hp_plot(plotdata,comp_hp,state,p0,dx,n)
     
     use make_hp_module
     use fill_3d_module
@@ -83,317 +111,64 @@ contains
     type(multifab), intent(in   ) :: state
     real(kind=dp_t), intent(in  ) :: p0(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    integer,        intent(in   ) :: n
     
     real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:), np(:,:,:,:)
     integer :: lo(get_dim(plotdata)), hi(get_dim(plotdata))
     integer :: i,k,j,l
-
+    
+    integer :: dm
     real(kind=dp_t) ::   hp(nlevs_radial,0:nr_fine-1)
     real(kind=dp_t), allocatable ::   hp_cart(:,:,:,:)
     
-    !grav(n,:) where n is the amr level
-    call make_hp(hp,p0)
-
-    do i = 1, nfabs(state)
-       sp => dataptr(state, i)
-       cp => dataptr(plotdata, i)
-       lo = lwb(get_box(state, i))
-       hi = upb(get_box(state, i))
-       allocate(hp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,hp(1,0:),hp_cart,lo,hi,dx(1,:),0)
-       !$OMP PARALLEL DO PRIVATE(i,j,l)    
-       do k = lo(3), hi(3)
-	do j = lo(2), hi(2)
-          do l = lo(1), hi(1)     
-	     cp(l,j,k,comp_hp) = hp_cart(l,j,k,1)
-	  enddo
-	enddo
-       enddo
-      !$OMP END PARALLEL DO
-      
-      deallocate(hp_cart)
-    enddo
-  end subroutine make_hp_plot
-  
-  
-  
-  !---------------------------------------------------------------------------
-  ! make_brunt_freq
-  !---------------------------------------------------------------------------
-  subroutine make_brunt_freq(plotdata,comp_brunt,state,rho0,p0,normal,dx)
-    
-    use make_grav_module
-    use make_hp_module
-    use geometry, only: spherical, nr_fine, nlevs_radial
-
-    type(multifab), intent(inout) :: plotdata
-    integer,        intent(in   ) :: comp_brunt
-    type(multifab), intent(in   ) :: state
-    type(multifab), intent(in   ) :: normal
-    real(kind=dp_t), intent(in  ) :: rho0(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t), intent(in  ) :: p0(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
-    
-    real(kind=dp_t), pointer :: sp(:,:,:,:), cp(:,:,:,:), np(:,:,:,:)
-    integer :: lo(get_dim(plotdata)), hi(get_dim(plotdata)), ng_s, ng_c, ng_n
-    integer :: i, dm
-
-    real(kind=dp_t) ::   hp(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t) ::   grav(nlevs_radial,0:nr_fine-1)
-
     dm = get_dim(plotdata)
-
-    ng_c = nghost(plotdata)
-    ng_s = nghost(state)
-    ng_n = nghost(normal)
-    
-    !grav(n,:) where n is the amr level
-    call make_grav_cell(grav,rho0)
-    call make_hp(hp,p0)
-
-    do i = 1, nfabs(state)
-       sp => dataptr(state, i)
-       cp => dataptr(plotdata, i)
-       lo = lwb(get_box(state, i))
-       hi = upb(get_box(state, i))
-       select case (dm)
-       case (1)
-          call make_brunt_1d(cp(:,1,1,comp_brunt), ng_c, &
-                                 sp(:,1,1,:), ng_s, &
-                                 lo, hi)
-       case (2)
-          call make_brunt_2d(cp(:,:,1,comp_brunt), ng_c, &
-                                 sp(:,:,1,:), ng_s, &
-                                 lo, hi)
-       case (3)
-          if (spherical .eq. 1) then
-             np => dataptr(normal, i)       
-             call make_brunt_3d_sphr(cp(:,:,:,comp_brunt), ng_c, &
-                                         sp(:,:,:,:), ng_s, &
-                                         grav(:,:), hp(:,:), &
-                                         np(:,:,:,:), ng_n, lo, hi, dx(1,:))
-          else
-             call make_brunt_3d(cp(:,:,:,comp_brunt), ng_c, &
-                                    sp(:,:,:,:), ng_s, &
-                                    lo, hi)
-          endif
-       end select
-
-    enddo
-  end subroutine make_brunt_freq
-  
-  subroutine make_brunt_1d(brunt, ng_ad, state, ng_s, lo, hi)
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module, only: eos_input_rt, eos
-    use eos_type_module
-    use network, only: nspec
-    use probin_module, only: base_cutoff_density
-    use bl_constants_module
-
-    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
-    real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:)
-    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,:)
-
-  end subroutine make_brunt_1d
-
-  subroutine make_brunt_2d(brunt, ng_ad, state, ng_s, lo, hi)
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module, only: eos_input_rt, eos
-    use eos_type_module
-    use network, only: nspec
-    use probin_module, only: base_cutoff_density
-    use bl_constants_module
-
-    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
-    real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:)
-    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,:)
-
-  end subroutine make_brunt_2d
-
-  subroutine make_brunt_3d(brunt, ng_ad, state, ng_s, lo, hi)
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module, only: eos_input_rt, eos
-    use eos_type_module
-    use network, only: nspec
-    use probin_module, only: base_cutoff_density
-    use bl_constants_module
-
-    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
-    real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
-    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-
-  end subroutine make_brunt_3d
-
-  subroutine make_brunt_3d_sphr(brunt, ng_ad, state, ng_s, grav, hp, &
-                                    normal, ng_n, lo, hi, dx)
-
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use geometry, only: nr_fine, nlevs_radial
-    use eos_module, only: eos_input_rt, eos
-    use eos_type_module
-    use fill_3d_module
-    use network, only: nspec
-    use probin_module, only: base_cutoff_density
-    use bl_constants_module
-
-    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s, ng_n
-    real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
-    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
-    real(kind=dp_t), intent(in   ) ::   hp(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t), intent(in   ) ::   grav(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    
-    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
-    real(kind=dp_t) :: abar(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
-    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
-    real(kind=dp_t) :: chi_rho(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
-    real(kind=dp_t) :: chi_t(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
-    real(kind=dp_t) :: chi_mu(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
-    real(kind=dp_t) :: nabla, nabla_mu
-    real(kind=dp_t) :: dp(4), dt(4), dmu(4)
-
-    
-
-    
-
-    real(kind=dp_t), allocatable ::   hp_cart(:,:,:,:)
-    real(kind=dp_t), allocatable :: grav_cart(:,:,:,:)
-    
-    integer :: i, j, k, c
-
-    type (eos_t) :: eos_state
-    integer :: pt_index(MAX_SPACEDIM)
-
-    
-    allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,grav(1,0:),grav_cart,lo,hi,dx,0)
-    
     !hp(n,:) where n is the amr level
-    allocate(hp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,hp(1,0:),hp_cart,lo,hi,dx,0)
-    
-    
-    
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)    
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             eos_state%rho   = state(i,j,k,rho_comp)
-             eos_state%T     = state(i,j,k,temp_comp)
-             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-             pt_index(:) = (/i, j, k/)       
-
-             call eos(eos_input_rt, eos_state, pt_index)
-       
-             pres(i,j,k) = eos_state%p
-             abar(i,j,k) = eos_state%abar
-
-             chi_rho(i,j,k) = eos_state%rho * eos_state%dpdr / eos_state%p
-             chi_t(i,j,k) = eos_state%T * eos_state%dpdt / eos_state%p
-             chi_mu(i,j,k) = eos_state%abar * eos_state%dpdA / eos_state%p
-             nabla_ad(i,j,k) = (eos_state%gam1 - chi_rho(i,j,k)) / (chi_t(i,j,k) * eos_state%gam1)
-
-          enddo
-       enddo
-    enddo
-    !$OMP END PARALLEL DO
-
-    !$OMP PARALLEL DO PRIVATE(i,j,k,dt,dp,nabla,nabla_mu,dmu)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             if (state(i,j,k,rho_comp) <= base_cutoff_density) then
-                nabla = ZERO
-                nabla_mu = ZERO
-             else
-                ! compute gradient
-
-                ! forward difference
-                if (k == lo(3)) then
-                   dt(3) = state(i,j,k+1,temp_comp) - state(i,j,k,temp_comp)
-                   dp(3) = pres(i,j,k+1) - pres(i,j,k)
-                   dmu(3) = abar(i,j,k+1) - abar(i,j,k)
-                   ! backward difference
-                else if (k == hi(3)) then
-                   dt(3) = state(i,j,k,temp_comp) - state(i,j,k-1,temp_comp)
-                   dp(3) = pres(i,j,k) - pres(i,j,k-1)
-                   dmu(3) = abar(i,j,k) - abar(i,j,k-1)
-                ! centered difference
-                else
-                   dt(3) = state(i,j,k+1,temp_comp) - state(i,j,k-1,temp_comp)
-                   dp(3) = pres(i,j,k+1) - pres(i,j,k-1)   
-                   dmu(3) = abar(i,j,k+1) - abar(i,j,k-1)
-                endif
-
-                if (j == lo(2)) then
-                   dt(2) = state(i,j+1,k,temp_comp) - state(i,j,k,temp_comp)
-                   dp(2) = pres(i,j+1,k) - pres(i,j,k)
-                   dmu(2) = abar(i,j+1,k) - abar(i,j,k)
-                  ! backward difference
-                else if (j == hi(2)) then
-                   dt(2) = state(i,j,k,temp_comp) - state(i,j-1,k,temp_comp)
-                   dp(2) = pres(i,j,k) - pres(i,j-1,k)
-		   dmu(2) = abar(i,j,k) - abar(i,j-1,k)
-		  ! centered difference
-                else
-                   dt(2) = state(i,j+1,k,temp_comp) - state(i,j-1,k,temp_comp)
-                   dp(2) = pres(i,j+1,k) - pres(i,j-1,k)
-		   dmu(2) = abar(i,j+1,k) - abar(i,j-1,k)
-                endif
-
-                if (i == lo(1)) then
-                   dt(1) = state(i+1,j,k,temp_comp) - state(i,j,k,temp_comp)
-                   dp(1) = pres(i+1,j,k) - pres(i,j,k)
-                   dmu(1) = abar(i+1,j,k) - abar(i,j,k)
-                   ! backward difference
-                else if (i == hi(1)) then
-                   dt(1) = state(i,j,k,temp_comp) - state(i-1,j,k,temp_comp)
-                   dp(1) = pres(i,j,k) - pres(i-1,j,k)
-                   dmu(1) = abar(i,j,k) - abar(i-1,j,k)
-                   ! centered difference
-                else
-                   dt(1) = state(i+1,j,k,temp_comp) - state(i-1,j,k,temp_comp)
-                   dp(1) = pres(i+1,j,k) - pres(i-1,j,k)
-                   dmu(1) = abar(i+1,j,k) - abar(i-1,j,k)
-                endif
-
-                ! dot into normal to get d/dr
-                dp(4) = 0.d0
-                dt(4) = 0.d0
-                dmu(4) = 0.d0
-                do c = 1,3
-                   dp(4) = dp(4) + dp(c)*normal(i,j,k,c) 
-                   dt(4) = dt(4) + dt(c)*normal(i,j,k,c)
-                   dmu(4) = dmu(4) + dmu(c)*normal(i,j,k,c)
-                enddo
-
-                ! prevent Inf
-                if (dp(4) == ZERO) then
-                   nabla = -huge(ZERO)
-                   nabla_mu = -huge(ZERO)
-                else
-                   nabla = pres(i,j,k)*dt(4) / (dp(4)*state(i,j,k,temp_comp))
-                   nabla_mu = pres(i,j,k)*dmu(4) / (dp(4)*abar(i,j,k))
-                endif
-             endif
-             if (hp_cart(i,j,k,1) == ZERO) then
-              brunt(i,j,k) = -huge(ZERO)
-             else 
-	      brunt(i,j,k) = - grav_cart(i,j,k,1)*chi_t(i,j,k) / (chi_rho(i,j,k) * hp_cart(i,j,k,1)) * (nabla_ad(i,j,k) - nabla - nabla_mu * chi_mu(i,j,k)/chi_t(i,j,k))
-	     endif
-          enddo
-       enddo
-    enddo
-    !$OMP END PARALLEL DO
-    
-    deallocate(grav_cart)
-    deallocate(hp_cart)
-
-  end subroutine make_brunt_3d_sphr
+    call make_hp(hp,p0)
+    do i = 1, nfabs(state)
+      sp => dataptr(state, i)
+      cp => dataptr(plotdata, i)
+      lo = lwb(get_box(state, i))
+      hi = upb(get_box(state, i))
+      select case (dm)
+	case (1)
+	  do k = lo(1), hi(1) 
+	    cp(k,1,1,comp_hp) = hp(n,k)
+	  enddo
+	case (2)
+	  do k = lo(2), hi(2)
+	    do j = lo(1), hi(1)
+	      cp(j,k,1,comp_hp) = hp(n,k)
+	    enddo
+	  enddo
+	case (3)         
+	  if (spherical .eq. 1) then 
+	    allocate(hp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+	    call put_1d_array_on_cart_3d_sphr(.false.,.false.,hp(n,0:),hp_cart,lo,hi,dx(1,:),0)
+	    !$OMP PARALLEL DO PRIVATE(i,j,l)    
+	    do k = lo(3), hi(3)
+	      do j = lo(2), hi(2)
+		do l = lo(1), hi(1)     
+		  cp(l,j,k,comp_hp) = hp_cart(l,j,k,1)
+		enddo
+	      enddo
+	    enddo
+	    !$OMP END PARALLEL DO
+	      
+	    deallocate(hp_cart)
+	  else 
+	    !$OMP PARALLEL DO PRIVATE(i,j,l) 
+	    do k = lo(3), hi(3)
+	      do j = lo(2), hi(2)
+		do l = lo(1), hi(1)     
+		  cp(l,j,k,comp_hp) = hp(n,k)
+		enddo
+	      enddo
+	    enddo
+	    !$OMP END PARALLEL DO
+	  end if
+      end select    
+    enddo  
+   end subroutine make_hp_plot
 
 
 

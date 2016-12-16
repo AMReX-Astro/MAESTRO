@@ -197,16 +197,16 @@ contains
           select case (dm)
           case (1)
              call estdt_1d(n, uop(:,1,1,1), ng_u, sop(:,1,1,:), ng_s, &
-                           fp(:,1,1,1), ng_f, dUp(:,1,1,1), ng_dU, &
+                           fp(:,1,1,1), ng_f, bp(:,1,1,1), ng_b, dUp(:,1,1,1), ng_dU, &
                            dSdtp(:,1,1,1), ng_dS, &
                            w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, &
-                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
           case (2)
              call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
-                           fp(:,:,1,:), ng_f, dUp(:,:,1,1), ng_dU, &
+                           fp(:,:,1,:), ng_f, bp(:,:,1,1), ng_b, dUp(:,:,1,1), ng_dU, &
                            dSdtp(:,:,1,1), ng_dS, &
                            w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, &
-                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
           case (3)
              if (spherical .eq. 1) then
                 ng_w = nghost(w0mac(1,1))
@@ -221,10 +221,10 @@ contains
                                    rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
              else
                 call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                                   fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
+                                   fp(:,:,:,:), ng_f, bp(:,:,:,1), ng_b, dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, &
                                    w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, dx(n,:), &
-                                   rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+                                   rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
              end if
           end select
 
@@ -299,26 +299,28 @@ contains
 
   end subroutine estdt
 
-  subroutine estdt_1d(n, u, ng_u, s, ng_s, force, ng_f, &
+  subroutine estdt_1d(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                       divU, ng_dU, dSdt, ng_dS, &
                       w0, p0, gamma1bar, lo, hi, &
-                      dx, rho_min, dt_adv, dt_divu, umax, cfl)
+                      dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
+    use probin_module, only: use_grav_dt
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS
+    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS,ng_b
     real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :)  
     real (kind = dp_t), intent(in   ) ::     s(lo(1)-ng_s :,:)  
-    real (kind = dp_t), intent(in   ) :: force(lo(1)-ng_f :)  
+    real (kind = dp_t), intent(in   ) :: force(lo(1)-ng_f :)   
+    real (kind = dp_t), intent(in   ) :: brunt(lo(1)-ng_b :)  
     real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:)
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,umax
+    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,dt_grav,umax
     
-    real (kind = dp_t)  :: spdx, spdr
+    real (kind = dp_t)  :: spdx, spdr, bm
     real (kind = dp_t)  :: fx
     real (kind = dp_t)  :: eps
     real (kind = dp_t)  :: denom, gradp0
@@ -394,28 +396,47 @@ contains
           
     enddo
     
+    
+    if (use_grav_dt) then
+      !
+      ! Limit dt based on brunt vaisaila frequency
+      !
+      
+      bm = ZERO
+      
+      do i = lo(1), hi(1)
+	bm = max(bm ,abs(brunt(i)))
+      enddo
+      
+      
+      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      dt_grav = dt_grav * cfl
+    endif
+    
   end subroutine estdt_1d
   
-  subroutine estdt_2d(n, u, ng_u, s, ng_s, force, ng_f, &
+  subroutine estdt_2d(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                       divU, ng_dU, dSdt, ng_dS, &
                       w0, p0, gamma1bar, lo, hi, &
-                      dx, rho_min, dt_adv, dt_divu, umax, cfl)
+                      dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
+    use probin_module, only: use_grav_dt
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS
+    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_b
     real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) :: force(lo(1)-ng_f :,lo(2)-ng_f :,:)  
+    real (kind = dp_t), intent(in   ) ::  brunt(lo(1)-ng_b :,lo(2)-ng_b :)
     real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:,lo(2)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:)
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,umax
+    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,dt_grav,umax
     
-    real (kind = dp_t)  :: spdx, spdy, spdr
+    real (kind = dp_t)  :: spdx, spdy, spdr, bm
     real (kind = dp_t)  :: fx, fy
     real (kind = dp_t)  :: eps
     real (kind = dp_t)  :: denom, gradp0
@@ -513,28 +534,47 @@ contains
        enddo
     enddo
     
+    
+    if (use_grav_dt) then
+      !
+      ! Limit dt based on brunt vaisaila frequency
+      !
+      
+      bm = ZERO
+      
+      do j = lo(2), hi(2); do i = lo(1), hi(1)
+	bm = max(bm ,abs(brunt(i,j)))
+      enddo; enddo
+      
+      
+      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      dt_grav = dt_grav * cfl
+    endif
+    
   end subroutine estdt_2d
   
-  subroutine estdt_3d_cart(n, u, ng_u, s, ng_s, force, ng_f, &
+  subroutine estdt_3d_cart(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
                            w0, p0, gamma1bar, lo, hi, &
-                           dx, rho_min, dt_adv, dt_divu, umax, cfl)
+                           dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
+    use probin_module, only: use_grav_dt
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS
+    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_b
     real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real (kind = dp_t), intent(in   ) ::  brunt(lo(1)-ng_b :,lo(2)-ng_b :,lo(3)-ng_b :)
     real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:,lo(3)-ng_dS:)
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, umax
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
     
-    real (kind = dp_t)  :: spdx, spdy, spdz, spdr
+    real (kind = dp_t)  :: spdx, spdy, spdz, spdr, bm
     real (kind = dp_t)  :: fx, fy, fz
     real (kind = dp_t)  :: eps,denom,gradp0
     real (kind = dp_t)  :: a, b, c
@@ -665,6 +705,26 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
+    
+    if (use_grav_dt) then
+      !
+      ! Limit dt based on brunt vaisaila frequency
+      !
+      
+      bm = ZERO
+      
+      !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdx)
+      do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+	bm = max(bm ,abs(brunt(i,j,k)))
+      enddo; enddo; enddo
+      !$OMP END PARALLEL DO
+
+      
+      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      dt_grav = dt_grav * cfl
+    endif
+    
     
   end subroutine estdt_3d_cart
   
@@ -835,8 +895,8 @@ contains
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
       
-      
-      if (bm > eps) dt_grav = min(dt_grav, 1/sqrt(bm))
+
+      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
       dt_grav = dt_grav * cfl
     endif
     

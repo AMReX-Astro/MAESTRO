@@ -37,7 +37,7 @@ program init_1d
   real (kind=dp_t), DIMENSION(nspec) :: xn
 
   real (kind=dp_t), allocatable :: xzn_hse(:), xznl_hse(:), xznr_hse(:)
-  real (kind=dp_t), allocatable :: model_hse(:,:)
+  real (kind=dp_t), allocatable :: model_hse(:,:),temp_model(:,:)
 
   real :: A
 
@@ -50,7 +50,7 @@ program init_1d
   real (kind=dp_t) :: xmin, xmax, dCoord, xmin_smooth, xmax_smooth
   real (kind=dp_t), allocatable :: brunt(:), s(:)
 
-  real (kind=dp_t) :: sumx, sumrho
+  real (kind=dp_t) :: sumx, sumrho, sumn
   real (kind=dp_t), DIMENSION(nspec) :: sumxn
   real (kind=dp_t) :: coreX, frhoT, qrhoT 
   integer :: comp
@@ -80,7 +80,8 @@ program init_1d
   real (kind=dp_t) :: low_density_cutoff, temp_cutoff, smallx, max_T
   real (kind=dp_t) :: model_shift
 
-  integer :: index_base, conv_base, min_base, max_base, cent_base, smoothness, csmooth
+  integer :: index_base, conv_base, min_base, max_base, cent_base, smoothness, csmooth, norm
+  real (kind=dp_t) :: wnorm
 
   character (len=256) :: outfile, outfile2, outfile3
   character (len=8) :: num
@@ -100,7 +101,7 @@ program init_1d
   namelist /params/ nx, model_file, xmin, xmax, g_const, &
                     temp_cutoff, do_invsq_grav, &
                     low_density_cutoff, model_prefix, model_shift, smooth, &
-                    xmin_smooth, xmax_smooth, smoothness
+                    xmin_smooth, xmax_smooth, smoothness, norm
 
   ! determine if we specified a runtime parameters file or use the default      
   narg = command_argument_count()
@@ -135,6 +136,7 @@ program init_1d
   smallx = 1.d-10
   smooth = .false.
   smoothness = 4
+  norm = 512
 
   ! this comes in via extern_probin_module -- override the default
   ! here if we want
@@ -183,6 +185,7 @@ program init_1d
   allocate(xznl_hse(nx))
   allocate(xznr_hse(nx))
   allocate(model_hse(nx,nvars_model))
+  allocate(temp_model(nx,nvars_model))
   allocate(brunt(nx))
   allocate(s(nx))
 
@@ -506,7 +509,7 @@ program init_1d
 ! now smooth the density and composition profile by a moving average between xmin_smooth and xmax_smooth
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  
+    temp_model = model_hse
     min_base = 0
     max_base = 0
     do i = 1, nx
@@ -532,52 +535,153 @@ program init_1d
     endif 
 
     cent_base = min_base + (max_base - min_base)/2
-
+    
+    smoothness = (max_base-min_base)/smoothness
+    if ((smoothness .gt. min_base-1 ) .or. (smoothness .gt. nx-max_base)) then
+      smoothness = min(min_base-1,nx-max_base)
+    endif
     
     print *, 'min base for smoothing is ', min_base 
     print *, 'max base for smoothing is ', max_base 
     print *, 'centering around ', cent_base 
-    print *, '' 
+    print *, 'we will smooth over ', smoothness, ' grid points'
+    print *, ''
     
     
-    do i = min_base+1, cent_base
-      if ((i-min_base)*2 - 1 .lt. smoothness) then
-        csmooth = (i-min_base)*2 -1
-      else
-        csmooth = smoothness
-      endif
+    
+    
+!     ! two swipes around the center of the smoothing region
+!     !one swipe upwards to the center of the smoothing zone
+!     do i = min_base+smoothness, cent_base
+! !       if ((i-min_base)*2 - 1 .lt. smoothness) then
+! !         csmooth = (i-min_base)*2 -1
+! !       else
+!         csmooth = smoothness
+! !       endif
+! 
+!       sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
+!       do j = 1, nspec-1
+! 	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
+!       enddo
+!       
+!       temp_model(i,idens_model) = sumrho / DBLE(csmooth*2+1)
+!       do j = 1, nspec-1
+! 	temp_model(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
+!       enddo    
+! 
+!     enddo
+!     
+!     model_hse = temp_model
+!     
+!     
+!     !one swipe downwards to the center of the smoothing zone
+!     do i = max_base-smoothness, cent_base, -1
+! !       if ((max_base-i )*2 - 1 .lt. smoothness) then
+! ! 	csmooth = (max_base-i )*2 -1
+! !       else
+!         csmooth = smoothness
+! !       endif
+!       
+!       sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
+!       do j = 1, nspec-1
+! 	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
+!       enddo
+!       
+!       
+!       
+!       temp_model(i,idens_model) = sumrho / DBLE(csmooth*2+1)
+!       do j = 1, nspec-1
+! 	temp_model(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
+!       enddo   
+!     enddo  
+!     
+!     model_hse = temp_model
+!      
+!      ! one swipe upwards -> make effectively two swipes
+!      do i = min_base+1, max_base-1
+! !         if (((i-min_base)*2 - 1 .lt. smoothness) .or. ((max_base-i )*2 - 1 .lt. smoothness) ) then
+! !           csmooth = min(i-min_base,max_base-i)*2 -1
+! !         else
+!          csmooth = smoothness
+! !         endif
+!  
+!        sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
+!        do j = 1, nspec-1
+!  	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
+!        enddo
+!        
+!        temp_model(i,idens_model) = sumrho / DBLE(csmooth*2+1)
+!        do j = 1, nspec-1
+!  	temp_model(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
+!        enddo    
+!  
+!      enddo
+    
+!     !one swipe upwards with weighted moving average ... this works fine, but does depend on the resolution 
+!     do i = min_base+1, max_base-1
+!       csmooth = smoothness
+!       
+!       sumn = ONE
+!       do n=2,csmooth+1
+!         sumn= sumn + TWO/dble(n)**2
+!       enddo
+!       
+!       sumrho = model_hse(i,idens_model)
+!       do n=2,csmooth+1
+!         sumrho = sumrho + model_hse(i-n+1,idens_model)/dble(n)**2 + model_hse(i+n-1,idens_model)/dble(n)**2
+!       enddo
+!       
+!       do j = 1, nspec-1
+! 	sumxn(j) = model_hse(i,ispec_model-1+j)
+! 	do n=2,csmooth+1
+! 	  sumxn(j) = sumxn(j) + model_hse(i-n+1,ispec_model-1+j)/dble(n)**2 + model_hse(i+n-1,ispec_model-1+j)/dble(n)**2
+! 	enddo
+!       enddo
+!       
+!       temp_model(i,idens_model) = sumrho / sumn
+!       do j = 1, nspec-1
+! 	temp_model(i,ispec_model-1+j) = sumxn(j) / sumn
+!       enddo    
+! 
+!     enddo
 
-      sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
-      do j = 1, nspec-1
-	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
+
+
+    !one swipe upwards with weighted moving average ... this works fine, but does depend on the resolution 
+    do i = min_base+1, max_base-1
+      csmooth = smoothness
+      
+      sumn = ONE
+      do n=2,csmooth+1
+        wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
+        sumn= sumn + TWO/wnorm**2
       enddo
       
-      model_hse(i,idens_model) = sumrho / DBLE(csmooth*2+1)
+      sumrho = model_hse(i,idens_model)
+      do n=2,csmooth+1
+        wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
+	sumrho = sumrho + model_hse(i-n+1,idens_model)/wnorm**2 + model_hse(i+n-1,idens_model)/wnorm**2
+      enddo
+      
       do j = 1, nspec-1
-	model_hse(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
+	sumxn(j) = model_hse(i,ispec_model-1+j)
+	do n=2,csmooth+1
+          wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
+	  sumxn(j) = sumxn(j) + model_hse(i-n+1,ispec_model-1+j)/wnorm**2 + model_hse(i+n-1,ispec_model-1+j)/wnorm**2
+	enddo
+      enddo
+      
+      temp_model(i,idens_model) = sumrho / sumn
+      do j = 1, nspec-1
+	temp_model(i,ispec_model-1+j) = sumxn(j) / sumn
       enddo    
 
     enddo
 
-    do i = max_base-1, cent_base, -1
-      if ((max_base-i )*2 - 1 .lt. smoothness) then
-	csmooth = (max_base-i )*2 -1
-      else
-        csmooth = smoothness
-      endif
-      
-      sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
-      do j = 1, nspec-1
-	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
-      enddo
-      
-      
-      
-      model_hse(i,idens_model) = sumrho / DBLE(csmooth*2+1)
-      do j = 1, nspec-1
-	model_hse(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
-      enddo   
-    enddo  
+
+    
+    model_hse = temp_model
+
   endif
   
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

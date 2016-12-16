@@ -278,11 +278,7 @@ contains
           base_cutoff_density_coord(n) = base_cutoff_density_coord(n+1) / 2 + 1
        end if
     end do
-    
-    ! check if the base cutoff coordinate is at the edge of the model
-    if (base_cutoff_density_coord(1) .eq. nr(1)) then
-      call bl_error("base_cutoff_density lower than outermost density of model")
-    endif
+
     
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

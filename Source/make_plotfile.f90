@@ -204,6 +204,7 @@ contains
     use make_grav_module
     use make_div_coeff_module
     use make_pi_cc_module
+    use make_brunt_freq_module
 
     type(plot_t)     , intent(in   ) :: p
     character(len=*) , intent(in   ) :: dirname
@@ -584,21 +585,22 @@ contains
 
     ! BRUNT VAISAILA FREQUENCY
     if (p%icomp_brunt > 0) then
-      do n=1, nlevs
-         call make_brunt_freq(plotdata(n),p%icomp_brunt,s(n),rho0,p0,normal(n),dx)
-      enddo
+      call make_brunt_freq(tempfab,s,rho0,p0,normal,dx)
+      do n=1,nlevs
+          call multifab_copy_c(plotdata(n),p%icomp_brunt,tempfab(n),1,1)
+       end do
     endif
     
     ! Gravity
     if (p%icomp_grav > 0) then
      do n=1, nlevs
-      call make_grav_plot(plotdata(n),p%icomp_grav,s(n),rho0,dx)
+      call make_grav_plot(plotdata(n),p%icomp_grav,s(n),rho0,dx,n)
      enddo
     endif
     ! Pressure Scale Height
     if (p%icomp_hp > 0) then
      do n=1, nlevs
-      call make_hp_plot(plotdata(n),p%icomp_hp,s(n),p0,dx)
+      call make_hp_plot(plotdata(n),p%icomp_hp,s(n),p0,dx,n)
      enddo
     endif    
     

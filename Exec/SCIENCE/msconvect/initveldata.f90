@@ -11,6 +11,7 @@ module init_vel_module
   use variables
   use network
   use geometry
+  use probin_module, only: do_2d_planar_octant
   use ml_layout_module
   use ml_cc_restriction_module
   use multifab_fill_ghost_module
@@ -55,7 +56,7 @@ contains
     ng = nghost(u(1))
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    if (dm .eq. 3 .and. spherical .eq. 1) then
+    if ((dm .eq. 3 .and. spherical .eq. 1 ) .or. (dm .eq. 2 .and. do_2d_planar_octant  .eq. 1)) then
        call init_genrand(20908)
        do i=1,3
           do j=1,3
@@ -100,7 +101,14 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call bl_error('initveldata_2d not written')
+             if (do_2d_planar_octant  .eq. 1) then
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                                 s0_init(n,:,:), p0_init(n,:), &
+                                 alpha(:,:,1),beta(:,:,1),gamma(:,:,1), &
+                                 phix(:,:,1),phiy(:,:,1),normk(:,:,1))
+	     else
+	      call bl_error('initveldata_2d not written')
+	     end if 
           case (3)
              if (spherical .eq. 1) then
                 call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
@@ -139,9 +147,115 @@ contains
        enddo
        
     end if
+    
 
   end subroutine initveldata
 
+  
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init,alpha,beta,gamma,phix,phiy,norm)
+    
+    
+    use probin_module, only: prob_lo, prob_hi, &
+         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
+         
+    integer           , intent(in   ) :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
+
+    ! random numbers between -1 and 1
+    real(kind=dp_t), intent(in) :: alpha(3,3), beta(3,3), gamma(3,3)
+
+    ! random numbers between 0 and 2*pi
+    real(kind=dp_t), intent(in) :: phix(3,3), phiy(3,3)
+
+    ! L2 norm of k
+    real(kind=dp_t), intent(in) :: norm(3,3)
+
+    ! Local variables
+    integer :: i, j
+    integer :: iloc, jloc
+
+    ! cos and sin of (2*pi*kx/L + phix), etc
+    real(kind=dp_t) :: cx(3,3), cy(3,3), cz(3,3)
+    real(kind=dp_t) :: sx(3,3), sy(3,3), sz(3,3)
+
+    ! radius, or distance, to center of star
+    real(kind=dp_t) :: rloc
+
+    ! the point we're at
+    real(kind=dp_t) :: xloc(2)
+
+    ! perturbational velocity to add
+    real(kind=dp_t) :: upert(2)
+
+    ! initialize the velocity to zero everywhere
+    u = ZERO
+
+
+    ! now do the big loop over all points in the domain
+    do iloc = lo(1),hi(1)
+       do jloc = lo(2),hi(2)
+
+             ! set perturbational velocity to zero
+             upert = ZERO
+
+             ! compute where we physically are
+             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
+             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
+
+             ! compute distance to the center of the star
+             rloc = xloc(2)
+
+             ! loop over the 9 combinations of fourier components
+             do i=1,3
+                do j=1,3
+                      ! compute cosines and sines
+                      cx(i,j) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j))
+                      cy(i,j) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j))
+                      sx(i,j) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j))
+                      sy(i,j) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j))
+                enddo
+             enddo
+
+             ! loop over the 9 combinations of fourier components
+             do i=1,3
+                do j=1,3
+                      ! compute contribution from perturbation velocity from each mode
+                      upert(1) = upert(1) + &
+                           (-gamma(i,j)*dble(j)*cx(i,j)*sy(i,j) &
+                             +beta(i,j)*dble(j)*cy(i,j)*sx(i,j)) &
+                             / norm(i,j)
+                            
+                      upert(2) = upert(2) + &
+                           (gamma(i,j)*dble(i)*cy(i,j)*sx(i,j) &
+                           -alpha(i,j)*dble(j)*cx(i,j)*sy(i,j)) &
+                             / norm(i,j)
+                            
+                enddo
+             enddo
+
+             ! apply the cutoff function to the perturbational velocity
+             do i=1,2
+                upert(i) = velpert_amplitude*upert(i) &
+                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+             enddo
+
+             ! add perturbational velocity to background velocity
+             do i=1,2
+                u(iloc,jloc,i) = u(iloc,jloc,i) + upert(i)
+             enddo
+
+       enddo
+    enddo
+
+  end subroutine initveldata_2d
+  
+  
+  
+  
+  
   ! the velocity is initialized to zero plus a perturbation which is a
   ! summation of 27 fourier modes with random amplitudes and phase
   ! shifts over a square of length "velpert_scale".  The parameter
@@ -155,7 +269,7 @@ contains
                                  alpha,beta,gamma,phix,phiy,phiz,normk)
 
     use probin_module, only: prob_lo, prob_hi, &
-         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
+         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale, octant
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -196,11 +310,16 @@ contains
     u = ZERO
 
     ! define where center of star is
-    ! this currently assumes the star is at the center of the domain
-    xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
-    xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
-    xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
-
+    if (octant) then 
+      xc(1) = prob_lo(1)
+      xc(2) = prob_lo(2)
+      xc(3) = prob_lo(3)
+    else 
+      xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
+      xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
+      xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
+    endif
+      
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)

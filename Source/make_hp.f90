@@ -53,7 +53,7 @@ module make_hp_module
 	    endif
 	    
 	    if (dp == ZERO) then
-	      hp(1,r) = -huge(ZERO)
+	      hp(1,r) = 1e30
 	    else
 	      hp(n,r) = -(ddr * p0(1,r))/dp
 	    endif
@@ -93,7 +93,7 @@ module make_hp_module
                    
                    
 		  if (dp == ZERO) then
-		      hp(n,r) = -huge(ZERO)
+		      hp(n,r) = 1e30
 		  else
 		      hp(n,r) = -(ddr * p0(n,r))/dp
 		  endif		    

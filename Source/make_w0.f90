@@ -553,7 +553,7 @@ contains
     logical,         intent(in   ) :: is_predictor
 
     ! Local variables
-    integer                    :: r
+    integer                    :: r,edge
     real(kind=dp_t)            :: dpdr, volume_discrepancy, w0_avg, div_avg, dt_avg
 
     real(kind=dp_t) ::    w0_old_cen(0:nr_fine-1)
@@ -621,9 +621,14 @@ contains
     u   = ZERO
    
     ! Note that we are solving for (r^2 delta w0), not just w0. 
-
+    if (base_cutoff_density_coord(1) .eq. nr_fine ) then
+     edge = nr_fine-1
+    else 
+     edge = base_cutoff_density_coord(1)
+    endif
+    
     !$OMP PARALLEL DO PRIVATE(r,dpdr)
-    do r=1,base_cutoff_density_coord(1)
+    do r=1,edge
        A(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2
        A(r) = A(r) / dr(1)**2
 
@@ -653,25 +658,25 @@ contains
     F(0) = zero
 
     ! Upper boundary
-    A(base_cutoff_density_coord(1)+1) = -one
-    B(base_cutoff_density_coord(1)+1) = one
-    C(base_cutoff_density_coord(1)+1) = zero
-    F(base_cutoff_density_coord(1)+1) = zero
+    A(edge+1) = -one
+    B(edge+1) = one
+    C(edge+1) = zero
+    F(edge+1) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(A, B, C, F, u, base_cutoff_density_coord(1)+2)
+    call tridiag(A, B, C, F, u, edge+2)
 
     w0(0) = ZERO + w0_from_Sbar(0)
 
     !$OMP PARALLEL DO PRIVATE(r)
-    do r=1,base_cutoff_density_coord(1)+1
+    do r=1,edge+1
        w0(r) = u(r) / r_edge_loc(1,r)**2 + w0_from_Sbar(r)
     end do
     !$OMP END PARALLEL DO
 
-    do r=base_cutoff_density_coord(1)+2,nr_fine
-       w0(r) = w0(base_cutoff_density_coord(1)+1)&
-            *r_edge_loc(1,base_cutoff_density_coord(1)+1)**2/r_edge_loc(1,r)**2
+    do r=edge+2,nr_fine
+       w0(r) = w0(edge+1)&
+            *r_edge_loc(1,edge+1)**2/r_edge_loc(1,r)**2
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 

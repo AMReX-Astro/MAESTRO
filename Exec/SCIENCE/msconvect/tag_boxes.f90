@@ -62,7 +62,7 @@ contains
 
        select case (get_dim(mf))
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),tlo(1:2),mfp(:,:,1,rho_comp),mflo(1:2),lo,hi,dx,lev)
+          call tag_boxes_2d(tp(:,:,1,1),tlo(1:2),mfp(:,:,1,rho_comp),mflo(1:2),lo,hi,lo_tag,hi_tag,dx,lev)
        case  (3)
           call tag_boxes_3d(tp(:,:,:,1),tlo(1:3),mfp(:,:,:,rho_comp),mflo(1:3),lo,hi,lo_tag,hi_tag,dx,lev)
        end select
@@ -71,13 +71,14 @@ contains
 
   end subroutine tag_boxes
 
-  subroutine tag_boxes_2d(tagbox,tlo,mf,mflo,lo,hi,dx,lev)
+  subroutine tag_boxes_2d(tagbox,tlo,mf,mflo,lo,hi,lo_tag,hi_tag,dx,lev)
 
     integer          , intent(in   ) :: lo(2),hi(2),tlo(2), mflo(2)
     logical          , intent(inout) :: tagbox( tlo(1):, tlo(2):)
     real(kind = dp_t), intent(in   ) ::     mf(mflo(1):,mflo(2):)
     real(dp_t)       , intent(in   ) :: dx
     integer          , intent(in   ) :: lev
+    real(kind = dp_t), intent(in   ) :: lo_tag, hi_tag
 
     ! local variables
     integer :: i,j
@@ -85,36 +86,14 @@ contains
     ! initially say that we do not want to tag any cells for refinement
     tagbox(lo(1):hi(1),lo(2):hi(2)) = .false.
 
-    select case(lev)
-    case (1)
-       ! tag all boxes where the first component of mf >= 1.01
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             if (mf(i,j) .gt. 1.01_dp_t) then
-                tagbox(i,j) = .true.
-             end if
-          end do
-       enddo
-    case (2)
-       ! for level 2 tag all boxes where the first component of mf >= 1.1
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             if (mf(i,j) .gt. 1.1_dp_t) then
-                tagbox(i,j) = .true.
-             end if
-          end do
-       end do
-    case default
-       ! for level 3 or greater tag all boxes where the first component of mf >= 1.5
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             if (mf(i,j) .gt. 1.5_dp_t) then
-                tagbox(i,j) = .true.
-             end if
-          end do
-       end do
-    end select
-
+    do j = lo(2),hi(2)
+      do i = lo(1),hi(1)
+	if (mf(i,j) .gt. lo_tag .and. mf(i,j) .lt. hi_tag) then
+	  tagbox(i,j) = .true.
+	end if
+      end do
+    end do
+    
   end subroutine tag_boxes_2d
 
   subroutine tag_boxes_3d(tagbox,tlo,mf,mflo,lo,hi,lo_tag,hi_tag,dx,lev)
