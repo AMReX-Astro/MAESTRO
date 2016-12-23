@@ -93,7 +93,10 @@ module make_brunt_freq_module
     integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
     real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:)
     real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,:)
-
+   
+   call bl_error("ERROR: Brunt Vaisailla frequency not yet implemented in 1D")
+   
+    
   end subroutine make_brunt_1d
 
   subroutine make_brunt_2d(brunt, ng_ad, state, ng_s, grav, hp, lo, hi,dx)
@@ -215,6 +218,8 @@ module make_brunt_freq_module
     real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
     real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
 
+    call bl_error("ERROR: Brunt Vaisailla frequency not yet implemented in 3D not spherical")
+    
   end subroutine make_brunt_3d
 
   subroutine make_brunt_3d_sphr(brunt, ng_ad, state, ng_s, grav, hp, &

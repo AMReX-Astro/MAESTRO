@@ -36,6 +36,7 @@ contains
     use bl_constants_module
     use mk_vel_force_module
     use make_brunt_freq_module
+    use make_hp_module
     use fill_3d_module
     use parallel
     use probin_module, only: evolve_base_state, small_dt, use_grav_dt
@@ -64,6 +65,7 @@ contains
 
     type(multifab) ::      brunt(mla%nlevel)
     type(multifab) :: normal(mla%nlevel)
+    real(kind=dp_t) ::   hp(nlevs_radial,0:nr_fine-1)
     
     logical :: is_final_update
 
@@ -156,6 +158,7 @@ contains
     if (use_grav_dt) then
       call make_normal(normal,dx)
       call make_brunt_freq(brunt,s,rho0,p0,normal,dx)
+      call make_hp(hp,p0)
       
       do n=1, nlevs
 	call destroy(normal(n))
@@ -199,13 +202,13 @@ contains
              call estdt_1d(n, uop(:,1,1,1), ng_u, sop(:,1,1,:), ng_s, &
                            fp(:,1,1,1), ng_f, bp(:,1,1,1), ng_b, dUp(:,1,1,1), ng_dU, &
                            dSdtp(:,1,1,1), ng_dS, &
-                           w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, &
+                           w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
           case (2)
              call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
                            fp(:,:,1,:), ng_f, bp(:,:,1,1), ng_b, dUp(:,:,1,1), ng_dU, &
                            dSdtp(:,:,1,1), ng_dS, &
-                           w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, &
+                           w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
           case (3)
              if (spherical .eq. 1) then
@@ -213,17 +216,18 @@ contains
                 wxp => dataptr(w0mac(n,1), i)
                 wyp => dataptr(w0mac(n,2), i)
                 wzp => dataptr(w0mac(n,3), i)
+                ! Dirt fix for grav_dt ... only use it in level 1.. this has to be changed (requires hp to be changed!)
                 call estdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f ,bp(:,:,:,1) ,ng_b , dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, &
                                    w0(1,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
-                                   p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
-                                   rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
+                                   p0(1,:), gamma1bar(1,:), hp(n,:), lo, hi, dx(n,:), &
+                                   rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac, n)
              else
                 call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f, bp(:,:,:,1), ng_b, dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, &
-                                   w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, dx(n,:), &
+                                   w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, dx(n,:), &
                                    rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
              end if
           end select
@@ -301,7 +305,7 @@ contains
 
   subroutine estdt_1d(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                       divU, ng_dU, dSdt, ng_dS, &
-                      w0, p0, gamma1bar, lo, hi, &
+                      w0, p0, gamma1bar, hp, lo, hi, &
                       dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: nr
@@ -315,7 +319,7 @@ contains
     real (kind = dp_t), intent(in   ) :: brunt(lo(1)-ng_b :)  
     real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,dt_grav,umax
@@ -405,11 +409,11 @@ contains
       bm = ZERO
       
       do i = lo(1), hi(1)
-	bm = max(bm ,abs(brunt(i)))
+	bm = max(bm ,sqrt(abs(brunt(i)))*hp(i))
       enddo
       
       
-      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
       dt_grav = dt_grav * cfl
     endif
     
@@ -417,7 +421,7 @@ contains
   
   subroutine estdt_2d(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                       divU, ng_dU, dSdt, ng_dS, &
-                      w0, p0, gamma1bar, lo, hi, &
+                      w0, p0, gamma1bar, hp, lo, hi, &
                       dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: nr
@@ -431,7 +435,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  brunt(lo(1)-ng_b :,lo(2)-ng_b :)
     real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:,lo(2)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,dt_grav,umax
@@ -543,11 +547,11 @@ contains
       bm = ZERO
       
       do j = lo(2), hi(2); do i = lo(1), hi(1)
-	bm = max(bm ,abs(brunt(i,j)))
+	bm = max(bm ,sqrt(abs(brunt(i,j)))*hp(j))
       enddo; enddo
       
       
-      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
       dt_grav = dt_grav * cfl
     endif
     
@@ -555,7 +559,7 @@ contains
   
   subroutine estdt_3d_cart(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
-                           w0, p0, gamma1bar, lo, hi, &
+                           w0, p0, gamma1bar, hp, lo, hi, &
                            dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
 
     use geometry,  only: nr
@@ -569,7 +573,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  brunt(lo(1)-ng_b :,lo(2)-ng_b :,lo(3)-ng_b :)
     real (kind = dp_t), intent(in   ) ::  divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::  dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:,lo(3)-ng_dS:)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
@@ -714,14 +718,14 @@ contains
       
       bm = ZERO
       
-      !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdx)
+      !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-	bm = max(bm ,abs(brunt(i,j,k)))
+	bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
 
       
-      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
       dt_grav = dt_grav * cfl
     endif
     
@@ -730,8 +734,8 @@ contains
   
   subroutine estdt_3d_sphr(u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
-                           w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, &
-                           lo, hi, dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
+                           w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, hp, &
+                           lo, hi, dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl,n)
 
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
@@ -748,13 +752,14 @@ contains
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
     real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
     real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
-    real (kind = dp_t), intent(in   ) :: rho_min, cfl
+    real (kind = dp_t), intent(in   ) :: rho_min, cfl, n
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
     
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
-
+    real (kind = dp_t), allocatable :: hp_cart(:,:,:,:)
+    
     real (kind = dp_t) :: gp0(0:nr_fine)
 
     real (kind = dp_t) :: spdx, spdy, spdz, spdr, gp_dot_u, gamma1bar_p_avg,bm
@@ -762,6 +767,9 @@ contains
     integer            :: i,j,k,r
 
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+    if (use_grav_dt) then
+      allocate(hp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    endif
     
     eps = 1.0d-8
     
@@ -882,25 +890,30 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-    if (use_grav_dt) then
+    if (use_grav_dt .and. n .eq. 1 ) then
+      call put_1d_array_on_cart_3d_sphr(.false.,.false.,hp(0:),hp_cart,lo,hi,dx,0)
       !
       ! Limit dt based on brunt vaisaila frequency
       !
       
       bm = ZERO
       
-      !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : spdx)
+      !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-	bm = max(bm ,abs(brunt(i,j,k)))
+	bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp_cart(i,j,k,1))
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
       
 
-      if (bm > eps) dt_grav = min(dt_grav, ONE/sqrt(bm))
+      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
       dt_grav = dt_grav * cfl
+      
     endif
     
     deallocate(gp0_cart)
+    if (use_grav_dt) then
+      deallocate(hp_cart)
+    endif
 
   end subroutine estdt_3d_sphr
   
