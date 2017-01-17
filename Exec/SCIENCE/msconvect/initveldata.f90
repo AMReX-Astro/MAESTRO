@@ -269,8 +269,9 @@ contains
                                  alpha,beta,gamma,phix,phiy,phiz,normk)
 
     use probin_module, only: prob_lo, prob_hi, &
-         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale, octant
-
+         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale, velpert_min, octant
+    use mt19937_module
+    
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -305,6 +306,9 @@ contains
 
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
+    
+    !random number
+    real(kind=dp_t) :: rand
 
     ! initialize the velocity to zero everywhere
     u = ZERO
@@ -319,7 +323,9 @@ contains
       xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
       xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
     endif
-      
+    
+    call init_genrand(20908)
+             
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
@@ -383,7 +389,20 @@ contains
                 upert(i) = velpert_amplitude*upert(i) &
                      *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
-
+             
+             
+             if (sum(abs(upert)) < velpert_min) then
+                rand = genrand_real1()
+                rand = 2.0d0*rand - 1.0d0
+                upert(1) = velpert_min * rand
+                rand = genrand_real1()
+                rand = 2.0d0*rand - 1.0d0
+                upert(2) = velpert_min * rand
+                rand = genrand_real1()
+                rand = 2.0d0*rand - 1.0d0
+                upert(3) = velpert_min * rand
+             endif
+             
              ! add perturbational velocity to background velocity
              do i=1,3
                 u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)

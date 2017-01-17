@@ -18,8 +18,9 @@ module make_brunt_freq_module
   subroutine make_brunt_freq(brunt,state,rho0,p0,normal,dx)
     
     use make_grav_module
-    use make_hp_module
+    use make_scale_module
     use geometry, only: spherical, nr_fine, nlevs_radial
+    use probin_module, only: max_levs
 
     type(multifab), intent(inout) :: brunt(:)
     type(multifab), intent(in   ) :: state(:)
@@ -39,10 +40,11 @@ module make_brunt_freq_module
     
     !grav(n,:) where n is the amr level
     call make_grav_cell(grav,rho0)
-    call make_hp(hp,p0)
+    call make_scale(hp,p0)
     
     
-    do n=1,nlevs_radial
+    do n=1,max_levs
+	
 	do i = 1, nfabs(state(n))
 	  sp => dataptr(state(n), i)
 	  cp => dataptr(brunt(n), i)
@@ -69,8 +71,8 @@ module make_brunt_freq_module
 		np => dataptr(normal(n), i)       
 		call make_brunt_3d_sphr(cp(:,:,:,1), ng_c, &
 					    sp(:,:,:,:), ng_s, &
-					    grav(n,:), hp(n,:), &
-					    np(:,:,:,:), ng_n, lo, hi, dx(1,:))
+					    grav(1,:), hp(1,:), &
+					    np(:,:,:,:), ng_n, lo, hi, dx(n,:))
 	      else
 		call make_brunt_3d(cp(:,:,:,1), ng_c, &
 					sp(:,:,:,:), ng_s, &
@@ -80,6 +82,7 @@ module make_brunt_freq_module
 
 	enddo
     enddo
+    
   end subroutine make_brunt_freq
   
   subroutine make_brunt_1d(brunt, ng_ad, state, ng_s, lo, hi)
@@ -383,6 +386,7 @@ module make_brunt_freq_module
              else 
 	      brunt(i,j,k) = - grav_cart(i,j,k,1)*chi_t(i,j,k) / (chi_rho(i,j,k) * hp_cart(i,j,k,1)) * (nabla_ad(i,j,k) - nabla - nabla_mu * chi_mu(i,j,k)/chi_t(i,j,k))
 	     endif
+
           enddo
        enddo
     enddo

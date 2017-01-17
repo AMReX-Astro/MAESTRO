@@ -9,7 +9,7 @@ PARTICLES :=
 MKVERBOSE := t
 
 # define the location of the MAESTRO top directory
-MAESTRO_TOP_DIR := ../../..
+MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
 
 # define the physics packages to build this problem
@@ -17,7 +17,7 @@ EOS_DIR := helmeos
 CONDUCTIVITY_DIR := timmes_stellar
 
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/H_core.net
+GENERAL_NET_INPUTS := $(MICROPHYSICS_HOME)/networks/$(NETWORK_DIR)/aproxCNOsolar.net
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique

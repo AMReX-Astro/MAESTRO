@@ -102,7 +102,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_hp_plot(plotdata,comp_hp,state,p0,dx,n)
     
-    use make_hp_module
+    use make_scale_module
     use fill_3d_module
     use geometry, only: spherical, nr_fine, nlevs_radial
 
@@ -123,7 +123,7 @@ contains
     
     dm = get_dim(plotdata)
     !hp(n,:) where n is the amr level
-    call make_hp(hp,p0)
+    call make_scale(hp,p0)
     do i = 1, nfabs(state)
       sp => dataptr(state, i)
       cp => dataptr(plotdata, i)
