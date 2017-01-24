@@ -17,7 +17,7 @@ contains
          nlevs_radial, nr, numdisjointchunks, & 
          r_start_coord, r_end_coord
     use probin_module, only: grav_const, base_cutoff_density, &
-         do_planar_invsq_grav, planar_invsq_mass, do_2d_planar_octant, ref_ratio
+         do_planar_invsq_grav, planar_invsq_mass, do_self_grav, ref_ratio
     use fundamental_constants_module, only: Gconst
     use restrict_base_module
 
@@ -47,14 +47,20 @@ contains
              enddo
           enddo
 
-       else if (do_2d_planar_octant .eq. 1) then
+       else if (do_self_grav) then
 
           ! compute gravity as in the spherical case
 
           allocate(m(nlevs_radial,0:nr_fine-1))
 
           n = 1
-          m(n,0) = FOUR3RD*M_PI*rho0(n,0)*r_cc_loc(n,0)**3
+          
+          if (planar_invsq_mass .gt. 0) then
+	    m(n,0) = planar_invsq_mass
+          else
+	    m(n,0) = FOUR3RD*M_PI*rho0(n,0)*r_cc_loc(n,0)**3
+	  endif
+	  
           grav_cell(n,0) = -Gconst * m(n,0) / r_cc_loc(n,0)**2
           
           do r=1,nr(n)-1
@@ -96,8 +102,12 @@ contains
              do i=1,numdisjointchunks(n)
 
                 if (r_start_coord(n,i) .eq. 0) then
-                   m(n,0) = FOUR3RD*M_PI*rho0(n,0)*r_cc_loc(n,0)**3
-                   grav_cell(n,0) = -Gconst * m(n,0) / r_cc_loc(n,0)**2
+                   if (planar_invsq_mass .gt. 0) then
+		     m(n,0) = planar_invsq_mass
+		   else
+		     m(n,0) = FOUR3RD*M_PI*rho0(n,0)*r_cc_loc(n,0)**3
+		   endif		
+		   grav_cell(n,0) = -Gconst * m(n,0) / r_cc_loc(n,0)**2
                 else 
                    r = r_start_coord(n,i)
                    m(n,r) = m(n-1,r/ref_ratio-1)
@@ -236,7 +246,7 @@ contains
     use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr, &
          numdisjointchunks, r_start_coord, r_end_coord
     use probin_module, only: grav_const, base_cutoff_density, &
-         do_planar_invsq_grav, planar_invsq_mass, do_2d_planar_octant, ref_ratio
+         do_planar_invsq_grav, planar_invsq_mass, do_self_grav, ref_ratio
     use fundamental_constants_module, only: Gconst
     use restrict_base_module
 
@@ -266,15 +276,20 @@ contains
              enddo
           enddo
 
-       else if (do_2d_planar_octant .eq. 1) then
+       else if (do_self_grav) then
 
           ! compute gravity as in spherical geometry
 
           allocate(m(nlevs_radial,0:nr_fine))
-
-          grav_edge(1,0) = zero 
-          m(1,0) = ZERO
-
+          
+          if (planar_invsq_mass .gt. 0) then
+	    m(1,0) = planar_invsq_mass
+	    grav_edge(1,0) = -Gconst*planar_invsq_mass / r_edge_loc(1,0)**2
+          else
+	    grav_edge(1,0) = zero 
+	    m(1,0) = ZERO
+	  endif
+          
           do r=1,nr(1)-1
 
              ! only add to the enclosed mass if the density is 
@@ -297,9 +312,13 @@ contains
              do i=1,numdisjointchunks(n)
 
                 if (r_start_coord(n,i) .eq. 0) then
-
-                   m(n,0) = ZERO
-
+		  if (planar_invsq_mass .gt. 0) then
+		    m(n,0) = planar_invsq_mass
+		    grav_edge(n,0) = -Gconst*planar_invsq_mass / r_edge_loc(n,0)**2
+		  else
+		    grav_edge(n,0) = zero 
+		    m(n,0) = ZERO
+		  endif
                 else 
 
                    m(n,r_start_coord(n,i)) = m(n-1,r_start_coord(n,i)/ref_ratio)
@@ -377,7 +396,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr
     use probin_module, only: grav_const, base_cutoff_density, &
-         do_planar_invsq_grav, planar_invsq_mass, do_2d_planar_octant
+         do_planar_invsq_grav, planar_invsq_mass, do_self_grav
     use fundamental_constants_module, only: Gconst
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
@@ -404,12 +423,20 @@ contains
                   r_edge_loc(nlevs_radial,r)**2
           enddo
        
-       else if (do_2d_planar_octant .eq. 1) then
+       else if (do_self_grav) then
 
           ! compute gravity as in spherical geometry
           grav_edge_fine(0) = ZERO
           mencl = ZERO
 
+          if (planar_invsq_mass .gt. 0) then
+	    mencl = planar_invsq_mass
+	    grav_edge_fine(0) = -Gconst*planar_invsq_mass / r_edge_loc(nlevs_radial,0)**2
+          else
+	    mencl = ZERO
+	    grav_edge_fine(0) = zero 
+	  endif
+          
           do r=1,nr_fine-1
 
              ! only add to the enclosed mass if the density is 

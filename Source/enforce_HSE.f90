@@ -17,7 +17,7 @@ contains
     use restrict_base_module
     use bl_error_module
     use make_grav_module
-    use probin_module, only: do_planar_invsq_grav, do_2d_planar_octant
+    use probin_module, only: do_planar_invsq_grav, do_self_grav
 
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(inout) ::   p0(:,0:)
@@ -66,7 +66,7 @@ contains
              ! we integrate upwards starting from the nearest coarse
              ! cell at a lower physical height
 
-             if (do_planar_invsq_grav .OR. do_2d_planar_octant .eq. 1) then
+             if (do_planar_invsq_grav .OR. do_self_grav) then
                 ! we have variable gravity
                 p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
                      + (dr(n)/4.d0)* &
@@ -111,7 +111,7 @@ contains
              offset = 0.d0
           else if (r_end_coord(n,i) .le. base_cutoff_density_coord(n)) then
              ! use fine -> coarse stencil in notes
-             if (do_planar_invsq_grav .OR. do_2d_planar_octant .eq. 1) then
+             if (do_planar_invsq_grav .OR. do_self_grav) then
                 ! we have variable gravity
                 temp = p0(n,r_end_coord(n,i)) &
                      + (dr(n)/4.d0)* &

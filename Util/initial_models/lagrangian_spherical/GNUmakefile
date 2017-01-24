@@ -14,6 +14,7 @@ MAESTRO_TOP_DIR = $(MAESTRO_HOME)
 
 # EOS and network
 EOS_DIR := helmeos
+CONDUCTIVITY_DIR := timmes_stellar
 NETWORK_DIR := general_null
 GENERAL_NET_INPUTS := $(MICROPHYSICS_HOME)/networks/$(NETWORK_DIR)/aproxCNOsolar.net 
 

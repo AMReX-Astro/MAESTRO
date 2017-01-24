@@ -75,8 +75,9 @@ module make_brunt_freq_module
 					    np(:,:,:,:), ng_n, lo, hi, dx(n,:))
 	      else
 		call make_brunt_3d(cp(:,:,:,1), ng_c, &
-					sp(:,:,:,:), ng_s, &
-					lo, hi)
+				    sp(:,:,:,:), ng_s, &
+				    grav(n,:), hp(n,:), &
+				    lo, hi,dx(n,:))
 	      endif
 	  end select
 
@@ -209,8 +210,11 @@ module make_brunt_freq_module
     
   end subroutine make_brunt_2d
 
-  subroutine make_brunt_3d(brunt, ng_ad, state, ng_s, lo, hi)
+  subroutine make_brunt_3d(brunt, ng_ad, state, ng_s, grav, hp, &
+                                    lo, hi, dx)
+
     use variables, only: rho_comp, temp_comp, spec_comp
+    use geometry, only: nr_fine, nlevs_radial
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
     use network, only: nspec
@@ -220,9 +224,100 @@ module make_brunt_freq_module
     integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s
     real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:,lo(3)-ng_ad:)
     real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-
-    call bl_error("ERROR: Brunt Vaisailla frequency not yet implemented in 3D not spherical")
+    real(kind=dp_t), intent(in   ) ::   hp(0:)
+    real(kind=dp_t), intent(in   ) ::   grav(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: abar(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: chi_rho(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: chi_t(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: chi_mu(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
+    real(kind=dp_t) :: nabla, nabla_mu
+    real(kind=dp_t) :: dp, dt, dmu
+
+   integer :: i, j, k, c
+
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+   
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)    
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             eos_state%rho   = state(i,j,k,rho_comp)
+             eos_state%T     = state(i,j,k,temp_comp)
+             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+             pt_index(:) = (/i, j, k/)       
+
+             call eos(eos_input_rt, eos_state, pt_index)
+       
+             pres(i,j,k) = eos_state%p
+             abar(i,j,k) = eos_state%abar
+
+             chi_rho(i,j,k) = eos_state%rho * eos_state%dpdr / eos_state%p
+             chi_t(i,j,k) = eos_state%T * eos_state%dpdt / eos_state%p
+             chi_mu(i,j,k) = eos_state%abar * eos_state%dpdA / eos_state%p
+             nabla_ad(i,j,k) = (eos_state%gam1 - chi_rho(i,j,k)) / (chi_t(i,j,k) * eos_state%gam1)
+
+          enddo
+       enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,k,dt,dp,nabla,nabla_mu,dmu)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (state(i,j,k,rho_comp) <= base_cutoff_density) then
+                nabla = ZERO
+                nabla_mu = ZERO
+             else
+                ! compute gradient
+
+                ! forward difference
+                if (k == lo(3)) then
+                   dt = state(i,j,k+1,temp_comp) - state(i,j,k,temp_comp)
+                   dp = pres(i,j,k+1) - pres(i,j,k)
+                   dmu = abar(i,j,k+1) - abar(i,j,k)
+                   ! backward difference
+                else if (k == hi(3)) then
+                   dt = state(i,j,k,temp_comp) - state(i,j,k-1,temp_comp)
+                   dp = pres(i,j,k) - pres(i,j,k-1)
+                   dmu = abar(i,j,k) - abar(i,j,k-1)
+                ! centered difference
+                else
+                   dt = state(i,j,k+1,temp_comp) - state(i,j,k-1,temp_comp)
+                   dp = pres(i,j,k+1) - pres(i,j,k-1)   
+                   dmu = abar(i,j,k+1) - abar(i,j,k-1)
+                endif
+
+
+                ! prevent Inf
+                if (dp == ZERO) then
+                   nabla = -huge(ZERO)
+                   nabla_mu = -huge(ZERO)
+                else
+                   nabla = pres(i,j,k)*dt / (dp*state(i,j,k,temp_comp))
+                   nabla_mu = pres(i,j,k)*dmu / (dp*abar(i,j,k))
+                endif
+             endif
+             if (hp(k) == ZERO) then
+              brunt(i,j,k) = -huge(ZERO)
+             else 
+	      brunt(i,j,k) = - grav(k)*chi_t(i,j,k) / (chi_rho(i,j,k) * hp(k)) * (nabla_ad(i,j,k) - nabla - nabla_mu * chi_mu(i,j,k)/chi_t(i,j,k))
+	     endif
+
+          enddo
+       enddo
+    enddo
+    !$OMP END PARALLEL DO    
+
   end subroutine make_brunt_3d
 
   subroutine make_brunt_3d_sphr(brunt, ng_ad, state, ng_s, grav, hp, &

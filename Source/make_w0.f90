@@ -25,7 +25,7 @@ contains
     use bl_prof_module
     use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs_radial
     use bl_constants_module
-    use probin_module, only: verbose, do_planar_invsq_grav, do_2d_planar_octant
+    use probin_module, only: verbose, do_planar_invsq_grav, do_self_grav
 
     real(kind=dp_t), intent(  out) ::                 w0(:,0:)
     real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
@@ -56,7 +56,7 @@ contains
 
     if (spherical .eq. 0) then
 
-       if (do_planar_invsq_grav .OR. do_2d_planar_octant .eq. 1) then
+       if (do_planar_invsq_grav .OR. do_self_grav) then
           
           call make_w0_planar_var_g(w0,w0_old,Sbar_in, &
                                     rho0_old,rho0_new,p0_old,p0_new, &

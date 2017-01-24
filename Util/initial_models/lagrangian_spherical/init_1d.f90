@@ -27,6 +27,7 @@ program init_1d
   use network, only : nspec, network_species_index, spec_names, network_init
   use fundamental_constants_module, only: Gconst
   use model_parser_module
+  use conductivity_module
 
   implicit none
 
@@ -48,7 +49,7 @@ program init_1d
   
   integer :: nx
   real (kind=dp_t) :: xmin, xmax, dCoord, xmin_smooth, xmax_smooth
-  real (kind=dp_t), allocatable :: brunt(:), s(:)
+  real (kind=dp_t), allocatable :: brunt(:), s(:), conductivity(:)
 
   real (kind=dp_t) :: sumx, sumrho, sumn
   real (kind=dp_t), DIMENSION(nspec) :: sumxn
@@ -60,7 +61,6 @@ program init_1d
   real (kind=dp_t) :: prev_mu, prev_p, prev_temp, prev_dtdr, prev_adiab
   real (kind=dp_t) :: grad_temp, grad_ad, grad_mu
   real (kind=dp_t) :: chi_rho, chi_temp, chi_mu    
-  
   
   
   
@@ -187,6 +187,7 @@ program init_1d
   allocate(model_hse(nx,nvars_model))
   allocate(temp_model(nx,nvars_model))
   allocate(brunt(nx))
+  allocate(conductivity(nx))
   allocate(s(nx))
 
 
@@ -1129,6 +1130,7 @@ program init_1d
     eos_state%xn(:) = xn(:)
     
     call eos(eos_input_rt, eos_state)
+    call conducteos(eos_input_rt, eos_state, .false., conductivity(i))  
     
     
     dpd = eos_state%dpdr
@@ -1171,7 +1173,7 @@ program init_1d
 
      model_hse(i,ipres_model) = eos_state%p
 
-     write (lun2,1000), xzn_hse(i), eos_state%s, eos_state%cs, brunt(i)
+     write (lun2,1000), xzn_hse(i), eos_state%s, eos_state%cs, brunt(i), conductivity(i)
   enddo
   
   

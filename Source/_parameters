@@ -163,9 +163,6 @@ spherical_in                        integer            0
 # (note: only takes effect for spherical geometry)
 octant                              logical            .false.
 
-# Set to 1 if using the 2D simplified (planar) model of an octant.
-do_2d_planar_octant                 integer            0
-
 # dimensionality (valid values are 2 or 3)
 dm_in                               integer            2
 
@@ -461,6 +458,9 @@ dpdt_factor                         real               0.d0
 
 # are we doing 1/r$^2$ gravity for plane-parallel
 do_planar_invsq_grav                logical            .false.
+
+# do we include self gravity?
+do_self_grav                        logical            .false.
 
 # the point mass for planar 1/r$^2$ gravity
 planar_invsq_mass                   real               0.d0
