@@ -310,7 +310,7 @@ contains
 
     use geometry,  only: nr
     use variables, only: rho_comp
-    use probin_module, only: use_grav_dt
+    use probin_module, only: use_grav_dt, buoyancy_cutoff_factor, base_cutoff_density
 
     integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS,ng_b
     real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :)  
@@ -407,9 +407,10 @@ contains
       !
       
       bm = ZERO
-      
       do i = lo(1), hi(1)
-	bm = max(bm ,sqrt(abs(brunt(i)))*hp(i))
+        if (s(i,rho_comp) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+	  bm = max(bm ,sqrt(abs(brunt(i)))*hp(i))
+	endif
       enddo
       
       
@@ -426,7 +427,7 @@ contains
 
     use geometry,  only: nr
     use variables, only: rho_comp
-    use probin_module, only: use_grav_dt
+    use probin_module, only: use_grav_dt, buoyancy_cutoff_factor, base_cutoff_density
 
     integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_b
     real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,:)  
@@ -547,7 +548,9 @@ contains
       bm = ZERO
       
       do j = lo(2), hi(2); do i = lo(1), hi(1)
-	bm = max(bm ,sqrt(abs(brunt(i,j)))*hp(j))
+        if (s(i,j,rho_comp) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+	  bm = max(bm ,sqrt(abs(brunt(i,j)))*hp(j))
+	endif
       enddo; enddo
       
       
@@ -564,7 +567,7 @@ contains
 
     use geometry,  only: nr
     use variables, only: rho_comp
-    use probin_module, only: use_grav_dt
+    use probin_module, only: use_grav_dt, buoyancy_cutoff_factor, base_cutoff_density
 
     integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_b
     real (kind = dp_t), intent(in   ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
@@ -720,7 +723,9 @@ contains
       
       !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-	bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
+        if (s(i,j,k,rho_comp) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+	  bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
+	endif
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
 
@@ -739,7 +744,7 @@ contains
 
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
-    use probin_module, only: use_grav_dt, max_levs
+    use probin_module, only: use_grav_dt, max_levs, buoyancy_cutoff_factor, base_cutoff_density
     use fill_3d_module
     
     integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_w,ng_b
@@ -901,7 +906,9 @@ contains
 
       !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-	bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp_cart(i,j,k,1))
+        if (s(i,j,k,rho_comp) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+	  bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
+	endif
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
 
