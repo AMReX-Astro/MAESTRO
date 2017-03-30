@@ -907,7 +907,7 @@ contains
       !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
         if (s(i,j,k,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
-	  bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
+	  bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp_cart(i,j,k,1))
 	endif
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
