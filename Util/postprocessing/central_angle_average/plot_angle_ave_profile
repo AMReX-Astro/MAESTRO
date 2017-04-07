@@ -6,7 +6,7 @@ Donald E. Willcox
 """
 
 from __future__ import print_function
-import AngleAveragedProfile
+from AngleAveragedProfile import AngleAveragedProfile
 import portalocker
 import numpy as np
 import matplotlib.pyplot as plt
