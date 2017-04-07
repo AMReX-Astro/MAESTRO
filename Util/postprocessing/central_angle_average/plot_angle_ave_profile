@@ -7,6 +7,7 @@ Donald E. Willcox
 
 from __future__ import print_function
 import AngleAveragedProfile
+import portalocker
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
@@ -18,11 +19,37 @@ parser.add_argument('-f', '--format', type=str, default='png',
                     help='Format of the desired output files. Can be, e.g. "png" or "eps". Defaults to "png".')
 parser.add_argument('-rup', '--radius_upper', type=float,
                     help='Upper bound for the plotted radius.')
+parser.add_argument('-lim', '--limit_file', type=str, help='Name of file containing field global limits.')
 args = parser.parse_args()
 
-
 if __name__ == '__main__':
+    # Get the global field limits if they exist
+    # They are stored in the field limits file one field per line
+    # as {field}, {fmin}, {fmax}, {sep_pos_neg}
+    # where sep_pos_neg is a boolean indicating
+    # that fmin and fmax correspond to log plots of absolute positive and negative values
+    # Use portalocker for thread-safety since multiple threads can be running this script!
+    fmins = {}
+    fmaxs = {}
+    fseps = {}
+    if args.limit_file:
+        lines = []
+        with portalocker.Lock(args.limit_file, mode='r',
+                              timeout=100, check_interval=0.01,
+                              fail_when_locked=False) as lf:
+            lines = lf.readlines()
+        for line in lines:
+            ls = line.strip().split(', ')
+            field = ls[0].strip()
+            field_min = float(ls[1])
+            field_max = float(ls[2])
+            field_sep = (ls[3] == 'True')
+            fmins[field] = field_min
+            fmaxs[field] = field_max
+            fseps[field] = field_sep
+    
     # Read the file into an angle-averaged profile object
     aaprof = AngleAveragedProfile(args.infile)
     # Plot the variables in the file
-    aaprof.plot_all_vars(args.format, args.radius_upper)
+    aaprof.plot_all_vars(args.format, args.radius_upper,
+                         field_mins=fmins, field_maxs=fmaxs, field_seps_type=fseps)
