@@ -69,6 +69,7 @@ def plot(xvar, yvar):
             fig = plt.figure()
             ax = fig.add_subplot(111)
             ax.plot(data[xvar], data[yvar])
+            ax.get_yaxis().get_major_formatter().set_useOffset(False)
             if args.logx:
                 ax.set_xscale('log')
             if args.logy:
