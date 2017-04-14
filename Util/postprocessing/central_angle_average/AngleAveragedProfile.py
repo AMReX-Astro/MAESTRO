@@ -89,7 +89,7 @@ class AngleAveragedProfile(object):
                 n += 1
                 yield float(10*n)
 
-    def plot_var(self, var, fmt='png', rup=None, fmin=None, fmax=None, sep_log=None):
+    def plot_var(self, var, fmt='png', rup=None, fmin=None, fmax=None, sep_log=None, show=False):
         # Plot the variable corresponding to the data key var
         # Independent axis is radius r
         # Plots are log scale on the dependent axis
@@ -174,6 +174,8 @@ class AngleAveragedProfile(object):
             plt.savefig(outname, bbox_extra_artists=(tart,), dpi=300)
         else:
             plt.savefig(outname, bbox_extra_artists=(tart,))
+        if show:
+            plt.show()
         plt.close(fig)
             
     def plot_all_vars(self, fmt='png', rup=None,
