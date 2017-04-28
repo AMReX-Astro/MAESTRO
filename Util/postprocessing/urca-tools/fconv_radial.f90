@@ -136,9 +136,9 @@ program fconv_radial
 
   dens_comp = plotfile_var_index(pf, "density")
   ! For the URCA-simple network
-  ! spec_comp = plotfile_var_index(pf, "X(n)")
+  spec_comp = plotfile_var_index(pf, "X(n)")
   ! For the Chamulak network
-  spec_comp = plotfile_var_index(pf, "X(C12)")  
+  ! spec_comp = plotfile_var_index(pf, "X(C12)")  
   temp_comp = plotfile_var_index(pf, "tfromp")
 
   actl_comp = 1
