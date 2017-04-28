@@ -117,7 +117,7 @@ program fad_excess
   dim = pf%dim
 
   dens_comp = plotfile_var_index(pf, "density")
-  spec_comp = plotfile_var_index(pf, "X(He4)")
+  spec_comp = plotfile_var_index(pf, "X(n)")  
   temp_comp = plotfile_var_index(pf, "tfromp")
 
   if (dens_comp < 0 .or. spec_comp < 0 .or. temp_comp < 0) &
