@@ -2,15 +2,15 @@
 # generator routines
 
 # include the main Makefile stuff
-include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
+include $(AMREX_HOME)/Tools/F_mk/GMakedefs.mak
 
 # default target (make just takes the one that appears first)
 ALL: init_1d.$(suf).exe
 
 
 #-----------------------------------------------------------------------------
-# core BoxLib directories
-BOXLIB_CORE := Src/F_BaseLib
+# core AMReX directories
+AMREX_CORE := Src/F_BaseLib
 
 
 #-----------------------------------------------------------------------------
@@ -84,9 +84,9 @@ f90sources += $(MODEL_SOURCES)
 
 
 #-----------------------------------------------------------------------------
-# core BoxLib directories
-Fmpack := $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
-Fmlocs := $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
+# core AMReX directories
+Fmpack := $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir)/GPackage.mak)
+Fmlocs := $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir))
 Fmincs :=
 
 # auxillary directories
@@ -113,13 +113,13 @@ PROBIN_PARAMETER_DIRS = $(MAESTRO_TOP_DIR)/Util/initial_models/
 EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
 
 
-PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
-EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
+PROBIN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
+EXTERN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 	@echo " "
 	@echo "${bold}WRITING probin.f90${normal}"
-	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
+	$(AMREX_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
 	@echo " "
@@ -150,7 +150,7 @@ init_1d.$(suf).exe: $(objects)
 
 
 # include the fParallel Makefile rules
-include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
+include $(AMREX_HOME)/Tools/F_mk/GMakerules.mak
 
 
 #-----------------------------------------------------------------------------
