@@ -142,7 +142,7 @@ contains
           end do
        end do
 !$omp end parallel do
-       case (3)
+    case (3)
 !$omp parallel do private(i,j,k)
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
