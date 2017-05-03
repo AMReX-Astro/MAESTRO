@@ -1,5 +1,8 @@
 changes since last merge with master:
 
+ * Major changes:
+
+   -- we now require the AMReX library instead of BoxLib to build.
 
 previous releases:
 
