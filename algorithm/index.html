@@ -71,7 +71,9 @@ used to achieve high spatial resolution.
 
 <p>Maestro is written primarily in Fortran 95 and is parallelized
 using MPI and OpenMP.  The adaptivity and message passing is managed
-by the <a href="https://ccse.lbl.gov/BoxLib/">BoxLib</a> library.  Distribution of grid patches to nodes using
+by the 
+<a href="https://www.github.com/AMReX-Codes/amrex">AMReX</a> library.  
+Distribution of grid patches to nodes using
 MPI provides a natural coarse-grained approach to distributing the
 computational work, while threading of loops over grids using OpenMP
 provides effective fine-grained parallelization.
