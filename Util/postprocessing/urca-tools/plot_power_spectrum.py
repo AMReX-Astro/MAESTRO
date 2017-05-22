@@ -26,6 +26,10 @@ energy density spectrum).
 parser = argparse.ArgumentParser()
 parser.add_argument('pltfile', type=str,
                     help='Name of pltfile for which to compute the power spectrum.')
+parser.add_argument('-emin', '--energy_min', type=float,
+                    help='Minimum E(k) to use for the vertical plot axis.')
+parser.add_argument('-emax', '--energy_max', type=float,
+                    help='Maximum E(k) to use for the vertical plot axis.')
 args = parser.parse_args()
 
 def doit(ds):
@@ -88,8 +92,13 @@ def doit(ds):
     plt.loglog(k, E_spectrum)
     plt.loglog(k, Emax*(k/kmax)**(-5./3.), ls=":", color="0.5")
 
-    # List the time above the plot
+
     ax = plt.gca()
+
+    # Apply vertical axis limits
+    ax.set_ylim(bottom=args.energy_min, top=args.energy_max)
+
+    # List the time above the plot
     tart = ax.text(1.0, 1.01, '$time = {}$'.format(float(ds.current_time)),
                    transform=ax.transAxes,
                    verticalalignment='bottom',
