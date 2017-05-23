@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+#Plot variables in the caaprofile summary
+import numpy as np
+import matplotlib.pyplot as plt
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('summaryfile', type=str,
+                    help='Name of centrally angle-averaged summary file.')
+parser.add_argument('-x', '--x', type=str,
+                    help='Name of variable to plot on the horizontal axis.')
+parser.add_argument('-xl', '--xlabel', type=str,
+                    help='Axis label of variable on the horizontal axis. Default is variable name.')
+parser.add_argument('-logx', '--logx', action='store_true',
+                    help='If supplied, log10-scale the horizontal axis.')
+parser.add_argument('-y', '--y', type=str,
+                    help='Name of variable to plot on the vertical axis.')
+parser.add_argument('-yl', '--ylabel', type=str,
+                    help='Axis label of variable on the vertical axis. Default is variable name.')
+parser.add_argument('-logy', '--logy', action='store_true',
+                    help='If supplied, log10-scale the vertical axis.')
+parser.add_argument('-alltime', '--alltime', action='store_true',
+                    help='If supplied, plots all variables vs. time.')
+parser.add_argument('-fmt', '--format', type=str, default='png',
+                    help='Output format for plot. Can be "png" or "eps". Defaults to "png".')
+args = parser.parse_args()
+
+# Read summary file
+try:
+    fo = open(args.summaryfile, 'r')
+except:
+    print('Summary file could not be opened!')
+    exit()
+
+lines = []
+for l in fo:
+    lines.append(l.strip())
+
+fo.close()
+
+# Organize data into a dictionary of numpy arrays keyed by column header
+data = {}
+orderedkeys = []
+header = lines[0][1:].split(']  [')
+for hk in header:
+    hk = hk.strip() # get rid of extra whitespace
+    if hk[0] == '[':
+        hk = hk[1:]
+    if hk[-1] == ']':
+        hk = hk[:-1]
+    data[hk] = []   # make a data list
+    orderedkeys.append(hk) # add key to ordered keys
+for line in lines[1:]:
+    ls = line.split('  ')
+    for k, v in zip(orderedkeys, ls):
+        data[k].append(float(v))
+for k in orderedkeys:
+    data[k] = np.array(data[k])
+
+def print_available_vars():
+    print('The available variables are:')
+    for k in orderedkeys:
+        print(k)
+
+# Plot
+def plot(xvar, yvar):
+    if xvar and yvar:
+        if xvar in orderedkeys and yvar in orderedkeys:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.plot(data[xvar], data[yvar])
+            ax.get_yaxis().get_major_formatter().set_useOffset(False)
+            if args.logx:
+                ax.set_xscale('log')
+            if args.logy:
+                ax.set_yscale('log')
+            if args.xlabel:
+                ax.set_xlabel(args.xlabel)
+            else:
+                if args.logx:
+                    ax.set_xlabel('Log10[{}]'.format(xvar))
+                else:
+                    ax.set_xlabel('{}'.format(xvar))                
+            if args.ylabel:
+                ax.set_ylabel(args.ylabel)
+            else:
+                if args.logy:
+                    ax.set_ylabel('Log10[{}]'.format(yvar))
+                else:
+                    ax.set_ylabel('{}'.format(yvar))
+            outname = '{}_{}-vs-{}'.format(args.summaryfile, yvar, xvar)
+            plt.tight_layout()
+            if args.format=='png':
+                plt.savefig(outname+'.png', dpi=300)
+            else:
+                plt.savefig(outname+'.eps')
+            plt.close()
+        else:
+            print('Incorrect variables specified!')
+            print_available_vars()
+    else:
+        print('No plot variables specified!')
+        print_available_vars()
+
+if args.alltime:
+    for k in orderedkeys:
+        if not k=='time':
+            plot('time', k)
+else:
+    plot(args.x, args.y)

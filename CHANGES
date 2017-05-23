@@ -1,6 +1,5 @@
 changes since last merge with master:
 
-
  * Major changes:
 
    -- we now use the reaction networks from the separate Microphysics
@@ -13,12 +12,9 @@ changes since last merge with master:
       repo that is used for the general equations of state, so you
       likely already have it installed.
 
+   -- we now require the AMReX library instead of BoxLib to build.
 
 previous releases:
-
-16.10
-
-16.09
 
 16.08
 
