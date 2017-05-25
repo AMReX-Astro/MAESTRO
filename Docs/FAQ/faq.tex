@@ -59,8 +59,8 @@
 \item {\em The code doesn't compile, but complains right away that there
    is ``{\tt No rule to make target `fabio\_c.c', needed by `t/Linux.gfortran.mpi/c.depends'}''}
 
-   The environment variable {\tt BOXLIB\_HOME} needs to be the full path
-   to the {\tt BoxLib} directory.  You cannot use `{\tt $\sim$}' as a shortcut
+   The environment variable {\tt AMREX\_HOME} needs to be the full path
+   to the {\tt amrex/} directory.  You cannot use `{\tt $\sim$}' as a shortcut
    for your home directory.
   
 \item {\em {\tt make} issues an error like:
@@ -213,7 +213,7 @@ where {\tt inputs} is the desired inputs file {\em in each} {\tt xterm}.
 
 \item {\em How can I get more information about floating point exceptions?}
 
-\boxlib\ can intercept floating point exceptions and provide a helpful
+\amrex\ can intercept floating point exceptions and provide a helpful
 backtrace that shows you where they were generated.  See \S
 \ref{ch:makefiles:special}.
 
@@ -346,10 +346,10 @@ they are not implemented in \maestro.
  data.  How do I do this?}
 
  One implementation of this can be found in {\tt
-   BoxLib/Tools/Postprocessing/F\_Src/tutorial/fwrite2d.f90}.  This reads in
+   amrex/Tools/Postprocessing/F\_Src/tutorial/fwrite2d.f90}.  This reads in
  the plotfile data using the {\tt plotfile\_module} that the {\tt
    data\_processing} routines rely on, but then builds a multifab
-   and writes the data out to a plotfile using the BoxLib write
+   and writes the data out to a plotfile using the \amrex\ write
    routines.
 
 \end{enumerate}
