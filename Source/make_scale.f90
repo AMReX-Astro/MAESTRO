@@ -73,7 +73,7 @@ module make_scale_module
 	    end if
 	    
 	    if (dq == ZERO) then
-		hq(n,r) = -huge(ZERO)
+		hq(n,r) = 1e30
 	    else
 		hq(n,r) = (ddr * q0(n,r))/dq
 	    endif
@@ -123,7 +123,7 @@ module make_scale_module
           endif
           
           if (dq == ZERO) then
-           hq(1,r) = -huge(ZERO)
+           hq(1,r) = 1e30
           else
 	   hq(1,r) = -(ddr * q0(1,r))/dq
 	  endif

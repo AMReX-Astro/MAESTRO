@@ -168,7 +168,7 @@ contains
     
     if (p%icomp_brunt > 0) p%names(p%icomp_brunt) = "N^2"
     if (p%icomp_grav > 0) p%names(p%icomp_grav) = "gravity"
-    if (p%icomp_hp > 0) p%names(p%icomp_hp) = "pressure scale height"
+    if (p%icomp_hp > 0) p%names(p%icomp_hp) = "Hp"
 
   end subroutine get_plot_names
 
@@ -205,6 +205,7 @@ contains
     use make_div_coeff_module
     use make_pi_cc_module
     use make_brunt_freq_module
+    use make_scale_module
 
     type(plot_t)     , intent(in   ) :: p
     character(len=*) , intent(in   ) :: dirname
@@ -244,6 +245,8 @@ contains
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         h0(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) ::   hp0(nlevs_radial,0:nr_fine-1)
+    
 
     real(dp_t) :: tempval
 
@@ -438,6 +441,28 @@ contains
           call multifab_copy_c(plotdata(n),p%icomp_rhoh0,tempfab(n),1,1)
        end do
     endif
+    
+    ! Gravity
+    if (p%icomp_grav > 0) then
+       call make_grav_cell(grav_cell,rho0)
+       call put_1d_array_on_cart(grav_cell,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),p%icomp_grav,tempfab(n),1,1)
+       end do 
+     endif
+ 
+    ! Pressure Scale Height
+    if (p%icomp_hp > 0) then
+       call make_scale(hp0,p0)
+       call put_1d_array_on_cart(hp0,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),p%icomp_hp,tempfab(n),1,1)
+       end do
+    endif   
 
     ! h0
     if (p%icomp_h0 > 0) then
@@ -590,19 +615,7 @@ contains
           call multifab_copy_c(plotdata(n),p%icomp_brunt,tempfab(n),1,1)
        end do
     endif
-    
-    ! Gravity
-    if (p%icomp_grav > 0) then
-     do n=1, nlevs
-      call make_grav_plot(plotdata(n),p%icomp_grav,s(n),rho0,dx,n)
-     enddo
-    endif
-    ! Pressure Scale Height
-    if (p%icomp_hp > 0) then
-     do n=1, nlevs
-      call make_hp_plot(plotdata(n),p%icomp_hp,s(n),p0,dx,n)
-     enddo
-    endif    
+     
     
     ! PARTICLES
     if (p%icomp_part > 0) then
