@@ -15,6 +15,24 @@
 !!
 !!  after that the now changed density and composition profile get smoothed out by a moving average
 !!  this also makes a renormalization of the composition necessary
+!!
+!!
+!!
+!!
+!!
+!!
+!!  When change_strat = T then also the density stratification is changed to garantee a constant brunt-vaisala frequency outwards. 
+!!  At default this will change the stratification after the maximum of N^2 is reached, but a arbitrary point can be given as well
+!!
+!!  f = p_EOS(rho, T, X) - p_HSE (rho)
+!!  q = N_EOS(rho, T, X) - N_max
+!!
+
+
+
+!!
+!!  We will integrate upwards only, because thats what MAESTRO assumes to be in HSE. 
+!!
 
 program init_1d
  
@@ -49,7 +67,7 @@ program init_1d
   
   integer :: nx
   real (kind=dp_t) :: xmin, xmax, dCoord, xmin_smooth, xmax_smooth
-  real (kind=dp_t), allocatable :: brunt(:), s(:), conductivity(:)
+  real (kind=dp_t), allocatable :: brunt(:), conductivity(:)
 
   real (kind=dp_t) :: sumx, sumrho, sumn
   real (kind=dp_t), DIMENSION(nspec) :: sumxn
@@ -57,30 +75,33 @@ program init_1d
   integer :: comp
  
   real (kind=dp_t) :: dens_zone, temp_zone, pres_zone, entropy, s_zone
-  real (kind=dp_t) :: dpd, dpdt, dsdt, dsdrho, dtdr, gam, Hp, dpda, adiab
-  real (kind=dp_t) :: prev_mu, prev_p, prev_temp, prev_dtdr, prev_adiab
-  real (kind=dp_t) :: grad_temp, grad_ad, grad_mu
-  real (kind=dp_t) :: chi_rho, chi_temp, chi_mu    
+  real (kind=dp_t) :: dpd, dpdt, dsdt, dsdrho
+  real (kind=dp_t) :: dndrho, dndt
+  real (kind=dp_t) :: prev_mu, prev_p, prev_temp
   
   
   
-  real (kind=dp_t) :: p_want, drho, dtemp, delx, s_want
+  real (kind=dp_t) :: p_want, drho, dtemp, delx, s_want 
+  real (kind=dp_t) :: brunt_want, brunt_zone, brunt_slope, prev_brunt
+  real (kind=dp_t) :: change_strat_r = -1.0
   
-  real (kind=dp_t) :: g_zone, g_const, M_enclosed, M_shell
+  real (kind=dp_t) :: g_zone, g_const
   logical :: do_invsq_grav
-
+    
   real (kind=dp_t), parameter :: TOL = 1.e-12
 
   integer, parameter :: MAX_ITER = 250
 
   integer :: iter
 
-  logical :: converged_hse, fluff, smooth, converged_smooth
+  logical :: converged_hse, fluff, smooth, converged_smooth, converged_strat
+  logical :: neutral_strat, change_strat,put_in_hse, use_slope
 
   real (kind=dp_t) :: low_density_cutoff, temp_cutoff, smallx, max_T
   real (kind=dp_t) :: model_shift
 
   integer :: index_base, conv_base, min_base, max_base, cent_base, smoothness, csmooth, norm
+  integer :: brunt_base
   real (kind=dp_t) :: wnorm
 
   character (len=256) :: outfile, outfile2, outfile3
@@ -99,9 +120,10 @@ program init_1d
   
 
   namelist /params/ nx, model_file, xmin, xmax, g_const, &
-                    temp_cutoff, do_invsq_grav, &
+                    temp_cutoff, do_invsq_grav, use_slope, &
                     low_density_cutoff, model_prefix, model_shift, smooth, &
-                    xmin_smooth, xmax_smooth, smoothness, norm
+                    xmin_smooth, xmax_smooth, smoothness, norm, &
+                    change_strat_r, change_strat, put_in_hse, neutral_strat, index_base
 
   ! determine if we specified a runtime parameters file or use the default      
   narg = command_argument_count()
@@ -137,10 +159,14 @@ program init_1d
   smooth = .false.
   smoothness = 4
   norm = 512
-
+  change_strat = .false.
+  put_in_hse = .true.
+  neutral_strat = .false.
+  use_slope = .false.
   ! this comes in via extern_probin_module -- override the default
   ! here if we want
   use_eos_coulomb = .true.
+  index_base = -1
 
 
   ! initialize the EOS and network
@@ -188,7 +214,6 @@ program init_1d
   allocate(temp_model(nx,nvars_model))
   allocate(brunt(nx))
   allocate(conductivity(nx))
-  allocate(s(nx))
 
 
   ! compute the coordinates of the new gridded function
@@ -202,10 +227,8 @@ program init_1d
   
 
 !-----------------------------------------------------------------------------
-! put the model onto our new uniform grid
+! put the model onto our new uniform grid and make it thermodynamically consistent
 !-----------------------------------------------------------------------------
-
-  fluff = .false.
 
   do i = 1, nx
      do n = 1, nvars_model
@@ -225,40 +248,12 @@ program init_1d
 
      model_hse(i,ipres_model) = eos_state%p
   enddo
-
-
-  ! find the index to integrate from by looking for the peak temperature
-  index_base = -1
-  max_T = -1.0_dp_t
-
-  do i = 1, nx
-     if (model_hse(i,itemp_model) > max_T) then
-        index_base = i
-        max_T = model_hse(i,itemp_model)
-     endif
-  enddo
-     
-  if (index_base == -1) then
-     call bl_error('ERROR: invalid base_height')
-  endif
-  
-  print *, 'index_base = ', index_base
-
-  ! make the base thermodynamics consistent for this base point -- that is
-  ! what we will integrate from!
-  eos_state%rho = model_hse(index_base,idens_model)
-  eos_state%T = model_hse(index_base,itemp_model)
-  eos_state%xn(:) = model_hse(index_base,ispec_model:ispec_model-1+nspec)
-
-  call eos(eos_input_rt, eos_state)
-
-  model_hse(index_base,ipres_model) = eos_state%p
   
 
    
-  
-  !make an output of the initial (interpolated) profiles
-  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+!make an output of the initial (interpolated) profiles
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   !compute the brunt-vaisala frequency at each zone
   brunt(1) = 0
@@ -276,23 +271,12 @@ program init_1d
   prev_p = eos_state%p
   prev_mu = eos_state%abar
   prev_temp = temp_zone
-  prev_dtdr = huge(0.0)
-  prev_adiab = huge(0.0)
   
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
-     if (do_invsq_grav) then
-        do j = 1, i-1
-           M_shell = model_hse(j,idens_model) * & 
-               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-           M_enclosed = M_enclosed + M_shell
-        enddo
-        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
-     else
-        g_zone = g_const
-     endif
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
 
     dens_zone = model_hse(i,idens_model)
     temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
@@ -303,30 +287,8 @@ program init_1d
     eos_state%xn(:) = xn(:)
     
     call eos(eos_input_rt, eos_state)
-    
-    
-    dpd = eos_state%dpdr
-    dpdt = eos_state%dpdt
-    dpda = eos_state%dpda
-    gam = eos_state%gam1
-    pres_zone = eos_state%p
-    chi_rho = dens_zone * dpd / pres_zone
-    chi_temp = temp_zone * dpdt / pres_zone
-    chi_mu = eos_state%abar * dpda/ pres_zone
-    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
-    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
-    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
-    grad_ad = (gam - chi_rho)/(chi_temp*gam)
-    
-    dtdr = (temp_zone-prev_temp) / delx 
-    adiab = (temp_zone-prev_temp) / delx - grad_temp
-    s(i) = - prev_dtdr / dtdr * (adiab/prev_adiab)
-    brunt(i) = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
-!     dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
-!     brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
-    
-    prev_adiab = adiab
-    prev_dtdr = dtdr
+    call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt(i))
+
     prev_p = eos_state%p
     prev_mu = eos_state%abar
     prev_temp = temp_zone
@@ -340,7 +302,7 @@ program init_1d
 
 
   write (lun1,2002), 'Initial interpolated profile: '
-  write (lun1,2001), 'radius','entropy','pressure','density','X(H1)', 'N^2', 'Stiffness'
+  write (lun1,2001), 'radius','entropy','pressure','density','X(H1)', 'N^2'
   do i = 1, nx
     dens_zone = model_hse(i,idens_model)
     temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
@@ -352,7 +314,7 @@ program init_1d
     
     call eos(eos_input_rt, eos_state)
     
-    write (lun1,2000), xzn_hse(i), eos_state%s, eos_state%p, eos_state%rho, eos_state%xn(1), brunt(i), s(i)
+    write (lun1,2000), xzn_hse(i), eos_state%s, eos_state%p, eos_state%rho, eos_state%xn(1), brunt(i)
   enddo
 
 
@@ -362,167 +324,121 @@ program init_1d
 
   close (unit=lun1)
 
-  
-!-----------------------------------------------------------------------------
-!Create a neutrally stratified core and smooth the density and composition profile afterwards
-!-----------------------------------------------------------------------------
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Determine all the bases necessary to do the following operations:
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  if (smooth) then  
+  !!!!
+  !index base
+  !!!!
+  index_base = 1
+
+  !!!!
+  ! conv_base
+  !!!!
+  if (neutral_strat) then
     !Find the position of the convective boundary. In garstec, convective zones
     !are full mixed -> first zone with varying composition (X) is just outside convective zone
     coreX = model_hse(1,ispec_model)
     conv_base = 1
     do i = 2,nx 
       if (model_hse(i,ispec_model) .ne. coreX) then
-	conv_base = i-1
-	exit
+        conv_base = i-1
+        exit
       endif 
     enddo
   
     print *, 'Convective boundary at zone ', conv_base
+  else
+    conv_base = -1
+  endif
+  
+  if (index_base .lt. conv_base) then
+    index_base = conv_base
+  endif
+  
+  !!!!
+  ! strat_base
+  !!!!
+  if (change_strat) then
+    !Find the radius of the maximum of the brunt-vaisala frequency, or use a given radius. 
+    !From this radius outward we will keep the brunt-vaisala frequency constant while also conserving the HSE
     
-    !keep the entropy at the core constant and enforce hse by integrating inwards from the convective boundary
-    xn(:) = model_hse(conv_base,ispec_model:ispec_model-1+nspec)
+    dens_zone = model_hse(1,idens_model)
+    temp_zone = max(temp_cutoff, model_hse(1,itemp_model))
+    xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
     
-    eos_state%T     = model_hse(conv_base+1,itemp_model)
-    eos_state%rho   = model_hse(conv_base+1,idens_model)
+    eos_state%T = temp_zone
+    eos_state%rho = dens_zone
     eos_state%xn(:) = xn(:)
-
+      
     call eos(eos_input_rt, eos_state)
     
-    s_want = eos_state%s
-    !---------------------------------------------------------------------------
-    ! integrate down -- using the temperature profile defined above
-    !---------------------------------------------------------------------------
-    do i = conv_base, 1, -1
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+    
 
-      delx = xzn_hse(i+1) - xzn_hse(i)
+    brunt_want = -1d30    
 
-      ! compute the gravitation acceleration at the upper edge
-      M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)
-      if (do_invsq_grav) then
-	  do j = 1, i
-	    M_shell = model_hse(j,idens_model) * & 
-		(four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-	    M_enclosed = M_enclosed + M_shell
-	  enddo
-	  
-	  g_zone = -Gconst*M_enclosed/xznr_hse(i)**2
-      else
-	  g_zone = g_const
-      endif
-
-      ! we already set the temperature and composition profiles
-      temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
-      ! use our previous initial guess for density
-      dens_zone = model_hse(i,idens_model)
+    if (change_strat_r .ge. 0) then
+      brunt_base = 2 
+      do i = 2,nx
+        if (xzn_hse(i) .ge. change_strat_r) then
+          brunt_base = i
+          exit
+        endif
+      enddo           
+    else 
+      brunt_base = 2 
+      do i = 2,nx
+        delx = xzn_hse(i) - xzn_hse(i-1)
+        ! compute the gravitation acceleration at the lower edge
+        call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
 
 
-      !-----------------------------------------------------------------------
-      ! iteration loop
-      !-----------------------------------------------------------------------
+        dens_zone = model_hse(i,idens_model)
+        temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+        xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
+        
+        eos_state%T = temp_zone
+        eos_state%rho = dens_zone
+        eos_state%xn(:) = xn(:)
+        
+        call eos(eos_input_rt, eos_state)
+        call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt_zone)
+        
+        if (brunt_zone .ge. brunt_want) then
+          brunt_want = brunt_zone
+          brunt_base = i
+        endif
 
-      ! start off the Newton loop by saying that the zone has not converged
-      converged_smooth = .FALSE.
-
-      do iter = 1, MAX_ITER
-
-	  ! get the pressure we want from the HSE equation, just the
-	  ! zone below the current.  Note, we are using an average of
-	  ! the density of the two zones as an approximation of the
-	  ! interface value -- this means that we need to iterate for
-	  ! find the density and pressure that are consistent
-	  
-	  ! HSE differencing
-	  p_want = model_hse(i+1,ipres_model) - &
-	      delx*0.5*(dens_zone + model_hse(i+1,idens_model))*g_zone
-
-	  
-	  ! we need to zero:
-	  !   frhoT = p_want - p(rho)
-	  !   qrhoT = s_eos - s_want 
-	  
-	  ! (t, rho) -> (p)
-	  eos_state%T     = temp_zone
-	  eos_state%rho   = dens_zone
-	  eos_state%xn(:) = xn(:)
-
-	  call eos(eos_input_rt, eos_state)
-	  
-	  pres_zone = eos_state%p
-	  s_zone = eos_state%s
-	  
-	  dpd = eos_state%dpdr
-	  dpdt = eos_state%dpdt
-	  dsdt = eos_state%dsdt
-	  dsdrho = eos_state%dsdr
-	  
-	  frhoT = pres_zone - p_want
-	  qrhoT = s_zone - s_want
-	  
-	  dtemp = (qrhoT - frhoT * dsdrho / (dpd + 0.5*delx*g_zone) ) / (dsdrho * dpdt /(dpd + 0.5*delx*g_zone) - dsdt)
-	  drho = -(frhoT + dpdt * dtemp)/(dpd + 0.5*delx*g_zone)
-	  
-	  dens_zone = max(0.9_dp_t*dens_zone, &
-	      min(dens_zone + drho, 1.1_dp_t*dens_zone))
-	  temp_zone = max (0.9_dp_t*temp_zone, &
-	      min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
-			  
-	  if (abs(drho) < TOL*dens_zone .and. abs(dtemp) < TOL*temp_zone) then
-	    converged_smooth = .TRUE.
-	    exit
-	  endif
-	  
-
+        prev_p = eos_state%p
+        prev_mu = eos_state%abar
+        prev_temp = temp_zone
       enddo
-	  
-      if (.NOT. converged_smooth) then
-	  
-	  print *, 'Error zone', i, ' did not converge while creating a neutrally stratified core'
-	  print *, dens_zone, temp_zone
-	  print *, p_want
-	  print *, drho, dtemp
-	  call bl_error('Error: HSE non-convergence')
-	    
-      endif
-
-
-      ! call the EOS one more time for this zone and then go on to the next
-      ! (t, rho) -> (p)
-      eos_state%T     = temp_zone
-      eos_state%rho   = dens_zone
-      eos_state%xn(:) = xn(:)
-
-      call eos(eos_input_rt, eos_state)
-
-      pres_zone = eos_state%p
-      
-      ! update the thermodynamics in this zone
-      model_hse(i,idens_model) = dens_zone
-      model_hse(i,itemp_model) = temp_zone
-      model_hse(i,ipres_model) = pres_zone
-
-    enddo 
+    endif   
+  else
+    brunt_base = nx
+  endif
   
   
-  
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-! now smooth the density and composition profile by a moving average between xmin_smooth and xmax_smooth
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-    temp_model = model_hse
+  !!!!
+  ! smoothing
+  !!!!
+  if (smooth) then
     min_base = 0
     max_base = 0
     do i = 1, nx
       if (xzn_hse(i) .ge. xmin_smooth) then
-	  min_base = i
-	  exit
+          min_base = i
+          exit
       endif
     enddo
     do i = 1, nx
       if (xzn_hse(i) .ge. xmax_smooth) then
-	  max_base = i
-	  exit
+          max_base = i
+          exit
       endif
     enddo 
     
@@ -546,291 +462,311 @@ program init_1d
     print *, 'max base for smoothing is ', max_base 
     print *, 'centering around ', cent_base 
     print *, 'we will smooth over ', smoothness, ' grid points'
-    print *, ''
-    
-    
-    
-    
-!     ! two swipes around the center of the smoothing region
-!     !one swipe upwards to the center of the smoothing zone
-!     do i = min_base+smoothness, cent_base
-! !       if ((i-min_base)*2 - 1 .lt. smoothness) then
-! !         csmooth = (i-min_base)*2 -1
-! !       else
-!         csmooth = smoothness
-! !       endif
-! 
-!       sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
-!       do j = 1, nspec-1
-! 	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
-!       enddo
-!       
-!       temp_model(i,idens_model) = sumrho / DBLE(csmooth*2+1)
-!       do j = 1, nspec-1
-! 	temp_model(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
-!       enddo    
-! 
-!     enddo
-!     
-!     model_hse = temp_model
-!     
-!     
-!     !one swipe downwards to the center of the smoothing zone
-!     do i = max_base-smoothness, cent_base, -1
-! !       if ((max_base-i )*2 - 1 .lt. smoothness) then
-! ! 	csmooth = (max_base-i )*2 -1
-! !       else
-!         csmooth = smoothness
-! !       endif
-!       
-!       sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
-!       do j = 1, nspec-1
-! 	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
-!       enddo
-!       
-!       
-!       
-!       temp_model(i,idens_model) = sumrho / DBLE(csmooth*2+1)
-!       do j = 1, nspec-1
-! 	temp_model(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
-!       enddo   
-!     enddo  
-!     
-!     model_hse = temp_model
-!      
-!      ! one swipe upwards -> make effectively two swipes
-!      do i = min_base+1, max_base-1
-! !         if (((i-min_base)*2 - 1 .lt. smoothness) .or. ((max_base-i )*2 - 1 .lt. smoothness) ) then
-! !           csmooth = min(i-min_base,max_base-i)*2 -1
-! !         else
-!          csmooth = smoothness
-! !         endif
-!  
-!        sumrho = sum(model_hse(i-csmooth:i+csmooth,idens_model))
-!        do j = 1, nspec-1
-!  	sumxn(j) = sum(model_hse(i-csmooth:i+csmooth,ispec_model-1+j))
-!        enddo
-!        
-!        temp_model(i,idens_model) = sumrho / DBLE(csmooth*2+1)
-!        do j = 1, nspec-1
-!  	temp_model(i,ispec_model-1+j) = sumxn(j) / DBLE(csmooth*2+1)
-!        enddo    
-!  
-!      enddo
-    
-!     !one swipe upwards with weighted moving average ... this works fine, but does depend on the resolution 
-!     do i = min_base+1, max_base-1
-!       csmooth = smoothness
-!       
-!       sumn = ONE
-!       do n=2,csmooth+1
-!         sumn= sumn + TWO/dble(n)**2
-!       enddo
-!       
-!       sumrho = model_hse(i,idens_model)
-!       do n=2,csmooth+1
-!         sumrho = sumrho + model_hse(i-n+1,idens_model)/dble(n)**2 + model_hse(i+n-1,idens_model)/dble(n)**2
-!       enddo
-!       
-!       do j = 1, nspec-1
-! 	sumxn(j) = model_hse(i,ispec_model-1+j)
-! 	do n=2,csmooth+1
-! 	  sumxn(j) = sumxn(j) + model_hse(i-n+1,ispec_model-1+j)/dble(n)**2 + model_hse(i+n-1,ispec_model-1+j)/dble(n)**2
-! 	enddo
-!       enddo
-!       
-!       temp_model(i,idens_model) = sumrho / sumn
-!       do j = 1, nspec-1
-! 	temp_model(i,ispec_model-1+j) = sumxn(j) / sumn
-!       enddo    
-! 
-!     enddo
-
-
-
-    !one swipe upwards with weighted moving average ... this works fine, but does depend on the resolution 
-    do i = min_base+1, max_base-1
-      csmooth = smoothness
-      
-      sumn = ONE
-      do n=2,csmooth+1
-        wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
-        sumn= sumn + TWO/wnorm**2
-      enddo
-      
-      sumrho = model_hse(i,idens_model)
-      do n=2,csmooth+1
-        wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
-	sumrho = sumrho + model_hse(i-n+1,idens_model)/wnorm**2 + model_hse(i+n-1,idens_model)/wnorm**2
-      enddo
-      
-      do j = 1, nspec-1
-	sumxn(j) = model_hse(i,ispec_model-1+j)
-	do n=2,csmooth+1
-          wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
-	  sumxn(j) = sumxn(j) + model_hse(i-n+1,ispec_model-1+j)/wnorm**2 + model_hse(i+n-1,ispec_model-1+j)/wnorm**2
-	enddo
-      enddo
-      
-      temp_model(i,idens_model) = sumrho / sumn
-      do j = 1, nspec-1
-	temp_model(i,ispec_model-1+j) = sumxn(j) / sumn
-      enddo    
-
-    enddo
-
-
-    
-    model_hse = temp_model
-
+  else
+    min_base = -1
+    max_base = -1
+    cent_base = -1
   endif
   
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !Normalize the composition again!!!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  
-  do i=1,nx
-    sumx = ZERO
-    do j=1,nspec
-      sumx = sumx + model_hse(i,ispec_model-1+j)
-    enddo
-    model_hse(i,ispec_model:ispec_model+nspec-1) = model_hse(i,ispec_model:ispec_model+nspec-1) / sumx
-  enddo
-  
-  
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-  !compute the brunt-vaisala frequency at each zone
-  brunt(1) = 0
-  
-  dens_zone = model_hse(1,idens_model)
-  temp_zone = max(temp_cutoff, model_hse(1,itemp_model))
-  xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
-  
-  eos_state%T = temp_zone
-  eos_state%rho = dens_zone
-  eos_state%xn(:) = xn(:)
-    
-  call eos(eos_input_rt, eos_state)
-  
-  prev_p = eos_state%p
-  prev_mu = eos_state%abar
-  prev_temp = temp_zone
-  prev_dtdr = huge(0.0)
-  prev_adiab = huge(0.0)
-  
-  do i = 2,nx 
-     delx = xzn_hse(i) - xzn_hse(i-1)
-     ! compute the gravitation acceleration at the lower edge
-     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
-     if (do_invsq_grav) then
-        do j = 1, i-1
-           M_shell = model_hse(j,idens_model) * & 
-               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-           M_enclosed = M_enclosed + M_shell
-        enddo
-        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
-     else
-        g_zone = g_const
-     endif
+!-----------------------------------------------------------------------------
+!Create a neutrally stratified core and smooth the density and composition profile afterwards
+!-----------------------------------------------------------------------------
 
-    dens_zone = model_hse(i,idens_model)
-    temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
-    xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
+  if (neutral_strat) then  
     
-    eos_state%T = temp_zone
-    eos_state%rho = dens_zone
+    !keep the entropy at the core constant and enforce hse by integrating inwards from the convective boundary
+    temp_zone = model_hse(conv_base,itemp_model)
+    dens_zone = model_hse(conv_base,idens_model)
+    xn(:) = model_hse(conv_base,ispec_model:ispec_model-1+nspec)
+    
+    eos_state%T     = temp_zone
+    eos_state%rho   = dens_zone
     eos_state%xn(:) = xn(:)
-    
+
     call eos(eos_input_rt, eos_state)
     
+    s_want = eos_state%s
     
-    dpd = eos_state%dpdr
-    dpdt = eos_state%dpdt
-    dpda = eos_state%dpda
-    gam = eos_state%gam1
-    pres_zone = eos_state%p
-    chi_rho = dens_zone * dpd / pres_zone
-    chi_temp = temp_zone * dpdt / pres_zone
-    chi_mu = eos_state%abar * dpda/ pres_zone
-    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
-    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
-    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
-    grad_ad = (gam - chi_rho)/(chi_temp*gam)
     
-    dtdr = (temp_zone-prev_temp) / delx 
-    adiab = (temp_zone-prev_temp) / delx - grad_temp
-    s(i) = - prev_dtdr / dtdr * (adiab/prev_adiab)
-    brunt(i) = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
-!     dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
-!     brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
     
-    prev_adiab = adiab
-    prev_dtdr = dtdr
-    prev_p = eos_state%p
-    prev_mu = eos_state%abar
-    prev_temp = temp_zone
+    
+    !---------------------------------------------------------------------------
+    ! integrate down -- using the temperature profile defined above
+    ! we do this to set the i=1 consistent 
+    ! if we set i=1 directlty to s_want the change can be too big 
+    !---------------------------------------------------------------------------
+    do i = conv_base, 1, -1
+
+     delx = xzn_hse(i+1) - xzn_hse(i)
+     ! compute the gravitation acceleration at the upper edge
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.False.,do_invsq_grav,g_zone)     
 
 
-  enddo
-  
-  !print the newly smoothed profiles into a new file 
-  
-  outfile = trim(model_prefix) // ".smoothed_profile"
-  open (newunit=lun1, file=outfile, status="unknown")
-
-
-  write (lun1,2002), 'Smoothed profile: '
-  write (lun1,2001), 'radius','entropy','pressure','density','X(H1)','N^2'
-  do i = 1, nx
-      dens_zone = model_hse(i,idens_model)
+      ! we already set the temperature and composition profiles
       temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+      ! use our previous initial guess for density
+      dens_zone = model_hse(i,idens_model)
       xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
-      
-      eos_state%T = temp_zone
-      eos_state%rho = dens_zone
+
+      !-----------------------------------------------------------------------
+      ! iteration loop
+      !-----------------------------------------------------------------------
+
+      ! start off the Newton loop by saying that the zone has not converged
+      converged_smooth = .FALSE.
+
+      do iter = 1, MAX_ITER
+
+          ! get the pressure we want from the HSE equation, just the
+          ! zone below the current.  Note, we are using an average of
+          ! the density of the two zones as an approximation of the
+          ! interface value -- this means that we need to iterate for
+          ! find the density and pressure that are consistent
+          
+          ! HSE differencing
+          p_want = model_hse(i+1,ipres_model) - &
+              delx*0.5*(dens_zone + model_hse(i+1,idens_model))*g_zone
+
+          
+          ! we need to zero:
+          !   frhoT = p(rho) - p_want
+          !   qrhoT = s_eos - s_want 
+          
+          ! (t, rho) -> (p)
+          eos_state%T     = temp_zone
+          eos_state%rho   = dens_zone
+          eos_state%xn(:) = xn(:)
+
+          call eos(eos_input_rt, eos_state)
+          
+          pres_zone = eos_state%p
+          s_zone = eos_state%s
+          
+          dpd = eos_state%dpdr
+          dpdt = eos_state%dpdt
+          dsdt = eos_state%dsdt
+          dsdrho = eos_state%dsdr
+          
+          frhoT = pres_zone - p_want
+          qrhoT = s_zone - s_want
+          
+          dtemp = (qrhoT - frhoT * dsdrho / (dpd + 0.5*delx*g_zone) ) / (dsdrho * dpdt /(dpd + 0.5*delx*g_zone) - dsdt)
+          drho = -(frhoT + dpdt * dtemp)/(dpd + 0.5*delx*g_zone)
+          
+          dens_zone = max(0.9_dp_t*dens_zone, &
+              min(dens_zone + drho, 1.1_dp_t*dens_zone))
+          temp_zone = max (0.9_dp_t*temp_zone, &
+              min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
+                          
+          if (abs(drho) < TOL*dens_zone .and. abs(dtemp) < TOL*temp_zone) then
+            converged_smooth = .TRUE.
+            exit
+          endif
+          
+
+      enddo
+          
+      if (.NOT. converged_smooth) then
+          
+          print *, 'Error zone', i, ' did not converge while creating a neutrally stratified core'
+          print *, dens_zone, temp_zone
+          print *, p_want
+          print *, drho, dtemp
+          call bl_error('Error: HSE non-convergence')
+            
+      endif
+
+
+      ! call the EOS one more time for this zone and then go on to the next
+      ! (t, rho) -> (p)
+      eos_state%T     = temp_zone
+      eos_state%rho   = dens_zone
       eos_state%xn(:) = xn(:)
-      
+
       call eos(eos_input_rt, eos_state)
+
+      pres_zone = eos_state%p
       
-      write (lun1,2000), xzn_hse(i), eos_state%s, eos_state%p, eos_state%rho, eos_state%xn(1),brunt(i)
-  enddo
+      ! update the thermodynamics in this zone
+      model_hse(i,idens_model) = dens_zone
+      model_hse(i,itemp_model) = temp_zone
+      model_hse(i,ipres_model) = pres_zone
+      
+    enddo 
+    
+    
+    
+!     !---------------------------------------------------------------------------
+!     ! integrate i=1 to s_want and set p to the thermodynamically correct value
+!     ! once this is set we can move forward 
+!     !---------------------------------------------------------------------------
+!     converged_smooth = .FALSE.
+!     
+!     do iter = 1, MAX_ITER
+!           ! (t, rho) -> (s)
+!           temp_zone = model_hse(conv_base,itemp_model)
+!           dens_zone = model_hse(conv_base,idens_model)
+!           xn(:) = model_hse(conv_base,ispec_model:ispec_model-1+nspec)
+!     
+!           call eos(eos_input_rt, eos_state)
+!           
+!           s_zone = eos_state%s
+!           dsdrho = eos_state%dsdr
+!           
+!           qrhoT = s_zone - s_want
+!           drho = -qrhoT/dsdrho
+!           
+!           dens_zone = max(0.9_dp_t*dens_zone, &
+!               min(dens_zone + drho, 1.1_dp_t*dens_zone))
+!                           
+!           if (abs(drho) < TOL*dens_zone) then
+!             converged_smooth = .TRUE.
+!             exit
+!           endif          
+!     enddo    
+! 
+!     if (.NOT. converged_smooth) then
+!         
+!         print *, 'Error: did not converge while creating the inner most point of a neutrally stratified core'
+!         print *, dens_zone, temp_zone
+!         print *, s_want
+!         print *, drho, dtemp
+!         call bl_error('Error: HSE non-convergence')
+!     
+!     endif
+! 
+!     ! call the EOS one more time for this zone and then go on to the next
+!     ! (t, rho) -> (p)
+!     eos_state%T     = temp_zone
+!     eos_state%rho   = dens_zone
+!     eos_state%xn(:) = xn(:)
+! 
+!     call eos(eos_input_rt, eos_state)
+! 
+!     pres_zone = eos_state%p
+!     
+!     ! update the thermodynamics in this zone
+!     model_hse(1,idens_model) = dens_zone
+!     model_hse(1,itemp_model) = temp_zone
+!     model_hse(1,ipres_model) = pres_zone
 
-
-  close (unit=lun1)
-  
-  
-  
-  
-  
-!-----------------------------------------------------------------------------
-! HSE + entropy solve
-!-----------------------------------------------------------------------------
-
-  ! the HSE state will be done respecting the interpolated temperature 
-  ! from the initial model.  When the temperature drops below T_lo,
-  ! we floor it.
-
-  !---------------------------------------------------------------------------
-  ! integrate up
-  !---------------------------------------------------------------------------
-  do i = index_base+1, nx
+    !---------------------------------------------------------------------------
+    ! integrate up -- using the temperature profile defined below
+    !---------------------------------------------------------------------------
+    do i = 2, conv_base, 1
 
      delx = xzn_hse(i) - xzn_hse(i-1)
-
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)     
-     if (do_invsq_grav) then
-        do j = 1, i-1
-           M_shell = model_hse(j,idens_model) * & 
-               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-           M_enclosed = M_enclosed + M_shell
-        enddo
-        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
-     else
-        g_zone = g_const
-     endif
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
+
+      ! we already set the temperature and composition profiles
+      temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+      ! use our previous initial guess for density
+      dens_zone = model_hse(i,idens_model)
+
+
+      !-----------------------------------------------------------------------
+      ! iteration loop
+      !-----------------------------------------------------------------------
+
+      ! start off the Newton loop by saying that the zone has not converged
+      converged_smooth = .FALSE.
+
+      do iter = 1, MAX_ITER
+
+          ! get the pressure we want from the HSE equation, just the
+          ! zone below the current.  Note, we are using an average of
+          ! the density of the two zones as an approximation of the
+          ! interface value -- this means that we need to iterate for
+          ! find the density and pressure that are consistent
+          
+          ! HSE differencing
+          p_want = model_hse(i-1,ipres_model) + &
+              delx*0.5*(dens_zone + model_hse(i-1,idens_model))*g_zone
+
+          
+          ! we need to zero:
+          !   frhoT = p(rho) - p_want
+          !   qrhoT = s_eos - s_want 
+          
+          ! (t, rho) -> (p)
+          eos_state%T     = temp_zone
+          eos_state%rho   = dens_zone
+          eos_state%xn(:) = xn(:)
+
+          call eos(eos_input_rt, eos_state)
+          
+          pres_zone = eos_state%p
+          s_zone = eos_state%s
+          
+          dpd = eos_state%dpdr
+          dpdt = eos_state%dpdt
+          dsdt = eos_state%dsdt
+          dsdrho = eos_state%dsdr
+          
+          frhoT = pres_zone - p_want
+          qrhoT = s_zone - s_want
+          
+          dtemp = (qrhoT - frhoT * dsdrho / (dpd - 0.5*delx*g_zone) ) / (dsdrho * dpdt /(dpd - 0.5*delx*g_zone) - dsdt)
+          drho = -(frhoT + dpdt * dtemp)/(dpd - 0.5*delx*g_zone)
+          
+          dens_zone = max(0.9_dp_t*dens_zone, &
+              min(dens_zone + drho, 1.1_dp_t*dens_zone))
+          temp_zone = max (0.9_dp_t*temp_zone, &
+              min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
+                          
+          if (abs(drho) < TOL*dens_zone .and. abs(dtemp) < TOL*temp_zone) then
+            converged_smooth = .TRUE.
+            exit
+          endif
+          
+
+      enddo
+          
+      if (.NOT. converged_smooth) then
+          
+          print *, 'Error zone', i, ' did not converge while creating a neutrally stratified core'
+          print *, dens_zone, temp_zone
+          print *, p_want
+          print *, drho, dtemp
+          call bl_error('Error: HSE non-convergence')
+            
+      endif
+
+
+      ! call the EOS one more time for this zone and then go on to the next
+      ! (t, rho) -> (p)
+      eos_state%T     = temp_zone
+      eos_state%rho   = dens_zone
+      eos_state%xn(:) = xn(:)
+
+      call eos(eos_input_rt, eos_state)
+
+      pres_zone = eos_state%p
+      
+      ! update the thermodynamics in this zone
+      model_hse(i,idens_model) = dens_zone
+      model_hse(i,itemp_model) = temp_zone
+      model_hse(i,ipres_model) = pres_zone
+      
+    enddo
+        
+  endif  
+
+
+
+
+!---------------------------------------------------------------------------
+! integrate further up
+!---------------------------------------------------------------------------
+  do i = index_base+1, brunt_base
+
+     delx = xzn_hse(i) - xzn_hse(i-1)
+     ! compute the gravitation acceleration at the lower edge
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
 
      ! we've already set initial guesses for density, temperature, and
      ! composition
@@ -915,36 +851,366 @@ program init_1d
 
   enddo
 
+!-----------------------------------------------------------------------------
+! Change the stratification to a constanstant brunt-vaisala frequency 
+!-----------------------------------------------------------------------------
 
-  !---------------------------------------------------------------------------
-  ! integrate down -- using the temperature profile defined above
-  !---------------------------------------------------------------------------
-  do i = index_base-1, 1, -1
+  if (change_strat) then  
 
-     delx = xzn_hse(i+1) - xzn_hse(i)
+    
+    !set up perv_p,prev_mu and prev_temp for N^2 calculation in brunt_base
+    if (use_slope) then
+      dens_zone = model_hse(brunt_base-2,idens_model)
+      temp_zone = max(temp_cutoff, model_hse(brunt_base-2,itemp_model))
+      xn(:) = model_hse(brunt_base-2,ispec_model:ispec_model-1+nspec)
+      
+      eos_state%T = temp_zone
+      eos_state%rho = dens_zone
+      eos_state%xn(:) = xn(:)
 
-     ! compute the gravitation acceleration at the upper edge
-     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)
-     if (do_invsq_grav) then
-        do j = 1, i
-           M_shell = model_hse(j,idens_model) * & 
-               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-           M_enclosed = M_enclosed + M_shell
-        enddo
+      call eos(eos_input_rt, eos_state)
+      
+      prev_p = eos_state%p
+      prev_mu = eos_state%abar
+      prev_temp = temp_zone
+      
+      !set up the rest and do the calculation. This is our brunt_want
+      delx = xzn_hse(brunt_base-1) - xzn_hse(brunt_base-2)
+      call calc_grav_zone(brunt_base-1,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+    endif
+
+    dens_zone = model_hse(brunt_base-1,idens_model)
+    temp_zone = max(temp_cutoff, model_hse(brunt_base-1,itemp_model))
+    xn(:) = model_hse(brunt_base-1,ispec_model:ispec_model-1+nspec)
+    
+    eos_state%T = temp_zone
+    eos_state%rho = dens_zone
+    eos_state%xn(:) = xn(:)
+
+    call eos(eos_input_rt, eos_state)
+    if (use_slope) then
+      call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,prev_brunt)
+    endif
+    
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+    
+    !set up the rest and do the calculation. This is our brunt_want
+    delx = xzn_hse(brunt_base) - xzn_hse(brunt_base-1)
+    call calc_grav_zone(brunt_base,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
+    dens_zone = model_hse(brunt_base,idens_model)
+    temp_zone = max(temp_cutoff, model_hse(brunt_base,itemp_model))
+    xn(:) = model_hse(brunt_base,ispec_model:ispec_model-1+nspec)
+    
+    eos_state%T = temp_zone
+    eos_state%rho = dens_zone
+    eos_state%xn(:) = xn(:)
+      
+    call eos(eos_input_rt, eos_state)
+    !setting the wanted N^2
+    call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt_want)
+    
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+    
+    
+    print *, 'We change the stratification outwards of zone ', brunt_base
+    print *, 'this is at radius ', xzn_hse(brunt_base)
+    if (use_slope) then
+      print *, 'and we use a slope of ', (brunt_want-prev_brunt)/delx, ' (= dN^2 / dx)'    
+    else
+      print *, 'and the N^2 we want to reach is ', brunt_want   
+    endif
+    
+    !---------------------------------------------------------------------------
+    ! integrate up -- using the temperature profile defined above
+    ! we need to do this to use the diff_brunt function, because with a downward 
+    ! integration we would need to change the gravity of the cell when computing dndrho
+    !---------------------------------------------------------------------------
+
+    
+    do i = brunt_base+1, nx
+
+      if (use_slope) then
+        brunt_slope = (brunt_want-prev_brunt)/delx
+        prev_brunt = brunt_want
+        delx = xzn_hse(i) - xzn_hse(i-1)
+        brunt_want = brunt_want + brunt_slope * delx
+      endif
+      
+      delx = xzn_hse(i) - xzn_hse(i-1)
+
+      ! compute the gravitation acceleration at the lower edge
+      call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
+      ! we already set the temperature profiles
+      temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+      ! use our previous initial guess for density
+      dens_zone = model_hse(i,idens_model)
+      xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
+
+
+      !-----------------------------------------------------------------------
+      ! iteration loop
+      !-----------------------------------------------------------------------
+
+      ! start off the Newton loop by saying that the zone has not converged
+      converged_strat = .FALSE.
+
+      do iter = 1, MAX_ITER
+
+          ! get the pressure we want from the HSE equation, just the
+          ! zone below the current.  Note, we are using an average of
+          ! the density of the two zones as an approximation of the
+          ! interface value -- this means that we need to iterate for
+          ! find the density and pressure that are consistent
+          
+          ! HSE differencing
+          p_want = model_hse(i-1,ipres_model) + &
+              delx*HALF*(dens_zone + model_hse(i-1,idens_model))*g_zone
         
-        g_zone = -Gconst*M_enclosed/xznr_hse(i)**2
-     else
-        g_zone = g_const
-     endif
+          
+          ! we need to zero:
+          !   frhoT = p(rho) - p_want
+          !   qrhoT = N^2 - N^2_want 
+          
+          ! (t, rho) -> (p)
+          eos_state%T     = temp_zone
+          eos_state%rho   = dens_zone
+          eos_state%xn(:) = xn(:)
 
-     ! we already set the temperature and composition profiles
+          call eos(eos_input_rt, eos_state)
+          call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt_zone)
+          
+          pres_zone = eos_state%p
+          
+          dpd = eos_state%dpdr
+          dpdt = eos_state%dpdt
+
+          frhoT = pres_zone - p_want
+          qrhoT = brunt_zone - brunt_want
+          
+          call diff_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,.True.,dndt)
+          call diff_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,.False.,dndrho)
+          
+          dtemp = (qrhoT - frhoT * dndrho / (dpd - 0.5*delx*g_zone) ) / (dndrho * dpdt /(dpd - 0.5*delx*g_zone) - dndt)
+          drho = -(frhoT + dpdt * dtemp)/(dpd - 0.5*delx*g_zone)
+
+          dens_zone = max(0.9_dp_t*dens_zone, &
+              min(dens_zone + drho, 1.1_dp_t*dens_zone))
+          temp_zone = max (0.9_dp_t*temp_zone, &
+              min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
+              
+          if (abs(drho) < TOL*dens_zone .and. abs(dtemp) < TOL*temp_zone) then
+            converged_strat = .TRUE.
+            exit
+          endif
+          
+
+      enddo
+          
+      if (.NOT. converged_strat) then
+          
+          print *, 'Error zone', i, ' did not converge while changing the stratification'
+          print *, dens_zone, temp_zone
+          print *, p_want
+          print *, drho, dtemp
+          call bl_error('Error: HSE non-convergence')
+            
+      endif
+
+
+      ! call the EOS one more time for this zone and then go on to the next
+      ! (t, rho) -> (p)
+      eos_state%T     = temp_zone
+      eos_state%rho   = dens_zone
+      eos_state%xn(:) = xn(:)
+
+      call eos(eos_input_rt, eos_state)
+
+      pres_zone = eos_state%p
+      
+      !set the needed previous zone values
+      prev_p = pres_zone
+      prev_temp = temp_zone
+      prev_mu = eos_state%abar
+      
+      ! update the thermodynamics in this zone
+      model_hse(i,idens_model) = dens_zone
+      model_hse(i,itemp_model) = temp_zone
+      model_hse(i,ipres_model) = pres_zone      
+    enddo 
+ endif
+
+  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+! now smooth the density and composition profile by a moving average between xmin_smooth and xmax_smooth
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  if (smooth) then
+    temp_model = model_hse
+
+    !one swipe upwards with weighted moving average ... this works fine, but does depend on the resolution 
+    do i = min_base+1, max_base-1
+      csmooth = smoothness
+      
+      sumn = ONE
+      do n=2,csmooth+1
+        wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
+        sumn= sumn + TWO/wnorm**2
+      enddo
+      
+      sumrho = model_hse(i,idens_model)
+      do n=2,csmooth+1
+        wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
+	sumrho = sumrho + model_hse(i-n+1,idens_model)/wnorm**2 + model_hse(i+n-1,idens_model)/wnorm**2
+      enddo
+      
+      do j = 1, nspec-1
+	sumxn(j) = model_hse(i,ispec_model-1+j)
+	do n=2,csmooth+1
+          wnorm = ONE+(dble(n)-ONE)*dble(norm)/dble(nx)
+	  sumxn(j) = sumxn(j) + model_hse(i-n+1,ispec_model-1+j)/wnorm**2 + model_hse(i+n-1,ispec_model-1+j)/wnorm**2
+	enddo
+      enddo
+      
+      temp_model(i,idens_model) = sumrho / sumn
+      do j = 1, nspec-1
+	temp_model(i,ispec_model-1+j) = sumxn(j) / sumn
+      enddo    
+
+    enddo
+
+
+    
+    model_hse = temp_model
+  
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !Normalize the composition again!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+    
+    do i=1,nx
+      sumx = ZERO
+      do j=1,nspec
+        sumx = sumx + model_hse(i,ispec_model-1+j)
+      enddo
+      model_hse(i,ispec_model:ispec_model+nspec-1) = model_hse(i,ispec_model:ispec_model+nspec-1) / sumx
+    enddo
+  
+  endif
+
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ ! write an intermediate output to show how the smoothing / stratification change worked
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ 
+  !compute the brunt-vaisala frequency at each zone
+  brunt(1) = 0
+  
+  dens_zone = model_hse(1,idens_model)
+  temp_zone = max(temp_cutoff, model_hse(1,itemp_model))
+  xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
+  
+  eos_state%T = temp_zone
+  eos_state%rho = dens_zone
+  eos_state%xn(:) = xn(:)
+    
+  call eos(eos_input_rt, eos_state)
+  
+  prev_p = eos_state%p
+  prev_mu = eos_state%abar
+  prev_temp = temp_zone
+
+  do i = 2,nx 
+     delx = xzn_hse(i) - xzn_hse(i-1)
+     ! compute the gravitation acceleration at the lower edge
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
+
+    dens_zone = model_hse(i,idens_model)
+    temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+    xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
+
+    eos_state%T = temp_zone
+    eos_state%rho = dens_zone
+    eos_state%xn(:) = xn(:)
+    
+    call eos(eos_input_rt, eos_state)
+    call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt(i))
+    
+    prev_p = eos_state%p
+    prev_mu = eos_state%abar
+    prev_temp = temp_zone
+  enddo
+
+  !print the newly smoothed profiles into a new file 
+  
+  outfile = trim(model_prefix) // ".smoothed_profile"
+  open (newunit=lun1, file=outfile, status="unknown")
+
+
+  write (lun1,2002), 'Smoothed profile: '
+  write (lun1,2001), 'radius','entropy','pressure','density','X(H1)','N^2'
+  do i = 1, nx
+      dens_zone = model_hse(i,idens_model)
+      temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
+      xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
+      
+      eos_state%T = temp_zone
+      eos_state%rho = dens_zone
+      eos_state%xn(:) = xn(:)
+      
+      call eos(eos_input_rt, eos_state)
+      
+      write (lun1,2000), xzn_hse(i), eos_state%s, eos_state%p, eos_state%rho, eos_state%xn(1),brunt(i)
+  enddo
+
+
+  close (unit=lun1)
+  
+  
+  
+  
+  
+!-----------------------------------------------------------------------------
+! Do a final sweep, just ensuring HSE. This is required, if the composition profile was smoothed 
+!-----------------------------------------------------------------------------
+if (put_in_hse .or. smooth) then
+  ! the HSE state will be done respecting the interpolated temperature 
+  ! from the initial model.  When the temperature drops below T_lo,
+  ! we floor it.
+  
+  ! make it all thermodynamically consistent in the centre
+  eos_state%rho = model_hse(1,idens_model)
+  eos_state%T = model_hse(1,itemp_model)
+  eos_state%xn(:) = model_hse(1,ispec_model:ispec_model-1+nspec)
+
+  call eos(eos_input_rt, eos_state)
+
+  model_hse(1,ipres_model) = eos_state%p
+  
+  
+  !---------------------------------------------------------------------------
+  ! integrate up
+  !---------------------------------------------------------------------------
+  do i = 2, nx
+
+     delx = xzn_hse(i) - xzn_hse(i-1)
+     ! compute the gravitation acceleration at the lower edge
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
+
+     ! we've already set initial guesses for density, temperature, and
+     ! composition
+     dens_zone = model_hse(i,idens_model)
      temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
      xn(:) = model_hse(i,ispec_model:ispec_model-1+nspec)
 
-     ! use our previous initial guess for density
-     dens_zone = model_hse(i,idens_model)
-
-
+     
      !-----------------------------------------------------------------------
      ! iteration loop
      !-----------------------------------------------------------------------
@@ -954,60 +1220,52 @@ program init_1d
 
      do iter = 1, MAX_ITER
 
-        ! get the pressure we want from the HSE equation, just the
-        ! zone below the current.  Note, we are using an average of
-        ! the density of the two zones as an approximation of the
-        ! interface value -- this means that we need to iterate for
-        ! find the density and pressure that are consistent
-        
-        ! HSE differencing
-        p_want = model_hse(i+1,ipres_model) - &
-             delx*0.5*(dens_zone + model_hse(i+1,idens_model))*g_zone
-
-        
-        ! we will take the temperature already defined in model_hse
-        ! so we only need to zero:
-        !   A = p_want - p(rho)
-        
+        ! what pressure does HSE say we want?
+        p_want = model_hse(i-1,ipres_model) + &
+             delx*0.5*(dens_zone + model_hse(i-1,idens_model))*g_zone
+         
         ! (t, rho) -> (p)
-        eos_state%T     = temp_zone
-        eos_state%rho   = dens_zone
+        eos_state%T   = temp_zone
+        eos_state%rho = dens_zone
         eos_state%xn(:) = xn(:)
 
         call eos(eos_input_rt, eos_state)
-        
+              
+        entropy = eos_state%s
         pres_zone = eos_state%p
-        
-        dpd = eos_state%dpdr
-              
-        A = p_want - pres_zone
-              
-        drho = A/(dpd + 0.5*delx*g_zone)
-        
-        dens_zone = max(0.9_dp_t*dens_zone, &
-             min(dens_zone + drho, 1.1_dp_t*dens_zone))
 
-                        
+        dpd = eos_state%dpdr
+
+        drho = (p_want - pres_zone)/(dpd - 0.5*delx*g_zone)
+              
+        dens_zone = max(0.9*dens_zone, &
+             min(dens_zone + drho, 1.1*dens_zone))
+       
         if (abs(drho) < TOL*dens_zone) then
            converged_hse = .TRUE.
            exit
         endif
-        
+
+        if (dens_zone < low_density_cutoff) then
+           dens_zone = low_density_cutoff
+           temp_zone = temp_cutoff
+           converged_hse = .TRUE.
+           exit
+        endif
 
      enddo
+
         
      if (.NOT. converged_hse) then
-        
         print *, 'Error zone', i, ' did not converge in init_1d'
-        print *, 'integrate down'
+        print *, 'integrate up'
         print *, dens_zone, temp_zone
         print *, p_want
-        print *, drho
+        print *, drho, dtemp
         call bl_error('Error: HSE non-convergence')
-           
      endif
-
-
+        
+  
      ! call the EOS one more time for this zone and then go on to the next
      ! (t, rho) -> (p)
      eos_state%T     = temp_zone
@@ -1023,10 +1281,21 @@ program init_1d
      model_hse(i,itemp_model) = temp_zone
      model_hse(i,ipres_model) = pres_zone
 
+     ! to make this process converge faster, set the density in the
+     ! next zone to the density in this zone
+     ! model_hse(i+1,idens) = dens_zone
+
   enddo
-  
-  
-  
+
+endif !put_in_hse  
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! final output
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   write(num,'(i8)') nx
 
   dxstr = num_to_unitstring(dCoord)
@@ -1069,7 +1338,7 @@ program init_1d
      write (lun1, 1003) "# ", spec_names(n)
   enddo
 
-1000 format (1x, 100(g36.26, 1x))
+1000 format (1x, 100(g26.16, 1x))
 1001 format (a, i5)
 1002 format (a)
 1003 format (a,a)
@@ -1080,7 +1349,9 @@ program init_1d
                       (model_hse(i,ispec_model-1+n), n=1,nspec)
   enddo
 
-
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! .extra output
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   write (lun2,1001), "# npts = ", nx
   write (lun2,1001), "# num of variables = ", 3
   write (lun2,1002), "# entropy"
@@ -1103,23 +1374,12 @@ program init_1d
   prev_p = eos_state%p
   prev_mu = eos_state%abar
   prev_temp = temp_zone
-  prev_dtdr = huge(0.0)
-  prev_adiab = huge(0.0)
   
   do i = 2,nx 
      delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = four3rd*m_pi *  xznl_hse(1)**3 * model_hse(1,idens_model)  
-     if (do_invsq_grav) then
-        do j = 1, i-1
-           M_shell = model_hse(j,idens_model) * & 
-               (four3rd*m_pi * (xznr_hse(j)-xznl_hse(j)) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-           M_enclosed = M_enclosed + M_shell
-        enddo
-        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
-     else
-        g_zone = g_const
-     endif
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
+
 
     dens_zone = model_hse(i,idens_model)
     temp_zone = max(temp_cutoff, model_hse(i,itemp_model))
@@ -1133,33 +1393,11 @@ program init_1d
     call conducteos(eos_input_rt, eos_state, .false., conductivity(i))  
     
     
-    dpd = eos_state%dpdr
-    dpdt = eos_state%dpdt
-    dpda = eos_state%dpda
-    gam = eos_state%gam1
-    pres_zone = eos_state%p
-    chi_rho = dens_zone * dpd / pres_zone
-    chi_temp = temp_zone * dpdt / pres_zone
-    chi_mu = eos_state%abar * dpda/ pres_zone
-    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
-    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
-    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
-    grad_ad = (gam - chi_rho)/(chi_temp*gam)
+    call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt(i))
     
-    dtdr = (temp_zone-prev_temp) / delx 
-    adiab = (temp_zone-prev_temp) / delx - grad_temp
-    s(i) = - prev_dtdr / dtdr * (adiab/prev_adiab)
-    brunt(i) = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
-!     dtdr = (temp_zone - max(temp_cutoff, model_hse(i-1,itemp_model)))/delx
-!     brunt(i) = - g_zone/temp_zone * (abs(dtdr) - g_zone/eos_state%cp)
-    
-    prev_adiab = adiab
-    prev_dtdr = dtdr
     prev_p = eos_state%p
     prev_mu = eos_state%abar
     prev_temp = temp_zone
-
-
   enddo
   
   ! test: bulk EOS call -- Maestro will do this once we are mapped, so make
@@ -1181,24 +1419,12 @@ program init_1d
   max_hse_error = -1.d30
 
   do i = 2, nx-1
-
+     delx = xzn_hse(i) - xzn_hse(i-1)
      ! compute the gravitation acceleration at the lower edge
-     M_enclosed = four3rd*m_pi *  dCoord**3 * model_hse(1,idens_model)     
-     if (do_invsq_grav) then
-        do j = 2, i-1
-           M_shell = model_hse(j,idens_model) * & 
-               (four3rd*m_pi * (dCoord) * (xznl_hse(j)**2 + xznr_hse(j)**2 + xznl_hse(j)*xznr_hse(j)) )
-           M_enclosed = M_enclosed + M_shell
-        enddo
-        g_zone = -Gconst*M_enclosed/xznl_hse(i)**2
-     else
-        g_zone = g_const
-     endif
-     
+     call calc_grav_zone(i,xznr_hse,xznl_hse,xzn_hse,model_hse(:,idens_model),.True.,do_invsq_grav,g_zone)     
 
      dpdr = (model_hse(i,ipres_model) - model_hse(i-1,ipres_model))/dCoord
      rhog = HALF*(model_hse(i,idens_model) + model_hse(i-1,idens_model))*g_zone
-  !   print *, abs(dpdr - rhog)/abs(dpdr)
      if (dpdr /= ZERO .and. model_hse(i+1,idens_model) > low_density_cutoff) then
         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
         write(lun2,'(g26.16)') abs(dpdr - rhog)/abs(dpdr)
@@ -1212,6 +1438,144 @@ program init_1d
   
   close (unit=lun1)
   close (unit=lun2)
+
+ contains
+ 
+ subroutine calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp, prev_mu,brunt)
+    use eos_module, only: eos_input_rt, eos, eos_init
+    use eos_type_module, only: eos_t
+    use bl_types
+  
+    real(kind=dp_t), intent(in) :: delx,g_zone,dens_zone,temp_zone,xn(:)
+    real(kind=dp_t), intent(in) :: prev_p,prev_temp,prev_mu
+    real(kind=dp_t), intent(out) :: brunt
+
+    !local variables
+    real(kind=dp_t) :: pres_zone,Hp
+    real(kind=dp_t) :: dpd,dpdt,dpda,gam,chi_rho,chi_temp,chi_mu,adiab,dtdr
+    real(kind=dp_t) :: grad_temp, grad_mu, grad_ad
+    
+    type (eos_t) :: eos_state
+    
+    
+    !compute N^2
+
+    eos_state%T = temp_zone
+    eos_state%rho = dens_zone
+    eos_state%xn(:) = xn(:)
+    
+    call eos(eos_input_rt, eos_state)    
+    
+    dpd = eos_state%dpdr
+    dpdt = eos_state%dpdt
+    dpda = eos_state%dpda
+    gam = eos_state%gam1
+    pres_zone = eos_state%p
+    chi_rho = dens_zone * dpd / pres_zone
+    chi_temp = temp_zone * dpdt / pres_zone
+    chi_mu = eos_state%abar * dpda/ pres_zone
+    Hp = -delx / (dlog(pres_zone)-dlog(prev_p))
+    grad_temp = (dlog(temp_zone) - dlog(prev_temp)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_mu = (dlog(eos_state%abar) - dlog(prev_mu)) / (dlog(pres_zone) - dlog(prev_p))
+    grad_ad = (gam - chi_rho)/(chi_temp*gam)
+    
+    dtdr = (temp_zone-prev_temp) / delx 
+    adiab = (temp_zone-prev_temp) / delx - grad_temp
+    brunt = - g_zone * chi_temp / (chi_rho * Hp) * (grad_ad - grad_temp - chi_mu / chi_temp * grad_mu) 
+    
+end subroutine calc_brunt
+
+
+subroutine diff_brunt(g_zone,delx,dens,temp,xn,prev_p,prev_temp,prev_mu,temp_diff,brunt_diff)
+    use bl_constants_module
+    use bl_types  
+    
+    real(kind=dp_t), intent(in)  :: delx,g_zone,dens,temp,xn(:),prev_p,prev_temp,prev_mu
+    real(kind=dp_t), intent(out) :: brunt_diff
+    logical :: temp_diff
+    
+    !local variables
+    real(kind=dp_t) :: dens_zone,temp_zone
+    real(kind=dp_t) :: brunt_l,brunt_h,h
+    
+    !we compute the partial derivative of the brunt-vaisala frequency with temperature or density
+    !we use a central differencing
+    
+    
+    !first compute N(rho+h,T,X) or N(rho,T+h,X)
+    if (temp_diff) then
+      temp_zone = temp + temp/1000.0
+      dens_zone = dens
+    else
+      temp_zone = temp
+      dens_zone = dens + dens/1000.0
+    endif 
+    
+    call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt_h)
+    
+    !second compute N(rho-h,T,X) or N(rho,T-h,X)
+    if (temp_diff) then
+      temp_zone = temp - temp/1000.0
+      dens_zone = dens
+    else
+      temp_zone = temp
+      dens_zone = dens - dens/1000.0
+    endif 
+    
+    call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt_l)
+   
+   !third compute the differential quotient
+    if (temp_diff) then
+      h = temp/1000.0
+    else
+      h = dens/1000.0
+    endif 
+    
+   brunt_diff = (brunt_h - brunt_l) / (TWO*h)
+   
+end subroutine diff_brunt
+
+subroutine calc_grav_zone(i,r_r,r_l,r_m,dens,inner_edge,do_invsq_grav,g_zone)
+  
+  use fundamental_constants_module, only: Gconst
+  use bl_constants_module
+  use bl_types
+  
+  real(kind=dp_t), intent(in)  :: r_r(:),r_l(:),r_m(:),dens(:) 
+  real(kind=dp_t), intent(out) :: g_zone
+  integer, intent(in) :: i
+  logical, intent(in) :: inner_edge, do_invsq_grav
+  
+  !local variables
+  real(kind=dp_t) :: M_shell,M_enclosed
+  integer :: j
+  
+  if (do_invsq_grav) then
+    if (inner_edge) then
+      ! compute the gravitation acceleration at the lower edge
+      M_enclosed = four3rd*m_pi *  r_l(1)**3 * dens(1)  
+        do j = 1, i-1
+            M_shell = dens(j) * & 
+                (four3rd*m_pi * (r_r(j)-r_l(j)) * (r_l(j)**2 + r_r(j)**2 + r_l(j)*r_r(j)) )
+            M_enclosed = M_enclosed + M_shell
+        enddo
+        g_zone = -Gconst*M_enclosed/r_l(i)**2
+    else 
+      ! compute the gravitation acceleration at the upper edge
+      M_enclosed = four3rd*m_pi *  r_l(1)**3 * dens(1)  
+        do j = 1, i
+            M_shell = dens(j) * & 
+                (four3rd*m_pi * (r_r(j)-r_l(j)) * (r_l(j)**2 + r_r(j)**2 + r_l(j)*r_r(j)) )
+            M_enclosed = M_enclosed + M_shell
+        enddo
+        g_zone = -Gconst*M_enclosed/r_r(i)**2
+    endif
+  
+  else
+    g_zone = g_const
+  endif  
+  
+end subroutine calc_grav_zone
   
 end program init_1d
 
