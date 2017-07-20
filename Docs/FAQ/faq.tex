@@ -59,8 +59,8 @@
 \item {\em The code doesn't compile, but complains right away that there
    is ``{\tt No rule to make target `fabio\_c.c', needed by `t/Linux.gfortran.mpi/c.depends'}''}
 
-   The environment variable {\tt BOXLIB\_HOME} needs to be the full path
-   to the {\tt BoxLib} directory.  You cannot use `{\tt $\sim$}' as a shortcut
+   The environment variable {\tt AMREX\_HOME} needs to be the full path
+   to the {\tt amrex/} directory.  You cannot use `{\tt $\sim$}' as a shortcut
    for your home directory.
   
 \item {\em {\tt make} issues an error like:
@@ -144,14 +144,20 @@
 
   An alternate way to get single-processor timings, when using the GCC
   compilers is to add {\tt -pg} to the compilation flags for both {\tt
-    gfortran} and {\tt gcc} (this can be accomplished by setting {\tt
-    GPROF := t} in your {\tt GNUmakefile}.  Upon completion, a file
+    gfortran} and {\tt gcc}.  This can be accomplished by setting:
+  \begin{verbatim}
+    GPROF := t
+\end{verbatim}
+  in your {\tt GNUmakefile}.  Upon completion, a file
   names {\tt gmon.out} will be produced.  This can be processed by
   {\tt gprof} running
 
-  {\tt~~~ gprof} {\em exec-name}
-  
-  where {\em exec-name} is the name of the executable.
+  \begin{verbatim}
+    gprof exec-name
+\end{verbatim}
+  where {\em exec-name} is the name of the executable.  More detailed
+  line-by-line timings can be obtained by using the {\tt -l} argument
+  to {\tt gprof}.
 
 \item{\em How can I force \maestro\ to abort?}
 
@@ -207,7 +213,7 @@ where {\tt inputs} is the desired inputs file {\em in each} {\tt xterm}.
 
 \item {\em How can I get more information about floating point exceptions?}
 
-\boxlib\ can intercept floating point exceptions and provide a helpful
+\amrex\ can intercept floating point exceptions and provide a helpful
 backtrace that shows you where they were generated.  See \S
 \ref{ch:makefiles:special}.
 
@@ -340,10 +346,10 @@ they are not implemented in \maestro.
  data.  How do I do this?}
 
  One implementation of this can be found in {\tt
-   BoxLib/Tools/Postprocessing/F\_Src/tutorial/fwrite2d.f90}.  This reads in
+   amrex/Tools/Postprocessing/F\_Src/tutorial/fwrite2d.f90}.  This reads in
  the plotfile data using the {\tt plotfile\_module} that the {\tt
    data\_processing} routines rely on, but then builds a multifab
-   and writes the data out to a plotfile using the BoxLib write
+   and writes the data out to a plotfile using the \amrex\ write
    routines.
 
 \end{enumerate}

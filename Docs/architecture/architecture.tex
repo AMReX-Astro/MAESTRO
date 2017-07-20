@@ -37,7 +37,7 @@ cells at the same height must be at the same level of refinement.
 This restriction is to allow for the base state to directly align with
 the Cartesian state everywhere.  For spherical geometries, there is no
 such restriction (again, see Figure~\ref{fig:base_state}).
-The \maestro\ grids are managed by the \boxlib\ library, which is
+The \maestro\ grids are managed by the \amrex\ library, which is
 distributed separately.
 
 
@@ -52,16 +52,16 @@ distributed separately.
   contribute to building the {\tt reacting\_bubble} problem in \maestro.  The
   red directories are part of most standard \maestro\ build.  The
   purple lines show the directories that are pulled in through
-  various Makefile variables ({\tt BOXLIB\_HOME}, {\tt NETWORK\_DIR},
+  various Makefile variables ({\tt AMREX\_HOME}, {\tt NETWORK\_DIR},
   {\tt EOS\_DIR}, and {\tt CONDUCTIVITY\_DIR}).}
 \end{figure}
 
 
 Building \maestro\ requires both the \maestro-specific source
 files (distributed in the {\tt MAESTRO/} directory), and the
-\boxlib\ library (distributed separately, consisting of the {\tt BoxLib/} directory).
-\boxlib\ provides both a C++ and a Fortran framework.  \maestro\
-only uses the Fortran portions of \boxlib.  Figure~\ref{fig:arch:eco}
+\amrex\ library (distributed separately, consisting of the {\tt amrex/} directory).
+\amrex\ provides both a C++ and a Fortran framework.  \maestro\
+only uses the Fortran portions of \amrex.  Figure~\ref{fig:arch:eco}
 shows the relationship between the different packages, highlighting
 what goes into defining a specific \maestro\ problem.
 
@@ -122,9 +122,9 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
     \end{itemize}
 
-  \item {\tt Microphysics/}
+  \item {\tt Microphysics/}\footnote{Note: many more compatible routines are available in the separate \microphysics\ git repo}
 
-    The core microphysics routines used by \maestro.  These are organized
+    The basic microphysics routines used by \maestro.  These are organized
     into the following sub-directories.
 
     \begin{itemize}
@@ -135,16 +135,12 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 
     \item {\tt EOS/}
 
-      A collection of various EOSes for use with the code.  The two
-      important ones for \maestro\ are {\tt helmeos/} and {\tt
-        gamma\_law\_general/}.
+      The {\tt gamma\_law\_general/}.
 
     \item {\tt networks/}
 
-      Various reaction networks for \maestro\ problems.  In addition
-      to providing a routine to evolve the nuclear species due to
-      reactions, the networks also define the species that are
-      advected by the code.
+      The basic {\tt general\_null} network that defines arbitrary
+      non-reacting species.
 
     \end{itemize}
 
@@ -196,32 +192,32 @@ an executable.  Briefly, the \maestro\ sub-directories are:
 \begin{figure}[t]
 \centering
 \includegraphics[scale=0.65]{\archfigpath/boxlib_directory2}
-\caption[\boxlib\ directory structure] {\label{fig:arch:boxlib} The
-  basic \boxlib\ directory structure.  The directories used by
-  \maestro\ are indicated in red.}
+\caption[\amrex\ directory structure] {\label{fig:arch:boxlib} The
+  basic \amrex\ directory structure.  The directories used by
+  \maestro\ are indicated in red. (this figure is likely out of date)}
 \end{figure}
 
-The \boxlib\ directory structure is shown in
+The \amrex\ directory structure is shown in
 Figure~\ref{fig:arch:boxlib}.  The subset of the directories that are
 used by \maestro\ are:
 \begin{itemize}
 \item {Src/}
 
-  The main \boxlib\ source directory.  In \maestro, we only use the
+  The main \amrex\ source directory.  In \maestro, we only use the
   Fortran source files.  The core directories are:
 
   \begin{itemize}
 
   \item {\tt F\_BaseLib/} 
 
-    The Fortran \boxlib\ files.  This is a library for describing
-    meshes consisting of a union of boxes.  The \boxlib\ modules
-    define the basic datatypes used in \maestro.  \boxlib\ also
+    The Fortran \amrex\ files.  This is a library for describing
+    meshes consisting of a union of boxes.  The \amrex\ modules
+    define the basic datatypes used in \maestro.  \amrex\ also
     provides the routines that handle the parallelization and I/O.
 
   \item {\tt LinearSolvers/}
 
-    The \boxlib\ linear solvers---these are used to solve elliptic
+    The \amrex\ linear solvers---these are used to solve elliptic
     problems in the \maestro\ algorithm.
 
     \begin{itemize}
@@ -237,7 +233,7 @@ used by \maestro\ are:
 
 \item {\tt Tools/}
 
-  Various tools used for building \boxlib\ applications.  Here we use:
+  Various tools used for building \amrex\ applications.  Here we use:
 
   \begin{itemize}
 
@@ -257,9 +253,9 @@ used by \maestro\ are:
 \end{itemize}
 
 
-Finally the {\tt BoxLib/Tools/Postprocessing/F\_Src} package provides simple
+Finally the {\tt amrex/Tools/Postprocessing/F\_Src} package provides simple
 Fortran-based analysis routines (e.g.\ extract a line from a
-multidimensional dataset) that operate on BoxLib datasets.  These are
+multidimensional dataset) that operate on \amrex\ datasets.  These are
 described in \S~\ref{sec:analysis}.  Several sub-directories with
 python-based routines are also here.  These are described both in
 \S~\ref{sec:analysis} and \S~\ref{sec:vis:python}.
@@ -334,14 +330,14 @@ multigrid solver, an EOS, a reaction network, etc.).  The core
 to define the EOS, reaction network, and conductivities to
 use, as well as any extra, problem-specific files.  
 \begin{lstlisting}[language={[gnu]make},mathescape=false]
-EOS_DIR := helmeos   
+EOS_DIR := helmholtz   
 CONDUCTIVITY_DIR := constant
 NETWORK_DIR := ignition_simple
 
 EXTRA_DIR := Util/random
 \end{lstlisting}
 Note that the microphysics packages are listed simply by the name of 
-the directory containing the specific implementation (e.g. {\tt helmeos}).
+the directory containing the specific implementation (e.g. {\tt helmholtz}).
 By default, the build system will look in {\tt Microphysics/EOS/} for
 the EOS, {\tt Microphysics/conductivity/} for the conductivity routine,
 and {\tt Microphysics/networks/} for the reaction network.  To
@@ -361,12 +357,12 @@ directory will always be put first in the {\tt VPATH}, so any source
 files placed there override those with the same name found elsewhere
 in the source tree.  
 
-Some packages (for instance, the {\tt helmeos}
+Some packages (for instance, the {\tt helmholtz}
 EOS) require Fortran include files.  The {\tt Fmincludes} variable
 lists all those directories that contain include files that are
 inserted into the Fortran source at compile time via the {\tt include}
 statement.  Presently, the only instance of this is with the Helmholtz
-general equation of state found in {\tt Microphysics/EOS/helmeos/}.  This is
+general equation of state found in {\tt Microphysics/EOS/helmholtz/}.  This is
 automatically handled by the {\tt GMaestro.mak} instructions.
 
 Runtime parameters listed in the {\tt MAESTRO/\_parameters} file are
@@ -491,9 +487,9 @@ starting point for full stars.
 
 
 
-\section{BoxLib Data Structures}
+\section{\amrex\ Data Structures}
 
-\maestro's gridding is handled by the BoxLib library, which
+\maestro's gridding is handled by the \amrex\ library, which
 contains the most fundamental objects used to construct parallel
 block-structured AMR applications---different
 regions of the domain can have different spatial resolutions.
@@ -526,7 +522,7 @@ processor (load balancing).
   Not shown is the case where data is nodal in the $y$-direction only.}
 \end{figure}
 On a grid, the data can be stored at cell-centers, on a face/edge, or
-on the corners.  In BoxLib, data that is on an edge is termed `nodal'
+on the corners.  In \amrex, data that is on an edge is termed `nodal'
 in that direction (see Figure~\ref{fig:dataloc}).  Data that is on the
 corners is nodal in all spatial directions.  In \maestro, the state
 data (density, enthalpy, velocity, $\ldots$) is generally
@@ -534,10 +530,10 @@ cell-centered.  Fluxes are nodal in the direction they represent.
 A few quantities are nodal in all directions (e.g.\ $\phi$ used in
 the final velocity projection).
 
-To simplify the description of the underlying AMR grid, BoxLib
+To simplify the description of the underlying AMR grid, \amrex\
 provides a number of Fortran types.  We briefly summarize the major
-data types below.  A more extensive introduction to \boxlib\ is 
-provided by the \boxlib\ User's Guide, distributed with the library.
+data types below.  A more extensive introduction to \amrex\ is 
+provided by the \amrex\ User's Guide, distributed with the library.
 
 
 \subsection{\boxtype}
@@ -554,7 +550,7 @@ a global index space.
 \caption[Single-level grid structure]
 {\label{fig:boxes} Three boxes that comprise a single level.  At this
   resolution, the domain is 20$\times$18 zones.  Note that the
-  indexing in BoxLib starts with $0$.}
+  indexing in \amrex\ starts with $0$.}
 \end{figure}
 
 
@@ -694,7 +690,7 @@ The procedure for accessing the data in each grid managed by the
 \multifab\ is shown in \S~\ref{sec:example}.  Subroutines to add,
 multiply, or divide two \multifab s exist, as do subroutines to copy
 from one \multifab\ to another---see
-\code{BoxLib/Src/F\_BaseLib/multifab.f90} for the full list of
+\code{amrex/Src/F\_BaseLib/multifab.f90} for the full list of
 routines that work with \multifab s.
 
 
@@ -844,9 +840,14 @@ gets the information about the fluid species from the \code{network}
 module (for example, the atomic number, $Z$, and atomic weight, $A$,
 of the nuclei).
 
-Presently there are 3 equations of state that work with \maestro:
+Presently there is a single EOS that comes with \maestro, {tt gamma\_law\_general},
+but many more are available through the external \microphysics\ repo\footnote{\microphysics\ is
+available at \url{https://github.com/starkiller-astro/Microphysics}.  \maestro\ will
+find it via the {\tt MICROPHYSICS\_HOME} environment variable}.  The \microphysics\
+EOSs share the same interface and can be compiled into \maestro\ directly.  
+Here are the more popular EOSs:
 \begin{itemize}
-\item {\tt helmeos/} represents a general stellar equation 
+\item {\tt helmholtz} represents a general stellar equation 
       of state, consisting of nuclei (as an ideal gas), radiation,
       and electrons (with arbitrary degeneracy and degree of relativity).
       This equation of state is that described in \cite{timmes_eos}.
@@ -1036,9 +1037,9 @@ projection of the pressure ({\tt press\_comp}), or constructing
 the plotfile.
 
 
-\section{BoxLib Helper Modules}
+\section{\amrex\ Helper Modules}
 
-There are a large number of modules in {\tt boxlib/} that provide
+There are a large number of modules in {\tt amrex/} that provide
 the core functionality for managing grids.  Here we describe
 the most popular such modules.
 
@@ -1091,7 +1092,7 @@ the dimensionality.
 \end{lstlisting}
 
 \noindent Here, the {\tt bl\_types} and \code{multifab\_module}
-modules bring in the basic BoxLib data types. Specifically, here,
+modules bring in the basic \amrex\ data types. Specifically, here,
 \code{bl\_types} defines {\tt dp\_t} which is the {\tt kind} used for
 declaring double precision data, and \code{multifab\_module} defines
 the \multifab\ data type.  The \code{ml\_layout\_module} defines the
@@ -1326,7 +1327,7 @@ on the objective.
 \end{itemize}
 
 You generally won't see calls in the MAESTRO source code to these subroutines,
-as there is now a special BoxLib subroutine, {\tt ml\_restrict\_and\_fill},
+as there is now a special \amrex\ subroutine, {\tt ml\_restrict\_and\_fill},
 that takes an array of multifabs at different level, and in order calls:
 (1) {\tt ml\_cc\_restriction\_c}, (2) {\tt multifab\_fill\_boundary},
 (3) {\tt multifab\_physbc}, and (4) {\tt multifab\_fill\_ghost\_cells}.
@@ -1349,7 +1350,7 @@ the boundary conditions for each box in the domain at that level of
 refinement: {\tt phys\_bc\_level\_array}, {\tt adv\_bc\_level\_array},
 and {\tt ell\_bc\_level\_array}.  In all cases, the boundary
 conditions are specified via integer values that are defined in {\tt
-  bc\_module} (part of \boxlib).
+  bc\_module} (part of \amrex).
 
 Each level has a {\tt phys\_bc\_level\_array(0:ngrids,dim,2)} array,
 where {\tt ngrids} is the number of boxes on that level, {\tt dim} is
@@ -1464,6 +1465,6 @@ positions.  See \S~\ref{analysis:sec:particles} for details.
 
 \section{Regression Testing}
 
-There is an extensive regression test suite for \boxlib\ that works with
+There is an extensive regression test suite for \amrex\ that works with
 \maestro.  Full details, and a sample \maestro\ configuration file are
-provided in the \boxlib\ User's Guide and source.
+provided in the \amrex\ User's Guide and source.

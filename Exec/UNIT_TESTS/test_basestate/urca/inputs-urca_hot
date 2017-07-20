@@ -1,0 +1,31 @@
+&PROBIN
+
+ anelastic_cutoff = 1.e6
+ base_cutoff_density = 1.e5
+
+ spherical_in = 1
+ dm_in = 1
+
+ prob_lo_x = 0.0
+ prob_hi_x = 5.e8
+
+ max_step  = 100000000
+
+ stop_time = 2.0d0
+
+ cflfac = 0.7d0
+
+ model_file = "WD_urca_nuc_M-0.5_hot_002.hse.5120"
+
+ heating_time  = 0.5d0
+ heating_rad   = 5.723d7
+ heating_peak  = 5.342d9
+ heating_sigma = 7.447d13
+ cooling_rad   = 2.813d7
+ cooling_peak  = -7.976d9
+ cooling_sigma = 3.943d13
+
+ prob_type = 4
+
+ use_eos_coulomb = T
+/

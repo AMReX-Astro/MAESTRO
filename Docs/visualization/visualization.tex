@@ -180,7 +180,7 @@ any of the following:
 
 
 
-\subsection{the \boxlib\ file format}
+\subsection{the \amrex\ file format}
 
 \maestro\ stores the plotfile data in a hierarchical directory format,
 with each level's data stored in a separate subdirectory.  Some meta-data
@@ -242,12 +242,12 @@ $\vdots$ \\
 %-----------------------------------------------------------------------------
 \section{Visualizing with \amrvis}
 
-\amrvis\ is a tool developed together with \boxlib\ to visualize datasets
-from codes built around the \boxlib\ library.  You can download the
+\amrvis\ is a tool developed together with \amrex\ to visualize datasets
+from codes built around the \amrex\ library.  You can download the
 \amrvis\ source from: \\
 \url{https://ccse.lbl.gov/Downloads/downloadAmrvis.html} \\
 
-\amrvis\ exists in the C++ \boxlib\ framework, so the build system is
+\amrvis\ exists in the C++ \amrex\ framework, so the build system is
 slightly different.  A different executable is needed for 2- vs.\ 3-d
 datasets.  Edit the {\tt GNUmakefile} and set the compilers (probably
 {\tt g++} and {\tt gfortran}) and the dimensionality, and turn off any
@@ -288,8 +288,8 @@ palette               /home/username/Palette
 
 
 {\tt AmrPostprocessing/python} provides some simple commandline
-tools for doing visualizations of \boxlib\ plotfiles (note: a subset
-of these are distributed directly with \boxlib\ in {\tt BoxLib/Tools/Py\_util/}).  The main drivers
+tools for doing visualizations of \amrex\ plotfiles (note: a subset
+of these are distributed directly with \amrex\ in {\tt amrex/Tools/Py\_util/}).  The main drivers
 are written in python and use a set of Fortran routines, compiled with
 {\tt f2py} to interface with the plotfile data.  To use the routine,
 you will need to have {\tt matplotlib} and {\tt f2py} installed.  On a
@@ -316,8 +316,8 @@ installing the {\tt lyx-fonts} package and deleting your {\tt
 
 \subsection{\tt plotsinglevar.py}
 
-{\tt plotsinglevar.py} does visualizations of 2-d \boxlib\ plotfiles,
-and slices through 3-d \boxlib\ plotfiles.  A simple plot can be made
+{\tt plotsinglevar.py} does visualizations of 2-d \amrex\ plotfiles,
+and slices through 3-d \amrex\ plotfiles.  A simple plot can be made
 via:
 \begin{verbatim}
 plotsinglevar.py --log -o test.png plt00000/ tfromp
@@ -412,12 +412,9 @@ runtimevis.py plt00000
 %-----------------------------------------------------------------------------
 \section{\label{sec:vis:yt} Visualizing with \yt}
 
-\yt is a Python package for analyzing and visualizing simulation data.
-Originally \yt was written for the {\tt Enzo} code, with focus on
-cosmological simulation data.  It has since been refactored to remove
-the specific {\tt Enzo}isms, and now can work on various data formats,
-such as the BoxLib data from \maestro\ and \castro, HDF5 data
-from {\tt FLASH}, and data from the SPH code {\tt Gadget}.  For more
+\yt is a Python package for analyzing and visualizing simulation data,
+and understand that \amrex\ data from \maestro\ and \castro\ (along
+with many other simulation codes). For more
 information, see the \yt homepage at \url{http://yt-project.org/} and
 \cite{yt}.
 

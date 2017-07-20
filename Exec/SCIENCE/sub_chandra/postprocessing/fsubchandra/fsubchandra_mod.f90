@@ -53,6 +53,7 @@ module subchandra
     real(kind=dp_t), allocatable :: XdotC12_avg_bin(:), XdotO16_avg_bin(:), XdotHe4_avg_bin(:)
     real(kind=dp_t), allocatable :: entropy_avg_bin(:), entropy_rms_bin(:)
     real(kind=dp_t), allocatable :: rv_neg_avg_bin(:)
+    real(kind=dp_t), allocatable :: cs_avg_bin(:)
   end type radial_averages
 
   !Collection of global results based on evaluation of
@@ -528,6 +529,7 @@ contains
     allocate(radav%entropy_avg_bin(0:nbins-1))
     allocate(radav%entropy_rms_bin(0:nbins-1))
     allocate( radav%rv_neg_avg_bin(0:nbins-1))
+    allocate(     radav%cs_avg_bin(0:nbins-1))
 
     radav%ncount(:) = 0
     radav%rvn_ncount(:) = 0
@@ -548,11 +550,12 @@ contains
     radav%entropy_avg_bin(:) = ZERO
     radav%entropy_rms_bin(:) = ZERO
     radav%rv_neg_avg_bin(:) = ZERO
+    radav%cs_avg_bin(:) = ZERO
   end subroutine init_averages
   
   subroutine analyze(pf, geo, sc, thist, glb, radav, hh, hheap_frac_input)
     !Modules
-    use eos_module, only: eos_input_rh, eos_input_re, eos
+    use eos_module, only: eos_input_rh, eos_input_re, eos_input_rt, eos
     use eos_type_module, only: eos_t
     use network, only: nspec, network_species_index
     implicit none
@@ -843,6 +846,20 @@ contains
             radav%temp_rms_bin(i) = sqrt(radav%temp_rms_bin(i)/radav%ncount(i))
             radav%pres_rms_bin(i) = sqrt(radav%pres_rms_bin(i)/radav%ncount(i))
             radav%entropy_rms_bin(i) = sqrt(radav%entropy_rms_bin(i)/radav%ncount(i))
+
+            ! Derive soundspeed, TODO: what's proper input to use?  Using rho,T now
+            xmass(network_species_index('He4')) = radav%XHe4_avg_bin(i)
+            xmass(network_species_index('C12')) = radav%XC12_avg_bin(i)
+            xmass(network_species_index('O16')) = radav%XO16_avg_bin(i) 
+            xmass(network_species_index('Fe56')) = 0.0_dp_t
+
+            eos_state%rho   = radav%dens_avg_bin(i)
+            !eos_state%h     = p(ii,jj,kk,sc%h_comp)
+            eos_state%T     = radav%temp_avg_bin(i)
+            eos_state%xn(:) = xmass(:)
+              
+            call eos(eos_input_rt, eos_state)
+            radav%cs_avg_bin(i) = eos_state%cs
          endif
       enddo
     end if
@@ -1141,7 +1158,7 @@ contains
 
       ! write averages labels
       write(uno,fmt_labels) "r", "density", "temperature", "pressure",  &
-           "vel. magnitude", "Hnuc", "entropy", "negative rad. vel.", &
+           "cs", "vel. magnitude", "Hnuc", "entropy", "negative rad. vel.", &
            "X(He4)", "X(C12)", "X(O16)", "Xdot(He4)", "Xdot(C12)", "Xdot(O16)",&
            "RMS density", "RMS temperature", "RMS pressure", "RMS entropy"
 
@@ -1152,6 +1169,7 @@ contains
          if (abs(   radav%dens_avg_bin(i)) .lt. 1.d-99)    radav%dens_avg_bin(i) = 0.d0
          if (abs(   radav%temp_avg_bin(i)) .lt. 1.d-99)    radav%temp_avg_bin(i) = 0.d0
          if (abs(   radav%pres_avg_bin(i)) .lt. 1.d-99)    radav%pres_avg_bin(i) = 0.d0
+         if (abs(   radav%cs_avg_bin(i))   .lt. 1.d-99)      radav%cs_avg_bin(i) = 0.d0
          if (abs(   radav%magv_avg_bin(i)) .lt. 1.d-99)    radav%magv_avg_bin(i) = 0.d0
          if (abs(   radav%enuc_avg_bin(i)) .lt. 1.d-99)    radav%enuc_avg_bin(i) = 0.d0
          if (abs(radav%entropy_avg_bin(i)) .lt. 1.d-99) radav%entropy_avg_bin(i) = 0.d0
@@ -1168,8 +1186,8 @@ contains
          if (abs(radav%entropy_rms_bin(i)) .lt. 1.d-99) radav%entropy_rms_bin(i) = 0.d0
          
          write(uno,fmt_data) geo%r(i), radav%dens_avg_bin(i), radav%temp_avg_bin(i),        &
-              radav%pres_avg_bin(i), radav%magv_avg_bin(i), radav%enuc_avg_bin(i),          &
-              radav%entropy_avg_bin(i), radav%rv_neg_avg_bin(i),                            &
+              radav%pres_avg_bin(i), radav%cs_avg_bin(i), radav%magv_avg_bin(i),            &
+              radav%enuc_avg_bin(i), radav%entropy_avg_bin(i), radav%rv_neg_avg_bin(i),     &
               radav%XHe4_avg_bin(i), radav%XC12_avg_bin(i), radav%XO16_avg_bin(i),          &
               radav%XdotHe4_avg_bin(i), radav%XdotC12_avg_bin(i), radav%XdotO16_avg_bin(i), &
               radav%dens_rms_bin(i), radav%temp_rms_bin(i),                                 &

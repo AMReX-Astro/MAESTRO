@@ -15,6 +15,8 @@ program testburn
   real(kind=dp_t) :: dens, temp, dt, rho_Hnuc
   real(kind=dp_t), dimension(nspec) :: Xin, Xout, rho_omegadot
 
+  integer :: n
+
   call network_init()
   call eos_init()
 
@@ -32,17 +34,15 @@ program testburn
 
   Xout = ZERO
 
-  print *, 'calling the burner...'
-
   call burner(dens, temp, Xin, dt, Xout, rho_omegadot, rho_Hnuc)
 
-  print *, 'done!'
+1000 format(g20.10, 1x, g20.10)
 
-  print *, 'Xin:      ', Xin
-  print *, 'sum:      ', sum(Xin)
-  print *, 'Xout:     ', Xout
-  print *, 'sum:      ', sum(Xout)
-  print *, 'rho_Hnuc: ', rho_Hnuc
-  print *, 'enuc:     ', rho_Hnuc*dt/dens
+  print *, 'Xin / Xout:'
+  do n = 1, nspec
+     print 1000, Xin(n), Xout(n)
+  enddo
+
+  print *, 'Hnuc: ', rho_Hnuc/dens
 
 end program testburn

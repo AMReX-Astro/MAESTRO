@@ -35,8 +35,8 @@
  prob_lo_y = 0.0d0
  prob_lo_z = 0.0d0
 
- prob_hi_x = 768.0d0
- prob_hi_y = 768.0d0
+ prob_hi_x = 384.0d0
+ prob_hi_y = 384.0d0
  prob_hi_z = 4608.0d0
 
 xlo_boundary_type = "periodic"
