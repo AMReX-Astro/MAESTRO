@@ -49,8 +49,10 @@ contains
         lo_tag = lo_dens_tag
         hi_tag = hi_dens_tag
        else 
-	lo_tag = (hi_dens_tag + lo_dens_tag) / TWO - (ONE / (steep_tag * dble(lev)) * (hi_dens_tag - lo_dens_tag))
-	hi_tag = (hi_dens_tag + lo_dens_tag) / TWO + (ONE / (steep_tag * dble(lev)) * (hi_dens_tag - lo_dens_tag))
+	lo_tag = (hi_dens_tag + lo_dens_tag) / TWO - &
+                 (ONE / (steep_tag * dble(lev)) * (hi_dens_tag - lo_dens_tag))
+	hi_tag = (hi_dens_tag + lo_dens_tag) / TWO + &
+                 (ONE / (steep_tag * dble(lev)) * (hi_dens_tag - lo_dens_tag))
        end if
        
        mfp => dataptr(mf, i)
@@ -62,9 +64,11 @@ contains
 
        select case (get_dim(mf))
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),tlo(1:2),mfp(:,:,1,rho_comp),mflo(1:2),lo,hi,lo_tag,hi_tag,dx,lev)
+          call tag_boxes_2d(tp(:,:,1,1),tlo(1:2),mfp(:,:,1,rho_comp),&
+                            mflo(1:2),lo,hi,lo_tag,hi_tag,dx,lev)
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),tlo(1:3),mfp(:,:,:,rho_comp),mflo(1:3),lo,hi,lo_tag,hi_tag,dx,lev)
+          call tag_boxes_3d(tp(:,:,:,1),tlo(1:3),mfp(:,:,:,rho_comp),&
+                            mflo(1:3),lo,hi,lo_tag,hi_tag,dx,lev)
        end select
     end do
     !$omp end parallel
