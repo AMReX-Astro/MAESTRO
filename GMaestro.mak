@@ -74,22 +74,13 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-# for backward compatibility -- MICROPHYSICS_DIR is deprecated
-ifndef MICROPHYSICS_HOME
-  ifdef MICROPHYSICS_DIR
-    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
-    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
-  endif 
-endif
-
-
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
 endif
 
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
+# the helmeholtz eos has an include file -- also add a target to link
+# the table into the problem directory.
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
@@ -103,7 +94,15 @@ ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
   EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
+MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS \
+                  $(MAESTRO_TOP_DIR)/Microphysics/screening \
+                  $(MAESTRO_TOP_DIR)/Microphysics/conductivity
+
+# are we using the stellar conductivity?
+ifeq ($(findstring stellar, $(CONDUCTIVITY_DIR)), stellar)
+  CONDUCTIVITY_TOP_DIR := $(MICROPHYSICS_HOME)/conductivity
+endif
+
 
 # locations of the microphysics 
 ifndef EOS_TOP_DIR 

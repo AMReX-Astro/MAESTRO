@@ -490,7 +490,7 @@ contains
        eos_state%T     = state(i,temp_comp)
        eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1) / eos_state%rho
 
-       call conducteos(eos_input_rt, eos_state, .false., conductivity)
+       call conducteos(eos_input_rt, eos_state, conductivity)
 
        cond(i) = conductivity
 
@@ -523,7 +523,7 @@ contains
           eos_state%T     = state(i,j,temp_comp)
           eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1) / eos_state%rho
 
-          call conducteos(eos_input_rt, eos_state, .false., conductivity)
+          call conducteos(eos_input_rt, eos_state, conductivity)
 
           cond(i,j) = conductivity
 
@@ -560,7 +560,7 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
                            eos_state%rho
 
-             call conducteos(eos_input_rt, eos_state, .false., conductivity)
+             call conducteos(eos_input_rt, eos_state, conductivity)
 
              cond(i,j,k) = conductivity
 

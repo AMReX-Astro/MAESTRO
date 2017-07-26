@@ -328,7 +328,7 @@ contains
           eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
           ! dens, temp, and xmass are inputs
-          call conducteos(eos_input_rt, eos_state, .false., conductivity)
+          call conducteos(eos_input_rt, eos_state, conductivity)
           
           Tcoeff(i) = -conductivity
           hcoeff(i) = -conductivity/eos_state%cp
@@ -395,7 +395,7 @@ contains
              eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              ! dens, temp, and xmass are inputs
-             call conducteos(eos_input_rt, eos_state, .false., conductivity)
+             call conducteos(eos_input_rt, eos_state, conductivity)
              
              Tcoeff(i,j) = -conductivity
              hcoeff(i,j) = -conductivity/eos_state%cp
@@ -466,7 +466,7 @@ contains
                 eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
                 ! dens, temp, and xmass are inputs
-                call conducteos(eos_input_rt, eos_state, .false., conductivity)
+                call conducteos(eos_input_rt, eos_state, conductivity)
                 
                 Tcoeff(i,j,k) = -conductivity
                 hcoeff(i,j,k) = -conductivity/eos_state%cp
