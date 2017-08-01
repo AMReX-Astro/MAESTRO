@@ -1,5 +1,10 @@
 changes since last merge with master:
 
+
+17.08
+
+ * Major changes:
+
   -- we now get the stellar conductivities from the Microphysics repo
      (part of StarKiller).  This is the same place as we get the
      general Helmholtz equation of state.
