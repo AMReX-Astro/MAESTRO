@@ -12,7 +12,7 @@ MAESTRO_TOP_DIR := ../../..
 
 # define the physics packages to build this problem 
 EOS_DIR := helmholtz
-CONDUCTIVITY_DIR := timmes_stellar
+CONDUCTIVITY_DIR := stellar
 
 ifdef SDC
   NETWORK_DIR := ignition_simple_SDC

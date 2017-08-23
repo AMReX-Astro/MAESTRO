@@ -10,7 +10,7 @@ from a single core to 100,000s of processor cores with MPI + OpenMP.
 A description of the algorithm and links to the algorithm papers can
 be found here:
 
-http://boxlib-codes.github.io/MAESTRO/
+http://amrex-astro.github.io/MAESTRO/
 
 
 ## Getting Started:

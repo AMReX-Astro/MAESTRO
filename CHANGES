@@ -1,11 +1,27 @@
 changes since last merge with master:
 
 
-previous releases:
+17.08
 
-16.10
+ * Major changes:
 
-16.09
+  -- we now get the stellar conductivities from the Microphysics repo
+     (part of StarKiller).  This is the same place as we get the
+     general Helmholtz equation of state.
+
+  -- the StarKiller-astro Microphysics repo now uses a denser table
+     for the Helmholtz EOS (thanks to Frank Timmes).  If you are using
+     this EOS, the new table will be soft-linked to your build
+     directory automatically.  If you have an old copy laying around,
+     it might fail to run, with an I/O error.
+
+
+17.06
+
+ * Major changes:
+
+   -- we now require the AMReX library instead of BoxLib to build.
+
 
 16.08
 
@@ -18,7 +34,7 @@ previous releases:
       turn on/off FPE handling through the boxlib backtrace module
 
    -- Chosing the general Helmholtz stellar equation of state is now done
-      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
+      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the
       actual name of the directory in the Microphysics repo.
 
 
@@ -35,7 +51,7 @@ previous releases:
  * Minor changes:
 
    -- The runtime parameter small_x is now owned by the network module.
-   
+
    -- The conductivity_constant runtime parameter is now owned by
       Microphysics/conductivity/constant.
 
@@ -86,5 +102,3 @@ previous releases:
 
    -- A workaround for a compiler bug in the Cray 8.4.x compilers was
       implemented, and these compilers are now supported
-
-

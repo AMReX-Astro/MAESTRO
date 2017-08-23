@@ -1,0 +1,28 @@
+&PROBIN
+
+ anelastic_cutoff = 1.e6
+ base_cutoff_density = 1.e5
+
+ spherical_in = 1
+ dm_in = 1
+
+ prob_lo_x = 0.0
+ prob_hi_x = 5.e8
+
+ max_step  = 100000000
+
+ stop_time = 2.0d0
+
+ cflfac = 0.7d0
+
+ model_file = "WD_M-0.5_hot.hse.5120"
+
+ heating_time  = 0.5d0
+ heating_rad   = -6.002d3
+ heating_peak  = 1.826d6
+ heating_sigma = 8.905d13
+
+ prob_type = 1
+
+ use_eos_coulomb = T
+/

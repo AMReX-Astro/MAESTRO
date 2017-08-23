@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# Given a re the caaprofile files must match in the working dir,
+# write a summary file for the header data.
+import argparse
+from AngleAveragedProfile import AngleAveragedProfile
+import numpy as np
+import os
+import re
+
+parser = argparse.ArgumentParser()
+parser.add_argument('regexp', type=str,
+                    help='Regular expression for angle-averaged profile filenames.')
+parser.add_argument('-o', '--outfile', type=str, default='caaprofile.summary',
+                    help='Name of output summary file to write. Default "caaprofile.summary"')
+args = parser.parse_args()
+
+if __name__ == '__main__':
+    # Get list of files in working dir
+    refile = re.compile(args.regexp)
+    files = os.listdir()
+    todo = []
+    for file in files:
+        if refile.match(file):
+            todo.append(file)
+    header_keys = []
+    header_entries = []
+    # Read each file into an angle-averaged profile object
+    for file in todo:
+        aaprof = AngleAveragedProfile(file)
+        if not header_keys:
+            header_keys = list(aaprof.header.keys())
+        header_entries.append(aaprof.header)
+    # Sort header_entries by time
+    header_entries = sorted(header_entries, key=lambda x: float(x['time']))
+    # Split 3-tuples in the data, identified by keys of the form (A, B, C)
+    keys_to_delete = []
+    keys_to_append = []
+    for k in header_keys:
+        if '(' in k:
+            keys_to_delete.append(k)
+            n = k.find('(')
+            # isolate a x, y, z tuple
+            kx = k[:n] + ' (x)'
+            ky = k[:n] + ' (y)'
+            kz = k[:n] + ' (z)'
+            keys_to_append.append(kx)
+            keys_to_append.append(ky)
+            keys_to_append.append(kz)
+            for entry in header_entries:
+                vx = entry[k][0]
+                vy = entry[k][1]
+                vz = entry[k][2]
+                entry[kx] = vx
+                entry[ky] = vy
+                entry[kz] = vz
+    # Now delete extraneous keys
+    for k in keys_to_delete:
+        header_keys.remove(k)
+        for i in range(len(header_entries)):
+            entry = header_entries[i]
+            newentry = dict(entry)
+            del newentry[k]
+            header_entries[i] = newentry
+    # And add new keys
+    for k in keys_to_append:
+        header_keys.append(k)
+    # Produce summary file
+    fo = open(args.outfile, 'w')
+    # Write header
+    hl = '# ' + '  '.join(['[' + k + ']' for k in header_keys]) + '\n'
+    fo.write(hl)
+    # Write data
+    for entry in header_entries:
+        dl = '  '.join(['{}'.format(entry[k]) for k in header_keys]) + '\n'
+        fo.write(dl)
+    # Close
+    fo.close()

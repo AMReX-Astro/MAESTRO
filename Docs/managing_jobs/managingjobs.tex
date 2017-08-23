@@ -11,7 +11,7 @@ host of parameters about the simulation, including:
 \item The total amount of CPU-hours used up to this point
 \item The data and time of the plotfile creation and the directory it was written to.
 \item The build date, machine, and directory
-\item The \maestro, \boxlib, and other relevant git hashes for the source
+\item The \maestro, \amrex, and other relevant git hashes for the source
 \item The directories used in the build
 \item The compilers used and compilation flags
 \item The number of levels and boxes for the grid
@@ -58,19 +58,15 @@ gfortran 4.8.5 appears to work without issues
 
 \item {\em gfortran 5.3.x}: These compilers have no known issues.
 
-\item {\em gfortran 6.1.1}: These compilers have a bug in producing
-  optimized code for \boxlib's {\tt init\_layout\_tilearray}.  At the
-  moment, this is worked around in \boxlib\ by changing the routine
-  from a function to a subroutine.
+\item {\em gfortran 6.2}: These compilers work without any known issues.
 
-
-  gfortran 6.1.1 is used for nightly regression testing.
+  gfortran 6.2.1 is used for nightly regression testing.
 
 \end{itemize}
 
 \subsection{PGI compilers}
 
-The \boxlib\ floating point exception trapping is disabled with PGI
+The \amrex\ floating point exception trapping is disabled with PGI
 compilers earlier than version 16, due to problems with PGI using the
 system header files.  From version 16 onward, things should work.
 
@@ -125,7 +121,7 @@ second time and overwriting the stored copy, especially if a purge
 took place.
 
 Additionally, if the {\tt ftime} executable is in your path ({\tt
-ftime.f90} lives in {\tt BoxLib/Tools/Postprocessing/F\_src/}), then
+ftime.f90} lives in {\tt amrex/Tools/Postprocessing/F\_src/}), then
 the script will create a file called {\tt ftime.out} that lists the
 name of the plotfile and the corresponding simulation time.
 
@@ -203,7 +199,7 @@ $ scorep --cuda --openacc -v ftn gpuprogram.f90
 \end{lstlisting}
 
 One way to achieve this in \maestro\ is to modify the appropriate make file.  For
-PGI, this would be {\tt \$BOXLIB\_HOME/Tools/F\_mk/comps/Linux\_pgi.mak}.  If
+PGI, this would be {\tt \$AMREX\_HOME/Tools/F\_mk/comps/Linux\_pgi.mak}.  If
 this proves useful, it may be worth it to build {\tt Score-P} into the build
 infrastructure.
 
@@ -419,7 +415,7 @@ that {\tt vol.py} is executable, and that we run it via {\tt aprun} to
 ensure that it is launched on the compute node.
 
 The scripts {\tt vis-titan.run} and {\tt parallel-yt-new} in that
-same directorywill manage the \yt jobs by calling a
+same directorywill manage the \yt\ jobs by calling a
 python script for each file that matches a pattern.  
 Note that the actual visualization command itself is launched by
 {\tt parallel-yt-new}, again using the {\tt aprun} command.  But
@@ -543,10 +539,7 @@ PGI and Cray also work well
 \begin{itemize}
 \item Intel 15.0.1 works well on edison/NERSC with MPI/OpenMP
 
-\item Intel 16.0.0 and 16.0.1 have issues compiling the linear solvers
-  in \boxlib\ and should be avoided.
-
-  Intel 16.0.2 works fine.
+\item Intel 16.0.2 works fine.
 
 \item Cray 8.4.x has worked in the past, but it has not been used
   at NERSC in a while.
