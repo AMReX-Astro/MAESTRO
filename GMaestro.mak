@@ -74,13 +74,6 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-# for backward compatibility -- MICROPHYSICS_DIR is deprecated
-ifndef MICROPHYSICS_HOME
-  ifdef MICROPHYSICS_DIR
-    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
-    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
-  endif
-endif
 
 
 # default to $(MICROPHYSICS_HOME) for the EOS unless we are gamma_law_general
@@ -95,7 +88,8 @@ ifeq ($(EOS_DIR), helmeos)
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
 endif
 
-# link to the table for helmholtz
+# the helmeholtz eos has an include file -- also add a target to link
+# the table into the problem directory.
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
@@ -108,6 +102,7 @@ table:
 ifeq ($(findstring URCA-simple, $(NETWORK_DIR)), URCA-simple)
   ALL: urcatables
 endif
+
 
 urcatables:
 	@if [ ! -f 23Ne-23Na_betadecay.dat ]; then echo ${bold}Linking 23Ne-23Na_betadecay.dat${normal}; ln -s $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/23Ne-23Na_betadecay.dat .;  fi
