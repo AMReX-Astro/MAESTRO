@@ -54,10 +54,10 @@ endif
 #   Setting AMREX_ONLY := t means that we don't even want the
 #   MAESTRO/Source directory in our VPATH
 
-ifndef UNIT_TEST 
-  ifndef AMREX_ONLY 
-    MAESTRO_CORE += Source 
-  endif 
+ifndef UNIT_TEST
+  ifndef AMREX_ONLY
+    MAESTRO_CORE += Source
+  endif
 endif
 
 
@@ -66,7 +66,7 @@ endif
 UTIL_CORE :=
 
 ifndef AMREX_ONLY
-  UTIL_CORE := Util/model_parser 
+  UTIL_CORE := Util/model_parser
 endif
 
 UTIL_CORE += Util/simple_log
@@ -119,6 +119,11 @@ else
 endif
 
 
+# are we using the stellar conductivity?
+ifeq ($(findstring stellar, $(CONDUCTIVITY_DIR)), stellar)
+  CONDUCTIVITY_TOP_DIR := $(MICROPHYSICS_HOME)/conductivity
+endif
+
 ifndef CONDUCTIVITY_TOP_DIR
   CONDUCTIVITY_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/conductivity
 endif
@@ -130,7 +135,8 @@ MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
 		  $(MAESTRO_TOP_DIR)/Microphysics/networks \
 		  $(EOS_TOP_DIR) \
 		  $(EOS_TOP_DIR)/$(EOS_DIR) \
-                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) \
+                  $(MAESTRO_TOP_DIR)/Microphysics/conductivity \
+                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR)
 
 
 #-----------------------------------------------------------------------------
@@ -241,7 +247,7 @@ endif
 # list of the directories to search for _parameters files
 PROBIN_PARAMETER_DIRS = ./
 
-ifndef AMREX_ONLY 
+ifndef AMREX_ONLY
   PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)/Source
 endif
 
