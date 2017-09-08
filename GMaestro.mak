@@ -8,26 +8,26 @@ ifndef OK
    $(error your version of GNU make is too old.  You need atleast version $(NEED))
 endif
 
-# Make sure we have BoxLib and that the build system will find it
-ifdef BOXLIB_HOME
-   ifeq ($(findstring ~, $(BOXLIB_HOME)), ~)
-      $(error you cannot include the ~ character in your BOXLIB_HOME variable)
+# Make sure we have AMReX and that the build system will find it
+ifdef AMREX_HOME
+   ifeq ($(findstring ~, $(AMREX_HOME)), ~)
+      $(error you cannot include the ~ character in your AMREX_HOME variable)
    endif
 else
-   $(error Maestro requires BoxLib. Please ensure that you have downloaded it and set $$BOXLIB_HOME appropriately)
+   $(error Maestro requires AMReX. Please ensure that you have downloaded it and set $$AMREX_HOME appropriately)
 endif
 
 # include the main Makefile stuff
-include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
+include $(AMREX_HOME)/Tools/F_mk/GMakedefs.mak
 
 # default target (make just takes the one that appears first)
 ALL: main.$(suf).exe
 
 
 #-----------------------------------------------------------------------------
-# core BoxLib directories
-BOXLIB_CORE := Src/F_BaseLib \
-               Src/LinearSolvers/F_MG
+# core AMREX directories
+AMREX_CORE := Src/F_BaseLib \
+              Src/LinearSolvers/F_MG
 
 # include the random number generator stuff
 RANDOM := t
@@ -51,11 +51,11 @@ endif
 #   tests, we leave it off the list of core directories, but do
 #   include it in the VPATH
 #
-#   Setting BOXLIB_ONLY := t means that we don't even want the
+#   Setting AMREX_ONLY := t means that we don't even want the
 #   MAESTRO/Source directory in our VPATH
 
 ifndef UNIT_TEST
-  ifndef BOXLIB_ONLY
+  ifndef AMREX_ONLY
     MAESTRO_CORE += Source
   endif
 endif
@@ -65,7 +65,7 @@ endif
 # core extern directories needed by every MAESTRO build
 UTIL_CORE :=
 
-ifndef BOXLIB_ONLY
+ifndef AMREX_ONLY
   UTIL_CORE := Util/model_parser
 endif
 
@@ -74,13 +74,6 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-# for backward compatibility -- MICROPHYSICS_DIR is deprecated
-ifndef MICROPHYSICS_HOME
-  ifdef MICROPHYSICS_DIR
-    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
-    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
-  endif
-endif
 
 
 # default to $(MICROPHYSICS_HOME) for the EOS unless we are gamma_law_general
@@ -95,7 +88,8 @@ ifeq ($(EOS_DIR), helmeos)
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
 endif
 
-# link to the table for helmholtz
+# the helmeholtz eos has an include file -- also add a target to link
+# the table into the problem directory.
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
@@ -108,6 +102,7 @@ table:
 ifeq ($(findstring URCA-simple, $(NETWORK_DIR)), URCA-simple)
   ALL: urcatables
 endif
+
 
 urcatables:
 	@if [ ! -f 23Ne-23Na_betadecay.dat ]; then echo ${bold}Linking 23Ne-23Na_betadecay.dat${normal}; ln -s $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/23Ne-23Na_betadecay.dat .;  fi
@@ -124,6 +119,11 @@ else
 endif
 
 
+# are we using the stellar conductivity?
+ifeq ($(findstring stellar, $(CONDUCTIVITY_DIR)), stellar)
+  CONDUCTIVITY_TOP_DIR := $(MICROPHYSICS_HOME)/conductivity
+endif
+
 ifndef CONDUCTIVITY_TOP_DIR
   CONDUCTIVITY_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/conductivity
 endif
@@ -135,7 +135,8 @@ MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
 		  $(MAESTRO_TOP_DIR)/Microphysics/networks \
 		  $(EOS_TOP_DIR) \
 		  $(EOS_TOP_DIR)/$(EOS_DIR) \
-                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) \
+                  $(MAESTRO_TOP_DIR)/Microphysics/conductivity \
+                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR)
 
 
 #-----------------------------------------------------------------------------
@@ -197,9 +198,9 @@ Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
 Fmpack += $(foreach dir, $(EXTRAS), $(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(EXTRAS), $(dir))
 
-# BoxLib
-Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
-Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
+# AMReX
+Fmpack += $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir))
 
 
 # any include directories
@@ -237,7 +238,7 @@ main.$(suf).exe: $(objects)
 # runtime parameter stuff (probin.f90)
 
 # template used by write_probin.py to build probin.f90
-ifndef BOXLIB_ONLY
+ifndef AMREX_ONLY
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Source/probin.template
 else
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
@@ -246,21 +247,21 @@ endif
 # list of the directories to search for _parameters files
 PROBIN_PARAMETER_DIRS = ./
 
-ifndef BOXLIB_ONLY
+ifndef AMREX_ONLY
   PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)/Source
 endif
 
 # list of all valid _parameters files for probin
-PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
+PROBIN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
 EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
-EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
+EXTERN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 	@echo " "
 	@echo "${bold}WRITING probin.f90${normal}"
-	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
+	$(AMREX_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
 	@echo " "
@@ -273,7 +274,7 @@ deppairs: build_info.f90
 build_info.f90:
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
-	$(BOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
+	$(AMREX_HOME)/Tools/F_scripts/makebuildinfo.py \
            --modules "$(Fmdirs) $(MICROPHYS_CORE)" \
            --FCOMP "$(COMP)" \
            --FCOMP_version "$(FCOMP_VERSION)" \
@@ -281,7 +282,7 @@ build_info.f90:
            --f_compile_line "$(COMPILE.f)" \
            --C_compile_line "$(COMPILE.c)" \
            --link_line "$(LINK.f90)" \
-           --boxlib_home "$(BOXLIB_HOME)" \
+           --amrex_home "$(AMREX_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
            --extra_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
@@ -295,8 +296,8 @@ $(odir)/build_info.o: build_info.f90
 
 
 #-----------------------------------------------------------------------------
-# include the BoxLib Fortran Makefile rules
-include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
+# include the AMReX Fortran Makefile rules
+include $(AMREX_HOME)/Tools/F_mk/GMakerules.mak
 
 
 #-----------------------------------------------------------------------------

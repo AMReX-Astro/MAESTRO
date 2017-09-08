@@ -13,7 +13,8 @@ contains
   
     use geometry, ONLY : nr, spherical, r_cc_loc
     use probin_module, ONLY : heating_time, heating_rad, heating_peak, &
-         heating_sigma, prob_type
+         heating_sigma, prob_type, &
+         cooling_rad, cooling_peak, cooling_sigma
     use variables
     use network
 
@@ -118,8 +119,37 @@ contains
           enddo
        end if
 
+    elseif (prob_type .eq. 4) then
+       ! Apply both heating and cooling for an Urca process
+
+       if (time .le. heating_time) then
+
+          if ( (time+dt) .gt. heating_time ) then
+             fac = (heating_time - time) / dt
+          else
+             fac = 1.d0
+          end if
+
+          do r = 0, nr(1)-1
+             if (spherical .eq. 0) then
+                ! plane-parallel -- do the heating term in paper II (section 4)
+                ! plus a similar cooling term for Urca
+                Hbar(r) = fac * (&
+                     heating_peak * exp(-((r_cc_loc(1,r) - heating_rad)**2)/ heating_sigma) + &
+                     cooling_peak * exp(-((r_cc_loc(1,r) - cooling_rad)**2)/ cooling_sigma))
+                
+             else
+                ! spherical -- lower amplitude heating/cooling term
+                Hbar(r) = fac * (&
+                     heating_peak * exp(-((r_cc_loc(1,r) - heating_rad)**2)/ heating_sigma) + &
+                     cooling_peak * exp(-((r_cc_loc(1,r) - cooling_rad)**2)/ cooling_sigma))
+             endif
+          enddo
+       end if
+       
     else
 
+       write(*,*) prob_type
        call bl_error("prob_type not yet supported.")       
 
     endif

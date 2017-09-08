@@ -1,24 +1,24 @@
 \label{ch:mg}
 
 
-\section{\boxlib\ Multigrid Philosophy}
+\section{\amrex\ Multigrid Philosophy}
 
-Here we describe some of the general ideas behind the \boxlib\
+Here we describe some of the general ideas behind the \amrex\
 multigrid (MG).
 
 We solve MG on an AMR hierarchy, which means in places we will encounter
-C-F interfaces.  The \boxlib\ MG will modify the stencil for the Laplacian
+C-F interfaces.  The \amrex\ MG will modify the stencil for the Laplacian
 at C-F interfaces to ensure the correct solution to the Poisson equation
 across these interfaces.  There is no correction step needed in this
 case (this differs from \cite{ricker:2008}).
 
 The MG solver always works with jumps of $2\times$ between levels.  In 
 some codes (but not \maestro) we can have jumps of $4\times$ between
-levels.  \boxlib\ uses a {\tt mini\_cycle} in these cases, effectively
+levels.  \amrex\ uses a {\tt mini\_cycle} in these cases, effectively
 inserting a multigrid level between the two AMR levels and doing a mini
 V-cycle.
 
-The MG solvers are located in {\tt BoxLib/Src/LinearSolvers/F\_MG/}.
+The MG solvers are located in {\tt amrex/Src/LinearSolvers/F\_MG/}.
 There are two MG solvers, for cell-centered and nodal data.
 Generally, the routines specific to the cell-centered solver will have
 {\tt cc} in their name, and those specific to the nodal solver will have
@@ -34,7 +34,7 @@ Support for $\Delta x \ne \Delta y \ne \Delta z$
 \subsubsection{\mgtower}
 
 The \mgtower\ is a special Fortran derived type that carries all the
-information required for a \boxlib\ multigrid solve.
+information required for a \amrex\ multigrid solve.
 
 The following parameters are specified when building the \mgtower:
 \begin{itemize}
@@ -233,7 +233,7 @@ coarsen the problem, again until we get as close to $2^3$ as possible.
 At that point, one of the other bottom solvers will be called upon
 to solve the problem.
 
-There are several bottom solvers available in \boxlib.  For \maestro.
+There are several bottom solvers available in \amrex.  For \maestro.
 These are set through the {\tt mg\_bottom\_solver} (MAC/cell-centered)
 and {\tt hg\_bottom\_solver} (nodal) runtime parameters.
 The allowed values are:
@@ -433,7 +433,7 @@ solve using pure V-cycles.
 \maestro\ uses multigrid to enforce the velocity constraint through
 projections at the half-time (the MAC projection) and end of the time
 step (the HG projection).  Two multigrid solvers are provided by
-\boxlib---one for cell-centered data and one for node-centered (nodal)
+\amrex---one for cell-centered data and one for node-centered (nodal)
 data.  Both of these are used in \maestro.
 
 

@@ -1,9 +1,28 @@
+#!/usr/bin/env python
 """
-Class for working with angle-averaged profiles.
+Get the global plot limits on central angle-averaged plotfiles
+per field for the set of plotfiles specified by regexp.
 
 Donald E. Willcox
 """
 
+from __future__ import print_function
+import re
+import os
+import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('regexp', type=str,
+                    help='Regular expression specifying profile files.')
+parser.add_argument('-rup', '--radius_upper', type=float,
+                    help='Upper bound for the plotted radius.')
+parser.add_argument('-o', '--outfile', type=str,
+                    default='global_field_extrema',
+                    help='Name of output file containing global field extrema.')
+args = parser.parse_args()
+
+# Angle-averaged profile Class
 class AngleAveragedProfile(object):
     def __init__(self, filename=None):
         self.init_vars()
@@ -42,7 +61,6 @@ class AngleAveragedProfile(object):
                                 ci = ci[1:-1].strip()
                             cl.append(ci) 
                     self.data_keys = cl
-                    print(self.data_keys)
                     for ci in cl:
                         self.data[ci] = []
                     readColumnLabels = False
@@ -52,13 +70,7 @@ class AngleAveragedProfile(object):
                     if '=' in ls:
                         k, v = ls[2:].split('=', 1)
                         k = k.strip()
-                        vv = []
-                        for vf in v.strip().split():
-                            try:
-                                vv.append(float(vf))
-                            except:
-                                vv.append(0.0)
-                        v = vv
+                        v = [float(vf) for vf in v.strip().split()]
                         if len(v) > 1:
                             v = np.array(v)
                         else:
@@ -90,7 +102,45 @@ class AngleAveragedProfile(object):
                 n += 1
                 yield float(10*n)
 
-    def plot_var(self, var, fmt='png', rup=None, fmin=None, fmax=None, sep_log=None, show=False):
+    def get_lwb(self, var, rup=None):
+        # Get the lower bound on variable var
+        # within radius rup if given.
+        # If lower bound is <= 0, return the
+        # minimum of the positive and negative variables
+        # and return (min, ltzero) where ltzero is
+        # True if the minimum was less than zero
+        # and False if all field values are positive.
+        if rup:
+            # Get the lowest index where radius > rup
+            idxup = np.where(self.data['r'] > rup)[0][0]
+            neg_idx = np.where(self.data[var][:idxup] < 0.0)
+            pos_idx = np.where(self.data[var][:idxup] > 0.0)
+            lwb = np.amin(self.data[var][:idxup])            
+        else:
+            neg_idx = np.where(self.data[var] < 0.0)
+            pos_idx = np.where(self.data[var] > 0.0)
+            lwb = np.amin(self.data[var])
+        # find smallest value in quantity to plot
+        ltzero = False
+        if lwb < 0.0:
+            ltzero = True
+            try:
+                neg_min = np.amin(np.absolute(self.data[var][neg_idx]))
+            except:
+                neg_min = None
+            try:
+                pos_min = np.amin(np.absolute(self.data[var][pos_idx]))
+            except:
+                pos_min = None
+            if pos_min and not neg_min:
+                lwb = pos_min
+            elif neg_min and not pos_min:
+                lwb = neg_min
+            else:
+                lwb = min(neg_min, pos_min)
+        return (lwb, ltzero)
+                
+    def plot_var(self, var, fmt='png', rup=None):
         # Plot the variable corresponding to the data key var
         # Independent axis is radius r
         # Plots are log scale on the dependent axis
@@ -125,7 +175,7 @@ class AngleAveragedProfile(object):
             else:
                 lwb = None
         upb = np.log10(np.amax(np.absolute(self.data[var][:idxup])))
-        if ((not lwb) or upb-lwb <= 1.0) and not sep_log:
+        if (not lwb) or upb-lwb <= 1.0:
             # plot quantity on linear axis
             # plot linear scale magnitudes
             ax.plot(self.data['r'][:idxup], self.data[var][:idxup], color='green')
@@ -135,9 +185,7 @@ class AngleAveragedProfile(object):
             # plot negative points in red
             ax.plot(self.data['r'][:idxup][neg_idx], self.data[var][:idxup][neg_idx],
                     linestyle='None', marker='v', color='red', markersize=8, alpha=0.5)
-            ax.set_ylabel('$\mathrm{' + var.replace('_','\_') + '}$')
-            if fmin and fmax:
-                ax.set_ylim((fmin, fmax))
+            ax.set_ylabel('$\mathrm{' + var.replace('_','\_') + '}$')                        
         else:
             # plot quantity on log10 axis
             # plot log scale magnitudes
@@ -149,21 +197,16 @@ class AngleAveragedProfile(object):
             ax.plot(self.data['r'][:idxup][neg_idx], np.log10(np.absolute(self.data[var][:idxup][neg_idx])),
                     linestyle='None', marker='v', color='red', markersize=8, alpha=0.5)
             ax.set_ylabel('$\mathrm{Log_{10} \ | ' + var.replace('_','\_') + ' |}$')
-            if fmin:
-                lwb = np.log10(fmin)
-            if fmax:
-                upb = np.log10(fmax)
-            lwb = max(lwb, upb-10) # Span at most 10 decades
             upb = np.ceil(upb*10.0)/10.0
             lwb = np.floor(lwb*10.0)/10.0
-            # yticks = None
-            # for tspac in self.gen_tick_spacing():
-            #     nticks = int(np.floor((upb-lwb)/tspac) + 1)
-            #     eps = upb - (lwb + tspac*(nticks-2))
-            #     if nticks <= 10 and eps > 0.5*tspac:
-            #         yticks = np.array([lwb + tspac*(j) for j in range(nticks-1)] + [upb])
-            #         break
-            # ax.set_yticks(yticks)
+            yticks = None
+            for tspac in self.gen_tick_spacing():
+                nticks = int(np.floor((upb-lwb)/tspac) + 1)
+                eps = upb - (lwb + tspac*(nticks-2))
+                if nticks <= 10 and eps > 0.5*tspac:
+                    yticks = np.array([lwb + tspac*(j) for j in range(nticks-1)] + [upb])
+                    break
+            ax.set_yticks(yticks)
             ax.set_ylim((lwb, upb))
         # List the time above the plot
         tart = ax.text(1.0, 1.01, 'time = {}'.format(self.header['time']),
@@ -175,26 +218,65 @@ class AngleAveragedProfile(object):
             plt.savefig(outname, bbox_extra_artists=(tart,), dpi=300)
         else:
             plt.savefig(outname, bbox_extra_artists=(tart,))
-        if show:
-            plt.show()
         plt.close(fig)
             
-    def plot_all_vars(self, fmt='png', rup=None,
-                      field_mins={}, field_maxs={}, field_seps_type={}):
+    def plot_all_vars(self, fmt='png', rup=None):
         # Plot all variables in the profile and save
         # fmt is the suffix passed to savefig
         for var in self.data.keys():
             if var != 'r':
-                if var in field_mins:
-                    fmin = field_mins[var]
+                self.plot_var(var, fmt, rup)
+
+class Field(object):
+    def __init__(self, name, fmin=None, fmax=None, separate_pos_neg=False):
+        self.name = name
+        self.fmin = fmin
+        self.fmax = fmax
+        self.separate_pos_neg = separate_pos_neg
+                
+if __name__ == '__main__':
+    # Get a list of the profile files in the directory
+    # which match the supplied regexp
+    refile = re.compile(args.regexp)
+    files = []
+    for file in os.listdir():
+        if refile.match(file):
+            files.append(file)
+    fields = []
+    # Read each file into an angle-averaged profile object
+    # and get the field list, min, and max per field
+    for file in files:
+        aaprof = AngleAveragedProfile(file)
+        for k in aaprof.data.keys():
+            fk = None
+            fexists = False
+            for i, f in enumerate(fields):
+                if f.name == k:
+                    fk = f
+                    fexists = True
+                    break
+            if not fk:
+                fk = Field(k)
+                fk.fmin, fk.separate_pos_neg = aaprof.get_lwb(k, args.radius_upper)
+                fk.fmax = np.amax(aaprof.data[k])
+                fields.append(fk)
+            else:
+                fk.fmax = max(fk.fmax, np.amax(aaprof.data[k]))                
+                lwb, separate_pos_neg = aaprof.get_lwb(k, args.radius_upper)
+                if separate_pos_neg and not fk.separate_pos_neg:
+                    fk.separate_pos_neg = separate_pos_neg
+                    fk.fmin = lwb
+                elif fk.separate_pos_neg and not separate_pos_neg:
+                    continue
                 else:
-                    fmin = None
-                if var in field_maxs:
-                    fmax = field_maxs[var]
-                else:
-                    fmax = None
-                if var in field_seps_type:
-                    sep_log = field_seps_type[var]
-                else:
-                    sep_log = None
-                self.plot_var(var, fmt, rup, fmin, fmax, sep_log)
+                    fk.fmin = min(fk.fmin, lwb)
+
+    # Write field names, mins, and maxs to a report file
+    # separate_pos_neg is a little ambiguous ... what it means is that
+    # the limits represent limits on absolute values of the data
+    # and that the plots should use marker color to indicate sign
+    # in the log-plot.
+    fo = open(args.outfile, 'w')
+    for f in fields:
+        fo.write('{}, {}, {}, {}\n'.format(f.name, f.fmin, f.fmax, f.separate_pos_neg))
+    fo.close()

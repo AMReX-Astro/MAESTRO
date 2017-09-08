@@ -1,6 +1,23 @@
 changes since last merge with master:
 
 
+17.08
+
+ * Major changes:
+
+  -- we now get the stellar conductivities from the Microphysics repo
+     (part of StarKiller).  This is the same place as we get the
+     general Helmholtz equation of state.
+
+  -- the StarKiller-astro Microphysics repo now uses a denser table
+     for the Helmholtz EOS (thanks to Frank Timmes).  If you are using
+     this EOS, the new table will be soft-linked to your build
+     directory automatically.  If you have an old copy laying around,
+     it might fail to run, with an I/O error.
+
+
+17.06
+
  * Major changes:
 
    -- we now use the reaction networks from the separate Microphysics
@@ -13,12 +30,8 @@ changes since last merge with master:
       repo that is used for the general equations of state, so you
       likely already have it installed.
 
+   -- we now require the AMReX library instead of BoxLib to build.
 
-previous releases:
-
-16.10
-
-16.09
 
 16.08
 

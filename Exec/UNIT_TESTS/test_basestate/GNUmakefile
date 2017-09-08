@@ -15,7 +15,8 @@ EOS_DIR := helmholtz
 CONDUCTIVITY_DIR := constant
 
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/triple_alpha_plus_o.net
+NETWORK_FILE := triple_alpha_plus_o.net
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/$(NETWORK_FILE)
 
 
 # define the special directories needed to build this problem.  Note:
