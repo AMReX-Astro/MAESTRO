@@ -55,6 +55,7 @@ endif
 # add in the network, EOS, and conductivity
 MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
                   $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
+                  $(NETWORK_TOP_DIR) \
                   $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
 
 # get any additional network dependencies

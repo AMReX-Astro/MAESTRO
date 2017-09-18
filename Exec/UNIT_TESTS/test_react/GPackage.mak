@@ -14,7 +14,7 @@ f90sources += average.f90
  f90sources += restrict_base.f90
  
 
-f90sources += react_state.f90
+F90sources += react_state.F90
 # |
 # --> 
 f90sources += define_bc_tower.f90

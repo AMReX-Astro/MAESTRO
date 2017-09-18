@@ -20,8 +20,9 @@
 
 module bdf
 
-  use bl_types
+  use bl_types, only: dp_t
   use bl_constants_module
+  use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
 
   implicit none
 
@@ -31,6 +32,8 @@ module bdf
   integer, parameter :: BDF_ERR_SOLVER   = 1
   integer, parameter :: BDF_ERR_MAXSTEPS = 2
   integer, parameter :: BDF_ERR_DTMIN    = 3
+  integer :: A(0:burn_max_order, 0:burn_max_order) ! pascal matrix
+  !$acc declare create(A)
 
   character(len=64), parameter :: errors(0:3) = [ &
        'Success.                                                ', &
@@ -43,71 +46,74 @@ module bdf
   !
   type :: bdf_ts
 
-     integer  :: neq                        ! number of equations (degrees of freedom) per point
-     integer  :: npt                        ! number of points
-     integer  :: max_order                  ! maximum order (1 to 6)
-     integer  :: max_steps                  ! maximum allowable number of steps
-     integer  :: max_iters                  ! maximum allowable number of newton iterations
-     integer  :: verbose                    ! verbosity level
-     real(dp_t) :: dt_min                   ! minimum allowable step-size
-     real(dp_t) :: eta_min                  ! minimum allowable step-size shrink factor
-     real(dp_t) :: eta_max                  ! maximum allowable step-size growth factor
-     real(dp_t) :: eta_thresh               ! step-size growth threshold
-     integer  :: max_j_age                  ! maximum age of Jacobian
-     integer  :: max_p_age                  ! maximum age of newton iteration matrix
+     !integer    :: neq       = neqs           ! number of equations (degrees of freedom) per point
+     !integer    :: npt       = burn_npts      ! number of points
+     !integer    :: max_order = burn_max_order ! maximum order (1 to 6)
+     integer    :: neq                        ! number of equations (degrees of freedom) per point
+     integer    :: npt                        ! number of points
+     integer    :: max_order                  ! maximum order (1 to 6)
+     integer    :: max_steps                  ! maximum allowable number of steps
+     integer    :: max_iters                  ! maximum allowable number of newton iterations
+     integer    :: verbose                    ! verbosity level
+     real(dp_t) :: dt_min                     ! minimum allowable step-size
+     real(dp_t) :: eta_min                    ! minimum allowable step-size shrink factor
+     real(dp_t) :: eta_max                    ! maximum allowable step-size growth factor
+     real(dp_t) :: eta_thresh                 ! step-size growth threshold
+     integer    :: max_j_age                  ! maximum age of Jacobian
+     integer    :: max_p_age                  ! maximum age of newton iteration matrix
 
-     logical  :: debug
-     integer  :: dump_unit
+     logical    :: debug
+     integer    :: dump_unit
 
-     real(dp_t), allocatable :: rtol(:)         ! relative tolerances
-     real(dp_t), allocatable :: atol(:)         ! absolute tolerances
+     real(dp_t) :: rtol(neqs)               ! relative tolerances
+     real(dp_t) :: atol(neqs)               ! absolute tolerances
 
      ! state
-     real(dp_t) :: t                        ! current time
-     real(dp_t) :: t1                       ! final time
-     real(dp_t) :: dt                       ! current time step
-     real(dp_t) :: dt_nwt                   ! dt used when building newton iteration matrix
-     integer  :: k                          ! current order
-     integer  :: n                          ! current step
-     integer  :: j_age                      ! age of Jacobian
-     integer  :: p_age                      ! age of newton iteration matrix
-     integer  :: k_age                      ! number of steps taken at current order
-     real(dp_t) :: tq(-1:2)                 ! error coefficients (test quality)
+     real(dp_t) :: t                          ! current time
+     real(dp_t) :: t1                         ! final time
+     real(dp_t) :: dt                         ! current time step
+     real(dp_t) :: dt_nwt                     ! dt used when building newton iteration matrix
+     integer    :: k                          ! current order
+     integer    :: n                          ! current step
+     integer    :: j_age                      ! age of Jacobian
+     integer    :: p_age                      ! age of newton iteration matrix
+     integer    :: k_age                      ! number of steps taken at current order
+     real(dp_t) :: tq(-1:2)                   ! error coefficients (test quality)
      real(dp_t) :: tq2save
      !real(dp_t) :: temp_data
-     !real(dp_t) :: temp_data(3,1,0:3) !z-like, if max_order=3
-     !real(dp_t) :: temp_data(0:3)     !l-like, if max_order=3
+     !real(dp_t) :: temp_data(3,1,0:3)        !z-like, if max_order=3
+     !real(dp_t) :: temp_data(0:3)            !l-like, if max_order=3
      real(dp_t) :: temp_data(2,1)
-     logical  :: refactor
+     logical    :: refactor
 
-     real(dp_t), allocatable :: J(:,:,:)        ! Jacobian matrix
-     real(dp_t), allocatable :: P(:,:,:)        ! Newton iteration matrix
-     real(dp_t), allocatable :: z(:,:,:)        ! Nordsieck histroy array, indexed as (dof, p, n)
-     real(dp_t), allocatable :: z0(:,:,:)       ! Nordsieck predictor array
-     real(dp_t), allocatable :: h(:)            ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
-     real(dp_t), allocatable :: l(:)            ! predictor/corrector update coefficients
-     real(dp_t), allocatable :: shift(:)        ! scratch array to hold shifted arrays
-     real(dp_t), allocatable :: upar(:,:)       ! array of user parameters (passed to
-                                                !    user's Jacobian and f)
-     real(dp_t), allocatable :: y(:,:)          ! current y
-     real(dp_t), allocatable :: yd(:,:)         ! current \dot{y}
-     real(dp_t), allocatable :: rhs(:,:)        ! solver rhs
-     real(dp_t), allocatable :: e(:,:)          ! accumulated correction
-     real(dp_t), allocatable :: e1(:,:)         ! accumulated correction, previous step
-     real(dp_t), allocatable :: ewt(:,:)        ! cached error weights
-     real(dp_t), allocatable :: b(:,:)          ! solver work space
-     integer,    allocatable :: ipvt(:,:)       ! pivots (neq,npts)
-     integer,    allocatable :: A(:,:)          ! pascal matrix
+     real(dp_t) :: J(neqs,neqs,burn_npts)           ! Jacobian matrix
+     real(dp_t) :: P(neqs,neqs,burn_npts)           ! Newton iteration matrix
+     real(dp_t) :: z(neqs,burn_npts,0:burn_max_order)   ! Nordsieck histroy array, indexed as (dof, p, n)
+     real(dp_t) :: z0(neqs,burn_npts,0:burn_max_order)  ! Nordsieck predictor array
+     real(dp_t) :: h(0:burn_max_order)                 ! time steps, h = [ h_n, h_{n-1}, ..., h_{n-k} ]
+     real(dp_t) :: l(0:burn_max_order)                 ! predictor/corrector update coefficients
+     real(dp_t) :: shift(0:burn_max_order)             ! scratch array to hold shifted arrays
+     real(dp_t) :: upar(n_rpar_comps,burn_npts)         ! array of user parameters (passed to
+                                                     !    user's Jacobian and f)
+     real(dp_t) :: y(neqs,burn_npts)           ! current y
+     real(dp_t) :: yd(neqs,burn_npts)          ! current \dot{y}
+     real(dp_t) :: rhs(neqs,burn_npts)         ! solver rhs
+     real(dp_t) :: e(neqs,burn_npts)           ! accumulated correction
+     real(dp_t) :: e1(neqs,burn_npts)          ! accumulated correction, previous step
+     real(dp_t) :: ewt(neqs,burn_npts)         ! cached error weights
+     real(dp_t) :: b(neqs,burn_npts)           ! solver work space
+     integer    :: ipvt(neqs,burn_npts)        ! pivots (neq,npts)
+     !integer    :: A(0:burn_max_order, 0:burn_max_order) ! pascal matrix
 
      ! counters
-     integer :: nfe                             ! number of function evaluations
-     integer :: nje                             ! number of Jacobian evaluations
-     integer :: nlu                             ! number of factorizations
-     integer :: nit                             ! number of non-linear solver iterations
-     integer :: nse                             ! number of non-linear solver errors
-     integer :: ncse                            ! number of consecutive non-linear solver errors
-     integer :: ncit                            ! number of current non-linear solver iterations
-     integer :: ncdtmin                         ! number of consecutive times we tried to shrink beyond the minimum time step
+     integer :: nfe                           ! number of function evaluations
+     integer :: nje                           ! number of Jacobian evaluations
+     integer :: nlu                           ! number of factorizations
+     integer :: nit                           ! number of non-linear solver iterations
+     integer :: nse                           ! number of non-linear solver errors
+     integer :: ncse                          ! number of consecutive non-linear solver errors
+     integer :: ncit                          ! number of current non-linear solver iterations
+     integer :: ncdtmin                       ! number of consecutive times we tried to shrink beyond the minimum time step
 
   end type bdf_ts
 
@@ -124,12 +130,11 @@ contains
   !
   ! Advance system from t0 to t1.
   !
-  subroutine bdf_advance(ts, neq, npt, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
+  subroutine bdf_advance(ts, y0, t0, y1, t1, dt0, reset, reuse, ierr, initial_call)
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    integer,      intent(in   ) :: neq, npt
-    real(dp_t),   intent(in   ) :: y0(neq,npt), t0, t1, dt0
-    real(dp_t),   intent(  out) :: y1(neq,npt)
+    real(dp_t),   intent(in   ) :: y0(neqs,burn_npts), t0, t1, dt0
+    real(dp_t),   intent(  out) :: y1(neqs,burn_npts)
     logical,      intent(in   ) :: reset, reuse
     integer,      intent(  out) :: ierr
     logical,      intent(in   ) :: initial_call
@@ -142,18 +147,11 @@ contains
     !linitial = initial_call
 
     if (reset) call bdf_reset(ts, y0, dt0, reuse)
-    !do m=1,2
-    !   ts%temp_data(m,1) = y0(m,1)
-    !end do
 
     ierr = BDF_ERR_SUCCESS
 
     ts%t1 = t1; ts%t = t0; ts%ncse = 0; ts%ncdtmin = 0;
     do k = 1, bdf_max_iters + 1
-       if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
-          !ierr = BDF_ERR_MAXSTEPS; return
-          ierr = BDF_ERR_MAXSTEPS; exit
-       end if
 
        !TODO: Debug I/O not cool on GPUs. If we want to keep it, need to rewrite
        !if (k == 1) &
@@ -175,21 +173,24 @@ contains
        call bdf_check(ts, retry, ierr)    ! check for solver errors and test error estimate
 
        !if (ierr /= BDF_ERR_SUCCESS) return
-       if (ierr /= BDF_ERR_SUCCESS) exit
        !TODO: cycle statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
        !look into this when tuning
-       if (retry) cycle
+       if (.not. retry) then
 
-       call bdf_correct(ts)               ! new solution looks good, correct history and advance
+          call bdf_correct(ts)               ! new solution looks good, correct history and advance
 
-       !call bdf_dump(ts)
-       !TODO: exit statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
-       !look into this when tuning
-       if (ts%t >= t1) exit
+          !call bdf_dump(ts)
+          !TODO: exit statements may lead to bad use of coalesced memory in OpenACC (or busy waiting),
+          !look into this when tuning
 
-       call bdf_adjust(ts)                ! adjust step-size/order
+          call bdf_adjust(ts)                ! adjust step-size/order
+       endif
+       if (ts%t >= t1 .or. ierr /= BDF_ERR_SUCCESS) exit
     end do
 
+    if (ts%n > ts%max_steps .or. k > bdf_max_iters) then
+       ierr = BDF_ERR_MAXSTEPS
+    end if
     !TODO: GPUs don't like print statements.  Either delete this or work up alternative implementations
     !if (ts%verbose > 0) &
     !     print '("BDF: n:",i6,", fe:",i6,", je: ",i3,", lu: ",i3,", it: ",i3,", se: ",i3,", dt: ",e15.8,", k: ",i2)', &
@@ -306,7 +307,8 @@ contains
           end do
           do j = i, ts%k
              do m = 1, ts%neq
-                ts%z0(m,p,i) = ts%z0(m,p,i) + ts%A(i,j) * ts%z(m,p,j)
+                !ts%z0(m,p,i) = ts%z0(m,p,i) + ts%A(i,j) * ts%z(m,p,j)
+                ts%z0(m,p,i) = ts%z0(m,p,i) + A(i,j) * ts%z(m,p,j)
              end do
           end do
        end do
@@ -329,30 +331,10 @@ contains
     !$acc routine(dgesl) seq
     use feval, only: f_rhs_vec, jac_vec
     type(bdf_ts), intent(inout) :: ts
-    !interface
-    !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-    !     !$acc routine seq
-    !     import dp_t
-    !     integer,  intent(in   ) :: neq, npt
-    !     real(dp_t), intent(in   ) :: y(neq,npt), t
-    !     real(dp_t), intent(  out) :: yd(neq,npt)
-    !     real(dp_t), intent(inout) :: upar(:,:)
-    !   end subroutine f_rhs_vec
-    !   subroutine jac_vec(neq, npt, y, t, J, upar)
-    !     !$acc routine seq
-    !     import dp_t
-    !     integer,  intent(in   ) :: neq, npt
-    !     real(dp_t), intent(in   ) :: y(neq,npt), t
-    !     real(dp_t), intent(  out) :: J(neq, neq,npt)
-    !     real(dp_t), intent(inout) :: upar(:,:)
-    !   end subroutine jac_vec
-    !end interface
-
-    !include 'LinAlg.inc'
 
     integer  :: k, m, n, p, info
     real(dp_t) :: c, dt_adj, dt_rat, inv_l1
-    logical  :: rebuild, iterating(ts%npt)
+    logical  :: rebuild, iterating(burn_npts)
 
     inv_l1 = 1.0_dp_t / ts%l(1)
     do p = 1, ts%npt
@@ -379,7 +361,7 @@ contains
           if (ts%ncse > 0  .and. (dt_rat < 0.2d0 .or. dt_rat > 5.d0)) rebuild = .false.
 
           if (rebuild) then
-             call jac_vec(ts%neq, ts%npt, ts%y, ts%t, ts%J, ts%upar)
+             call jac_vec(ts%y, ts%t, ts%J, ts%upar)
              ts%nje   = ts%nje + 1*ts%npt
              ts%j_age = 0
           end if
@@ -390,11 +372,11 @@ contains
              do m = 1, ts%neq
                 do n = 1, ts%neq
                    ts%P(n,m,p) = ts%P(n,m,p) - dt_adj * ts%J(n,m,p)
-                   call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
-                   ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
-                   ts%nlu    = ts%nlu + 1
                 end do
              end do
+             call dgefa(ts%P(:,:,p), ts%neq, ts%neq, ts%ipvt(:,p), info)
+             ! lapack      call dgetrf(neq, neq, ts%P, neq, ts%ipvt, info)
+             ts%nlu    = ts%nlu + 1
           end do
 
           ts%dt_nwt = dt_adj
@@ -404,7 +386,7 @@ contains
 
        c = 2 * ts%dt_nwt / (dt_adj + ts%dt_nwt)
 
-       call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
+       call f_rhs_vec(ts%y, ts%t, ts%yd, ts%upar)
        ts%nfe = ts%nfe + 1
 
        do p = 1, ts%npt
@@ -524,8 +506,9 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
 
-    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(ts%npt), etaminmax
-    real(dp_t) :: cxe1(ts%neq, ts%npt), emcxe1(ts%neq, ts%npt), delta(ts%npt)
+    real(dp_t) :: c, error, eta(-1:1), rescale, etamax(burn_npts), etaminmax
+    real(dp_t) :: cxe1(neqs, burn_npts), emcxe1(neqs, burn_npts)
+    real(dp_t) :: delta(burn_npts)
     integer  :: p, m
 
     rescale = 0
@@ -609,20 +592,10 @@ contains
     !$acc routine seq
     use feval, only: f_rhs_vec
     type(bdf_ts), intent(inout) :: ts
-    real(dp_t),   intent(in   ) :: y0(ts%neq, ts%npt), dt
+    real(dp_t),   intent(in   ) :: y0(neqs, burn_npts), dt
     logical,      intent(in   ) :: reuse
     
     integer :: p,m,o
-    !interface
-    !   subroutine f_rhs_vec(neq, npt, y, t, yd, upar)
-    !     !$acc routine seq
-    !     import dp_t
-    !     integer,  intent(in   ) :: neq, npt
-    !     real(dp_t), intent(in   ) :: y(neq,npt), t
-    !     real(dp_t), intent(  out) :: yd(neq,npt)
-    !     real(dp_t), intent(inout) :: upar(:,:)
-    !   end subroutine f_rhs_vec
-    !end interface
 
     ts%nfe = 0
     ts%nje = 0
@@ -647,7 +620,7 @@ contains
     ts%dt_nwt   = ts%dt
     ts%refactor = .true.
 
-    call f_rhs_vec(ts%neq, ts%npt, ts%y, ts%t, ts%yd, ts%upar)
+    call f_rhs_vec(ts%y, ts%t, ts%yd, ts%upar)
     ts%nfe = ts%nfe + 1
 
     !ts%z(:,:,0) = ts%y
@@ -713,6 +686,7 @@ contains
     !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
     integer  :: j, o, p, m
+    !TODO: Shouldn't 6 be burn_max_order? If so, change all instances
     real(dp_t) :: c(0:6), c_shift(0:6)
 
     if (ts%k > 2) then
@@ -795,6 +769,8 @@ contains
   function alphahat0(k, h) result(a0)
     !$acc routine seq
     integer,  intent(in) :: k
+    !TODO: Will this be treated as automatic array? 
+    !      I don't think so, but make sure
     real(dp_t), intent(in) :: h(0:k)
     real(dp_t) :: a0
     integer  :: j
@@ -876,40 +852,49 @@ contains
   !
   ! Build/destroy BDF time-stepper.
   !
-  subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
+  !subroutine bdf_ts_build(ts, neq, npt, rtol, atol, max_order, upar)
+  subroutine bdf_ts_build(ts, rtol, atol, upar)
+    !$acc routine seq
+    !NOTE: Using this is redundant as we already do at the top of the module,
+    !but I like it here for clarity
+    use burner_data, only: neqs, burn_max_order, burn_npts, n_rpar_comps
+
     type(bdf_ts),   intent(inout) :: ts
-    integer,        intent(in   ) :: max_order, neq, npt
-    real(dp_t),     intent(in   ) :: rtol(neq), atol(neq)
-    real(dp_t),     intent(in   ) :: upar(:,:)
+    real(dp_t),     intent(in   ) :: rtol(neqs), atol(neqs)
+    real(dp_t),     intent(in   ) :: upar(n_rpar_comps,burn_npts)
+    integer :: U(burn_max_order+1, burn_max_order+1), Uk(burn_max_order+1, burn_max_order+1)
+    integer :: k, n, r, c, sum_element
 
-    integer :: U(max_order+1, max_order+1), Uk(max_order+1, max_order+1)
-    integer :: k, n
+    !allocate(ts%rtol(neq))
+    !allocate(ts%atol(neq))
+    !allocate(ts%z(neq, npt, 0:max_order))
+    !allocate(ts%z0(neq, npt, 0:max_order))
+    !allocate(ts%l(0:max_order))
+    !allocate(ts%h(0:max_order))
+    !allocate(ts%shift(0:max_order))
+    !allocate(ts%A(0:max_order, 0:max_order))
+    !allocate(ts%P(neq, neq, npt))
+    !allocate(ts%J(neq, neq, npt))
+    !allocate(ts%y(neq, npt))
+    !allocate(ts%yd(neq, npt))
+    !allocate(ts%rhs(neq, npt))
+    !allocate(ts%e(neq, npt))
+    !allocate(ts%e1(neq, npt))
+    !allocate(ts%ewt(neq, npt))
+    !allocate(ts%b(neq, npt))
+    !allocate(ts%ipvt(neq,npt))
+    !allocate(ts%upar(size(upar,1),npt))
 
+    !ts%upar = upar
+    do k = 1, n_rpar_comps
+       do n = 1, burn_npts
+          ts%upar(k,n) = upar(k,n)
+       enddo
+    enddo
 
-    allocate(ts%rtol(neq))
-    allocate(ts%atol(neq))
-    allocate(ts%z(neq, npt, 0:max_order))
-    allocate(ts%z0(neq, npt, 0:max_order))
-    allocate(ts%l(0:max_order))
-    allocate(ts%h(0:max_order))
-    allocate(ts%shift(0:max_order))
-    allocate(ts%A(0:max_order, 0:max_order))
-    allocate(ts%P(neq, neq, npt))
-    allocate(ts%J(neq, neq, npt))
-    allocate(ts%y(neq, npt))
-    allocate(ts%yd(neq, npt))
-    allocate(ts%rhs(neq, npt))
-    allocate(ts%e(neq, npt))
-    allocate(ts%e1(neq, npt))
-    allocate(ts%ewt(neq, npt))
-    allocate(ts%b(neq, npt))
-    allocate(ts%ipvt(neq,npt))
-    allocate(ts%upar(size(upar,1),npt))
-    ts%upar = upar
-
-    ts%neq        = neq
-    ts%npt        = npt
-    ts%max_order  = max_order
+    ts%neq        = neqs
+    ts%npt        = burn_npts
+    ts%max_order  = burn_max_order
     ts%max_steps  = 1000000
     ts%max_iters  = 10
     ts%verbose    = 0
@@ -922,39 +907,41 @@ contains
 
     ts%k = -1
 
-    do n = 1, neq
+    do n = 1, neqs
        ts%rtol(n) = rtol(n)
        ts%atol(n) = atol(n)
     end do
 
-    ts%J  = 0
-    ts%P  = 0
-    ts%yd = 0
+    !ts%J  = 0
+    !ts%P  = 0
+    !ts%yd = 0
+    do r = 1, neqs
+       do c = 1, neqs
+          do n = 1, burn_npts
+             ts%J(r,c,n) = 0.0_dp_t
+             ts%P(r,c,n) = 0.0_dp_t
+          enddo
+       enddo
+    enddo
+    do c = 1, neqs
+       do n = 1, burn_npts
+          ts%yd(c,n) = 0.0_dp_t
+       enddo
+    enddo
 
     ts%j_age = 666666666
     ts%p_age = 666666666
 
     ts%debug = .false.
-
-    ! build pascal matrix A using A = exp(U)
-    U = 0
-    do k = 1, max_order
-       U(k,k+1) = k
-    end do
-    Uk = U
-    call eye_i(ts%A)
-    do k = 1, max_order+1
-       ts%A  = ts%A + Uk / factorial(k)
-       Uk = matmul(U, Uk)
-    end do
   end subroutine bdf_ts_build
 
   subroutine bdf_ts_destroy(ts)
+    !$acc routine seq
     type(bdf_ts), intent(inout) :: ts
-    deallocate(ts%h,ts%l,ts%shift,ts%ewt,ts%rtol,ts%atol)
-    deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
-    deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
-    deallocate(ts%upar)
+    !deallocate(ts%h,ts%l,ts%shift,ts%ewt,ts%rtol,ts%atol)
+    !deallocate(ts%y,ts%yd,ts%z,ts%z0,ts%A)
+    !deallocate(ts%P,ts%J,ts%rhs,ts%e,ts%e1,ts%b,ts%ipvt)
+    !deallocate(ts%upar)
   end subroutine bdf_ts_destroy
 
   !
@@ -970,6 +957,7 @@ contains
     end do
   end subroutine eye_r
   subroutine eye_i(A)
+    !$acc routine seq
     integer, intent(inout) :: A(:,:)
     integer :: i
     A = 0
@@ -977,15 +965,18 @@ contains
        A(i,i) = 1
     end do
   end subroutine eye_i
-  recursive function factorial(n) result(r)
+  
+  !NOTE: This was implemented in the typical recursive way, but this doesn't fly
+  !on the GPU.  Gotta do it the less pretty way.
+  function factorial(n) result(r)
     !$acc routine seq
     integer, intent(in) :: n
-    integer :: r
-    if (n == 1) then
-       r = 1
-    else
-       r = n * factorial(n-1)
-    end if
+    integer :: r, i
+
+    r = 1
+    do i = n, 2, -1
+       r = r * i
+    enddo
   end function factorial
 
   !
@@ -1049,4 +1040,46 @@ contains
     enddo
   end function minloc
 
+  !
+  ! Initialize the pascal matrix.  We do this here because we should only do
+  ! it once and use it for all bdf_ts types
+  !
+  subroutine init_pascal()
+     integer :: U(burn_max_order+1, burn_max_order+1), Uk(burn_max_order+1, burn_max_order+1)
+     integer :: k, n, r, c, sum_element
+
+     ! build pascal matrix A using A = exp(U)
+     !U = 0
+     do r = 1, burn_max_order+1
+        do c = 1, burn_max_order+1
+           U(r,c) = 0
+        enddo
+     enddo
+     do k = 1, burn_max_order
+        U(k,k+1) = k
+     end do
+     !Uk = U
+     do r = 1, burn_max_order+1
+        do c = 1, burn_max_order+1
+           Uk(r,c) = U(r,c)
+        enddo
+     enddo
+     call eye_i(A)
+     do k = 1, burn_max_order+1
+        A  = A + Uk / factorial(k)
+        !TODO: This is an unoptimized, naive matrix multiply, might consider
+        !using optimized.  Can't use Fortran intrinsic matmul() on GPU
+        !Uk = matmul(U, Uk)
+        do r = 1, burn_max_order+1
+           do c = 1, burn_max_order+1
+              sum_element = 0
+              do n = 1, burn_max_order+1
+                 sum_element = sum_element + U(r,n) * Uk(n,c)
+              enddo
+              Uk(r,c) = sum_element
+           enddo
+        enddo
+     end do
+     !$acc update device(A)
+  end subroutine init_pascal
 end module bdf

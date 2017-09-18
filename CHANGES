@@ -20,6 +20,16 @@ changes since last merge with master:
 
  * Major changes:
 
+   -- we now use the reaction networks from the separate Microphysics
+      git repo:
+
+      https://github.com/BoxLib-Codes/Microphysics
+
+      This is enabled by setting MICROPHYSICS_HOME to point to the
+      location of the Microphysics/ directory.  Note: this is the same
+      repo that is used for the general equations of state, so you
+      likely already have it installed.
+
    -- we now require the AMReX library instead of BoxLib to build.
 
 
@@ -33,9 +43,10 @@ changes since last merge with master:
       boxlib_fpe_invalid, boxlib_fpe_zero, and boxlib_fpe_overflow
       turn on/off FPE handling through the boxlib backtrace module
 
-   -- Chosing the general Helmholtz stellar equation of state is now done
-      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the
-      actual name of the directory in the Microphysics repo.
+   -- Chosing the general Helmholtz stellar equation of state is now
+      done with EOS_DIR := helmholtz, instead of helmeos.  This
+      reflects the actual name of the directory in the Microphysics
+      repo.
 
 
 16.07

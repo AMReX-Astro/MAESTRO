@@ -524,6 +524,7 @@ program init_1d
 end program init_1d
 
 subroutine set_urca_composition(dens, urca_dens, xn, xn_in, xn_out)
+  use bl_types
   use network
   real (kind=dp_t) :: dens, urca_dens
   real (kind=dp_t), DIMENSION(nspec) :: xn, xn_in, xn_out
