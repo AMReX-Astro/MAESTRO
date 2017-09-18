@@ -1,5 +1,11 @@
 changes since last merge with master:
 
+  -- we now get our reaction netwroks from the Microphysics repo (part
+     of StarKiller).  This allows for a much wider range of networks,
+     and enables the same microphysics as used in Castro.  The interfaces
+     to the burner were changed accordingly.  The SDC reaction stuff does
+     not work at the moment.
+
 
 17.08
 
