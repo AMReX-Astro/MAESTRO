@@ -20,9 +20,15 @@ on github at:
 
 https://github.com/AMReX-Codes/amrex.git
 
-A *Getting Started* guide is provided in the Maestro User's Guide.  To
-build the User's Guide, cd into `Docs/`, and type `make`, or download
-the PDF here:
+To use anything other than the simple microphysics, you need the
+StarKiller microphysics package, available on github at:
+
+https://github.com/starkiller-astro/Microphysics.git
+
+There are a few environment variables that need to be set.  A *Getting
+Started* guide is provided in the Maestro User's Guide which will walk
+you through this.  To build the User's Guide, cd into `Docs/`, and
+type `make`, or download the PDF here:
 
 http://bender.astro.sunysb.edu/Maestro/staging/MAESTRO/Docs/MaestroUsersGuide.pdf
 
