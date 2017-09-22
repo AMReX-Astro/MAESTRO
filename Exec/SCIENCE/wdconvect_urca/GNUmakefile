@@ -1,10 +1,10 @@
 NDEBUG := t
-MPI    := t
-OMP    := t
+MPI    :=
+OMP    :=
 
 HYPRE :=
 
-COMP := Cray
+COMP := gfortran
 
 MKVERBOSE := t
 
@@ -13,8 +13,8 @@ MAESTRO_TOP_DIR := ../../..
 
 # define the physics packages to build this problem
 EOS_DIR := helmholtz
-CONDUCTIVITY_DIR := timmes_stellar
-#NETWORK_DIR := ignition_chamulak
+CONDUCTIVITY_DIR := stellar
+INTEGRATOR_DIR := VODE
 NETWORK_DIR := ignition_reaclib/URCA-simple
 
 # define the special directories needed to build this problem.  Note:
