@@ -978,8 +978,8 @@ contains
     ! set up hi & lo to carry indexing info
     lo = 0
     hi(1) = n_cellx-1
-    if (dm > 1) then   
-       hi(2) = n_celly - 1        
+    if (dm > 1) then
+       hi(2) = n_celly - 1
        if (dm > 2)  then
           hi(3) = n_cellz -1
        endif
