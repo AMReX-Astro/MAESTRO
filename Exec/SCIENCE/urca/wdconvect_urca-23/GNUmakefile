@@ -9,12 +9,11 @@ COMP := Cray
 MKVERBOSE := t
 
 # define the location of the MAESTRO top directory
-MAESTRO_TOP_DIR := ../../..
+MAESTRO_TOP_DIR := ../../../..
 
 # define the physics packages to build this problem
 EOS_DIR := helmholtz
-CONDUCTIVITY_DIR := timmes_stellar
-#NETWORK_DIR := ignition_chamulak
+CONDUCTIVITY_DIR := stellar
 NETWORK_DIR := ignition_reaclib/URCA-simple
 
 # define the special directories needed to build this problem.  Note:
