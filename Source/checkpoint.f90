@@ -15,7 +15,7 @@ module checkpoint_module
 
 contains
 
-  subroutine checkpoint_write(dirname, mfs, dSdt, S_cc_old, S_cc_new, &
+  subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, S_cc_old, S_cc_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               rrs, dt)
 
@@ -29,7 +29,7 @@ contains
     use time_module, only: time
     use cputime_module, only: get_cputime
 
-    type(multifab)  , intent(in) :: mfs(:)
+    type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab)  , intent(in) :: dSdt(:), S_cc_old(:), S_cc_new(:)
     type(multifab)  , intent(in) :: rho_omegadot2(:), rho_Hnuc2(:), rho_Hext(:), thermal2(:)
     integer         , intent(in) :: rrs(:,:)
@@ -116,6 +116,13 @@ contains
        end if
     end if
 
+    write(unit=sd_name_nodal, fmt='(a,"/Pressure")') trim(dirname)
+    call fabio_ml_multifab_write_d(mfs_nodal, rrs(:,1), sd_name_nodal, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+      write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)
+    end if
+
     ! Note: parallel fails on Bassi if this is done on all processors
     if (parallel_IOProcessor()) then
        header = "Header"
@@ -153,7 +160,7 @@ contains
 
   end subroutine checkpoint_write
 
-  subroutine checkpoint_read(mfs, dSdt, S_cc_old, S_cc_new, rho_omegadot2, &
+  subroutine checkpoint_read(mfs, mfs_nodal, dSdt, S_cc_old, S_cc_new, rho_omegadot2, &
                              rho_Hnuc2, rho_Hext, thermal2, dirname, dt_out, nlevs_out)
 
     use bl_IO_module, only: unit_new
@@ -163,7 +170,7 @@ contains
     use probin_module, only: use_thermal_diffusion, plot_Hext
     use time_module, only: time
 
-    type(multifab  ),                pointer :: mfs(:)
+    type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), S_cc_old(:), S_cc_new(:)
     type(multifab  ),                pointer :: rho_omegadot2(:), rho_Hnuc2(:), rho_Hext(:), thermal2(:)
     character(len=*), intent(in   )          :: dirname
@@ -202,6 +209,10 @@ contains
 !   Read the state data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/State")') trim(dirname)
     call fabio_ml_multifab_read_d(mfs, sd_name)
+
+!   Read the pressure data into a multilevel multifab.
+    write(unit=sd_name, fmt='(a,"/Pressure")') trim(dirname)
+    call fabio_ml_multifab_read_d(mfs_nodal, sd_name)
 
 !   Read the dSdt data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/dSdt")') trim(dirname)

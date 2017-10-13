@@ -149,7 +149,7 @@ contains
 
     ! Build the level 1 layout.
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask, &
-                         mapping=LA_EXPLICIT, explicit_mapping=get_proc(mla%la(1)))
+         mapping=LA_EXPLICIT, explicit_mapping=get_proc(mla%la(1)))
 
     call destroy(mla)
 

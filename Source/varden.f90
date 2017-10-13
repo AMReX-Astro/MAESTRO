@@ -65,7 +65,6 @@ subroutine varden()
 
   type(multifab), allocatable :: unew(:)
   type(multifab), allocatable :: snew(:)
-  type(multifab), allocatable :: pi(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
   type(multifab), allocatable :: S_nodal(:)
@@ -77,6 +76,7 @@ subroutine varden()
   !   another function
   type(multifab), pointer :: uold(:)
   type(multifab), pointer :: sold(:)
+  type(multifab), pointer :: pi(:)
   type(multifab), pointer :: gpi(:)
   type(multifab), pointer :: dSdt(:)
   type(multifab), pointer :: S_cc_old(:)
@@ -194,7 +194,7 @@ subroutine varden()
 
   if (restart >= 0) then
 
-     call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi, &
+     call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
                                   dSdt,S_cc_old,S_cc_new, &
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -213,7 +213,7 @@ subroutine varden()
      
      if(use_particles) call build(particles)
 
-     call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,dSdt, &
+     call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                       S_cc_old,S_cc_new, &
                                       rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                       the_bc_tower, &
@@ -226,7 +226,7 @@ subroutine varden()
 
      if (use_particles) call build(particles)
 
-     call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,dSdt, &
+     call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
                                          S_cc_old,S_cc_new, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower, &
@@ -331,13 +331,13 @@ subroutine varden()
      allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
-  allocate(unew(nlevs),snew(nlevs),pi(nlevs),sponge(nlevs),S_nodal(nlevs))
-  allocate(normal(nlevs),tag_mf(nlevs))
+  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),S_nodal(nlevs))
+  allocate(normal(nlevs))
+  allocate(tag_mf(nlevs))
 
   do n = 1,nlevs
      call multifab_build(   unew(n), mla%la(n),    dm, nghost(uold(n)))
      call multifab_build(   snew(n), mla%la(n), nscal, nghost(sold(n)))
-     call multifab_build(     pi(n), mla%la(n),     1, 0, nodal)
      call multifab_build( sponge(n), mla%la(n),     1, 0)
      call multifab_build(S_nodal(n), mla%la(n),     1, 0, nodal)
      if (dm .eq. 3) then
@@ -345,12 +345,11 @@ subroutine varden()
      end if
      call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
 
-     call setval(   unew(n), ZERO, all=.true.)
-     call setval(   snew(n), ZERO, all=.true.)
-     call setval(     pi(n), ZERO, all=.true.)
-     call setval( sponge(n), ONE,  all=.true.)
-     call setval(S_nodal(n), ZERO, all=.true.)
-     call setval( tag_mf(n), ZERO, all=.true.)
+     call setval(      unew(n), ZERO, all=.true.)
+     call setval(      snew(n), ZERO, all=.true.)
+     call setval(    sponge(n), ONE,  all=.true.)
+     call setval(   S_nodal(n), ZERO, all=.true.)
+     call setval(    tag_mf(n), ZERO, all=.true.)
   end do
 
   ! Create normal now that we have defined center and dx
@@ -611,7 +610,7 @@ subroutine varden()
         check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
-                              dSdt, S_cc_old, S_cc_new, &
+                              pi, dSdt, S_cc_old, S_cc_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               mla%mba%rr, dt)
 
@@ -987,6 +986,7 @@ subroutine varden()
               
               call setval(      unew(n), ZERO, all=.true.)
               call setval(      snew(n), ZERO, all=.true.)
+              call setval(        pi(n), ZERO, all=.true.)
               call setval(    sponge(n), ONE,  all=.true.)
               call setval(   S_nodal(n), ZERO, all=.true.)
               call setval(  S_cc_new(n), ZERO, all=.true.)
@@ -1305,7 +1305,7 @@ subroutine varden()
               check_file_name = make_filename(check_base_name, istep)
 
               call checkpoint_write(check_file_name, chkdata, &
-                                    dSdt, S_cc_old, S_cc_new, &
+                                    pi, dSdt, S_cc_old, S_cc_new, &
                                     rho_omegadot2, rho_Hnuc2, rho_Hext, &
                                     thermal2, mla%mba%rr, &
                                     dt)
@@ -1405,7 +1405,7 @@ subroutine varden()
         check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
-                              dSdt, S_cc_old, S_cc_new, &
+                              pi, dSdt, S_cc_old, S_cc_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               mla%mba%rr, dt)
 
