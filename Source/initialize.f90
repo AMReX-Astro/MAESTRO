@@ -465,7 +465,6 @@ contains
        do n=1,nlevs
           call multifab_destroy(S_cc_new(n))
           call multifab_destroy(rho_omegadot2(n))
-          call multifab_destroy(rho_Hnuc2(n))
           call multifab_destroy(rho_Hext(n))
           call multifab_destroy(thermal2(n))
        end do
@@ -473,6 +472,11 @@ contains
        ! regrid
        ! this also rebuilds mla and the_bc_tower
        if (use_tpert_in_tagging) then
+
+          ! destroy this before we reset nlevs
+          do n=1,nlevs
+             call multifab_destroy(rho_Hnuc2(n))
+          end do
 
           ! create tpert
           allocate(tpert_mf(nlevs))
@@ -498,6 +502,10 @@ contains
           call regrid(restart,mla,uold,sold,gpi,pi,dSdt,S_cc_old, &
                       dx,the_bc_tower, &
                       rho0_old,rhoh0_old,.true.,rho_Hnuc2)
+
+          do n = 1,nlevs
+             call destroy(rho_Hnuc2(n))
+          enddo
        endif
 
        ! nlevs is local so we need to reset it
