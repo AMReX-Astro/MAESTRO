@@ -661,7 +661,7 @@ contains
     ! normalized the entire signal to sum to 0.  If we are doing
     ! use_alt_energy_fix = T, then we first want to convert
     ! (pi/beta_0) to pi.
-    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array,tempfab)
+    call make_pi_cc(mla,pi,pi_cc,1,the_bc_tower%bc_tower_array,tempfab)
 
     do n=1,nlevs
 

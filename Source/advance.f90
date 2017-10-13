@@ -25,7 +25,7 @@ module advance_timestep_module
   public :: advance_timestep
 
 contains
-    
+
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
@@ -150,7 +150,6 @@ contains
     type(multifab) ::            Xkcoeff2(mla%nlevel)
     type(multifab) ::             pcoeff2(mla%nlevel)
     type(multifab) ::          scal_force(mla%nlevel)
-    type(multifab) ::               pi_cc(mla%nlevel)
     type(multifab) ::           delta_chi(mla%nlevel)
 
     type(multifab) ::               w0mac(mla%nlevel,mla%dim)
@@ -1445,17 +1444,7 @@ contains
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
 
-    do n = 1, nlevs
-       call multifab_build(pi_cc(n), mla%la(n), 1, 0)
-       call setval(pi_cc(n), ZERO, all=.true.)
-    enddo
-
-    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array,div_coeff_3d)
-
-    do n = 1, nlevs
-       call multifab_copy_c(snew(n),pi_comp,pi_cc(n),1,1)
-       call destroy(pi_cc(n))
-    enddo
+    call make_pi_cc(mla,pi,snew,pi_comp,the_bc_tower%bc_tower_array,div_coeff_3d)
 
     do n=1,nlevs
        call destroy(div_coeff_3d(n))

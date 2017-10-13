@@ -9,7 +9,7 @@ contains
   !---------------------------------------------------------------------------
   ! make_pi_cc
   !---------------------------------------------------------------------------
-  subroutine make_pi_cc(mla,pi,pi_cc,the_bc_level,beta0)
+  subroutine make_pi_cc(mla,pi,pi_cc,comp,the_bc_level,beta0)
 
     ! average the nodal pi to the cell-centers and normalize
     ! it such that it integrates to 0.  Store the result in pi_cc
@@ -22,6 +22,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: pi(:)
     type(multifab) , intent(inout) :: pi_cc(:)
+    integer        , intent(in   ) :: comp
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(multifab) , intent(in   ) :: beta0(:)
 
@@ -60,29 +61,29 @@ contains
           select case (dm)
           case (1)
              if (n .eq. nlevs) then
-                call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
+                call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,comp),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),bp(:,1,1,1),ng_b)
              else
                 mp => dataptr(mla%mask(n), i)
-                call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,1),ng_pc, &
+                call make_pi_cc_1d(weight,ppn(:,1,1,1),ng_pn,ppc(:,1,1,comp),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),bp(:,1,1,1),ng_b,mp(:,1,1,1))
              end if
           case (2)
              if (n .eq. nlevs) then
-                call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
+                call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,comp),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,1,1),ng_b)
              else
                 mp => dataptr(mla%mask(n), i)
-                call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,1),ng_pc, &
+                call make_pi_cc_2d(weight,ppn(:,:,1,1),ng_pn,ppc(:,:,1,comp),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,1,1),ng_b,mp(:,:,1,1))
              end if
           case (3)
              if (n .eq. nlevs) then
-                call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
+                call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,comp),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,:,1),ng_b)
              else
                 mp => dataptr(mla%mask(n), i)
-                call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,1),ng_pc, &
+                call make_pi_cc_3d(weight,ppn(:,:,:,1),ng_pn,ppc(:,:,:,comp),ng_pc, &
                                    lo,hi,ncell_proc(n),pisum_proc(n),bp(:,:,:,1),ng_b,mp(:,:,:,1))
              end if
           end select
@@ -106,7 +107,7 @@ contains
     ! sum over the domain is zero
     if (.not.(any(the_bc_level(1)%phys_bc_level_array(:,:,:) .eq. OUTLET))) then
        do n=1,nlevs
-          call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
+          call multifab_sub_sub_s_c(pi_cc(n),comp,avg,1,ng_pc)
        end do
     end if
 
