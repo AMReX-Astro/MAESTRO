@@ -65,6 +65,7 @@ subroutine varden()
 
   type(multifab), allocatable :: unew(:)
   type(multifab), allocatable :: snew(:)
+  type(multifab), allocatable :: pi(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
   type(multifab), allocatable :: S_nodal(:)
@@ -76,7 +77,6 @@ subroutine varden()
   !   another function
   type(multifab), pointer :: uold(:)
   type(multifab), pointer :: sold(:)
-  type(multifab), pointer :: pi(:)
   type(multifab), pointer :: gpi(:)
   type(multifab), pointer :: dSdt(:)
   type(multifab), pointer :: S_cc_old(:)
@@ -194,7 +194,7 @@ subroutine varden()
 
   if (restart >= 0) then
 
-     call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
+     call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi, &
                                   dSdt,S_cc_old,S_cc_new, &
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -213,7 +213,7 @@ subroutine varden()
      
      if(use_particles) call build(particles)
 
-     call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
+     call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,dSdt, &
                                       S_cc_old,S_cc_new, &
                                       rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                       the_bc_tower, &
@@ -226,7 +226,7 @@ subroutine varden()
 
      if (use_particles) call build(particles)
 
-     call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
+     call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,dSdt, &
                                          S_cc_old,S_cc_new, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower, &
@@ -288,7 +288,7 @@ subroutine varden()
      print *, 'number of dimensions    = ', dm
      do n = 1, nlevs
         print *, 'level: ', n
-        print *, '   number of boxes = ', nboxes(pi(n)%la)
+        print *, '   number of boxes = ', nboxes(S_cc_old(n)%la)
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
      print *, ' '
@@ -296,11 +296,11 @@ subroutine varden()
 
   if (verbose .ge. 1) then
      do n=1,nlevs
-        numcell = multifab_volume(pi(n),.false.)
+        numcell = multifab_volume(S_cc_old(n),.false.)
         if (parallel_IOProcessor()) then
            print*,"Number of valid cells at level        ",n,numcell
         end if
-        numcell = multifab_volume(pi(n),.true.)
+        numcell = multifab_volume(S_cc_old(n),.true.)
         if (parallel_IOProcessor()) then
            print*,"Number of valid + ghost cells at level",n,numcell
         end if
@@ -331,25 +331,26 @@ subroutine varden()
      allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
-  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),S_nodal(nlevs))
-  allocate(normal(nlevs))
-  allocate(tag_mf(nlevs))
+  allocate(unew(nlevs),snew(nlevs),pi(nlevs),sponge(nlevs),S_nodal(nlevs))
+  allocate(normal(nlevs),tag_mf(nlevs))
 
   do n = 1,nlevs
-     call multifab_build(      unew(n), mla%la(n),    dm, nghost(uold(n)))
-     call multifab_build(      snew(n), mla%la(n), nscal, nghost(sold(n)))
-     call multifab_build(    sponge(n), mla%la(n),     1, 0)
-     call multifab_build(   S_nodal(n), mla%la(n),     1, 0, nodal)
+     call multifab_build(   unew(n), mla%la(n),    dm, nghost(uold(n)))
+     call multifab_build(   snew(n), mla%la(n), nscal, nghost(sold(n)))
+     call multifab_build(     pi(n), mla%la(n),     1, 0, nodal)
+     call multifab_build( sponge(n), mla%la(n),     1, 0)
+     call multifab_build(S_nodal(n), mla%la(n),     1, 0, nodal)
      if (dm .eq. 3) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
      call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
 
-     call setval(      unew(n), ZERO, all=.true.)
-     call setval(      snew(n), ZERO, all=.true.)
-     call setval(    sponge(n), ONE,  all=.true.)
-     call setval(   S_nodal(n), ZERO, all=.true.)
-     call setval(    tag_mf(n), ZERO, all=.true.)
+     call setval(   unew(n), ZERO, all=.true.)
+     call setval(   snew(n), ZERO, all=.true.)
+     call setval(     pi(n), ZERO, all=.true.)
+     call setval( sponge(n), ONE,  all=.true.)
+     call setval(S_nodal(n), ZERO, all=.true.)
+     call setval( tag_mf(n), ZERO, all=.true.)
   end do
 
   ! Create normal now that we have defined center and dx
@@ -610,7 +611,7 @@ subroutine varden()
         check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pi, dSdt, S_cc_old, S_cc_new, &
+                              dSdt, S_cc_old, S_cc_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               mla%mba%rr, dt)
 
@@ -941,6 +942,7 @@ subroutine varden()
            do n=1,nlevs
               call multifab_destroy(unew(n))
               call multifab_destroy(snew(n))
+              call multifab_destroy(pi(n))
               call multifab_destroy(sponge(n))
               call multifab_destroy(S_nodal(n))
               call multifab_destroy(S_cc_new(n))
@@ -955,7 +957,7 @@ subroutine varden()
 
            ! create new grids and fill in data on those grids
 
-           call regrid(istep,mla,uold,sold,gpi,pi,dSdt,S_cc_old,dx,the_bc_tower, &
+           call regrid(istep,mla,uold,sold,gpi,dSdt,S_cc_old,dx,the_bc_tower, &
                        rho0_old,rhoh0_old,.false.,tag_mf)
 
 
@@ -971,6 +973,7 @@ subroutine varden()
            do n = 1,nlevs
               call multifab_build(         unew(n), mla%la(n),    dm, nghost(uold(n)))
               call multifab_build(         snew(n), mla%la(n), nscal, nghost(sold(n)))
+              call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
               call multifab_build(       sponge(n), mla%la(n),     1, 0)
               call multifab_build(      S_nodal(n), mla%la(n),     1, 0, nodal)
               call multifab_build(     S_cc_new(n), mla%la(n),     1, 1)
@@ -1302,7 +1305,7 @@ subroutine varden()
               check_file_name = make_filename(check_base_name, istep)
 
               call checkpoint_write(check_file_name, chkdata, &
-                                    pi, dSdt, S_cc_old, S_cc_new, &
+                                    dSdt, S_cc_old, S_cc_new, &
                                     rho_omegadot2, rho_Hnuc2, rho_Hext, &
                                     thermal2, mla%mba%rr, &
                                     dt)
@@ -1402,7 +1405,7 @@ subroutine varden()
         check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pi, dSdt, S_cc_old, S_cc_new, &
+                              dSdt, S_cc_old, S_cc_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               mla%mba%rr, dt)
 

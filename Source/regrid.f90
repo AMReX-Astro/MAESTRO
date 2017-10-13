@@ -16,7 +16,7 @@ module regrid_module
 
 contains
 
-  subroutine regrid(nstep,mla,uold,sold,gpi,pi,dSdt,S_cc,dx,the_bc_tower, &
+  subroutine regrid(nstep,mla,uold,sold,gpi,dSdt,S_cc,dx,the_bc_tower, &
                     rho0,rhoh0,init_into_finer,tag_mf)
 
     use fillpatch_module
@@ -35,7 +35,7 @@ contains
 
     integer       ,  intent(in   ) :: nstep
     type(ml_layout), intent(inout) :: mla
-    type(multifab),  pointer       :: uold(:),sold(:),gpi(:),pi(:)
+    type(multifab),  pointer       :: uold(:),sold(:),gpi(:)
     type(multifab),  pointer       :: dSdt(:),S_cc(:)
     type(multifab),  pointer       :: tag_mf(:)
     real(dp_t)    ,  pointer       :: dx(:,:)
@@ -56,9 +56,9 @@ contains
     type(ml_layout) :: mla_temp
     type(bc_tower)  :: the_bc_tower_temp
     type(multifab)  :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
-    type(multifab)  :: pi_temp(max_levs), dSdt_temp(max_levs), S_cc_temp(max_levs)
+    type(multifab)  :: dSdt_temp(max_levs), S_cc_temp(max_levs)
     type(multifab)  :: tag_mf_temp(max_levs)
-    type(multifab), allocatable :: uold_opt(:), sold_opt(:), gpi_opt(:), pi_opt(:), &
+    type(multifab), allocatable :: uold_opt(:), sold_opt(:), gpi_opt(:), &
          dSdt_opt(:), S_cc_opt(:), tag_mf_opt(:)
 
     type(bl_prof_timer), save :: bpt
@@ -99,7 +99,6 @@ contains
        call multifab_build(   uold_temp(n),mla_temp%la(n),   dm, ng_s)
        call multifab_build(   sold_temp(n),mla_temp%la(n),nscal, ng_s)
        call multifab_build(    gpi_temp(n),mla_temp%la(n),   dm, 0)
-       call multifab_build(     pi_temp(n),mla_temp%la(n),    1, 0, nodal)
        call multifab_build(   dSdt_temp(n),mla_temp%la(n),    1, 0)
        call multifab_build(   S_cc_temp(n),mla_temp%la(n),    1, 0)
        call multifab_build( tag_mf_temp(n),mla_temp%la(n),    1, 0)
@@ -107,7 +106,6 @@ contains
        call multifab_copy_c(   uold_temp(n),1,   uold(n),1,   dm)
        call multifab_copy_c(   sold_temp(n),1,   sold(n),1,nscal)
        call multifab_copy_c(    gpi_temp(n),1,    gpi(n),1,   dm)
-       call multifab_copy_c(     pi_temp(n),1,     pi(n),1,    1)
        call multifab_copy_c(   dSdt_temp(n),1,   dSdt(n),1,    1)
        call multifab_copy_c(   S_cc_temp(n),1,   S_cc(n),1,    1)
        call multifab_copy_c( tag_mf_temp(n),1, tag_mf(n),1,    1)
@@ -117,7 +115,6 @@ contains
        call multifab_destroy(  uold(n))
        call multifab_destroy(  sold(n))
        call multifab_destroy(   gpi(n))
-       call multifab_destroy(    pi(n))
        call multifab_destroy(  dSdt(n))
        call multifab_destroy(  S_cc(n))
        call multifab_destroy(tag_mf(n))
@@ -134,11 +131,10 @@ contains
     enddo
 
     if (associated(uold)) then
-       deallocate(uold,sold,pi,gpi,dSdt,S_cc)
-       deallocate(tag_mf)
+       deallocate(uold,sold,gpi,dSdt,S_cc,tag_mf)
     end if
 
-    allocate(uold(max_levs),sold(max_levs),pi(max_levs),gpi(max_levs))
+    allocate(uold(max_levs),sold(max_levs),gpi(max_levs))
     allocate(dSdt(max_levs),S_cc(max_levs))
     allocate(tag_mf(max_levs))
 
@@ -153,7 +149,7 @@ contains
 
     ! Build the level 1 layout.
     call layout_build_ba(la_array(1),mba%bas(1),mba%pd(1),pmask, &
-         mapping=LA_EXPLICIT, explicit_mapping=get_proc(mla%la(1)))
+                         mapping=LA_EXPLICIT, explicit_mapping=get_proc(mla%la(1)))
 
     call destroy(mla)
 
@@ -162,8 +158,8 @@ contains
 
     ! Build and fill the level 1 data only.
     call build_and_fill_data(1,la_array(1),mla_temp, &
-                             uold     ,sold     ,gpi     ,pi     ,dSdt     ,S_cc,     tag_mf, &
-                             uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
+                             uold     ,sold     ,gpi     ,dSdt     ,S_cc,     tag_mf, &
+                             uold_temp,sold_temp,gpi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
                              the_bc_tower,dm,ng_s,mba%rr(1,:))
 
     nl       = 1
@@ -213,7 +209,6 @@ contains
                    call destroy(  sold(n))
                    call destroy(  uold(n))
                    call destroy(   gpi(n))
-                   call destroy(    pi(n))
                    call destroy(  dSdt(n))
                    call destroy(  S_cc(n))
                    call destroy(tag_mf(n))
@@ -229,8 +224,8 @@ contains
    
                    ! Rebuild the lower level data again if it changed.
                    call build_and_fill_data(n,la_array(n),mla_temp, &
-                                            uold     ,sold     ,gpi     ,pi     ,dSdt     ,S_cc,     tag_mf, &
-                                            uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
+                                            uold     ,sold     ,gpi     ,dSdt     ,S_cc,     tag_mf, &
+                                            uold_temp,sold_temp,gpi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
                                             the_bc_tower,dm,ng_s,mba%rr(n-1,:))
                 end do
 
@@ -242,8 +237,8 @@ contains
 
           ! Build the level nl+1 data only.
           call build_and_fill_data(nl+1,la_array(nl+1),mla_temp, &
-                                   uold     ,sold     ,gpi     ,pi     ,dSdt     ,S_cc,     tag_mf, &
-                                   uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
+                                   uold     ,sold     ,gpi     ,dSdt     ,S_cc,     tag_mf, &
+                                   uold_temp,sold_temp,gpi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
                                    the_bc_tower,dm,ng_s,mba%rr(nl,:))
 
           nlevs = nl+1
@@ -261,14 +256,13 @@ contains
 
     ! We need to move data if a layout in la_array is not used in mla.
     ! We also need to destroy any unused layouts.
-    allocate(uold_opt(nlevs),sold_opt(nlevs),gpi_opt(nlevs),pi_opt(nlevs))
+    allocate(uold_opt(nlevs),sold_opt(nlevs),gpi_opt(nlevs))
     allocate(dSdt_opt(nlevs),S_cc_opt(nlevs),tag_mf_opt(nlevs))
     do n=1,nlevs
        if (mla%la(n) .ne. la_array(n)) then
           call multifab_build(  uold_opt(n),mla%la(n),   dm, ng_s)
           call multifab_build(  sold_opt(n),mla%la(n),nscal, ng_s)
           call multifab_build(   gpi_opt(n),mla%la(n),   dm, 0)
-          call multifab_build(    pi_opt(n),mla%la(n),    1, 0, nodal)
           call multifab_build(  dSdt_opt(n),mla%la(n),    1, 0)
           call multifab_build(  S_cc_opt(n),mla%la(n),    1, 0)
           call multifab_build(tag_mf_opt(n),mla%la(n),    1, 0)
@@ -276,7 +270,6 @@ contains
           call multifab_copy_c(  uold_opt(n),1,  uold(n),1,   dm)
           call multifab_copy_c(  sold_opt(n),1,  sold(n),1,nscal)
           call multifab_copy_c(   gpi_opt(n),1,   gpi(n),1,   dm)
-          call multifab_copy_c(    pi_opt(n),1,    pi(n),1,    1)
           call multifab_copy_c(  dSdt_opt(n),1,  dSdt(n),1,    1)
           call multifab_copy_c(  S_cc_opt(n),1,  S_cc(n),1,    1)
           call multifab_copy_c(tag_mf_opt(n),1,tag_mf(n),1,  1)
@@ -284,7 +277,6 @@ contains
           call multifab_destroy(  uold(n))
           call multifab_destroy(  sold(n))
           call multifab_destroy(   gpi(n))
-          call multifab_destroy(    pi(n))
           call multifab_destroy(  dSdt(n))
           call multifab_destroy(  S_cc(n))
           call multifab_destroy(tag_mf(n))
@@ -294,13 +286,12 @@ contains
           uold  (n) =   uold_opt(n)
           sold  (n) =   sold_opt(n)
           gpi   (n) =    gpi_opt(n)
-          pi    (n) =     pi_opt(n)
           dSdt  (n) =   dSdt_opt(n)
           S_cc  (n) =   S_cc_opt(n)
           tag_mf(n) = tag_mf_opt(n)
        end if
     end do
-    deallocate(uold_opt,sold_opt,gpi_opt,pi_opt,dSdt_opt,S_cc_opt,tag_mf_opt)
+    deallocate(uold_opt,sold_opt,gpi_opt,dSdt_opt,S_cc_opt,tag_mf_opt)
 
     ! This makes sure the boundary conditions are properly defined everywhere
     do n = 1, nlevs
@@ -325,7 +316,6 @@ contains
           call destroy(  sold(n))
           call destroy(  uold(n))
           call destroy(   gpi(n))
-          call destroy(    pi(n))
           call destroy(  dSdt(n))
           call destroy(  S_cc(n))
           call destroy(tag_mf(n))
@@ -334,8 +324,8 @@ contains
        ! Rebuild using the perturbational form
        do n = 1, nlevs
           call build_and_fill_data(n,mla%la(n),mla_temp, &
-                                   uold     ,sold     ,gpi     ,pi     ,dSdt     ,S_cc,     tag_mf, &
-                                   uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
+                                   uold     ,sold     ,gpi     ,dSdt     ,S_cc,     tag_mf, &
+                                   uold_temp,sold_temp,gpi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
                                    the_bc_tower,dm,ng_s,mba%rr(n-1,:))
        end do
 
@@ -356,7 +346,6 @@ contains
        call destroy(  uold_temp(nl))
        call destroy(  sold_temp(nl))
        call destroy(   gpi_temp(nl))
-       call destroy(    pi_temp(nl))
        call destroy(  dSdt_temp(nl))
        call destroy(  S_cc_temp(nl))
        call destroy(tag_mf_temp(nl))
@@ -435,8 +424,8 @@ contains
   end subroutine regrid
 
   subroutine build_and_fill_data(lev,la,mla_temp, &
-                                 uold     ,sold     ,gpi     ,pi     ,dSdt     ,S_cc,     tag_mf, &
-                                 uold_temp,sold_temp,gpi_temp,pi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
+                                 uold     ,sold     ,gpi     ,dSdt     ,S_cc,     tag_mf, &
+                                 uold_temp,sold_temp,gpi_temp,dSdt_temp,S_cc_temp,tag_mf_temp, &
                                  the_bc_tower,dm,ng_s,rr)
 
     use fillpatch_module
@@ -450,9 +439,9 @@ contains
     type(layout)               , intent(in   ) :: la
     type(ml_layout)            , intent(in   ) :: mla_temp
     type(bc_tower)             , intent(inout) :: the_bc_tower
-    type(multifab)   ,  pointer :: uold(:),sold(:),gpi(:),pi(:),dSdt(:),S_cc(:)
+    type(multifab)   ,  pointer :: uold(:),sold(:),gpi(:),dSdt(:),S_cc(:)
     type(multifab)   ,  pointer :: tag_mf(:)
-    type(multifab)             , intent(in   ) :: uold_temp(:),sold_temp(:),gpi_temp(:),pi_temp(:)
+    type(multifab)             , intent(in   ) :: uold_temp(:),sold_temp(:),gpi_temp(:)
     type(multifab)             , intent(in   ) :: dSdt_temp(:),S_cc_temp(:), tag_mf_temp(:)
  
     integer :: d 
@@ -464,10 +453,6 @@ contains
     call multifab_build(  dSdt(lev), la,     1, 0)
     call multifab_build(  S_cc(lev), la,     1, 0)
     call multifab_build(tag_mf(lev), la,     1, 0)
-
-    call multifab_build(    pi(lev), la,     1, 0, nodal)
-    ! need to initialize to zero for ml_nodal_prolongation
-    call multifab_setval(pi(lev),0.d0,all=.true.)
 
     ! Fill the data in the new level lev state -- first from the coarser data if lev > 1.
 
@@ -505,8 +490,6 @@ contains
                       the_bc_tower%bc_tower_array(lev-1), &
                       the_bc_tower%bc_tower_array(lev  ), &
                       1,1,foextrap_comp,1,no_final_physbc_input=.true.) 
-       ! We interpolate p differently because it is nodal, not cell-centered
-       call ml_nodal_prolongation(pi(lev), pi(lev-1), rr)
 
     end if
 
@@ -515,7 +498,6 @@ contains
        call multifab_copy_c(  uold(lev),1,  uold_temp(lev),1,   dm)
        call multifab_copy_c(  sold(lev),1,  sold_temp(lev),1,nscal)
        call multifab_copy_c(   gpi(lev),1,   gpi_temp(lev),1,   dm)
-       call multifab_copy_c(    pi(lev),1,    pi_temp(lev),1,    1)
        call multifab_copy_c(  dSdt(lev),1,  dSdt_temp(lev),1,    1)
        call multifab_copy_c(  S_cc(lev),1,  S_cc_temp(lev),1,    1)
        call multifab_copy_c(tag_mf(lev),1,tag_mf_temp(lev),1,    1)
