@@ -22,7 +22,7 @@ module initialize_module
 contains
     
   subroutine initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
-                                     dSdt,S_cc_old,S_cc_new, &
+                                     dSdt,S_cc_old, &
                                      rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -59,7 +59,7 @@ contains
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
-    type(multifab), pointer       :: S_cc_old(:),S_cc_new(:)
+    type(multifab), pointer       :: S_cc_old(:)
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
@@ -79,9 +79,8 @@ contains
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
-    type(multifab), pointer :: chk_dsdt(:)
-    type(multifab), pointer :: chk_src_old(:)
-    type(multifab), pointer :: chk_src_new(:)
+    type(multifab), pointer :: chk_dSdt(:)
+    type(multifab), pointer :: chk_S_cc(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
     type(multifab), pointer :: chk_rho_Hnuc2(:)
     type(multifab), pointer :: chk_rho_Hext(:)
@@ -109,8 +108,8 @@ contains
     endif
 
     ! create mba, chk stuff, time, and dt
-    call fill_restart_data(restart, mba_old, chkdata, chk_p, chk_dsdt, chk_src_old, &
-                           chk_src_new, chk_rho_omegadot2, chk_rho_Hnuc2, &
+    call fill_restart_data(restart, mba_old, chkdata, chk_p, chk_dSdt, chk_S_cc, &
+                           chk_rho_omegadot2, chk_rho_Hnuc2, &
                            chk_rho_Hext,chk_thermal2, dt)
 
     if (change_max_grid_size_1) then
@@ -150,7 +149,7 @@ contains
 
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpi(nlevs),pi(nlevs))
-    allocate(dSdt(nlevs),S_cc_old(nlevs),S_cc_new(nlevs))
+    allocate(dSdt(nlevs),S_cc_old(nlevs))
     allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs))
     allocate(thermal2(nlevs))
 
@@ -165,10 +164,9 @@ contains
        call multifab_build(         uold(n), mla%la(n),    dm, ng_s)
        call multifab_build(         sold(n), mla%la(n), nscal, ng_s)
        call multifab_build(          gpi(n), mla%la(n),    dm, 0)
-       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(     S_cc_old(n), mla%la(n),     1, 0)
-       call multifab_build(     S_cc_new(n), mla%la(n),     1, 0)
+       call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -185,37 +183,30 @@ contains
     end do
     
     do n=1,nlevs
+       call multifab_copy_c(dSdt(n),1,chk_dSdt(n),1,1)
+       la = get_layout(chk_dSdt(n))
+       call destroy(chk_dSdt(n))
+       call destroy(la)
+    end do
+    
+    do n=1,nlevs
+       call multifab_copy_c(S_cc_old(n),1,chk_S_cc(n),1,1)
+       la = get_layout(chk_S_cc(n))
+       call destroy(chk_S_cc(n))
+       call destroy(la)
+    end do
+
+    ! Note: pi, rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not
+    ! actually needed other than to have them available when we print
+    ! a plotfile immediately after restart.  They are recomputed
+    ! before they are used.
+    
+    do n=1,nlevs
        call multifab_copy_c(pi(n),1,chk_p(n),1,1)
        la = get_layout(chk_p(n))
        call destroy(chk_p(n))
        call destroy(la)
     end do
-    
-    do n=1,nlevs
-       call multifab_copy_c(dSdt(n),1,chk_dsdt(n),1,1)
-       la = get_layout(chk_dsdt(n))
-       call destroy(chk_dsdt(n))
-       call destroy(la)
-    end do
-    
-    do n=1,nlevs
-       call multifab_copy_c(S_cc_old(n),1,chk_src_old(n),1,1)
-       la = get_layout(chk_src_old(n))
-       call destroy(chk_src_old(n))
-       call destroy(la)
-    end do
-
-    do n=1,nlevs
-       call multifab_copy_c(S_cc_new(n),1,chk_src_new(n),1,1)
-       la = get_layout(chk_src_new(n))
-       call destroy(chk_src_new(n))
-       call destroy(la)
-    end do
-    
-    ! Note: rho_omegadot2, rho_Hnuc2, rho_Hext, and thermal2 are not
-    ! actually needed other than to have them available when we print
-    ! a plotfile immediately after restart.  They are recomputed
-    ! before they are used.
 
     do n=1,nlevs
        call multifab_copy_c(rho_omegadot2(n),1,chk_rho_omegadot2(n),1,nspec)
@@ -260,10 +251,9 @@ contains
        do n = 1, nlevs
           call setval(         sold(n), ZERO, all=.true.)
           call setval(          gpi(n), ZERO, all=.true.)
-          call setval(           pi(n), ZERO, all=.true.)
           call setval(     S_cc_old(n), ZERO, all=.true.)
-          call setval(     S_cc_new(n), ZERO, all=.true.)
           call setval(         dSdt(n), ZERO, all=.true.)
+          call setval(           pi(n), ZERO, all=.true.)
           call setval(rho_omegadot2(n), ZERO, all=.true.)
           call setval(    rho_Hnuc2(n), ZERO, all=.true.)
           call setval(     rho_Hext(n), ZERO, all=.true.)
@@ -272,7 +262,7 @@ contains
 
      endif
     
-    deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new)
+    deallocate(chkdata, chk_p, chk_dSdt, chk_S_cc)
     deallocate(chk_rho_omegadot2, chk_rho_Hnuc2)
 
     ! initialize dx
@@ -483,7 +473,7 @@ contains
 
        ! destroy these before we reset nlevs
        do n=1,nlevs
-          call multifab_destroy(S_cc_new(n))
+          call multifab_destroy(pi(n))
           call multifab_destroy(rho_omegadot2(n))
           call multifab_destroy(rho_Hnuc2(n))
           call multifab_destroy(rho_Hext(n))
@@ -508,7 +498,7 @@ contains
 
        ! rebuild these with the new ml_layout
        do n=1,nlevs
-          call multifab_build(     S_cc_new(n), mla%la(n),     1, 1)
+          call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
           call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
           call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
           call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -518,7 +508,7 @@ contains
        ! we set these to zero because they won't affect the solution
        ! they only affect an immediately generated plotfile
        do n=1,nlevs
-          call setval(     S_cc_new(n),ZERO,all=.true.)
+          call setval(           pi(n),ZERO,all=.true.)
           call setval(rho_omegadot2(n),ZERO,all=.true.)
           call setval(    rho_Hnuc2(n),ZERO,all=.true.)
           call setval(     rho_Hext(n),ZERO,all=.true.)
@@ -694,7 +684,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi, &
-                                         dSdt,S_cc_old,S_cc_new, &
+                                         dSdt,S_cc_old, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext, &
                                          thermal2, &
                                          the_bc_tower,div_coeff_old,div_coeff_new, &
@@ -720,7 +710,7 @@ contains
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
-    type(multifab), pointer       :: S_cc_old(:),S_cc_new(:)
+    type(multifab), pointer       :: S_cc_old(:)
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
@@ -767,7 +757,7 @@ contains
 
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpi(nlevs),pi(nlevs))
-    allocate(dSdt(nlevs),S_cc_old(nlevs),S_cc_new(nlevs))
+    allocate(dSdt(nlevs),S_cc_old(nlevs))
     allocate(rho_omegadot2(nlevs),rho_Hnuc2(nlevs),rho_Hext(nlevs),thermal2(nlevs))
 
     if (ppm_type .eq. 2 .or. bds_type .eq. 1) then
@@ -784,7 +774,6 @@ contains
        call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(     S_cc_old(n), mla%la(n),     1, 0)
-       call multifab_build(     S_cc_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -795,7 +784,6 @@ contains
        call setval(          gpi(n), ZERO, all=.true.)
        call setval(           pi(n), ZERO, all=.true.)
        call setval(     S_cc_old(n), ZERO, all=.true.)
-       call setval(     S_cc_new(n), ZERO, all=.true.)
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)
@@ -913,7 +901,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi, &
-                                            dSdt,S_cc_old,S_cc_new, &
+                                            dSdt,S_cc_old, &
                                             rho_omegadot2,rho_Hnuc2,rho_Hext, &
                                             thermal2, &
                                             the_bc_tower,div_coeff_old,div_coeff_new, &
@@ -944,7 +932,7 @@ contains
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpi(:),pi(:),dSdt(:)
-    type(multifab), pointer       :: S_cc_old(:),S_cc_new(:)
+    type(multifab), pointer       :: S_cc_old(:)
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
@@ -992,7 +980,7 @@ contains
 
     ! allocate states
     allocate(uold(max_levs),sold(max_levs),gpi(max_levs),pi(max_levs))
-    allocate(dSdt(max_levs),S_cc_old(max_levs),S_cc_new(max_levs))
+    allocate(dSdt(max_levs),S_cc_old(max_levs))
     allocate(rho_omegadot2(max_levs),rho_Hnuc2(max_levs),rho_Hext(max_levs),thermal2(max_levs))
 
     ! Build the level 1 boxarray
@@ -1273,7 +1261,6 @@ contains
        call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(     S_cc_old(n), mla%la(n),     1, 0)
-       call multifab_build(     S_cc_new(n), mla%la(n),     1, 0)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
        call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
        call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
@@ -1284,7 +1271,6 @@ contains
        call setval(          gpi(n), ZERO, all=.true.)
        call setval(           pi(n), ZERO, all=.true.)
        call setval(     S_cc_old(n), ZERO, all=.true.)
-       call setval(     S_cc_new(n), ZERO, all=.true.)
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
        call setval(    rho_Hnuc2(n), ZERO, all=.true.)

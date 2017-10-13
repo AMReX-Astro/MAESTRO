@@ -58,8 +58,8 @@ contains
     type(multifab)  :: uold_temp(max_levs), sold_temp(max_levs), gpi_temp(max_levs)
     type(multifab)  :: dSdt_temp(max_levs), S_cc_temp(max_levs)
     type(multifab)  :: tag_mf_temp(max_levs)
-    type(multifab), allocatable :: uold_opt(:), sold_opt(:), gpi_opt(:), &
-         dSdt_opt(:), S_cc_opt(:), tag_mf_opt(:)
+    type(multifab), allocatable :: uold_opt(:), sold_opt(:), gpi_opt(:)
+    type(multifab), allocatable :: dSdt_opt(:), S_cc_opt(:), tag_mf_opt(:)
 
     type(bl_prof_timer), save :: bpt
 

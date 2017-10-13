@@ -63,29 +63,35 @@ subroutine varden()
 
   real(dp_t)  , pointer     :: dx(:,:)
 
+  ! initialized below. not checkpointed.
   type(multifab), allocatable :: unew(:)
   type(multifab), allocatable :: snew(:)
+  type(multifab), allocatable :: S_cc_new(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
   type(multifab), allocatable :: S_nodal(:)
   type(multifab), allocatable :: gamma1(:)
 
-  type(multifab), pointer :: tag_mf(:)
-  
+  !!!!!!!!!!!!!
   ! these are pointers because they need to be allocated and built within 
-  !   another function
+  !   another function (in initialize.f90)
+
+  ! these are in the checkpoint, and need to be passed into regrid
   type(multifab), pointer :: uold(:)
   type(multifab), pointer :: sold(:)
-  type(multifab), pointer :: pi(:)
   type(multifab), pointer :: gpi(:)
   type(multifab), pointer :: dSdt(:)
   type(multifab), pointer :: S_cc_old(:)
-  type(multifab), pointer :: S_cc_new(:)
+
+  ! these are in the checkpoint only so the plotfile after checkpoint
+  ! matches.  They are not persistent, and do not need to be passed into regrid
+  type(multifab), pointer :: pi(:)
   type(multifab), pointer :: rho_omegadot2(:)
   type(multifab), pointer :: rho_Hnuc2(:)
   type(multifab), pointer :: rho_Hext(:)
   type(multifab), pointer :: thermal2(:)
 
+  type(multifab), pointer :: tag_mf(:)
   type(multifab), pointer :: chkdata(:)
 
   character(len=MAX_FILENAME_LEN) :: plot_file_name, check_file_name
@@ -195,7 +201,7 @@ subroutine varden()
   if (restart >= 0) then
 
      call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
-                                  dSdt,S_cc_old,S_cc_new, &
+                                  dSdt,S_cc_old, &
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -214,7 +220,7 @@ subroutine varden()
      if(use_particles) call build(particles)
 
      call initialize_with_fixed_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
-                                      S_cc_old,S_cc_new, &
+                                      S_cc_old, &
                                       rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                       the_bc_tower, &
                                       div_coeff_old,div_coeff_new,gamma1bar, &
@@ -227,7 +233,7 @@ subroutine varden()
      if (use_particles) call build(particles)
 
      call initialize_with_adaptive_grids(mla,dt,pmask,dx,uold,sold,gpi,pi,dSdt, &
-                                         S_cc_old,S_cc_new, &
+                                         S_cc_old, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower, &
                                          div_coeff_old,div_coeff_new,gamma1bar, &
@@ -331,22 +337,24 @@ subroutine varden()
      allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
-  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),S_nodal(nlevs))
-  allocate(normal(nlevs))
+  allocate(unew(nlevs),snew(nlevs),S_cc_new(nlevs))
+  allocate(normal(nlevs),sponge(nlevs),S_nodal(nlevs))
   allocate(tag_mf(nlevs))
 
   do n = 1,nlevs
-     call multifab_build(   unew(n), mla%la(n),    dm, nghost(uold(n)))
-     call multifab_build(   snew(n), mla%la(n), nscal, nghost(sold(n)))
-     call multifab_build( sponge(n), mla%la(n),     1, 0)
-     call multifab_build(S_nodal(n), mla%la(n),     1, 0, nodal)
+     call multifab_build(    unew(n), mla%la(n),    dm, nghost(uold(n)))
+     call multifab_build(    snew(n), mla%la(n), nscal, nghost(sold(n)))
+     call multifab_build(S_cc_new(n), mla%la(n),     1, 0)
      if (dm .eq. 3) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
-     call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
+     call multifab_build(  sponge(n), mla%la(n),     1, 0)
+     call multifab_build( S_nodal(n), mla%la(n),     1, 0, nodal)
+     call multifab_build(  tag_mf(n), mla%la(n), 1, 0)
 
      call setval(      unew(n), ZERO, all=.true.)
      call setval(      snew(n), ZERO, all=.true.)
+     call setval(  S_cc_new(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
      call setval(   S_nodal(n), ZERO, all=.true.)
      call setval(    tag_mf(n), ZERO, all=.true.)
@@ -610,7 +618,7 @@ subroutine varden()
         check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pi, dSdt, S_cc_old, S_cc_new, &
+                              pi, dSdt, S_cc_old, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               mla%mba%rr, dt)
 
@@ -941,17 +949,18 @@ subroutine varden()
            do n=1,nlevs
               call multifab_destroy(unew(n))
               call multifab_destroy(snew(n))
-              call multifab_destroy(pi(n))
+              call multifab_destroy(S_cc_new(n))
+              if (dm .eq. 3) then
+                 call multifab_destroy(normal(n))
+              end if
               call multifab_destroy(sponge(n))
               call multifab_destroy(S_nodal(n))
-              call multifab_destroy(S_cc_new(n))
+
+              call multifab_destroy(pi(n))
               call multifab_destroy(rho_omegadot2(n))
               call multifab_destroy(rho_Hnuc2(n))
               call multifab_destroy(rho_Hext(n))
               call multifab_destroy(thermal2(n))
-              if (dm .eq. 3) then
-                 call multifab_destroy(normal(n))
-              end if
            end do
 
            ! create new grids and fill in data on those grids
@@ -972,24 +981,24 @@ subroutine varden()
            do n = 1,nlevs
               call multifab_build(         unew(n), mla%la(n),    dm, nghost(uold(n)))
               call multifab_build(         snew(n), mla%la(n), nscal, nghost(sold(n)))
-              call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
+              call multifab_build(     S_cc_new(n), mla%la(n),     1, 0)
+              if (dm .eq. 3) then
+                 call multifab_build(normal(n), mla%la(n),    dm, 1)
+              end if
               call multifab_build(       sponge(n), mla%la(n),     1, 0)
               call multifab_build(      S_nodal(n), mla%la(n),     1, 0, nodal)
-              call multifab_build(     S_cc_new(n), mla%la(n),     1, 1)
+
+              call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
               call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
               call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
               call multifab_build(     rho_Hext(n), mla%la(n),     1, 0)
               call multifab_build(     thermal2(n), mla%la(n),     1, 1)
-              if (dm .eq. 3) then
-                 call multifab_build(normal(n), mla%la(n),    dm, 1)
-              end if
               
               call setval(      unew(n), ZERO, all=.true.)
               call setval(      snew(n), ZERO, all=.true.)
-              call setval(        pi(n), ZERO, all=.true.)
+              call setval(  S_cc_new(n), ZERO, all=.true.)
               call setval(    sponge(n), ONE,  all=.true.)
               call setval(   S_nodal(n), ZERO, all=.true.)
-              call setval(  S_cc_new(n), ZERO, all=.true.)
            end do
 
            ! Create normal now that we have defined center and dx
@@ -1062,7 +1071,6 @@ subroutine varden()
            do n=1,nlevs
               call destroy(gamma1(n))
            end do
-
 
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
@@ -1297,15 +1305,15 @@ subroutine varden()
               allocate(chkdata(nlevs))
               do n = 1,nlevs
                  call multifab_build(chkdata(n), mla%la(n), 2*dm+nscal, 0)
-                 call multifab_copy_c(chkdata(n),1,unew(n),1,dm)
-                 call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
-                 call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n),1,dm)
+                 call multifab_copy_c(chkdata(n),1                ,unew(n),1,dm)
+                 call multifab_copy_c(chkdata(n),rho_comp+dm      ,snew(n),1,nscal)
+                 call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpi(n) ,1,dm)
               end do
 
               check_file_name = make_filename(check_base_name, istep)
 
               call checkpoint_write(check_file_name, chkdata, &
-                                    pi, dSdt, S_cc_old, S_cc_new, &
+                                    pi, dSdt, S_cc_new, &
                                     rho_omegadot2, rho_Hnuc2, rho_Hext, &
                                     thermal2, mla%mba%rr, &
                                     dt)
@@ -1405,7 +1413,7 @@ subroutine varden()
         check_file_name = make_filename(check_base_name, istep)
 
         call checkpoint_write(check_file_name, chkdata, &
-                              pi, dSdt, S_cc_old, S_cc_new, &
+                              pi, dSdt, S_cc_new, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               mla%mba%rr, dt)
 
@@ -1459,29 +1467,29 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   do n=1,nlevs
-     call destroy(uold(n))
      call destroy(unew(n))
-     call destroy(sold(n))
      call destroy(snew(n))
-     call destroy(pi(n))
+     call destroy(S_cc_new(n))
+     if(dm .eq. 3) then
+        call destroy(normal(n))
+     end if
+     call destroy(sponge(n))
+     call destroy(S_nodal(n))
+
+     call destroy(uold(n))
+     call destroy(sold(n))
      call destroy(gpi(n))
      call destroy(dSdt(n))
      call destroy(S_cc_old(n))
-     call destroy(S_cc_new(n))
-     call destroy(S_nodal(n))
+
+     call destroy(pi(n))
      call destroy(rho_omegadot2(n))
      call destroy(rho_Hnuc2(n))
      call destroy(rho_Hext(n))
      call destroy(thermal2(n))
-     call destroy(sponge(n))
+
      call destroy(tag_mf(n))
   end do
-
-  if(dm .eq. 3) then
-     do n=1,nlevs
-        call destroy(normal(n))
-     end do
-  end if
 
   call destroy(mla)
 
@@ -1501,10 +1509,9 @@ subroutine varden()
   
   call runtime_close()
 
-  deallocate(uold,sold,pi,gpi,dSdt,S_cc_old,S_cc_new,rho_omegadot2, &
-             rho_Hnuc2,rho_Hext,tag_mf)
-  deallocate(thermal2,dx)
-  deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
+  deallocate(uold,sold,pi,gpi,dSdt,S_cc_old,S_cc_new,rho_omegadot2)
+  deallocate(rho_Hnuc2,rho_Hext,thermal2,tag_mf)
+  deallocate(dx,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
   deallocate(psi,tempbar,tempbar_init,grav_cell)
 
