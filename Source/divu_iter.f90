@@ -20,7 +20,7 @@ module divu_iter_module
 contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
-                       Source_old,normal,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
+                       S_cc,normal,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
     use variables, only: nscal, foextrap_comp
@@ -31,7 +31,7 @@ contains
     use proj_parameters, only: divu_iters_comp
     use react_state_module
     use make_explicit_thermal_module
-    use make_S_module
+    use make_S_cc_module
     use average_module
     use hgrhs_module
     use fill_3d_module
@@ -48,7 +48,7 @@ contains
     type(multifab) , intent(inout) :: pi(:)
     type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(inout) :: thermal(:)
-    type(multifab) , intent(inout) :: Source_old(:)
+    type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: normal(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(in   ) :: dSdt(:)
@@ -149,12 +149,12 @@ contains
        call multifab_build(delta_gamma1(n),      mla%la(n), 1, 0)
     end do
 
-    call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold, &
-                normal, &
-                rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
-                p0_old,gamma1bar,delta_gamma1_termbar,psi, &
-                dx,mla,the_bc_tower%bc_tower_array)
+    call make_S_cc(S_cc,delta_gamma1_term,delta_gamma1, &
+                   sold,uold, &
+                   normal, &
+                   rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
+                   p0_old,gamma1bar,delta_gamma1_termbar,psi, &
+                   dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot(n))
@@ -164,7 +164,7 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,Source_old,Sbar,dx,1)
+       call average(mla,S_cc,Sbar,dx,1)
        call make_w0(w0,w0,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
                     gamma1bar,gamma1bar,p0_minus_pthermbar, &
                     psi,etarho_ec,etarho_cc,dt,dt,delta_chi_w0,.true.)
@@ -172,7 +172,7 @@ contains
     
     ! This needs to be a separate loop so Sbar is fully defined before 
     ! we get here.
-    call make_hgrhs(the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term, &
+    call make_hgrhs(the_bc_tower,mla,hgrhs,S_cc,delta_gamma1_term, &
                     Sbar,div_coeff_old,dx)
     
     do n=1,nlevs
@@ -238,7 +238,7 @@ contains
     dt_hold = dt
     dt      = HUGE(dt)
 
-    call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
+    call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc,dSdt, &
                w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then

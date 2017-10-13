@@ -22,7 +22,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_macrhs(macrhs,rho0,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
+  subroutine make_macrhs(macrhs,rho0,S_cc,delta_gamma1_term,Sbar,div_coeff,dx, &
                          gamma1bar,p0,delta_p_term,dt,delta_chi,is_predictor)
 
     use bl_prof_module
@@ -31,7 +31,7 @@ contains
 
     type(multifab) , intent(inout) :: macrhs(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
-    type(multifab) , intent(in   ) :: Source(:)
+    type(multifab) , intent(in   ) :: S_cc(:)
     type(multifab) , intent(in   ) :: delta_gamma1_term(:)
     real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
@@ -56,21 +56,21 @@ contains
     nlevs = size(macrhs)
 
     ng_rh = nghost(macrhs(1))
-    ng_sr = nghost(Source(1))
+    ng_sr = nghost(S_cc(1))
     ng_dg = nghost(delta_gamma1_term(1))
     ng_dp = nghost(delta_p_term(1))
     ng_d  = nghost(delta_chi(1))
 
     do n = 1, nlevs
 
-       do i = 1, nfabs(Source(n))
+       do i = 1, nfabs(S_cc(n))
           mp => dataptr(macrhs(n), i)
-          sp => dataptr(Source(n), i)
+          sp => dataptr(S_cc(n), i)
           gp => dataptr(delta_gamma1_term(n), i)
           dp => dataptr(delta_chi(n), i)
           pop => dataptr(delta_p_term(n), i)
-          lo =  lwb(get_box(Source(n), i))
-          hi =  upb(get_box(Source(n), i))
+          lo =  lwb(get_box(S_cc(n), i))
+          hi =  upb(get_box(S_cc(n), i))
           select case (dm)
           case (1)
              call make_macrhs_1d(n,lo,hi,mp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
@@ -107,7 +107,7 @@ contains
 
   end subroutine make_macrhs
 
-  subroutine make_macrhs_1d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_macrhs_1d(n,lo,hi,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                             Sbar,div_coeff,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
@@ -116,7 +116,7 @@ contains
 
     integer         , intent(in   ) :: n, lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_dp, ng_d
     real (kind=dp_t), intent(  out) ::               rhs(lo(1)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
     real (kind=dp_t), intent(in   ) :: Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -131,7 +131,7 @@ contains
     integer :: i
 
     do i = lo(1),hi(1)
-       rhs(i) = div_coeff(i) * (Source(i) - Sbar(i) + delta_gamma1_term(i))
+       rhs(i) = div_coeff(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
     end do
 
     if (dpdt_factor .gt. 0.0d0) then
@@ -150,7 +150,7 @@ contains
 
   end subroutine make_macrhs_1d
 
-  subroutine make_macrhs_2d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_macrhs_2d(n,lo,hi,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                             Sbar,div_coeff,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
@@ -159,7 +159,7 @@ contains
 
     integer         , intent(in   ) :: n, lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_dp, ng_d
     real (kind=dp_t), intent(  out) ::               rhs(lo(1)-ng_rh:,lo(2)-ng_rh:)  
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)  
+    real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:)  
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) :: Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -175,7 +175,7 @@ contains
 
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          rhs(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + delta_gamma1_term(i,j))
+          rhs(i,j) = div_coeff(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
        end do
     end do
 
@@ -197,7 +197,7 @@ contains
 
   end subroutine make_macrhs_2d
 
-  subroutine make_macrhs_3d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_macrhs_3d(n,lo,hi,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                             Sbar,div_coeff,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
@@ -207,7 +207,7 @@ contains
 
     integer         , intent(in   ) :: n,lo(:),hi(:),ng_rh,ng_sr,ng_dg,ng_dp,ng_d
     real (kind=dp_t), intent(  out) ::            rhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
@@ -226,7 +226,7 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              rhs(i,j,k) = div_coeff(k) * &
-                  (Source(i,j,k) - Sbar(k) + delta_gamma1_term(i,j,k))
+                  (S_cc(i,j,k) - Sbar(k) + delta_gamma1_term(i,j,k))
           end do
        end do
     end do
@@ -255,7 +255,7 @@ contains
        
   end subroutine make_macrhs_3d
 
-  subroutine make_macrhs_3d_sphr(lo,hi,rho0,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_macrhs_3d_sphr(lo,hi,rho0,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                                  Sbar,div_coeff,dx,gamma1bar,p0, &
                                  delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
@@ -265,7 +265,7 @@ contains
     integer         , intent(in   ) :: lo(:),hi(:),ng_rh,ng_sr,ng_dg,ng_dp,ng_d
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) ::            rhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
@@ -294,7 +294,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs(i,j,k) = div_cart(i,j,k,1) * (Source(i,j,k) - Sbar_cart(i,j,k,1) + &
+             rhs(i,j,k) = div_cart(i,j,k,1) * (S_cc(i,j,k) - Sbar_cart(i,j,k,1) + &
                           delta_gamma1_term(i,j,k))
           end do
        end do

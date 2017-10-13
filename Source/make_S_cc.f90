@@ -6,7 +6,7 @@
 ! we average it.  Finally we correct the full version of the term to
 ! account for the psi term that comes from the base state.  
 
-module make_S_module
+module make_S_cc_module
 
   use bl_types
   use multifab_module
@@ -15,19 +15,19 @@ module make_S_module
 
   private
 
-  public :: make_S
+  public :: make_S_cc
 
 contains
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S(Source,delta_gamma1_term,delta_gamma1, &
-                    state,u, &
-                    normal, &
-                    rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
-                    p0,gamma1bar,delta_gamma1_termbar,psi, &
-                    dx,mla,the_bc_level)
+  subroutine make_S_cc(Source,delta_gamma1_term,delta_gamma1, &
+                       state,u, &
+                       normal, &
+                       rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
+                       p0,gamma1bar,delta_gamma1_termbar,psi, &
+                       dx,mla,the_bc_level)
 
     use bl_constants_module
     use bl_prof_module
@@ -76,7 +76,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "make_S")
+    call build(bpt, "make_S_cc")
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -164,28 +164,28 @@ contains
              np => dataptr(normal(n), i)
              ng_n = nghost(normal(1))
 
-             call make_S_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
-                                 dgp(:,:,:,1), ng_dg, &
-                                 sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
-                                 omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
-                                 hep(:,:,:,1), ng_he, &
-                                 tp(:,:,:,1), ng_th, &
-                                 gp0p(:,:,:,1), ng_gp, &
-                                 p0p(:,:,:,1), ng_p0, &
-                                 g1p(:,:,:,1), ng_g1, &
-                                 np(:,:,:,:), ng_n)
+             call make_S_cc_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+                                    dgp(:,:,:,1), ng_dg, &
+                                    sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
+                                    omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
+                                    hep(:,:,:,1), ng_he, &
+                                    tp(:,:,:,1), ng_th, &
+                                    gp0p(:,:,:,1), ng_gp, &
+                                    p0p(:,:,:,1), ng_p0, &
+                                    g1p(:,:,:,1), ng_g1, &
+                                    np(:,:,:,:), ng_n)
           else
-             call make_S_cart(dm, n, lo, hi, &
-                              srcp(:,:,:,1), lbound(srcp), &
-                              dgtp(:,:,:,1), lbound(dgtp), &
-                              dgp(:,:,:,1), lbound(dgp), &
-                              sp, lbound(sp), &
-                              up, lbound(up), &
-                              omegap, lbound(omegap), &
-                              hnp(:,:,:,1), lbound(hnp), &
-                              hep(:,:,:,1), lbound(hep), &
-                              tp(:,:,:,1), lbound(tp), &
-                              p0(n,:), gamma1bar(n,:), dx(n,:))
+             call make_S_cc_cart(dm, n, lo, hi, &
+                                 srcp(:,:,:,1), lbound(srcp), &
+                                 dgtp(:,:,:,1), lbound(dgtp), &
+                                 dgp(:,:,:,1), lbound(dgp), &
+                                 sp, lbound(sp), &
+                                 up, lbound(up), &
+                                 omegap, lbound(omegap), &
+                                 hnp(:,:,:,1), lbound(hnp), &
+                                 hep(:,:,:,1), lbound(hep), &
+                                 tp(:,:,:,1), lbound(tp), &
+                                 p0(n,:), gamma1bar(n,:), dx(n,:))
           end if
 
        end do
@@ -264,19 +264,19 @@ contains
 
     call destroy(bpt)
 
-  end subroutine make_S
+  end subroutine make_S_cc
 
-  subroutine make_S_cart(dm, n, lo, hi, &
-                         Source, srlo, &
-                         delta_gamma1_term, dtlo, &
-                         delta_gamma1, dglo, &
-                         s, slo, &
-                         u, ulo, &
-                         rho_omegadot, rwlo, &
-                         rho_Hnuc, hnlo, &
-                         rho_Hext, helo, &
-                         thermal, thlo, &
-                         p0,gamma1bar,dx)
+  subroutine make_S_cc_cart(dm, n, lo, hi, &
+                            Source, srlo, &
+                            delta_gamma1_term, dtlo, &
+                            delta_gamma1, dglo, &
+                            s, slo, &
+                            u, ulo, &
+                            rho_omegadot, rwlo, &
+                            rho_Hnuc, hnlo, &
+                            rho_Hext, helo, &
+                            thermal, thlo, &
+                            p0,gamma1bar,dx)
 
     use bl_constants_module
     use eos_module, only: eos, eos_input_rt
@@ -378,13 +378,13 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-  end subroutine make_S_cart
+  end subroutine make_S_cc_cart
 
-  subroutine make_S_3d_sphr(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
-                            ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                            rho_Hext,ng_he,thermal,ng_th, &
-                            gradp0_cart,ng_gp,p0_cart,ng_p0, &
-                            gamma1bar_cart,ng_g1,normal,ng_n)
+  subroutine make_S_cc_3d_sphr(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
+                               ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                               rho_Hext,ng_he,thermal,ng_th, &
+                               gradp0_cart,ng_gp,p0_cart,ng_p0, &
+                               gamma1bar_cart,ng_g1,normal,ng_n)
 
     use bl_constants_module
     use eos_module, only: eos, eos_input_rt
@@ -478,7 +478,7 @@ contains
     enddo
     !$OMP END PARALLEL DO
 
-  end subroutine make_S_3d_sphr
+  end subroutine make_S_cc_3d_sphr
 
   subroutine correct_delta_gamma1_term_1d(lo,hi,delta_gamma1_term,ng_dt, &
                                           delta_gamma1,ng_dg, &
@@ -584,4 +584,4 @@ contains
 
   end subroutine correct_delta_gamma1_term_3d_sphr
 
-end module make_S_module
+end module make_S_cc_module

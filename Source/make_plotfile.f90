@@ -170,7 +170,7 @@ contains
 
   subroutine make_plotfile(p,dirname,mla,u,s,pi,gpi,rho_omegadot, &
                            rho_Hnuc,rho_Hext, &
-                           thermal,Source,sponge,mba,dx, &
+                           thermal,S_cc,sponge,mba,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt,particles,write_pf_time)
@@ -212,7 +212,7 @@ contains
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
     type(multifab)   , intent(in   ) :: rho_Hext(:)
     type(multifab)   , intent(in   ) :: thermal(:)
-    type(multifab)   , intent(in   ) :: Source(:)
+    type(multifab)   , intent(in   ) :: S_cc(:)
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
     real(dp_t)       , intent(in   ) :: dt,dx(:,:)
@@ -517,7 +517,7 @@ contains
 
        ! DIVU
        if (p%icomp_src > 0) then
-          call multifab_copy_c(plotdata(n),p%icomp_src,Source(n),1,1)
+          call multifab_copy_c(plotdata(n),p%icomp_src,S_cc(n),1,1)
        endif
 
     end do

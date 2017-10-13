@@ -21,7 +21,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(uold,sold,pi,gpi,Source_old,normal,hgrhs,thermal, &
+  subroutine initial_proj(uold,sold,pi,gpi,S_cc,normal,hgrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: foextrap_comp
@@ -30,7 +30,7 @@ contains
     use geometry, only: spherical, nr_fine, nlevs_radial
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
-    use make_S_module
+    use make_S_cc_module
     use average_module
     use hgrhs_module
     use fill_3d_module
@@ -43,7 +43,7 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pi(:)
     type(multifab) , intent(inout) :: gpi(:)
-    type(multifab) , intent(inout) :: Source_old(:)
+    type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: normal(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(inout) :: thermal(:)
@@ -129,12 +129,12 @@ contains
        call setval( delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold, &
-                normal, &
-                rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
-                p0,gamma1bar,delta_gamma1_termbar,psi, &
-                dx,mla,the_bc_tower%bc_tower_array)
+    call make_S_cc(S_cc,delta_gamma1_term,delta_gamma1, &
+                   sold,uold, &
+                   normal, &
+                   rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
+                   p0,gamma1bar,delta_gamma1_termbar,psi, &
+                   dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot1(n))
@@ -144,7 +144,7 @@ contains
     end do
     
     if (evolve_base_state) then
-       call average(mla,Source_old,Sbar,dx,1)
+       call average(mla,S_cc,Sbar,dx,1)
     end if
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary
@@ -155,7 +155,7 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_hgrhs(the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar, &
+    call make_hgrhs(the_bc_tower,mla,hgrhs,S_cc,delta_gamma1_term,Sbar, &
                     div_coeff_old,dx)
 
     do n=1,nlevs
