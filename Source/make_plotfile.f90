@@ -109,7 +109,7 @@ contains
     if (p%icomp_magvel > 0) p%names(p%icomp_magvel)      = "magvel"
     if (p%icomp_mom > 0) p%names(p%icomp_mom)         = "momentum"
     if (p%icomp_vort > 0) p%names(p%icomp_vort)        = "vort"
-    if (p%icomp_src > 0) p%names(p%icomp_src)         = "S"
+    if (p%icomp_s_cc > 0) p%names(p%icomp_s_cc)         = "S"
     if (p%icomp_rhopert > 0) p%names(p%icomp_rhopert)     = "rhopert"
     if (p%icomp_rhohpert > 0) p%names(p%icomp_rhohpert)    = "rhohpert"
   
@@ -516,8 +516,8 @@ contains
        endif
 
        ! DIVU
-       if (p%icomp_src > 0) then
-          call multifab_copy_c(plotdata(n),p%icomp_src,S_cc(n),1,1)
+       if (p%icomp_s_cc > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_s_cc,S_cc(n),1,1)
        endif
 
     end do
