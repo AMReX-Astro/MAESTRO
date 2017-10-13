@@ -526,16 +526,20 @@ subroutine varden()
 
   dtold = dt
 
+  if (restart <= 0) then
+     ! initialize S_cc_new to the S_cc_old for the initialization or if
+     ! restarting from checkpoint0
+     do n = 1,nlevs
+        call multifab_copy_c(S_cc_new(n),1,S_cc_old(n),1,1)
+     end do
+  end if
+
   if (restart < 0) then
 
      !------------------------------------------------------------------------
      ! Begin the initial pressure iterations
      !------------------------------------------------------------------------
 
-     ! initialize S_cc_new to the S_cc_old the first time through
-     do n = 1,nlevs
-        call multifab_copy_c(S_cc_new(n),1,S_cc_old(n),1,1)
-     end do
 
      if (do_sponge) then
         call make_sponge(sponge,dx,dt,mla)
