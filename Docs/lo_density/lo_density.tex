@@ -168,7 +168,7 @@ The \runparam{base\_cutoff\_density} is the lowest density that we model.
   just use the values for $\rho,T$, and $p$ at {\tt base\_cutoff\_density\_loc}.
   When we check whether we are in HSE, we use {\tt base\_cutoff\_density\_loc}.
 
-\item In {\tt make\_hgrhs}, {\tt make\_macrhs}, and {\tt make\_w0}, 
+\item In {\tt make\_S\_nodal}, {\tt make\_macrhs}, and {\tt make\_w0}, 
   we only add the volume discrepancy for $r < {\tt base\_cutoff\_density\_coord}$
   (in plane parallel) and if $\rho_0^{\rm cart} > {\tt base\_cutoff\_density}$ 
   (in spherical).

@@ -32,8 +32,8 @@ contains
                               rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
                               div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
-                              psi,sponge,hgrhs,tempbar_init,particles)
+                              dSdt,S_cc_old,S_cc_new,etarho_ec,etarho_cc, &
+                              psi,sponge,S_nodal,tempbar_init,particles)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
     use      pre_advance_module     , only : advance_premac
@@ -44,7 +44,7 @@ contains
     use make_w0_module              , only : make_w0
     use advect_base_module          , only : advect_base_dens, advect_base_enthalpy, advect_base_species
     use react_state_module          , only : react_state
-    use make_S_module               , only : make_S
+    use make_S_cc_module            , only : make_S
     use average_module              , only : average
     use phihalf_module              , only : make_S_at_halftime, make_at_halftime
     use extraphalf_module           , only : extrap_to_halftime
@@ -64,7 +64,7 @@ contains
     use macrhs_module               , only : make_macrhs
     use macproject_module           , only : macproject
 
-    use hgrhs_module                , only : make_hgrhs, correct_hgrhs
+    use make_S_nodal_module         , only : make_S_nodal, correct_S_nodal
     use hgproject_module            , only : hgproject
     use proj_parameters             , only : pressure_iters_comp, regular_timestep_comp
 
@@ -108,13 +108,13 @@ contains
     real(dp_t)    ,  intent(in   ) :: dx(:,:),dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(multifab),  intent(inout) ::       dSdt(:)
-    type(multifab),  intent(inout) :: Source_old(:)
-    type(multifab),  intent(inout) :: Source_new(:)
+    type(multifab),  intent(inout) :: S_cc_old(:)
+    type(multifab),  intent(inout) :: S_cc_new(:)
     real(dp_t)    ,  intent(inout) ::  etarho_ec(:,0:)
     real(dp_t)    ,  intent(inout) ::  etarho_cc(:,0:)
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
-    type(multifab),  intent(inout) ::  hgrhs(:)
+    type(multifab),  intent(inout) ::  S_nodal(:)
     type(particle_container), intent(inout) :: particles
 
     ! local
@@ -122,8 +122,8 @@ contains
     type(multifab) ::       w0_force_cart(mla%nlevel)
     type(multifab) ::              macrhs(mla%nlevel)
     type(multifab) ::              macphi(mla%nlevel)
-    type(multifab) ::           hgrhs_old(mla%nlevel)
-    type(multifab) ::          Source_nph(mla%nlevel)
+    type(multifab) ::           S_nodal_old(mla%nlevel)
+    type(multifab) ::          S_cc_nph(mla%nlevel)
     type(multifab) ::            thermal1(mla%nlevel)
     type(multifab) ::              s2star(mla%nlevel)
     type(multifab) ::                  s1(mla%nlevel)
@@ -294,14 +294,14 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+       call multifab_build(S_cc_nph(n), mla%la(n), 1, 1)
     end do
 
     if (time .eq. ZERO) then
-       call make_S_at_halftime(mla,Source_nph,Source_old,Source_new, &
+       call make_S_at_halftime(mla,S_cc_nph,S_cc_old,S_cc_new, &
                                the_bc_tower%bc_tower_array)
     else
-       call extrap_to_halftime(mla,Source_nph,dSdt,Source_old,dt, &
+       call extrap_to_halftime(mla,S_cc_nph,dSdt,S_cc_old,dt, &
                                the_bc_tower%bc_tower_array)
     end if
 
@@ -366,7 +366,7 @@ contains
 
     if (evolve_base_state) then
 
-       call average(mla,Source_nph,Sbar,dx,1)
+       call average(mla,S_cc_nph,Sbar,dx,1)
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
                     gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold)
@@ -422,12 +422,12 @@ contains
 
     macproj_time_start = parallel_wtime()
 
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
+    call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
                      gamma1bar_old,gamma1bar_old,p0_old,p0_old,delta_p_term,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
-       call destroy(Source_nph(n))
+       call destroy(S_cc_nph(n))
        call destroy(delta_p_term(n))
     end do
 
@@ -787,7 +787,7 @@ contains
     end do
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+    call make_S(S_cc_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,thermal2,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
@@ -797,10 +797,10 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+       call multifab_build(S_cc_nph(n), mla%la(n), 1, 1)
     end do
 
-    call make_S_at_halftime(mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
+    call make_S_at_halftime(mla,S_cc_nph,S_cc_old,S_cc_new,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
@@ -873,7 +873,7 @@ contains
 
     if (evolve_base_state) then
 
-       call average(mla,Source_nph,Sbar,dx,1)
+       call average(mla,S_cc_nph,Sbar,dx,1)
 
        if(use_delta_gamma1_term) then
           ! add delta_gamma1_termbar to Sbar
@@ -922,12 +922,12 @@ contains
     end do
 
     ! note delta_gamma1_term here is not time-centered
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
+    call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
                      gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
-       call destroy(Source_nph(n))
+       call destroy(S_cc_nph(n))
        call destroy(delta_p_term(n))
     end do
 
@@ -1295,7 +1295,7 @@ contains
     ndproj_time_start = parallel_wtime()
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+    call make_S(S_cc_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,thermal2,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
@@ -1304,7 +1304,7 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,Source_new,Sbar,dx,1)
+       call average(mla,S_cc_new,Sbar,dx,1)
 
        if(use_delta_gamma1_term) then
           ! add delta_gamma1_termbar to Sbar
@@ -1313,10 +1313,10 @@ contains
 
     end if
     
-    ! define dSdt = (Source_new - Source_old) / dt
+    ! define dSdt = (S_cc_new - S_cc_old) / dt
     do n=1,nlevs
-       call multifab_copy(dSdt(n),Source_new(n))
-       call multifab_sub_sub(dSdt(n),Source_old(n))
+       call multifab_copy(dSdt(n),S_cc_new(n))
+       call multifab_sub_sub(dSdt(n),S_cc_old(n))
        call multifab_div_div_s(dSdt(n),dt)
     end do
 
@@ -1375,21 +1375,21 @@ contains
        proj_type = pressure_iters_comp
 
        do n=1,nlevs
-          call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
-          call multifab_copy(hgrhs_old(n),hgrhs(n))
+          call multifab_build(S_nodal_old(n), mla%la(n), 1, 0, nodal)
+          call multifab_copy(S_nodal_old(n),S_nodal(n))
        end do
-       call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
+       call make_S_nodal(the_bc_tower,mla,S_nodal,S_cc_new,delta_gamma1_term, &
                        Sbar,div_coeff_nph,dx)
        do n=1,nlevs
-          call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
-          call multifab_div_div_s(hgrhs(n),dt)
+          call multifab_sub_sub(S_nodal(n),S_nodal_old(n))
+          call multifab_div_div_s(S_nodal(n),dt)
        end do
 
     else
 
        proj_type = regular_timestep_comp
 
-       call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
+       call make_S_nodal(the_bc_tower,mla,S_nodal,S_cc_new,delta_gamma1_term, &
                        Sbar,div_coeff_nph,dx)
 
        ! compute delta_p_term = peos_new - peosbar_cart (for RHS of projection)
@@ -1430,7 +1430,7 @@ contains
              call destroy(peosbar_cart(n))
           end do
           
-          call correct_hgrhs(the_bc_tower,mla,rho0_new,hgrhs,div_coeff_nph,dx,dt, &
+          call correct_S_nodal(the_bc_tower,mla,rho0_new,S_nodal,div_coeff_nph,dx,dt, &
                              gamma1bar,p0_new,delta_p_term)
           
           do n=1,nlevs
@@ -1452,18 +1452,18 @@ contains
     call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
+    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,S_nodal)
 
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
     end do
     
-    ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
+    ! If doing pressure iterations then put S_nodal_old into S_nodal to be returned to varden.
     if (init_mode) then
        do n=1,nlevs
-          call multifab_copy(hgrhs(n),hgrhs_old(n))
-          call destroy(hgrhs_old(n))
+          call multifab_copy(S_nodal(n),S_nodal_old(n))
+          call destroy(S_nodal_old(n))
        end do
     end if
 

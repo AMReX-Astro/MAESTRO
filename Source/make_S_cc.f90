@@ -22,7 +22,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S_cc(Source,delta_gamma1_term,delta_gamma1, &
+  subroutine make_S_cc(S_cc,delta_gamma1_term,delta_gamma1, &
                        state,u, &
                        normal, &
                        rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
@@ -39,7 +39,7 @@ contains
     use geometry, only: spherical, nr_fine, dr
     use fill_3d_module, only : put_1d_array_on_cart
 
-    type(multifab) , intent(inout) :: Source(:)
+    type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: delta_gamma1_term(:)
     type(multifab) , intent(inout) :: delta_gamma1(:)
     type(multifab) , intent(in   ) :: state(:)
@@ -123,7 +123,7 @@ contains
     endif
 
 
-    ng_sr = nghost(Source(1))
+    ng_sr = nghost(S_cc(1))
     ng_dt = nghost(delta_gamma1_term(1))
     ng_dg = nghost(delta_gamma1(1))
     ng_s  = nghost(state(1))
@@ -138,7 +138,7 @@ contains
        lo(:) = 1; hi(:) = 1
        
        do i = 1, nfabs(state(n))
-          srcp => dataptr(Source(n), i)
+          srcp => dataptr(S_cc(n), i)
           dgtp     => dataptr(delta_gamma1_term(n), i)
           dgp    => dataptr(delta_gamma1(n), i)
           sp     => dataptr(state(n), i)
@@ -192,11 +192,11 @@ contains
     enddo
 
     ! restrict data (has no ghost cells)
-    call ml_restrict_and_fill(nlevs,Source,mla%mba%rr,the_bc_level, &
+    call ml_restrict_and_fill(nlevs,S_cc,mla%mba%rr,the_bc_level, &
                               icomp=1, &
                               bcomp=foextrap_comp, &
                               nc=1, &
-                              ng=Source(1)%ng)
+                              ng=S_cc(1)%ng)
 
     ! restrict data (has no ghost cells)
     call ml_restrict_and_fill(nlevs,delta_gamma1_term,mla%mba%rr,the_bc_level, &
@@ -267,7 +267,7 @@ contains
   end subroutine make_S_cc
 
   subroutine make_S_cc_cart(dm, n, lo, hi, &
-                            Source, srlo, &
+                            S_cc, srlo, &
                             delta_gamma1_term, dtlo, &
                             delta_gamma1, dglo, &
                             s, slo, &
@@ -291,7 +291,7 @@ contains
     integer         , intent(in   ) :: slo(4), ulo(4), rwlo(4)
     integer         , intent(in   ) :: hnlo(4), helo(4), thlo(4)
 
-    real (kind=dp_t), intent(  out) ::            Source(srlo(1): ,srlo(2): ,srlo(3): )
+    real (kind=dp_t), intent(  out) ::              S_cc(srlo(1): ,srlo(2): ,srlo(3): )
     real (kind=dp_t), intent(  out) :: delta_gamma1_term(dtlo(1): ,dtlo(2): ,dtlo(3): )
     real (kind=dp_t), intent(  out) ::      delta_gamma1(dglo(1): ,dglo(2): ,dglo(3): )
     real (kind=dp_t), intent(in   ) ::                 s( slo(1): , slo(2): , slo(3): , slo(4): )
@@ -311,7 +311,7 @@ contains
     integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
-    Source = zero
+    S_cc = zero
     r = -1
     
     !$OMP PARALLEL DO PRIVATE(i,j,k,r,comp,sigma,xi_term,pres_term,gradp0,eos_state,pt_index)
@@ -341,7 +341,7 @@ contains
                      eos_state%dpdX(comp)*rho_omegadot(i,j,k,comp)/eos_state%rho
              enddo
 
-             Source(i,j,k) = (sigma/eos_state%rho) * &
+             S_cc(i,j,k) = (sigma/eos_state%rho) * &
                   ( rho_Hext(i,j,k) + rho_Hnuc(i,j,k) + thermal(i,j,k) ) &
                   + sigma*xi_term &
                   + pres_term/(eos_state%rho*eos_state%dpdr)
@@ -380,7 +380,7 @@ contains
 
   end subroutine make_S_cc_cart
 
-  subroutine make_S_cc_3d_sphr(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
+  subroutine make_S_cc_3d_sphr(lo,hi,S_cc,ng_sr,dg1_term,ng_dt,delta_gamma1, &
                                ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
                                rho_Hext,ng_he,thermal,ng_th, &
                                gradp0_cart,ng_gp,p0_cart,ng_p0, &
@@ -398,7 +398,7 @@ contains
                                        ng_rw,ng_he, &
                                        ng_hn,ng_th,ng_gp,ng_p0,ng_g1,ng_n
 
-    real (kind=dp_t), intent(  out) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(  out) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(  out) ::       dg1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
     real (kind=dp_t), intent(  out) ::   delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:) 
     real (kind=dp_t), intent(in   ) ::              s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
@@ -421,7 +421,7 @@ contains
 
     real(kind=dp_t) :: Ut_dot_er
 
-    Source = zero
+    S_cc = zero
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,comp,sigma,xi_term,pres_term,eos_state,pt_index,Ut_dot_er)
     do k = lo(3), hi(3)
@@ -450,7 +450,7 @@ contains
                      eos_state%dpdX(comp)*rho_omegadot(i,j,k,comp)/eos_state%rho
              enddo
 
-             Source(i,j,k) = (sigma/eos_state%rho) * &
+             S_cc(i,j,k) = (sigma/eos_state%rho) * &
                   ( rho_Hext(i,j,k) + rho_Hnuc(i,j,k) + thermal(i,j,k) ) &
                   + sigma*xi_term &
                   + pres_term/(eos_state%rho*eos_state%dpdr)

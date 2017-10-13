@@ -7,7 +7,7 @@
 ! the effect of replacing \Gamma_1 by {\Gamma_1}_0 in the constraint
 ! equation (see paper III).
 
-module hgrhs_module
+module make_S_nodal_module
 
   use bl_types
   use multifab_module
@@ -16,13 +16,13 @@ module hgrhs_module
 
   private
 
-  public :: make_hgrhs, correct_hgrhs
+  public :: make_S_nodal, correct_S_nodal
 
 contains
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine make_hgrhs(the_bc_tower,mla,hgrhs,Source,delta_gamma1_term,Sbar, &
+  subroutine make_S_nodal(the_bc_tower,mla,S_nodal,S_cc,delta_gamma1_term,Sbar, &
                         div_coeff,dx)
 
     use define_bc_module
@@ -36,8 +36,8 @@ contains
     
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
-    type(multifab) , intent(inout) :: hgrhs(:)
-    type(multifab) , intent(in   ) :: Source(:)
+    type(multifab) , intent(inout) :: S_nodal(:)
+    type(multifab) , intent(in   ) :: S_cc(:)
     type(multifab) , intent(in   ) :: delta_gamma1_term(:)
     real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
@@ -55,14 +55,14 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "make_hgrhs")
+    call build(bpt, "make_S_nodal")
 
     dm = mla%dim
     nlevs = mla%nlevel
 
     if (spherical .eq. 1) then
        do n = 1, nlevs
-          la = get_layout(Source(n))
+          la = get_layout(S_cc(n))
           call multifab_build(Sbar_cart(n),     la,1,0)
           call multifab_build(div_coeff_cart(n),la,1,0)
           call setval(Sbar_cart(n),     ZERO,all=.true.)
@@ -76,24 +76,24 @@ contains
     end if
 
     do n = 1, nlevs
-       call multifab_build(rhs_cc(n),get_layout(Source(n)),1,1)
+       call multifab_build(rhs_cc(n),get_layout(S_cc(n)),1,1)
        call setval(rhs_cc(n),ZERO,all=.true.)
     end do
 
     ng_rh = nghost(rhs_cc(1))
-    ng_sr = nghost(Source(1))
+    ng_sr = nghost(S_cc(1))
     ng_dg = nghost(delta_gamma1_term(1))
     ng_dc = nghost(div_coeff_cart(1))
     ng_sb = nghost(Sbar_cart(1))
-    ng_hg = nghost(hgrhs(1))
+    ng_hg = nghost(S_nodal(1))
 
     do n = 1, nlevs
-       do i = 1, nfabs(Source(n))
+       do i = 1, nfabs(S_cc(n))
           rp => dataptr(rhs_cc(n), i)
-          sp => dataptr(Source(n), i)
+          sp => dataptr(S_cc(n), i)
           gp => dataptr(delta_gamma1_term(n), i)
-          lo =  lwb(get_box(Source(n), i))
-          hi =  upb(get_box(Source(n), i))
+          lo =  lwb(get_box(S_cc(n), i))
+          hi =  upb(get_box(S_cc(n), i))
           select case (dm)
           case (1)
              call make_rhscc_1d(lo,hi,rp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
@@ -124,19 +124,19 @@ contains
                               ng=rhs_cc(1)%ng)
 
     do n=1,nlevs
-       call setval(hgrhs(n),ZERO,all=.true.)
-       do i = 1, nfabs(Source(n))
-          hp => dataptr(hgrhs(n), i)
+       call setval(S_nodal(n),ZERO,all=.true.)
+       do i = 1, nfabs(S_cc(n))
+          hp => dataptr(S_nodal(n), i)
           rp => dataptr(rhs_cc(n), i)
-          lo =  lwb(get_box(Source(n), i))
-          hi =  upb(get_box(Source(n), i))
+          lo =  lwb(get_box(S_cc(n), i))
+          hi =  upb(get_box(S_cc(n), i))
           select case (dm)
           case (1)
-             call make_hgrhs_1d(lo,hi,hp(:,1,1,1),ng_hg,rp(:,1,1,1),ng_rh)
+             call make_S_nodal_1d(lo,hi,hp(:,1,1,1),ng_hg,rp(:,1,1,1),ng_rh)
           case (2)
-             call make_hgrhs_2d(lo,hi,hp(:,:,1,1),ng_hg,rp(:,:,1,1),ng_rh)
+             call make_S_nodal_2d(lo,hi,hp(:,:,1,1),ng_hg,rp(:,:,1,1),ng_rh)
           case (3)
-             call make_hgrhs_3d(lo,hi,hp(:,:,:,1),ng_hg,rp(:,:,:,1),ng_rh)
+             call make_S_nodal_3d(lo,hi,hp(:,:,:,1),ng_hg,rp(:,:,:,1),ng_rh)
           end select
        end do
     end do ! end loop over levels
@@ -151,14 +151,14 @@ contains
 
     call destroy(bpt)
     
-  end subroutine make_hgrhs
+  end subroutine make_S_nodal
   
-  subroutine make_rhscc_1d(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
+  subroutine make_rhscc_1d(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
                            div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
     real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -167,17 +167,17 @@ contains
     integer :: i
     
     do i = lo(1),hi(1)
-       rhs_cc(i) = div_coeff(i) * (Source(i) - Sbar(i) + delta_gamma1_term(i))
+       rhs_cc(i) = div_coeff(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
     end do
     
   end subroutine make_rhscc_1d
   
-  subroutine make_rhscc_2d(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
+  subroutine make_rhscc_2d(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
                            div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
     real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -187,18 +187,18 @@ contains
     
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + delta_gamma1_term(i,j))
+          rhs_cc(i,j) = div_coeff(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
        end do
     end do
     
   end subroutine make_rhscc_2d
   
-  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                                 Sbar,div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
     real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -210,7 +210,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k) + &
+             rhs_cc(i,j,k) = div_coeff(k) * (S_cc(i,j,k) - Sbar(k) + &
                   delta_gamma1_term(i,j,k))
           end do
        end do
@@ -219,12 +219,12 @@ contains
     
   end subroutine make_rhscc_3d_cart
    
-  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                                 Sbar_cart,ng_sb,div_coeff_cart,ng_dc)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_sb, ng_dc
     real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
-    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar_cart(lo(1)-ng_sb:,lo(2)-ng_sb:,lo(3)-ng_sb:)
     real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
@@ -236,7 +236,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k) + &
+             rhs_cc(i,j,k) = div_coeff_cart(i,j,k) * (S_cc(i,j,k) - Sbar_cart(i,j,k) + &
                   delta_gamma1_term(i,j,k))
              
           end do
@@ -246,7 +246,7 @@ contains
     
   end subroutine make_rhscc_3d_sphr
   
-  subroutine make_hgrhs_1d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+  subroutine make_S_nodal_1d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
 
     use bl_constants_module
 
@@ -261,9 +261,9 @@ contains
        rhs(i) = HALF * ( rhs_cc(i) + rhs_cc(i-1) )
     end do
     
-  end subroutine make_hgrhs_1d
+  end subroutine make_S_nodal_1d
   
-  subroutine make_hgrhs_2d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+  subroutine make_S_nodal_2d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
 
     use bl_constants_module
 
@@ -281,9 +281,9 @@ contains
        end do
     end do
     
-  end subroutine make_hgrhs_2d
+  end subroutine make_S_nodal_2d
   
-  subroutine make_hgrhs_3d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+  subroutine make_S_nodal_3d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
 
     use bl_constants_module
 
@@ -307,9 +307,9 @@ contains
     end do
     !$OMP END PARALLEL DO
     
-  end subroutine make_hgrhs_3d
+  end subroutine make_S_nodal_3d
 
-  subroutine correct_hgrhs(the_bc_tower,mla,rho0,hgrhs,div_coeff,dx,dt,gamma1bar,p0, &
+  subroutine correct_S_nodal(the_bc_tower,mla,rho0,S_nodal,div_coeff,dx,dt,gamma1bar,p0, &
                            delta_p_term)
 
     use define_bc_module
@@ -324,7 +324,7 @@ contains
     
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
-    type(multifab) , intent(inout) :: hgrhs(:)
+    type(multifab) , intent(inout) :: S_nodal(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:), dt
@@ -349,7 +349,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "correct_hgrhs")
+    call build(bpt, "correct_S_nodal")
     
     dm = mla%dim
     nlevs = mla%nlevel
@@ -453,7 +453,7 @@ contains
     
     ! add correction term
     do n=1,nlevs
-       call multifab_plus_plus_c(hgrhs(n),1,correction_nodal(n),1,1)
+       call multifab_plus_plus_c(S_nodal(n),1,correction_nodal(n),1,1)
     end do
 
     do n = 1, nlevs
@@ -469,7 +469,7 @@ contains
 
     call destroy(bpt)
     
-  end subroutine correct_hgrhs
+  end subroutine correct_S_nodal
   
   subroutine create_correction_cc_1d(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
                                      div_coeff,gamma1bar,p0,dt)
@@ -669,4 +669,4 @@ contains
     
   end subroutine create_correction_nodal_3d
   
-end module hgrhs_module
+end module make_S_nodal_module

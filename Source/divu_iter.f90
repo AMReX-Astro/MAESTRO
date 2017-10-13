@@ -20,20 +20,20 @@ module divu_iter_module
 contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
-                       S_cc,normal,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
+                       S_cc,normal,S_nodal,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
                        tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
     use variables, only: nscal, foextrap_comp
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state, &
-         init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
+                             init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
     use geometry, only: spherical, nr_fine, nlevs_radial
     use proj_parameters, only: divu_iters_comp
     use react_state_module
     use make_explicit_thermal_module
     use make_S_cc_module
     use average_module
-    use hgrhs_module
+    use make_S_nodal_module
     use fill_3d_module
     use hgproject_module
     use estdt_module
@@ -50,7 +50,7 @@ contains
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: normal(:)
-    type(multifab) , intent(inout) :: hgrhs(:)
+    type(multifab) , intent(inout) :: S_nodal(:)
     type(multifab) , intent(in   ) :: dSdt(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
@@ -172,7 +172,7 @@ contains
     
     ! This needs to be a separate loop so Sbar is fully defined before 
     ! we get here.
-    call make_hgrhs(the_bc_tower,mla,hgrhs,S_cc,delta_gamma1_term, &
+    call make_S_nodal(the_bc_tower,mla,S_nodal,S_cc,delta_gamma1_term, &
                     Sbar,div_coeff_old,dx)
     
     do n=1,nlevs
@@ -223,7 +223,7 @@ contains
 
 
     call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                   the_bc_tower,div_coeff_3d,hgrhs,eps_divu)
+                   the_bc_tower,div_coeff_3d,S_nodal,eps_divu)
     
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
