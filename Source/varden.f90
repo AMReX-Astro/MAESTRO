@@ -70,7 +70,6 @@ subroutine varden()
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
   type(multifab), allocatable :: S_nodal(:)
-  type(multifab), allocatable :: gamma1(:)
 
   !!!!!!!!!!!!!
   ! these are pointers because they need to be allocated and built within 
@@ -409,19 +408,7 @@ subroutine varden()
      ! Do an initial projection with omegadot = 0 and rho_Hext = 0
      !----------------------------------------------------------------------
 
-     allocate(gamma1(nlevs))
-
-     do n=1,nlevs
-        call multifab_build(gamma1(n), mla%la(n), 1, 0)
-     end do
-
-     call make_gamma(mla,gamma1,sold,p0_old,dx)
-
-     call average(mla,gamma1,gamma1bar,dx,1)
-     
-     do n=1,nlevs
-        call destroy(gamma1(n))
-     end do
+     call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
 
      call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
@@ -1062,23 +1049,10 @@ subroutine varden()
            call average(mla,sold,tempbar,dx,temp_comp)
 
            ! gamma1bar needs to be recomputed
-           if (allocated(gamma1)) deallocate(gamma1)
-           allocate(gamma1(nlevs))
-           
-           do n=1,nlevs
-              call multifab_build(gamma1(n), mla%la(n), 1, 0)
-           end do
-           
-           call make_gamma(mla,gamma1,sold,p0_old,dx)
-           call average(mla,gamma1,gamma1bar,dx,1)
-           
-           do n=1,nlevs
-              call destroy(gamma1(n))
-           end do
+           call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
 
            ! div_coeff_old needs to be recomputed
            call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
-
 
            ! redistribute the particles to their new processor locations
            if (use_particles) call redistribute(particles,mla,dx,prob_lo)

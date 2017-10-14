@@ -49,7 +49,7 @@ contains
     use make_psi_module             , only : make_psi_planar, make_psi_spherical
     use fill_3d_module              , only : put_1d_array_on_cart, make_w0mac, make_s0mac
     use cell_to_edge_module         , only : cell_to_edge
-    use make_gamma_module           , only : make_gamma
+    use make_gamma_module           , only : make_gamma1bar
     use rhoh_vs_t_module            , only : makePfromRhoH, makeTfromRhoP, makeTfromRhoH
     use diag_module                 , only : diag
     use sanity_module               , only : sanity_check

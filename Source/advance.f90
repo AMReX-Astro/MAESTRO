@@ -55,7 +55,7 @@ contains
     use make_psi_module             , only : make_psi_planar, make_psi_spherical
     use fill_3d_module              , only : put_1d_array_on_cart, make_w0mac, make_s0mac
     use cell_to_edge_module         , only : cell_to_edge
-    use make_gamma_module           , only : make_gamma
+    use make_gamma_module           , only : make_gamma1bar
     use rhoh_vs_t_module            , only : makePfromRhoH, makeTfromRhoP, makeTfromRhoH
     use diag_module                 , only : diag
     use sanity_module               , only : sanity_check
@@ -136,7 +136,6 @@ contains
     type(multifab) ::           rho_Hnuc1(mla%nlevel)
     type(multifab) ::        div_coeff_3d(mla%nlevel)
     type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
-    type(multifab) ::              gamma1(mla%nlevel)
     type(multifab) ::          etarhoflux(mla%nlevel)
     type(multifab) ::                peos(mla%nlevel)
     type(multifab) ::        peosbar_cart(mla%nlevel)
@@ -589,21 +588,11 @@ contains
           ! compute p0_nph
           p0_nph = HALF*(p0_old+p0_new)
 
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-
           ! compute gamma1bar^{(1)} and store it in gamma1bar_temp1
-          call make_gamma(mla,gamma1,s1,p0_old,dx)
-          call average(mla,gamma1,gamma1bar_temp1,dx,1)
+          call make_gamma1bar(mla,s1,gamma1bar_temp1,p0_old,dx)
 
           ! compute gamma1bar^{(2),*} and store it in gamma1bar_temp2
-          call make_gamma(mla,gamma1,s2,p0_new,dx)
-          call average(mla,gamma1,gamma1bar_temp2,dx,1)
-
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
+          call make_gamma1bar(mla,s2,gamma1bar_temp2,p0_new,dx)
 
           ! compute gamma1bar^{nph,*} and store it in gamma1bar_temp2
           gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
@@ -724,16 +713,7 @@ contains
     ! compute gamma1bar
     if (evolve_base_state) then
 
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-       
-       call make_gamma(mla,gamma1,snew,p0_new,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
-
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
+       call make_gamma1bar(mla,snew,gamma1bar,p0_new,dx)
 
        call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
@@ -1074,17 +1054,8 @@ contains
        else
           p0_nph = HALF*(p0_old+p0_new)
 
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-
           ! compute gamma1bar^{(2)} and store it in gamma1bar_temp2
-          call make_gamma(mla,gamma1,s2,p0_new,dx)
-          call average(mla,gamma1,gamma1bar_temp2,dx,1)
-
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
+          call make_gamma1bar(mla,s2,gamma1bar_temp2,p0_new,dx)
 
           ! compute gamma1bar^{nph} and store it in gamma1bar_temp2
           gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
@@ -1215,19 +1186,10 @@ contains
 
     misc_time_start = parallel_wtime()
 
-    ! compute gamma1bar
     if (evolve_base_state) then
 
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-
-       call make_gamma(mla,gamma1,snew,p0_new,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
-
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
+       ! compute gamma1bar
+       call make_gamma1bar(mla,snew,gamma1bar,p0_new,dx)
 
        !  We used to call this even if evolve_base was false,but we don't need to
        call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)

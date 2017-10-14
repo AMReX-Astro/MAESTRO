@@ -86,7 +86,6 @@ contains
     type(multifab), pointer :: chk_rho_Hext(:)
     type(multifab), pointer :: chk_thermal2(:)
 
-    type(multifab), allocatable :: gamma1(:)
     type(multifab), pointer :: tag_mf(:)
 
     type(layout) :: la
@@ -650,22 +649,9 @@ contains
        ! functionality, so we just set tempbar_init = tempbar
        tempbar_init = tempbar
 
-       ! compute gamma1 (just for use in computing gamma1bar)
-       allocate(gamma1(nlevs))
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-       call make_gamma(mla,gamma1,sold,p0_old,dx)
-
        ! compute gamma1bar
-       call average(mla,gamma1,gamma1bar,dx,1)
+       call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
 
-       ! deallocate gamma1
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
-       deallocate(gamma1)
-     
        ! compute div_coeff_old
        call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
