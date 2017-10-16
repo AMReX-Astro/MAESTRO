@@ -83,6 +83,9 @@ else
   EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
+# we need all the thermodynamics
+FPP_DEFINES += -DEXTRA_THERMO
+
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
