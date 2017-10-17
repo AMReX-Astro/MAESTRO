@@ -132,8 +132,7 @@ contains
     type(multifab) ::              s2star(mla%nlevel)
     type(multifab) ::   delta_gamma1_term(mla%nlevel)
     type(multifab) ::        delta_gamma1(mla%nlevel)
-    type(multifab) ::        div_coeff_3d(mla%nlevel)
-    type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
+    type(multifab) ::      div_coeff_cart(mla%nlevel)
     type(multifab) ::          etarhoflux(mla%nlevel)
     type(multifab) ::        peosbar_cart(mla%nlevel)
     type(multifab) ::        delta_p_term(mla%nlevel)
@@ -151,6 +150,7 @@ contains
     type(multifab) ::                umac(mla%nlevel,mla%dim)
     type(multifab) ::               sedge(mla%nlevel,mla%dim)
     type(multifab) ::               sflux(mla%nlevel,mla%dim)
+    type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
 
     real(kind=dp_t), allocatable ::        grav_cell_nph(:,:)
     real(kind=dp_t), allocatable ::        grav_cell_new(:,:)
@@ -1375,19 +1375,19 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+       call multifab_build(div_coeff_cart(n), mla%la(n), 1, 1)
     end do
        
-    call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
+    call put_1d_array_on_cart(div_coeff_nph,div_coeff_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                   div_coeff_3d,S_nodal)
+                   div_coeff_cart,S_nodal)
 
-    call make_pi_cc(mla,pi,snew,pi_comp,the_bc_tower%bc_tower_array,div_coeff_3d)
+    call make_pi_cc(mla,pi,snew,pi_comp,the_bc_tower%bc_tower_array,div_coeff_cart)
 
     do n=1,nlevs
-       call destroy(div_coeff_3d(n))
+       call destroy(div_coeff_cart(n))
        call destroy(rhohalf(n))
     end do
     

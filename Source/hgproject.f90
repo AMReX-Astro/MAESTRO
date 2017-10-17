@@ -30,7 +30,7 @@ module hgproject_module
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                       div_coeff_3d,divu_rhs,eps_in)
+                       div_coeff_cart,divu_rhs,eps_in)
 
     use bc_module
     use bl_constants_module
@@ -53,7 +53,7 @@ contains
     type(multifab ), intent(inout) :: gpi(:)
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    type(multifab ), intent(in   ) :: div_coeff_3d(:)
+    type(multifab ), intent(in   ) :: div_coeff_cart(:)
 
     type(multifab ), intent(inout), optional :: divu_rhs(:)
     real(dp_t)     , intent(in   ), optional :: eps_in
@@ -139,17 +139,17 @@ contains
 
     do n=1,nlevs
        do d=1,dm
-          call multifab_mult_mult_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
+          call multifab_mult_mult_c(unew(n),d,div_coeff_cart(n),1,1,nghost(div_coeff_cart(n)))
        end do
 
        ! rhohalf = rho/beta_0
-       call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
-                               nghost(div_coeff_3d(n)))
+       call multifab_div_div_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
+                               nghost(div_coeff_cart(n)))
 
        ! rhohalf = rho/beta_0^2
        if (using_alt_energy_fix) then
-          call multifab_div_div_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
-                                  nghost(div_coeff_3d(n)))
+          call multifab_div_div_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
+                                  nghost(div_coeff_cart(n)))
        endif
     end do
 
@@ -174,18 +174,18 @@ contains
 
     if (use_hypre) then 
        if (present(divu_rhs)) then
-          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
                         stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
        else
-          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
                         stencil_type,rel_solver_eps,abs_solver_eps)
        end if
     else
        if (present(divu_rhs)) then
-          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
                             stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
        else
-          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_3d,phi,dx,the_bc_tower, &
+          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
                             stencil_type,rel_solver_eps,abs_solver_eps)
                             
        end if
@@ -199,18 +199,18 @@ contains
 
        ! Convert (beta_0 U) back to U
        do d=1,dm
-          call multifab_div_div_c(unew(n),d,div_coeff_3d(n),1,1,nghost(div_coeff_3d(n)))
+          call multifab_div_div_c(unew(n),d,div_coeff_cart(n),1,1,nghost(div_coeff_cart(n)))
        end do
 
        ! Convert (rhohalf/beta_0)   back to rhohalf
        !  OR     (rhohalf/beta_0^2) back to (rhohalf/beta_0^2)
-       call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
-                                 nghost(div_coeff_3d(n)))
+       call multifab_mult_mult_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
+                                 nghost(div_coeff_cart(n)))
 
        ! Convert (rhohalf/beta_0)   back to rhohalf
        if (using_alt_energy_fix) then
-          call multifab_mult_mult_c(rhohalf(n),1,div_coeff_3d(n),1,1, &
-                                    nghost(div_coeff_3d(n)))
+          call multifab_mult_mult_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
+                                    nghost(div_coeff_cart(n)))
        endif
     end do
 
@@ -218,10 +218,10 @@ contains
        call multifab_build(gphi(n), mla%la(n), dm, 0)
     end do
 
-    call mkgphi(gphi,phi,div_coeff_3d,dx)
+    call mkgphi(gphi,phi,div_coeff_cart,dx)
 
     call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
-                   pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_3d, &
+                   pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_cart, &
                    using_alt_energy_fix)
 
     do n = 1,nlevs
@@ -514,11 +514,11 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine mkgphi(gphi,phi,div_coeff_3d,dx)
+    subroutine mkgphi(gphi,phi,div_coeff_cart,dx)
 
       type(multifab), intent(inout) :: gphi(:)
       type(multifab), intent(in   ) :: phi(:)
-      type(multifab), intent(in   ) :: div_coeff_3d(:)
+      type(multifab), intent(in   ) :: div_coeff_cart(:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
 
       integer :: lo(phi(1)%dim),hi(phi(1)%dim)
@@ -542,7 +542,7 @@ contains
             hi = upb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
-            bp  => dataptr(div_coeff_3d(n),i)
+            bp  => dataptr(div_coeff_cart(n),i)
             select case (dm)
             case (1)
                call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, &
@@ -641,7 +641,7 @@ contains
     ! ******************************************************************************* !
 
     subroutine hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,pi,phi,dt, &
-                         mla,the_bc_level,div_coeff_3d,using_alt_energy_fix)
+                         mla,the_bc_level,div_coeff_cart,using_alt_energy_fix)
 
       use variables, only: foextrap_comp
       use ml_restrict_fill_module
@@ -657,7 +657,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       type(ml_layout), intent(in   ) :: mla
       type(bc_level) , intent(in   ) :: the_bc_level(:)
-      type(multifab) , intent(in   ) :: div_coeff_3d(:)
+      type(multifab) , intent(in   ) :: div_coeff_cart(:)
       logical        , intent(in   ) :: using_alt_energy_fix
 
       ! local
@@ -685,7 +685,7 @@ contains
       ng_rh = nghost(rhohalf(1))
       ng_p  = nghost(pi(1))
       ng_h  = nghost(phi(1))
-      ng_d  = nghost(div_coeff_3d(1))
+      ng_d  = nghost(div_coeff_cart(1))
 
       do n = 1, nlevs
 
@@ -699,7 +699,7 @@ contains
             rp  => dataptr(rhohalf(n),i)
             pp  => dataptr(pi(n),i)
             ph  => dataptr(phi(n),i)
-            dp  => dataptr(div_coeff_3d(n),i)
+            dp  => dataptr(div_coeff_cart(n),i)
             select case (dm)
             case (1)
                call hg_update_1d(proj_type, upn(:,1,1,1), ng_un, uon(:,1,1,1), ng_uo, &

@@ -76,7 +76,7 @@ contains
     type(multifab) :: rho_omegadot(mla%nlevel)
     type(multifab) :: rho_Hnuc(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
-    type(multifab) :: div_coeff_3d(mla%nlevel)
+    type(multifab) :: div_coeff_cart(mla%nlevel)
     type(multifab) :: Tcoeff(mla%nlevel)
     type(multifab) :: hcoeff(mla%nlevel)
     type(multifab) :: Xkcoeff(mla%nlevel)
@@ -215,18 +215,18 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+       call multifab_build(div_coeff_cart(n), mla%la(n), 1, 1)
     end do
        
-    call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+    call put_1d_array_on_cart(div_coeff_old,div_coeff_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
 
     call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                   the_bc_tower,div_coeff_3d,S_nodal,eps_divu)
+                   the_bc_tower,div_coeff_cart,S_nodal,eps_divu)
     
     do n=1,nlevs
-       call destroy(div_coeff_3d(n))
+       call destroy(div_coeff_cart(n))
        call destroy(rhohalf(n))
     end do
 
