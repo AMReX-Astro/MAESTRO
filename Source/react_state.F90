@@ -943,8 +943,7 @@ contains
       !$acc end data
       
       call cpu_time(full_end)
-      print *, 'burner loop time (s): ', loop_end-loop_start
-      print *, 'burner loop time + data (s): ', full_end-full_start
+
    end subroutine burner_loop_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1156,7 +1155,5 @@ contains
       !$acc end data
       
       call cpu_time(full_end)
-      print *, 'burner loop time (s): ', loop_end-loop_start
-      print *, 'burner loop time + data (s): ', full_end-full_start
    end subroutine burner_loop_3d_sph
 end module react_state_module
