@@ -23,7 +23,9 @@ zhi_boundary_type = "periodic"
 
   xin_file   = "xin.rprox"
   run_prefix = "react_rprox_"
-  
+
   base_cutoff_density = 1.e-5
+
+  integrate_temperature = F
 
 /
