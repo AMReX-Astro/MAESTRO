@@ -1,13 +1,15 @@
-changes since last merge with master:
+17.10
+
+ * Major changes
 
   -- we now get our reaction netwroks from the Microphysics repo (part
      of StarKiller).  This allows for a much wider range of networks,
-     and enables the same microphysics as used in Castro.  The interfaces
-     to the burner were changed accordingly.  The SDC reaction stuff does
-     not work at the moment.
+     and enables the same microphysics as used in Castro.  The
+     interfaces to the burner were changed accordingly.  The SDC
+     reaction stuff does not work at the moment.
 
-  -- the README.md now describes the process to become a
-     "core developer" of Maestro, and what this means.
+  -- the README.md now describes the process to become a "core
+     developer" of Maestro, and what this means.
 
 
 17.08
