@@ -6,9 +6,10 @@ COMP := gfortran
 
 MKVERBOSE := t
 
+SDC    :=
 
 # location of top-level MAESTRO directory
-MAESTRO_TOP_DIR = ../../..
+MAESTRO_TOP_DIR = ../../../..
 
 
 # EOS and network
@@ -23,6 +24,6 @@ MODEL_SOURCES := init_1d.f90
 MODEL_SOURCES += urca_composition.f90
 
 
-include ../GInitModels.mak
+include ../../GInitModels.mak
 
 
