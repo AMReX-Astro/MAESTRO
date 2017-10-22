@@ -265,7 +265,9 @@ BLAS and LINPACK, so these are compiled in from {\tt Util/BLAS}  and
 {\tt Util/LINPACK}.  
 
 You can instead link in a system-wide optimized BLAS library by setting
-{\tt SYSTEM\_BLAS := t}\otherindex{{\tt GNUmakefile}}{BLAS} in the {\tt GNUmakefile}.  This adds {\tt -lblas}
+{\tt SYSTEM\_BLAS := t}\otherindex{{\tt GNUmakefile}}{BLAS} in the {\tt GNUmakefile}.  This will
+use the library specified in \otherindex{{\tt GNUmakefile}}{BLAS\_LIBRARY} {\tt BLAS\_LIBRARY}
+(defaulting to {\tt -lopenblas})
 to the link line, and assumes that the library is in your path.  Note
 that for some systems, you should have the static BLAS libraries 
 available. 
@@ -276,7 +278,7 @@ From {\tt MAESTRO/}, we add
 \item {\tt MAESTRO/constants}
 \item {\tt MAESTRO/Source}
 \end{itemize}
-(although see the unit tests section below regarding {\tt MAESTRO/Source}.
+(although see the unit tests section below regarding {\tt MAESTRO/Source}.)
 
 \noindent Finally, any extra directories listed in the {\tt EXTRA\_DIR}
 variable are included.
