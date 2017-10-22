@@ -1,5 +1,8 @@
 # A set of useful macros for putting together a MAESTRO application.
 
+# system blas
+BLAS_LIBRARY ?= -lopenblas
+
 # check the version number -- this comes from the GNU Make cookbook
 NEED := 3.81
 OK := $(filter $(NEED),$(firstword $(sort $(MAKE_VERSION) $(NEED))))
@@ -121,6 +124,9 @@ else
   MICROPHYS_CORE += $(NETWORK_TOP_DIR) $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
 endif
 
+ifdef SYSTEM_BLAS
+  libraries += $(BLAS_LIBRARY)
+endif
 
 # are we using the stellar conductivity?
 ifeq ($(findstring stellar, $(CONDUCTIVITY_DIR)), stellar)
