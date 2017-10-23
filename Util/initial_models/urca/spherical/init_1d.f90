@@ -63,7 +63,11 @@ program init_1d
 
   real (kind=dp_t), dimension(nspec) :: xn
 
-  real (kind=dp_t), save :: low_density_cutoff, temp_fluff, smallx, dens_conv_zone, M_conv_zone
+  real (kind=dp_t), save :: low_density_cutoff, smallx, dens_conv_zone, M_conv_zone
+
+  real (kind=dp_t), save :: temp_before_fluff, temp_fluff
+
+  character (len=128) :: fluff_type = "continuous"
 
   logical :: isentropic
 
@@ -79,6 +83,7 @@ program init_1d
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
        xmin, xmax, &
+       fluff_type, &
        c12_in, c12_out, o16_in, o16_out, &
        ne23_in, ne23_out, na23_in, na23_out, &
        urca_23_dens, urca_shell_type, shell_atan_kappa, &
@@ -130,6 +135,9 @@ program init_1d
   read(unit=11, nml=params)
   close(unit=11)
 
+  ! Initialize the temperature interior to fluff
+  ! (used to calculate fluff temperature for various values of fluff_type)
+  temp_before_fluff = temp_fluff
 
   ! initialize the EOS and network
 
@@ -226,8 +234,7 @@ program init_1d
 
               p_want = model_hse(i-1,ipres) + &
                    delx*0.5_dp_t*(dens_zone + model_hse(i-1,idens))*g_zone
-         
-           
+
               ! now we have two functions to zero:
               !   A = p_want - p(rho,T)
               !   B = entropy_want - s(rho,T)
@@ -275,9 +282,13 @@ program init_1d
               if (dens_zone < low_density_cutoff) then
 
                  i_fluff = i
-                 
+
                  dens_zone = low_density_cutoff
-                 temp_zone = temp_fluff
+
+                 temp_before_fluff = model_hse(i-1,itemp)
+
+                 call get_fluff_temperature(temp_zone, temp_fluff, temp_before_fluff, fluff_type)
+
                  converged_hse = .TRUE.
                  fluff = .TRUE.
                  exit
@@ -336,7 +347,11 @@ program init_1d
                  i_fluff = i
                  
                  dens_zone = low_density_cutoff
-                 temp_zone = temp_fluff
+
+                 temp_before_fluff = model_hse(i-1,itemp)
+
+                 call get_fluff_temperature(temp_zone, temp_fluff, temp_before_fluff, fluff_type)
+
                  converged_hse = .TRUE.
                  fluff = .TRUE.
                  exit
@@ -360,13 +375,15 @@ program init_1d
         endif
 
         if (temp_zone < temp_fluff) then
-           temp_zone = temp_fluff
+           if (fluff_type .eq. "constant") then
+              call get_fluff_temperature(temp_zone, temp_fluff, temp_before_fluff, fluff_type)
+           endif
            isentropic = .false.
         endif
 
      else
         dens_zone = low_density_cutoff
-        temp_zone = temp_fluff
+        call get_fluff_temperature(temp_zone, temp_fluff, temp_before_fluff, fluff_type)
      endif
 
 
@@ -468,3 +485,30 @@ program init_1d
   close (unit=50)
 
 end program init_1d
+
+
+subroutine get_fluff_temperature(temp, temp_fluff, temp_previous, fluff_type)
+
+  ! There are 2 kinds of fluff temperature handling:
+  ! 1) fluff_type = "constant" : fluff is at the temperature temp_fluff in the inputs
+  ! 2) fluff_type = "continuous" : fluff is at the same temperature as the material
+  !                                immediately interior to the fluff.
+
+  use bl_types, only: dp_t
+  use bl_error_module
+
+  implicit none
+
+  real (kind=dp_t), intent(out)   :: temp
+  real (kind=dp_t), intent(in)    :: temp_fluff, temp_previous
+  character (len=128), intent(in) :: fluff_type
+
+  if (fluff_type .eq. "constant") then
+     temp = temp_fluff
+  else if (fluff_type .eq. "continuous") then
+     temp = temp_previous
+  else
+     call bl_error("ERROR: invalid fluff_type")
+  end if
+
+end subroutine get_fluff_temperature
