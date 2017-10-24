@@ -53,9 +53,9 @@ program init_1d
 
   real (kind=dp_t) :: g_zone
 
-  real (kind=dp_t), parameter :: TOL = 1.e-11
+  real (kind=dp_t) :: TOL = 1.e-11
 
-  integer, parameter :: MAX_ITER = 1000
+  integer :: MAX_ITER = 1000
 
   integer :: iter
 
@@ -84,7 +84,7 @@ program init_1d
 
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
-       test_hse_convergence, &
+       test_hse_convergence, TOL, MAX_ITER, &
        xmin, xmax, &
        fluff_type, &
        c12_in, c12_out, o16_in, o16_out, &
