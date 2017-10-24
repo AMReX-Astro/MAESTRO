@@ -79,13 +79,14 @@ contains
     xn_in(io16) = o16_in
     xn_in(ine23) = ne23_in
     xn_in(ina23) = na23_in
-    
+
     xn_out(:)    = 0.0d0
     xn_out(ic12) = c12_out
     xn_out(io16) = o16_out
     xn_out(ine23) = ne23_out
-    xn_out(ina23) = na23_out    
+    xn_out(ina23) = na23_out
   end subroutine init_urca_composition
+
 
   subroutine set_urca_composition(dens, xn)
 
@@ -94,7 +95,7 @@ contains
     ! "jump": impose sharp species discontinuity
     ! "atan": use arctan to smooth composition profile
     use bl_error_module
-    use bl_types
+    use bl_types, only: dp_t
     use network
 
     real (kind=dp_t), intent(in) :: dens
@@ -107,8 +108,27 @@ contains
     else
        call bl_error("ERROR: invalid urca_shell_type")
     end if
+
+    ! Renormalize species
+    call renormalize_species(xn)
+
   end subroutine set_urca_composition
-  
+
+
+  subroutine renormalize_species(xn)
+
+    ! Renormalize the mass fractions so they sum to 1
+    use bl_types, only: dp_t
+
+    real (kind=dp_t) :: xn(nspec)
+    real (kind=dp_t) :: sumx
+
+    sumx = sum(xn)
+    xn(:) = xn(:)/sumx
+
+  end subroutine renormalize_species
+
+
   subroutine composition_jump(rho, shell_rho, xn, xn_left, xn_right)
     use bl_types
     use bl_constants_module, only: HALF
@@ -127,8 +147,9 @@ contains
     end if
   end subroutine composition_jump
 
+
   subroutine composition_atan(rho, shell_rho, xn, xn_left, xn_right, &
-                              shell_atan_kappa)    
+                              shell_atan_kappa)
     use bl_types
     use bl_constants_module, only: TWO, HALF, M_PI
     use network
@@ -140,7 +161,7 @@ contains
 
     B = HALF * (xn_left + xn_right)
     A = xn_right - B
-    
+
     xn = (TWO/M_PI) * A * atan(shell_atan_kappa * (shell_rho - rho)) + B
   end subroutine composition_atan
 
