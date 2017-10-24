@@ -1,4 +1,4 @@
-!! generate an initial model for spherical geometry with a 
+!! generate an initial model for spherical geometry with a
 !! uniform composition.  Here we take a base density and temperature
 !! and use HSE and constant entropy to generate the model.
 
@@ -19,7 +19,7 @@ program init_1d
   integer :: i, j, n
 
   integer :: nx
-      
+
   real (kind=dp_t) :: temp_base, dens_base
   real (kind=dp_t), DIMENSION(nspec) :: xn_base
 
@@ -39,7 +39,7 @@ program init_1d
 
   ! we'll get the composition indices from the network module
   integer, save :: ihe4, ic12, io16, ine20, ine23, ina23, img23
-  
+
   integer :: narg
   character(len=128) :: params_file
 
@@ -53,9 +53,9 @@ program init_1d
 
   real (kind=dp_t) :: g_zone
 
-  real (kind=dp_t), parameter :: TOL = 1.e-10
+  real (kind=dp_t), parameter :: TOL = 1.e-11
 
-  integer, parameter :: MAX_ITER = 250
+  integer, parameter :: MAX_ITER = 1000
 
   integer :: iter
 
@@ -64,6 +64,8 @@ program init_1d
   real (kind=dp_t), dimension(nspec) :: xn
 
   real (kind=dp_t), save :: low_density_cutoff, smallx, dens_conv_zone, M_conv_zone
+
+  logical :: test_hse_convergence = .true.
 
   real (kind=dp_t), save :: temp_before_fluff, temp_fluff
 
@@ -82,13 +84,14 @@ program init_1d
 
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
+       test_hse_convergence, &
        xmin, xmax, &
        fluff_type, &
        c12_in, c12_out, o16_in, o16_out, &
        ne23_in, ne23_out, na23_in, na23_out, &
        urca_23_dens, urca_shell_type, shell_atan_kappa, &
        prefix
-  
+
 
   ! determine if we specified a runtime parameters file or use the default
   narg = command_argument_count()
@@ -110,7 +113,7 @@ program init_1d
 
   dens_base = 2.6d9
   temp_base = 6.d8
-     
+
   dens_conv_zone = -1.d0
   M_conv_zone = 2.0d0
 
@@ -172,7 +175,7 @@ program init_1d
      xznr(i) = xmin + (dble(i))*dCoord
      xzn_hse(i) = 0.5_dp_t*(xznl(i) + xznr(i))
   enddo
-  
+
   fluff = .false.
 
   ! call the EOS one more time for this zone and then go on to the next
@@ -181,7 +184,7 @@ program init_1d
   call set_urca_composition(dens_base, xn_base)
   eos_state%xn(:) = xn_base(:)
 
-  ! (t, rho) -> (p, s)    
+  ! (t, rho) -> (p, s)
   call eos(eos_input_rt, eos_state)
 
   ! make the initial guess be completely uniform
@@ -240,36 +243,36 @@ program init_1d
               !   B = entropy_want - s(rho,T)
               ! We use a two dimensional Taylor expansion and find the deltas
               ! for both density and temperature
-              
+
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
               call set_urca_composition(dens_zone, xn)
               eos_state%xn(:) = xn(:)
-              
-              ! (t, rho) -> (p, s)    
+
+              ! (t, rho) -> (p, s)
               call eos(eos_input_rt, eos_state)
 
               entropy = eos_state%s
               pres_zone = eos_state%p
-              
+
               dpt = eos_state%dpdt
               dpd = eos_state%dpdr
               dst = eos_state%dsdt
               dsd = eos_state%dsdr
-              
+
               A = p_want - pres_zone
               B = entropy_want(i) - entropy
-              
+
               dAdT = -dpt
               dAdrho = 0.5d0*delx*g_zone - dpd
               dBdT = -dst
               dBdrho = -dsd
-              
+
               dtemp = (B - (dBdrho/dAdrho)*A)/ &
                    ((dBdrho/dAdrho)*dAdT - dBdT)
-              
+
               drho = -(A + dAdT*dtemp)/dAdrho
-              
+
               dens_zone = max(0.9_dp_t*dens_zone, &
                               min(dens_zone + drho, 1.1_dp_t*dens_zone))
 
@@ -297,18 +300,48 @@ program init_1d
 
               if (dens_zone < dens_conv_zone .and. isentropic) then
 
-                 i_conv = i                 
+                 i_conv = i
                  isentropic = .false.
-                 
+
               endif
 
+              if (test_hse_convergence) then
 
-              ! if (A < TOL .and. B < ETOL) then
-              if (abs(drho) < TOL*dens_zone .and. abs(dtemp) < TOL*temp_zone) then
-                 converged_hse = .TRUE.
-                 exit
+                 ! Check to see if HSE is satisfied to relative tolerance TOL
+
+                 ! Call EOS again using the new values of dens_zone and temp_zone
+                 ! to get pres_zone ...
+                 eos_state%T     = temp_zone
+                 eos_state%rho   = dens_zone
+                 call set_urca_composition(dens_zone, xn)
+                 eos_state%xn(:) = xn(:)
+
+                 ! (t, rho) -> (p, s)
+                 call eos(eos_input_rt, eos_state)
+
+                 pres_zone = eos_state%p
+
+                 ! Compute dpdr
+                 dpdr = (pres_zone - model_hse(i-1,ipres))/delx
+
+                 ! Compute rho*g
+                 rhog = HALF*(dens_zone + model_hse(i-1,idens))*g_zone
+
+                 if (abs(dpdr - rhog) < TOL*abs(dpdr)) then
+                    converged_hse = .TRUE.
+                    exit
+                 endif
+
+              else
+
+                 ! Check to see if drho and dtemp are under the relative tolerance TOL
+                 if (abs(drho) < TOL*dens_zone .and. abs(dtemp) < TOL*temp_zone) then
+                    converged_hse = .TRUE.
+                    exit
+                 endif
+
               endif
-       
+
            else
 
               ! do isothermal
@@ -322,30 +355,24 @@ program init_1d
               eos_state%rho   = dens_zone
               call set_urca_composition(dens_zone, xn)
               eos_state%xn(:) = xn(:)
-        
+
               ! (t, rho) -> (p, s)
               call eos(eos_input_rt, eos_state)
-        
+
               entropy = eos_state%s
               pres_zone = eos_state%p
-              
+
               dpd = eos_state%dpdr
-              
+
               drho = (p_want - pres_zone)/(dpd - 0.5*delx*g_zone)
-              
+
               dens_zone = max(0.9*dens_zone, &
                    min(dens_zone + drho, 1.1*dens_zone))
-              
-              if (abs(drho) < TOL*dens_zone) then
-                 converged_hse = .TRUE.
-                 exit
-              endif
 
-              
               if (dens_zone < low_density_cutoff) then
 
                  i_fluff = i
-                 
+
                  dens_zone = low_density_cutoff
 
                  temp_before_fluff = model_hse(i-1,itemp)
@@ -355,23 +382,60 @@ program init_1d
                  converged_hse = .TRUE.
                  fluff = .TRUE.
                  exit
-                 
+
               endif
 
-            
+              if (test_hse_convergence) then
+
+                 ! Check to see if HSE is satisfied to relative tolerance TOL
+
+                 ! Call EOS again using the new values of dens_zone and temp_zone
+                 ! to get pres_zone ...
+                 eos_state%T     = temp_zone
+                 eos_state%rho   = dens_zone
+                 call set_urca_composition(dens_zone, xn)
+                 eos_state%xn(:) = xn(:)
+
+                 ! (t, rho) -> (p, s)
+                 call eos(eos_input_rt, eos_state)
+
+                 pres_zone = eos_state%p
+
+                 ! Compute dpdr
+                 dpdr = (pres_zone - model_hse(i-1,ipres))/delx
+
+                 ! Compute rho*g
+                 rhog = HALF*(dens_zone + model_hse(i-1,idens))*g_zone
+
+                 if (abs(dpdr - rhog) < TOL*abs(dpdr)) then
+                    converged_hse = .TRUE.
+                    exit
+                 endif
+
+              else
+
+                 ! Check to see if drho is under the relative tolerance TOL
+                 if (abs(drho) < TOL*dens_zone) then
+                    converged_hse = .TRUE.
+                    exit
+                 endif
+
+              endif
+
            endif
 
         enddo
 
         if (.NOT. converged_hse) then
-           
+
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
-           print *, dens_zone, temp_zone
-           print *, p_want
-           print *, drho
+           print *, 'density (dens_zone): ', dens_zone
+           print *, 'temperature (temp_zone): ', temp_zone
+           print *, 'desired pressure (p_want): ', p_want
+           print *, 'delta density (drho): ', drho
            call bl_error('Error: HSE non-convergence')
-           
+
         endif
 
         if (temp_zone < temp_fluff) then
@@ -393,13 +457,13 @@ program init_1d
      call set_urca_composition(dens_zone, xn)
      eos_state%xn(:) = xn(:)
 
-     ! (t, rho) -> (p, s)    
+     ! (t, rho) -> (p, s)
      call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 
      dpd = eos_state%dpdr
-     
+
      ! update the thermodynamics in this zone
      model_hse(i,idens) = dens_zone
      model_hse(i,itemp) = temp_zone
@@ -409,16 +473,16 @@ program init_1d
      enddo
 
      print *, i, dens_zone, temp_zone
-     
+
      M_enclosed(i) = M_enclosed(i-1) + &
           FOUR3RD*M_PI*(xznr(i) - xznl(i))* &
             (xznr(i)**2 +xznl(i)*xznr(i) + xznl(i)**2)*model_hse(i,idens)
 
      if (M_enclosed(i) > M_conv_zone*M_sun .and. isentropic) then
 
-        i_conv = i                 
+        i_conv = i
         isentropic = .false.
-                 
+
      endif
 
   enddo
@@ -464,7 +528,7 @@ program init_1d
      dpdr = (model_hse(i,ipres) - model_hse(i-1,ipres))/delx
      rhog = HALF*(model_hse(i,idens) + model_hse(i-1,idens))*g_zone
 
-     if (dpdr /= ZERO .and. model_hse(i+1,idens) > low_density_cutoff) then
+     if (dpdr /= ZERO .and. model_hse(i,idens) > low_density_cutoff) then
         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
      endif
 
@@ -479,7 +543,7 @@ program init_1d
 
   print *, 'total mass = ', M_enclosed(i_fluff)/M_sun
   print *, 'convective zone mass = ', M_enclosed(i_conv)/M_sun
-  
+
 
 
   close (unit=50)
@@ -490,7 +554,7 @@ end program init_1d
 subroutine get_fluff_temperature(temp, temp_fluff, temp_previous, fluff_type)
 
   ! There are 2 kinds of fluff temperature handling:
-  ! 1) fluff_type = "constant" : fluff is at the temperature temp_fluff in the inputs
+  ! 1) fluff_type = "constant"   : fluff is at the temperature temp_fluff in the inputs
   ! 2) fluff_type = "continuous" : fluff is at the same temperature as the material
   !                                immediately interior to the fluff.
 
