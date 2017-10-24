@@ -289,6 +289,9 @@ contains
     end do
 
     ! initialize (rho h) and either T or p0 using the EOS
+
+    !$OMP PARALLEL DO PRIVATE(k, j, i, eos_state, pt_index) &
+    !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -314,10 +317,15 @@ contains
           enddo
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
     if (perturb_model) then
 
        ! add an optional perturbation
+
+       !$OMP PARALLEL DO PRIVATE(k, j, i, z, y, x) &
+       !$OMP PRIVATE (dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert) &
+       !$OMP SCHEDULE(DYNAMIC,1)
        do k = lo(3), hi(3)
           z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
@@ -338,6 +346,7 @@ contains
              enddo
           enddo
        enddo
+       !$OMP END PARALLEL DO
 
     end if
 
