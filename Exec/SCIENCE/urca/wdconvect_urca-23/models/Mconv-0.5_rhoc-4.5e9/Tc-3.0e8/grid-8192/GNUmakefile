@@ -1,2 +1,4 @@
+PROBLEM_DIR := $(MAESTRO_HOME)/Exec/SCIENCE/urca/wdconvect_urca-23
+
 all:
-	plot-maestro-model WD_urca_nuc_M-0.5_hot_atan.hse.8192
+	$(PROBLEM_DIR)/plotting/plot-maestro-initial-model WD_urca_nuc_M-0.5_hot_atan.hse.8192
