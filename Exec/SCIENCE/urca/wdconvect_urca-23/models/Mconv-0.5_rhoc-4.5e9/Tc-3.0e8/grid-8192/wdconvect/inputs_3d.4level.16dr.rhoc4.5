@@ -1,26 +1,28 @@
 &PROBIN
 
  ! initial model
- model_file = "WD_urca_nuc_M-0.5_hot_002.hse.5120"
- drdxfac = 5
+ model_file = "WD_urca_nuc_M-0.5_hot_atan.hse.8192"
+ drdxfac = 16
 
- job_name = "128^3, rhoc = 4.5e9"
+ job_name = "4-level, rhoc = 4.5e9"
 
 
  ! gridding and geometry
- max_levs = 2
- n_cellx = 64
- n_celly = 64
- n_cellz = 64
+ max_levs = 4
+ n_cellx = 256
+ n_celly = 256
+ n_cellz = 256
 
- max_grid_size_1 = 16
- max_grid_size_2 = 16
+ !! Max grid size for all levels
+ max_grid_size = 32
 
  regrid_int = 2
  min_eff = 0.8
 
  spherical_in = 1
  dm_in = 3
+
+ octant = F
 
  prob_hi_x = 5.12d8
  prob_hi_y = 5.12d8
@@ -37,7 +39,11 @@
 
  ! stepping
  max_step  = 100000000
- stop_time = 1000.
+
+ !! It should take about 1000 seconds for the model
+ !! to equilibrate, so let's go a bit longer
+ !! for this exploratory simulation.
+ stop_time = 5000.
 
  cflfac = 0.8d0
 
@@ -53,7 +59,7 @@
  do_burning = T
 
  enthalpy_pred_type = 1
- evolve_base_state = F
+ evolve_base_state = T
 
  dpdt_factor = 0.0d0
 
@@ -88,11 +94,11 @@
 
 
  ! I/O
- plot_base_name = "wd_128_rhoc4-5_plt"
+ plot_base_name = "wd_512_rhoc4-5_plt"
  plot_int = -1
  plot_deltat = 5.0d0
 
- check_base_name = "wd_128_rhoc4-5_chk"
+ check_base_name = "wd_512_rhoc4-5_chk"
  chk_int   = 100
 
  single_prec_plotfiles = T
@@ -102,11 +108,20 @@
  plot_h_with_use_tfromp = F
 
 
- ! perturbation
- velpert_amplitude = 1.d3
- velpert_radius = 2.d7
- velpert_scale = 1.d7
- velpert_steep = 1.d5
+ ! velocity perturbation
+ !! Set amplitude to an order of magnitude lower
+ !! than the expected convective velocity in the core.
+ velpert_amplitude = 1.d2
+ !! Set the spatial scale of fourier modes to roughly
+ !! the expected size of central convective zone.
+ velpert_scale     = 2.5d7
+ !! Set the radius of the perturbation to roughly
+ !! the expected size of central convective zone.
+ velpert_radius    = 2.5d7
+ !! Set the steepness distance to the grid width
+ !! on the finest zone. It will take roughly 5 zones
+ !! to damp the velocity perturbation.
+ velpert_steep     = 1.d6
 
  ! VODE Reactions ODE settings
  burner_verbose = .false.
@@ -117,7 +132,7 @@
  jacobian   = 1
 
  retry_burn = .false.
- renormalize_abundances = .false.
+ renormalize_abundances = .true.
 
  rtol_spec = 1.0d-12
  rtol_enuc = 1.0d-9

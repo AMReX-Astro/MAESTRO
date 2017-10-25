@@ -1,14 +1,14 @@
 &PROBIN
 
  ! initial model
- model_file = "WD_urca_nuc_M-0.5_hot_002.hse.5120"
+ model_file = "WD_urca_nuc_M-0.5_hot.hse.5120"
  drdxfac = 5
 
- job_name = "64^3, rhoc = 4.5e9"
+ job_name = "128^3, rhoc = 4.5e9"
 
 
  ! gridding and geometry
- max_levs = 1
+ max_levs = 2
  n_cellx = 64
  n_celly = 64
  n_cellz = 64
@@ -88,11 +88,11 @@
 
 
  ! I/O
- plot_base_name = "wd_64_rhoc4-5_plt"
+ plot_base_name = "wd_128_rhoc4-5_plt"
  plot_int = -1
  plot_deltat = 5.0d0
 
- check_base_name = "wd_64_rhoc4-5_chk"
+ check_base_name = "wd_128_rhoc4-5_chk"
  chk_int   = 100
 
  single_prec_plotfiles = T
