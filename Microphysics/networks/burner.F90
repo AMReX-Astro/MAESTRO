@@ -24,13 +24,22 @@ contains
     !$acc routine seq
     
     use bl_types, only: dp_t
+#ifndef SDC
     use burn_type_module, only: burn_t
+#else
+    use sdc_type_module, only: sdc_t
+#endif
     use actual_burner_module, only: actual_burner
 
     implicit none
-    
+
+#ifndef SDC
     type (burn_t),   intent(in   ) :: state_in
     type (burn_t),   intent(inout) :: state_out
+#else
+    type (sdc_t),   intent(in   )  :: state_in
+    type (sdc_t),   intent(inout)  :: state_out
+#endif
     real(kind=dp_t), intent(in   ) :: dt
     real(kind=dp_t) :: time
 
