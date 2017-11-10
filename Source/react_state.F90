@@ -398,7 +398,7 @@ contains
                state_in % xn(n) = x_in(n)
             enddo
             state_out = state_in
-            call burner(state_in, state_out, dt, rhowdot, rhoH)
+            call burner(state_in, state_out, dt)
             do n = 1, nspec
                x_out(n) = state_out % xn(n)
             enddo
@@ -528,7 +528,7 @@ contains
                      state_in % xn(n) = x_in(n)
                   enddo
                   state_out = state_in
-                  call burner(state_in, state_out, dt, rhowdot, rhoH)
+                  call burner(state_in, state_out, dt)
                   do n = 1, nspec
                      x_out(n) = state_out % xn(n)
                   enddo
@@ -714,7 +714,7 @@ contains
                         state_in % xn(n) = x_in(n)
                      enddo
                      state_out = state_in
-                     call burner(state_in, state_out, dt, rhowdot, rhoH)
+                     call burner(state_in, state_out, dt)
                      do n = 1, nspec
                         x_out(n) = state_out % xn(n)
                      enddo
@@ -882,7 +882,7 @@ contains
                      state_in % xn(n) = x_in(n)
                   enddo
                   state_out = state_in
-                  call burner(state_in, state_out, dt, rhowdot, rhoH)
+                  call burner(state_in, state_out, dt)
                   do n = 1, nspec
                      x_out(n) = state_out % xn(n)
                   enddo
@@ -1074,7 +1074,7 @@ contains
                        x_test > burner_threshold_cutoff)            &
                        )                                            &
                        ) then
-                     call burner(state_in, state_out, ldt, rhowdot, rhoH)
+                     call burner(state_in, state_out, ldt)
                      do n = 1, nspec
                         rhowdot(n) = state_out % rho * &
                              (state_out % xn(n) - state_in % xn(n)) / ldt

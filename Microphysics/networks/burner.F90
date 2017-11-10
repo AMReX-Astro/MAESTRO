@@ -19,12 +19,11 @@ contains
   end subroutine burner_init
 
 
-  subroutine burner(state_in, state_out, dt, rhowdot, rhoH)
+  subroutine burner(state_in, state_out, dt)
 
     !$acc routine seq
     
     use bl_types, only: dp_t
-    use network, only: nspec
     use burn_type_module, only: burn_t
     use actual_burner_module, only: actual_burner
 
@@ -33,9 +32,7 @@ contains
     type (burn_t),   intent(in   ) :: state_in
     type (burn_t),   intent(inout) :: state_out
     real(kind=dp_t), intent(in   ) :: dt
-    real(kind=dp_t), intent(  out) :: rhowdot(nspec), rhoH
     real(kind=dp_t) :: time
-    integer :: n
 
     time = 0.0d0
 
