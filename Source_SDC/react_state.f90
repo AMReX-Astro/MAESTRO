@@ -238,6 +238,7 @@ contains
 
     use bl_constants_module
     use burner_module
+    use sdc_type_module, only: sdc_t
     use variables, only: rho_comp, spec_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -262,6 +263,8 @@ contains
     real (kind = dp_t) :: sdc_rhoX(nspec)
     real (kind = dp_t) :: sdc_rhoh
     real (kind = dp_t) :: p0_in
+
+    type (sdc_t)       :: state_in, state_out
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -295,12 +298,26 @@ contains
             ( ispec_threshold < 0 .or.                  &
             (ispec_threshold > 0 .and.                  &
             x_test > burner_threshold_cutoff ))) then
-          call burner(rhox_in, rhoh_in, dt, rho_out, rhox_out, rhoh_out, &
-                      sdc_rhoX, sdc_rhoh, p0_in)
+
+          state_in % p0  = p0_in
+          state_in % rho = rho_in
+          state_in % y(1:nspec) = rhox_in(1:nspec)
+          state_in % y(nspec+1) = rhoh_in
+          state_in % ydot_a(1:nspec) = sdc_rhoX(1:nspec)
+          state_in % ydot_a(nspec+1) = sdc_rhoh
+
+          call burner(state_in, state_out, dt)
+
+          rho_out  = sum(state_out % y(1:nspec))
+          rhox_out = state_out % y(1:nspec)
+          rhoh_out = state_out % y(nspec+1)
+
        else
+
           rho_out = rho_in + sum(sdc_rhoX(1:nspec))*dt
           rhox_out = rhox_in + sdc_rhoX*dt
           rhoh_out = rhoh_in + sdc_rhoh*dt
+
        endif
 
        ! update the density
@@ -327,6 +344,7 @@ contains
 
     use bl_constants_module
     use burner_module
+    use sdc_type_module, only: sdc_t
     use variables, only: rho_comp, spec_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -353,6 +371,8 @@ contains
     real (kind = dp_t) :: sdc_rhoX(nspec)
     real (kind = dp_t) :: sdc_rhoh
     real (kind = dp_t) :: p0_in
+
+    type (sdc_t)       :: state_in, state_out
 
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
@@ -395,8 +415,20 @@ contains
                   ( ispec_threshold < 0 .or.                  &
                   (ispec_threshold > 0 .and.                  &
                   x_test > burner_threshold_cutoff ))) then
-                call burner(rhox_in, rhoh_in, dt, rho_out, rhox_out, rhoh_out, &
-                            sdc_rhoX, sdc_rhoh, p0_in)
+
+                state_in % p0  = p0_in
+                state_in % rho = rho_in
+                state_in % y(1:nspec) = rhox_in(1:nspec)
+                state_in % y(nspec+1) = rhoh_in
+                state_in % ydot_a(1:nspec) = sdc_rhoX(1:nspec)
+                state_in % ydot_a(nspec+1) = sdc_rhoh
+
+                call burner(state_in, state_out, dt)
+
+                rho_out  = sum(state_out % y(1:nspec))
+                rhox_out = state_out % y(1:nspec)
+                rhoh_out = state_out % y(nspec+1)
+
              else
                 rho_out = rho_in + sum(sdc_rhoX(1:nspec))*dt
                 rhox_out = rhox_in + sdc_rhoX*dt
@@ -428,6 +460,7 @@ contains
 
     use bl_constants_module
     use burner_module
+    use sdc_type_module, only: sdc_t
     use variables, only: rho_comp, spec_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -455,6 +488,8 @@ contains
     real (kind = dp_t) :: sdc_rhoh
     real (kind = dp_t) :: p0_in
 
+    type (sdc_t)       :: state_in, state_out
+
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
        firstCall = .false.
@@ -464,6 +499,7 @@ contains
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,sdc_rhoX,sdc_rhoh,p0_in,rho_in,rhox_in) &
     !$OMP PRIVATE(rhoh_in,x_test,rho_out,rhox_out,rhoh_out) &
+    !$OMP PRIVATE(state_in, state_out) &
     !$OMP FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
@@ -503,8 +539,20 @@ contains
                      ( ispec_threshold < 0 .or.                  &
                      (ispec_threshold > 0 .and.                  &
                      x_test > burner_threshold_cutoff ))) then
-                   call burner(rhox_in, rhoh_in, dt, rho_out, rhox_out, rhoh_out, &
-                               sdc_rhoX, sdc_rhoh, p0_in)
+
+                   state_in % p0  = p0_in
+                   state_in % rho = rho_in
+                   state_in % y(1:nspec) = rhox_in(1:nspec)
+                   state_in % y(nspec+1) = rhoh_in
+                   state_in % ydot_a(1:nspec) = sdc_rhoX(1:nspec)
+                   state_in % ydot_a(nspec+1) = sdc_rhoh
+
+                   call burner(state_in, state_out, dt)
+
+                   rho_out  = sum(state_out % y(1:nspec))
+                   rhox_out = state_out % y(1:nspec)
+                   rhoh_out = state_out % y(nspec+1)
+
                 else
                    rho_out = rho_in + sum(sdc_rhoX(1:nspec))*dt
                    rhox_out = rhox_in + sdc_rhoX*dt
@@ -541,6 +589,7 @@ contains
 
     use bl_constants_module
     use burner_module
+    use sdc_type_module, only: sdc_t
     use variables, only: rho_comp, spec_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, network_species_index
     use probin_module, ONLY: burning_cutoff_density, burner_threshold_species, &
@@ -568,6 +617,8 @@ contains
     real (kind = dp_t) :: sdc_rhoh
     real (kind = dp_t) :: p0_in
 
+    type (sdc_t)       :: state_in, state_out
+
     if (firstCall) then
        ispec_threshold = network_species_index(burner_threshold_species)
        firstCall = .false.
@@ -577,6 +628,7 @@ contains
 
     !$OMP PARALLEL DO PRIVATE(i,j,k,cell_valid,sdc_rhoX,sdc_rhoh,p0_in,rho_in,rhox_in) &
     !$OMP PRIVATE(rhoh_in,x_test,rho_out,rhox_out,rhoh_out) &
+    !$OMP PRIVATE(state_in, state_out) &
     !$OMP FIRSTPRIVATE(ldt) &
     !$OMP SCHEDULE(DYNAMIC,1)
     do k = lo(3), hi(3)
@@ -616,8 +668,20 @@ contains
                      ( ispec_threshold < 0 .or.                  &
                      (ispec_threshold > 0 .and.                  &
                      x_test > burner_threshold_cutoff ))) then
-                   call burner(rhox_in, rhoh_in, dt, rho_out, rhox_out, rhoh_out, &
-                               sdc_rhoX, sdc_rhoh, p0_in)
+
+                   state_in % p0  = p0_in
+                   state_in % rho = rho_in
+                   state_in % y(1:nspec) = rhox_in(1:nspec)
+                   state_in % y(nspec+1) = rhoh_in
+                   state_in % ydot_a(1:nspec) = sdc_rhoX(1:nspec)
+                   state_in % ydot_a(nspec+1) = sdc_rhoh
+
+                   call burner(state_in, state_out, dt)
+
+                   rho_out  = sum(state_out % y(1:nspec))
+                   rhox_out = state_out % y(1:nspec)
+                   rhoh_out = state_out % y(nspec+1)
+
                 else
                    rho_out = rho_in + sum(sdc_rhoX(1:nspec))*dt
                    rhox_out = rhox_in + sdc_rhoX*dt
