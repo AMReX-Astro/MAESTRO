@@ -2,7 +2,8 @@ NDEBUG := t
 MPI    := 
 OMP    :=
 
-SDC := 
+SDC := t
+SDC_METHOD ?= 2
 
 COMP := gfortran
 
@@ -16,11 +17,7 @@ MAESTRO_TOP_DIR := ../../..
 EOS_DIR := helmholtz
 CONDUCTIVITY_DIR := stellar
 
-ifdef SDC
-  NETWORK_DIR := ignition_simple_SDC
-else
-  NETWORK_DIR := ignition_simple
-endif
+NETWORK_DIR := ignition_simple
 
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
