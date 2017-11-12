@@ -1,19 +1,11 @@
 module burn_type_module
 
-  use bl_types
-  use bl_constants_module, only: ZERO
+  use bl_types, only: dp_t
   use actual_network, only: nspec, nspec_evolve, naux
 
   implicit none
 
   ! A generic structure holding data necessary to do a nuclear burn.
-
-  ! Initialize the main quantities to an unphysical number
-  ! so that we know if the user forgot to initialize them
-  ! when calling the burner.
-
-  real(dp_t), parameter :: init_num  = -1.0d200
-  real(dp_t), parameter :: init_test = -1.0d199
 
   ! Set the number of independent variables -- this should be
   ! temperature, enuc + the number of species which participate
@@ -28,29 +20,34 @@ module burn_type_module
 
   type :: burn_t
 
-    real(dp_t) :: rho              != init_num
-    real(dp_t) :: T                != init_num
-    real(dp_t) :: e                != init_num
-    real(dp_t) :: xn(nspec)        != init_num
+    real(dp_t) :: rho
+    real(dp_t) :: T
+    real(dp_t) :: e
+    real(dp_t) :: xn(nspec)
 #if naux > 0
-    real(dp_t) :: aux(naux)        != init_num
+    real(dp_t) :: aux(naux)
 #endif
 
-    real(dp_t) :: cv               != init_num
-    real(dp_t) :: cp               != init_num
-    real(dp_t) :: y_e              != init_num
-    real(dp_t) :: eta              != init_num
-    real(dp_t) :: cs               != init_num
-    real(dp_t) :: dx               != init_num
-    real(dp_t) :: abar             != init_num
-    real(dp_t) :: zbar             != init_num
+#if (SDC_METHOD == 2)
+    ! For SDC_METHOD = 2, make pressure available to RHS
+    real(dp_t) :: p0
+#endif
+
+    real(dp_t) :: cv
+    real(dp_t) :: cp
+    real(dp_t) :: y_e
+    real(dp_t) :: eta
+    real(dp_t) :: cs
+    real(dp_t) :: dx
+    real(dp_t) :: abar
+    real(dp_t) :: zbar
 
     ! Last temperature we evaluated the EOS at
-    real(dp_t) :: T_old            != init_num
+    real(dp_t) :: T_old
 
     ! Temperature derivatives of specific heat
-    real(dp_t) :: dcvdT            != init_num
-    real(dp_t) :: dcpdT            != init_num
+    real(dp_t) :: dcvdT
+    real(dp_t) :: dcpdT
 
     ! The following are the actual integration data.
     ! To avoid potential incompatibilities we won't
@@ -58,18 +55,18 @@ module burn_type_module
     ! It can be reconstructed from all of the above
     ! data, particularly xn, e, and T.
 
-    real(dp_t) :: ydot(neqs)       != ZERO
-    real(dp_t) :: jac(neqs, neqs)  != ZERO
+    real(dp_t) :: ydot(neqs)
+    real(dp_t) :: jac(neqs, neqs)
 
     ! Whether we are self-heating or not.
 
-    logical          :: self_heat        != .true.
+    logical          :: self_heat
 
     ! Zone index information.
 
-    integer :: i
-    integer :: j
-    integer :: k
+    integer          :: i
+    integer          :: j
+    integer          :: k
 
     ! diagnostics
     integer :: n_rhs
@@ -112,6 +109,7 @@ contains
     burn_state % zbar = eos_state % zbar
 
   end subroutine eos_to_burn
+
 
 
   ! Given a burn type, copy the data relevant to the eos type.
