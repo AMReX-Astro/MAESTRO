@@ -758,8 +758,13 @@ contains
   subroutine instantaneous_reaction_rates_1d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
 
     use network, only: nspec
-    use variables, only: spec_comp, rhoh_comp
+    use actual_rhs_module, only: actual_rhs
+    use variables, only: spec_comp, rhoh_comp, rho_comp
     use bl_constants_module   , only: ZERO
+    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn
+    use eos_type_module, only: eos_t, eos_input_rh, &
+                               eos_get_small_temp, eos_get_max_temp
+    use eos_module, only: eos
 
     integer,         intent(in   ) :: ng_s,ng_w,ng_h,lo(:),hi(:)
     real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s:,:)
@@ -773,22 +778,32 @@ contains
     real(kind=dp_t) :: ydot(nspec+1)
     real(kind=dp_t) :: rho_Hnuc_out
 
-    real(kind=dp_t) :: time_dummy, rpar_dummy
-    integer :: ipar_dummy
+    real(kind=dp_t) :: temp_max, temp_min
+    type (burn_t)   :: state
+    type (eos_t)    :: eos_state
 
     do i=lo(1),hi(1)
 
-       y(1:nspec) = s(i,spec_comp:spec_comp+nspec-1)
-       y(nspec+1) = s(i,rhoh_comp)
+       ! initialize state variables
+       eos_state % xn(1:nspec) = s(i,spec_comp:spec_comp+nspec-1)
+       eos_state % rho = s(i,rho_comp)
+       eos_state % h   = s(i,rhoh_comp) / state % rho
+
+       call eos_get_small_temp(temp_min)
+       call eos_get_max_temp(temp_max)
+       eos_state % T = sqrt(temp_min * temp_max)
+
+       ! call the EOS with input rh to set T for rate evaluation
+       call eos(eos_input_rh, eos_state)
+       call eos_to_burn(eos_state, state)
 
        ! initialize arbitrary time
-       time_dummy = ZERO
+       state % time = ZERO
 
-       call f_rhs_instantaneous_reaction_rates(nspec+1,time_dummy,y,ydot,rho_Hnuc_out,&
-                                               rpar_dummy,ipar_dummy)
+       call actual_rhs(state)
 
-       rho_omegadot(i,1:nspec) = ydot(1:nspec)
-       rho_Hnuc(i) = rho_Hnuc_out
+       rho_omegadot(i,1:nspec) = state % ydot(1:nspec)
+       rho_Hnuc(i) = state % ydot(nspec+1)
 
     end do
 
@@ -797,7 +812,13 @@ contains
   subroutine instantaneous_reaction_rates_2d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
 
     use network, only: nspec
-    use variables, only: spec_comp, rhoh_comp
+    use actual_rhs_module, only: actual_rhs
+    use variables, only: spec_comp, rhoh_comp, rho_comp
+    use bl_constants_module   , only: ZERO
+    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn
+    use eos_type_module, only: eos_t, eos_input_rh, &
+                               eos_get_small_temp, eos_get_max_temp
+    use eos_module, only: eos
 
     integer,         intent(in   ) :: ng_s,ng_w,ng_h,lo(:),hi(:)
     real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -811,20 +832,33 @@ contains
     real(kind=dp_t) :: ydot(nspec+1)
     real(kind=dp_t) :: rho_Hnuc_out
 
-    real(kind=dp_t) :: time_dummy, rpar_dummy
-    integer :: ipar_dummy
+    real(kind=dp_t) :: temp_max, temp_min
+    type (burn_t)   :: state
+    type (eos_t)    :: eos_state
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
 
-          y(1:nspec) = s(i,j,spec_comp:spec_comp+nspec-1)
-          y(nspec+1) = s(i,j,rhoh_comp)
+          ! initialize state variables
+          eos_state % xn(1:nspec) = s(i,j,spec_comp:spec_comp+nspec-1)
+          eos_state % rho = s(i,j,rho_comp)
+          eos_state % h   = s(i,j,rhoh_comp) / state % rho
 
-          call f_rhs_instantaneous_reaction_rates(nspec+1,time_dummy,y,ydot,rho_Hnuc_out, &
-                                                  rpar_dummy,ipar_dummy)
+          call eos_get_small_temp(temp_min)
+          call eos_get_max_temp(temp_max)
+          eos_state % T = sqrt(temp_min * temp_max)
 
-          rho_omegadot(i,j,1:nspec) = ydot(1:nspec)
-          rho_Hnuc(i,j) = rho_Hnuc_out
+          ! call the EOS with input rh to set T for rate evaluation
+          call eos(eos_input_rh, eos_state)
+          call eos_to_burn(eos_state, state)
+
+          ! initialize arbitrary time
+          state % time = ZERO
+
+          call actual_rhs(state)
+
+          rho_omegadot(i,j,1:nspec) = state % ydot(1:nspec)
+          rho_Hnuc(i,j) = state % ydot(nspec+1)
 
        end do
     end do
