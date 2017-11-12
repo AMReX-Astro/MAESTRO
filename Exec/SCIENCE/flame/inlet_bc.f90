@@ -10,7 +10,7 @@ module inlet_bc_module
   use bl_constants_module
   use bl_error_module
   use bl_space
-  use network
+  use network, only: nspec, network_species_index
 
   implicit none
 

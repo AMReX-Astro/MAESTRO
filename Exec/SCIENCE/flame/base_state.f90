@@ -23,7 +23,7 @@ contains
 
     use bl_constants_module
     use bl_error_module
-    use network
+    use network, only: nspec, network_species_index
     use eos_module, only: eos, eos_input_tp, eos_input_rt
     use eos_type_module
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel, &

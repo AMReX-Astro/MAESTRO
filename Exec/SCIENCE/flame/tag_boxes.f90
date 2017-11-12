@@ -30,7 +30,7 @@ contains
 
     use variables, only: rho_comp, spec_comp
     use geometry, only: nr_fine, nr
-    use network
+    use network, only: network_species_index
     use inlet_bc_module, only: INLET_RHOX, INLET_RHO
 
     type( multifab)          , intent(in   ) :: mf
