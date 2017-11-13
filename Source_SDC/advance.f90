@@ -1396,7 +1396,9 @@ contains
        call destroy(aofs(n))
        call destroy(sdc_source(n))
        call destroy(delta_chi(n))
-       call destroy(peos_old(n))
+       if (dpdt_factor .gt. ZERO) then
+          call destroy(peos_old(n))
+       end if
     end do
 
     ! advect the particles through dt using umac.  Then redistribute them
