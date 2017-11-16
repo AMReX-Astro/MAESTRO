@@ -107,7 +107,7 @@ subroutine varden()
   real(dp_t), pointer :: div_coeff_old(:,:)
   real(dp_t), pointer :: div_coeff_new(:,:)
   real(dp_t), pointer :: gamma1bar(:,:)
-  real(dp_t), pointer :: gamma1bar_hold(:,:)
+  real(dp_t), pointer :: gamma1bar_init(:,:)
   real(dp_t), pointer :: s0_init(:,:,:)
   real(dp_t), pointer :: rho0_old(:,:)
   real(dp_t), pointer :: rhoh0_old(:,:)
@@ -202,7 +202,7 @@ subroutine varden()
      call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
                                   dSdt,S_cc_old, &
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
-                                  div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                                  div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_init, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                   tempbar,tempbar_init,grav_cell)
@@ -223,7 +223,7 @@ subroutine varden()
                                       rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                       the_bc_tower, &
                                       div_coeff_old,div_coeff_new,gamma1bar, &
-                                      gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
+                                      gamma1bar_init,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
                                       etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
@@ -236,7 +236,7 @@ subroutine varden()
                                          rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower, &
                                          div_coeff_old,div_coeff_new,gamma1bar, &
-                                         gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
+                                         gamma1bar_init,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
                                          etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
@@ -550,7 +550,7 @@ subroutine varden()
            ! Advance a single timestep at all levels.
            init_mode = .true.
 
-           gamma1bar_hold = gamma1bar
+           gamma1bar_init = gamma1bar
 
            runtime1 = parallel_wtime()
 
@@ -570,7 +570,7 @@ subroutine varden()
            
            call print_and_reset_fab_byte_spread()
            
-           gamma1bar = gamma1bar_hold
+           gamma1bar = gamma1bar_init
 
         end do ! end do istep_init_iter = 1,init_iter
 
@@ -1489,7 +1489,7 @@ subroutine varden()
 
   deallocate(uold,sold,pi,gpi,dSdt,S_cc_old,S_cc_new,rho_omegadot2)
   deallocate(rho_Hnuc2,rho_Hext,thermal2,tag_mf)
-  deallocate(dx,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
+  deallocate(dx,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_init,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
   deallocate(psi,tempbar,tempbar_init,grav_cell)
 

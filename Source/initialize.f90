@@ -24,7 +24,7 @@ contains
   subroutine initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
                                      dSdt,S_cc_old, &
                                      rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
-                                     div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                                     div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_init, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                      p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                      tempbar,tempbar_init,grav_cell)
@@ -63,7 +63,7 @@ contains
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
-    real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t)    , pointer       :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
     real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
@@ -310,7 +310,7 @@ contains
     call init_radial(nlevs,mla%mba)
 
     ! now that we have nr_fine we can allocate 1d arrays
-    call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+    call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_init, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                               p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
                               grav_cell)
@@ -567,13 +567,13 @@ contains
        p0_temp = p0_old(1,nr_fine_old-1)
 
        ! deallocate 1D arrays
-       deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
+       deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_init,s0_init,rho0_old)
        deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec)
        deallocate(etarho_cc,psi,tempbar,tempbar_init,grav_cell)
 
        ! reallocate 1D arrays
        call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar, &
-                                 gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
+                                 gamma1bar_init,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                  rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                  psi,tempbar,tempbar_init,grav_cell)
 
@@ -674,7 +674,7 @@ contains
                                          rho_omegadot2,rho_Hnuc2,rho_Hext, &
                                          thermal2, &
                                          the_bc_tower,div_coeff_old,div_coeff_new, &
-                                         gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
+                                         gamma1bar,gamma1bar_init,s0_init,rho0_old, &
                                          rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                          p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                          psi,tempbar,tempbar_init,grav_cell)
@@ -700,7 +700,7 @@ contains
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
-    real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t)    , pointer       :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
     real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
@@ -823,7 +823,7 @@ contains
     call init_radial(nlevs,mba)
 
     ! now that we have nr_fine we can allocate 1d arrays
-    call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+    call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_init, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                               p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
                               grav_cell)
@@ -891,7 +891,7 @@ contains
                                             rho_omegadot2,rho_Hnuc2,rho_Hext, &
                                             thermal2, &
                                             the_bc_tower,div_coeff_old,div_coeff_new, &
-                                            gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
+                                            gamma1bar,gamma1bar_init,s0_init,rho0_old, &
                                             rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                             p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                             psi,tempbar,tempbar_init,grav_cell)
@@ -922,7 +922,7 @@ contains
     type(multifab), pointer       :: rho_omegadot2(:),rho_Hnuc2(:),rho_Hext(:),thermal2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
-    real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t)    , pointer       :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
     real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
@@ -1023,7 +1023,7 @@ contains
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(max_levs,div_coeff_old,div_coeff_new,gamma1bar, &
-                              gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
+                              gamma1bar_init,s0_init,rho0_old,rhoh0_old,rho0_new, &
                               rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                               psi,tempbar,tempbar_init,grav_cell)
 
@@ -1324,13 +1324,13 @@ contains
 
 
   subroutine initialize_1d_arrays(num_levs,div_coeff_old,div_coeff_new,gamma1bar, &
-                                  gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
+                                  gamma1bar_init,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                   rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                   psi,tempbar,tempbar_init,grav_cell)
 
     integer    , intent(in) :: num_levs    
     real(dp_t) , pointer    :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
-    real(dp_t) , pointer    :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t) , pointer    :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t) , pointer    :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t) , pointer    :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
     real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
@@ -1339,7 +1339,7 @@ contains
        allocate(div_coeff_old (num_levs,0:nr_fine-1))
        allocate(div_coeff_new (num_levs,0:nr_fine-1))
        allocate(gamma1bar     (num_levs,0:nr_fine-1))
-       allocate(gamma1bar_hold(num_levs,0:nr_fine-1))
+       allocate(gamma1bar_init(num_levs,0:nr_fine-1))
        allocate(s0_init       (num_levs,0:nr_fine-1,nscal))
        allocate(rho0_old      (num_levs,0:nr_fine-1))
        allocate(rhoh0_old     (num_levs,0:nr_fine-1))
@@ -1359,7 +1359,7 @@ contains
        allocate(div_coeff_old (1,0:nr_fine-1))
        allocate(div_coeff_new (1,0:nr_fine-1))
        allocate(gamma1bar     (1,0:nr_fine-1))
-       allocate(gamma1bar_hold(1,0:nr_fine-1))
+       allocate(gamma1bar_init(1,0:nr_fine-1))
        allocate(s0_init       (1,0:nr_fine-1,nscal))
        allocate(rho0_old      (1,0:nr_fine-1))
        allocate(rhoh0_old     (1,0:nr_fine-1))
@@ -1380,7 +1380,7 @@ contains
     div_coeff_old = ZERO
     div_coeff_new = ZERO
     gamma1bar = ZERO
-    gamma1bar_hold = ZERO
+    gamma1bar_init = ZERO
     s0_init = ZERO
     rho0_old = ZERO
     rhoh0_old = ZERO
