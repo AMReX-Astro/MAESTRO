@@ -16,6 +16,9 @@ EOS_DIR := helmholtz
 CONDUCTIVITY_DIR := stellar
 NETWORK_DIR := ignition_reaclib/URCA-simple
 
+# define the ODE integration method for reactions
+INTEGRATOR_DIR := VODE
+
 # define the special directories needed to build this problem.  Note:
 # we only need to include the problem's directory if there are unique
 # files there (as specified in a GPackage.mak).  The problem directory
