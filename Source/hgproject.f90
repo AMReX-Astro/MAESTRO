@@ -30,7 +30,7 @@ module hgproject_module
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                       div_coeff_cart,divu_rhs,eps_in)
+                       div_coeff_cart,nodalrhs,eps_in)
 
     use bc_module
     use bl_constants_module
@@ -55,7 +55,7 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
     type(multifab ), intent(in   ) :: div_coeff_cart(:)
 
-    type(multifab ), intent(inout), optional :: divu_rhs(:)
+    type(multifab ), intent(inout), optional :: nodalrhs(:)
     real(dp_t)     , intent(in   ), optional :: eps_in
 
     ! Local  
@@ -161,7 +161,7 @@ contains
     end do
 
 !   if (dm .eq. 1) then
-!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs)
+!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,nodalrhs)
 !   else 
 
     if (present(eps_in)) then
@@ -173,17 +173,17 @@ contains
     abs_solver_eps = -1.d0
 
     if (use_hypre) then 
-       if (present(divu_rhs)) then
+       if (present(nodalrhs)) then
           call hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
-                        stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
+                        stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
        else
           call hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
                         stencil_type,rel_solver_eps,abs_solver_eps)
        end if
     else
-       if (present(divu_rhs)) then
+       if (present(nodalrhs)) then
           call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
-                            stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
+                            stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
        else
           call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
                             stencil_type,rel_solver_eps,abs_solver_eps)
@@ -1080,7 +1080,7 @@ contains
 
   ! ******************************************************************************** !
 
-  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs)
+  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,nodalrhs)
 
     use bl_prof_module
     use bl_constants_module
@@ -1098,7 +1098,7 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in)    :: stencil_type
 
-    type(multifab ), intent(in   ), optional :: divu_rhs(:)
+    type(multifab ), intent(in   ), optional :: nodalrhs(:)
 
     ! Local variables
     type(box     ) :: pd
@@ -1157,10 +1157,10 @@ contains
 
     call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal,lo_inflow,hi_inflow)
 
-    ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
+    ! Do rh = rh - nodalrhs (this routine preserves rh=0 on
     !  nodes which have bc_dirichlet = true.
-    if (present(divu_rhs)) &
-       call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
+    if (present(nodalrhs)) &
+       call subtract_divu_from_rh(nlevs,mgt,rh,nodalrhs)
 
 !   call solve_1d(mla,mgt,rh,phi,mla%mba%rr)
 

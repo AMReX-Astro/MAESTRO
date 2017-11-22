@@ -49,7 +49,7 @@ contains
   ! NOTE: this routine differs from that in varden because phi is passed in/out 
   !       rather than allocated here
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
-                        divu_rhs,div_coeff_1d,div_coeff_1d_edge,div_coeff_cart_edge)
+                        macrhs,div_coeff_1d,div_coeff_1d_edge,div_coeff_cart_edge)
 
     use mac_hypre_module               , only : mac_hypre
     use mac_multigrid_module           , only : mac_multigrid
@@ -70,7 +70,7 @@ contains
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
 
-    type(multifab ), intent(in   ), optional :: divu_rhs(:)
+    type(multifab ), intent(in   ), optional :: macrhs(:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d_edge(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_cart_edge(:,:)
@@ -92,7 +92,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    use_rhs          = .false. ; if (present(divu_rhs)    ) use_rhs          = .true.
+    use_rhs          = .false. ; if (present(macrhs)    ) use_rhs          = .true.
     use_div_coeff_1d = .false. ; if (present(div_coeff_1d)) use_div_coeff_1d = .true.
     use_div_coeff_cart_edge = .false. ; if (present(div_coeff_cart_edge)) use_div_coeff_cart_edge = .true.
 
@@ -173,7 +173,7 @@ contains
 !    end do
 
     if (use_rhs) then
-       call divumac(umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
+       call divumac(umac,rh,dx,mla%mba%rr,.true.,macrhs)
     else
        call divumac(umac,rh,dx,mla%mba%rr,.true.)
     end if
@@ -329,7 +329,7 @@ contains
 
   contains
 
-    subroutine divumac(umac,rh,dx,ref_ratio,before,divu_rhs)
+    subroutine divumac(umac,rh,dx,ref_ratio,before,macrhs)
 
       use ml_cc_restriction_module, only: ml_cc_restriction, ml_edge_restriction
       use probin_module, only: verbose
@@ -339,7 +339,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:,:)
       integer        , intent(in   ) :: ref_ratio(:,:)
       logical        , intent(in   ) :: before
-      type(multifab ), intent(in   ), optional :: divu_rhs(:)
+      type(multifab ), intent(in   ), optional :: macrhs(:)
 
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
@@ -386,10 +386,10 @@ contains
       !            (alpha MINUS del dot beta grad) phi = RHS
       !            Here alpha is zero.
 
-      ! Do rh = divu_rhs - rh
-      if (present(divu_rhs)) then
+      ! Do rh = macrhs - rh
+      if (present(macrhs)) then
          do n = 1, nlevs
-            call multifab_sub_sub(rh(n),divu_rhs(n))
+            call multifab_sub_sub(rh(n),macrhs(n))
          end do
       end if
       ! ... or rh = -rh
