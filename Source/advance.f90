@@ -33,7 +33,7 @@ contains
                               div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
                               dSdt,S_cc_old,S_cc_new,etarho_ec,etarho_cc, &
-                              psi,sponge,S_nodal,tempbar_init,particles)
+                              psi,sponge,nodalrhs,tempbar_init,particles)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
     use      pre_advance_module     , only : advance_premac
@@ -64,7 +64,7 @@ contains
     use macrhs_module               , only : make_macrhs
     use macproject_module           , only : macproject
 
-    use make_S_nodal_module         , only : make_S_nodal, correct_S_nodal
+    use make_nodalrhs_module        , only : make_nodalrhs, correct_nodalrhs
     use hgproject_module            , only : hgproject
     use proj_parameters             , only : pressure_iters_comp, regular_timestep_comp
 
@@ -116,7 +116,7 @@ contains
     real(dp_t)    ,  intent(inout) ::  etarho_cc(:,0:)
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
-    type(multifab),  intent(inout) ::  S_nodal(:)
+    type(multifab),  intent(inout) ::  nodalrhs(:)
     type(particle_container), intent(inout) :: particles
 
     ! local
@@ -124,7 +124,7 @@ contains
     type(multifab) ::       w0_force_cart(mla%nlevel)
     type(multifab) ::              macrhs(mla%nlevel)
     type(multifab) ::              macphi(mla%nlevel)
-    type(multifab) ::         S_nodal_old(mla%nlevel)
+    type(multifab) ::         nodalrhs_old(mla%nlevel)
     type(multifab) ::            S_cc_nph(mla%nlevel)
     type(multifab) ::            thermal1(mla%nlevel)
     type(multifab) ::                  s1(mla%nlevel)
@@ -1316,21 +1316,21 @@ contains
        proj_type = pressure_iters_comp
 
        do n=1,nlevs
-          call multifab_build(S_nodal_old(n), mla%la(n), 1, 0, nodal)
-          call multifab_copy(S_nodal_old(n),S_nodal(n))
+          call multifab_build(nodalrhs_old(n), mla%la(n), 1, 0, nodal)
+          call multifab_copy(nodalrhs_old(n),nodalrhs(n))
        end do
-       call make_S_nodal(the_bc_tower,mla,S_nodal,S_cc_new,delta_gamma1_term, &
+       call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc_new,delta_gamma1_term, &
                          Sbar,div_coeff_nph,dx)
        do n=1,nlevs
-          call multifab_sub_sub(S_nodal(n),S_nodal_old(n))
-          call multifab_div_div_s(S_nodal(n),dt)
+          call multifab_sub_sub(nodalrhs(n),nodalrhs_old(n))
+          call multifab_div_div_s(nodalrhs(n),dt)
        end do
 
     else
 
        proj_type = regular_timestep_comp
 
-       call make_S_nodal(the_bc_tower,mla,S_nodal,S_cc_new,delta_gamma1_term, &
+       call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc_new,delta_gamma1_term, &
                          Sbar,div_coeff_nph,dx)
 
        ! compute delta_p_term = peos_new - peosbar_cart (for RHS of projection)
@@ -1358,7 +1358,7 @@ contains
              call multifab_sub_sub(delta_p_term(n), peosbar_cart(n))
           end do
           
-          call correct_S_nodal(the_bc_tower,mla,rho0_new,S_nodal,div_coeff_nph,dx,dt, &
+          call correct_nodalrhs(the_bc_tower,mla,rho0_new,nodalrhs,div_coeff_nph,dx,dt, &
                                gamma1bar,p0_new,delta_p_term)
           
           do n=1,nlevs
@@ -1382,7 +1382,7 @@ contains
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                   div_coeff_cart,S_nodal)
+                   div_coeff_cart,nodalrhs)
 
     call make_pi_cc(mla,pi,snew,pi_comp,the_bc_tower%bc_tower_array,div_coeff_cart)
 
@@ -1391,11 +1391,11 @@ contains
        call destroy(rhohalf(n))
     end do
     
-    ! If doing pressure iterations then put S_nodal_old into S_nodal to be returned to varden.
+    ! If doing pressure iterations then put nodalrhs_old into nodalrhs to be returned to varden.
     if (init_mode) then
        do n=1,nlevs
-          call multifab_copy(S_nodal(n),S_nodal_old(n))
-          call destroy(S_nodal_old(n))
+          call multifab_copy(nodalrhs(n),nodalrhs_old(n))
+          call destroy(nodalrhs_old(n))
        end do
     end if
 

@@ -60,7 +60,7 @@ subroutine varden()
   type(multifab), allocatable :: snew(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
-  type(multifab), allocatable :: S_nodal(:)
+  type(multifab), allocatable :: nodalrhs(:)
 
   ! these are pointers because they need to be allocated and built within 
   !   another function
@@ -310,14 +310,14 @@ subroutine varden()
      allocate(tempbar_init_temp(1,0:nr_fine-1))
   end if
 
-  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),S_nodal(nlevs))
+  allocate(unew(nlevs),snew(nlevs),sponge(nlevs),nodalrhs(nlevs))
   allocate(normal(nlevs))
 
   do n = 1,nlevs
      call multifab_build(      unew(n), mla%la(n),    dm, nghost(uold(n)))
      call multifab_build(      snew(n), mla%la(n), nscal, nghost(sold(n)))
      call multifab_build(    sponge(n), mla%la(n),     1, 0)
-     call multifab_build(   S_nodal(n), mla%la(n),     1, 0, nodal)
+     call multifab_build(   nodalrhs(n), mla%la(n),     1, 0, nodal)
      if (dm .eq. 3) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
@@ -325,7 +325,7 @@ subroutine varden()
      call setval(      unew(n), ZERO, all=.true.)
      call setval(      snew(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
-     call setval(   S_nodal(n), ZERO, all=.true.)
+     call setval(   nodalrhs(n), ZERO, all=.true.)
   end do
 
   ! Create normal now that we have defined center and dx
@@ -366,7 +366,7 @@ subroutine varden()
      call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
      if(do_initial_projection) then
-        call initial_proj(uold,sold,pi,gpi,S_cc_old,S_nodal,thermal2, &
+        call initial_proj(uold,sold,pi,gpi,S_cc_old,nodalrhs,thermal2, &
                           div_coeff_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
      end if
 
@@ -412,7 +412,7 @@ subroutine varden()
      do istep_divu_iter=1,init_divu_iter
 
         call divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal2, &
-                       S_cc_old,S_nodal,dSdt,div_coeff_old,rho0_old,p0_old, &
+                       S_cc_old,nodalrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
                        gamma1bar,tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
      end do
@@ -511,7 +511,7 @@ subroutine varden()
                                  rho_Hext,thermal2, &
                                  div_coeff_old,div_coeff_new,grav_cell,dx,dt,dtold, &
                                  the_bc_tower,dSdt,S_cc_old,S_cc_new,etarho_ec, &
-                                 etarho_cc,psi,sponge,S_nodal,tempbar_init,particles)
+                                 etarho_cc,psi,sponge,nodalrhs,tempbar_init,particles)
 
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
@@ -867,7 +867,7 @@ subroutine varden()
               call multifab_destroy(unew(n))
               call multifab_destroy(snew(n))
               call multifab_destroy(sponge(n))
-              call multifab_destroy(S_nodal(n))
+              call multifab_destroy(nodalrhs(n))
               call multifab_destroy(S_cc_new(n))
               call multifab_destroy(rho_omegadot2(n))
               call multifab_destroy(rho_Hnuc2(n))
@@ -895,7 +895,7 @@ subroutine varden()
               call multifab_build(      unew(n),    mla%la(n),    dm, nghost(uold(n)))
               call multifab_build(      snew(n),    mla%la(n), nscal, nghost(sold(n)))
               call multifab_build(    sponge(n),    mla%la(n),     1, 0)
-              call multifab_build(   S_nodal(n),    mla%la(n),     1, 0, nodal)
+              call multifab_build(   nodalrhs(n),    mla%la(n),     1, 0, nodal)
               call multifab_build(S_cc_new(n),    mla%la(n),     1, 1)
               call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
               call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
@@ -908,7 +908,7 @@ subroutine varden()
               call setval(      unew(n), ZERO, all=.true.)
               call setval(      snew(n), ZERO, all=.true.)
               call setval(    sponge(n), ONE,  all=.true.)
-              call setval(   S_nodal(n), ZERO, all=.true.)
+              call setval(   nodalrhs(n), ZERO, all=.true.)
               call setval(S_cc_new(n), ZERO, all=.true.)
            end do
 
@@ -1060,7 +1060,7 @@ subroutine varden()
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,dt,dtold,the_bc_tower,dSdt,S_cc_old, &
-                              S_cc_new,etarho_ec,etarho_cc,psi,sponge,S_nodal,tempbar_init, &
+                              S_cc_new,etarho_ec,etarho_cc,psi,sponge,nodalrhs,tempbar_init, &
                               particles)
 
         
@@ -1384,7 +1384,7 @@ subroutine varden()
      call destroy(dSdt(n))
      call destroy(S_cc_old(n))
      call destroy(S_cc_new(n))
-     call destroy(S_nodal(n))
+     call destroy(nodalrhs(n))
      call destroy(rho_omegadot2(n))
      call destroy(rho_Hnuc2(n))
      call destroy(rho_Hext(n))
