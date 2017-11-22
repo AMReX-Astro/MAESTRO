@@ -143,9 +143,7 @@ contains
              do i = lo(1),lo(1)+nx-1
                 call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
                 rhoye = mf(i, j, k, rho_comp) * ye
-                if ((mf(i,j,k, rho_comp) .gt. tag_density_2 .and. &
-                     mf(i,j,k, temp_comp) .gt. tag_temperature_2) .or. &
-                    (rhoye .gt. tag_rhoye_lo_2 .and. rhoye .lt. tag_rhoye_hi_2)) then
+                if (rhoye .gt. tag_rhoye_lo_2) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
@@ -159,9 +157,7 @@ contains
              do i = lo(1),lo(1)+nx-1
                 call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
                 rhoye = mf(i, j, k, rho_comp) * ye
-                if ((mf(i,j,k, rho_comp) .gt. tag_density_3 .and. &
-                     mf(i,j,k, temp_comp) .gt. tag_temperature_3) .or. &
-                    (rhoye .gt. tag_rhoye_lo_3 .and. rhoye .lt. tag_rhoye_hi_3)) then
+                if (rhoye .gt. tag_rhoye_lo_3) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
