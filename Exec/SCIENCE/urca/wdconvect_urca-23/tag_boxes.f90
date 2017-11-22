@@ -104,8 +104,8 @@ contains
     use network, ONLY: get_electron_fraction, nspec
     use probin_module, ONLY : base_cutoff_density, &
          tag_density_1, &
-         tag_density_2, tag_temperature_2, tag_rhoye_lo_2, tag_rhoye_hi_2, &
-         tag_density_3, tag_temperature_3, tag_rhoye_lo_3, tag_rhoye_hi_3
+         tag_rhoye_lo_2, &
+         tag_rhoye_lo_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
