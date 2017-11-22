@@ -95,4 +95,21 @@ contains
 
   end function network_species_index
 
+
+  subroutine get_electron_fraction(ye, xn)
+
+    use bl_constants_module, only : ZERO
+
+    real (kind=dp_t), intent(out) :: ye
+    real (kind=dp_t), intent(in)  :: xn(nspec)
+    integer :: i
+
+    ye = ZERO
+
+    do i = 1, nspec
+       ye = ye + zion(i) * xn(i) * aion_inv(i)
+    enddo
+
+  end subroutine get_electron_fraction
+
 end module network
