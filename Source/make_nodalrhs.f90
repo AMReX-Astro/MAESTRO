@@ -43,7 +43,7 @@ contains
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
-    type(multifab) ::         rhs_cc(mla%nlevel)
+    type(multifab) ::          ccrhs(mla%nlevel)
     type(multifab) ::      Sbar_cart(mla%nlevel)
     type(multifab) :: div_coeff_cart(mla%nlevel)
     type(layout  ) :: la
@@ -76,11 +76,11 @@ contains
     end if
 
     do n = 1, nlevs
-       call multifab_build(rhs_cc(n),get_layout(S_cc(n)),1,1)
-       call setval(rhs_cc(n),ZERO,all=.true.)
+       call multifab_build(ccrhs(n),get_layout(S_cc(n)),1,1)
+       call setval(ccrhs(n),ZERO,all=.true.)
     end do
 
-    ng_rh = nghost(rhs_cc(1))
+    ng_rh = nghost(ccrhs(1))
     ng_sr = nghost(S_cc(1))
     ng_dg = nghost(delta_gamma1_term(1))
     ng_dc = nghost(div_coeff_cart(1))
@@ -89,27 +89,27 @@ contains
 
     do n = 1, nlevs
        do i = 1, nfabs(S_cc(n))
-          rp => dataptr(rhs_cc(n), i)
+          rp => dataptr(ccrhs(n), i)
           sp => dataptr(S_cc(n), i)
           gp => dataptr(delta_gamma1_term(n), i)
           lo =  lwb(get_box(S_cc(n), i))
           hi =  upb(get_box(S_cc(n), i))
           select case (dm)
           case (1)
-             call make_rhscc_1d(lo,hi,rp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
+             call make_ccrhs_1d(lo,hi,rp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
                                 gp(:,1,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
           case (2)
-             call make_rhscc_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
+             call make_ccrhs_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
                                 gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
           case (3)
              if (spherical .eq. 1) then
                 dp => dataptr(div_coeff_cart(n), i)
                 sbp => dataptr(Sbar_cart(n), i)
-                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
+                call make_ccrhs_3d_sphr(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
                                         gp(:,:,:,1),ng_dg,sbp(:,:,:,1),ng_sb, &
                                         dp(:,:,:,1),ng_dc)
              else
-                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
+                call make_ccrhs_3d_cart(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
                                         gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:))
              end if
           end select
@@ -117,17 +117,17 @@ contains
     end do
 
     ! restrict data and fill all ghost cells
-    call ml_restrict_and_fill(nlevs,rhs_cc,mla%mba%rr,the_bc_tower%bc_tower_array, &
+    call ml_restrict_and_fill(nlevs,ccrhs,mla%mba%rr,the_bc_tower%bc_tower_array, &
                               icomp=1, &
                               bcomp=foextrap_comp, &
                               nc=1, &
-                              ng=rhs_cc(1)%ng)
+                              ng=ccrhs(1)%ng)
 
     do n=1,nlevs
        call setval(nodalrhs(n),ZERO,all=.true.)
        do i = 1, nfabs(S_cc(n))
           hp => dataptr(nodalrhs(n), i)
-          rp => dataptr(rhs_cc(n), i)
+          rp => dataptr(ccrhs(n), i)
           lo =  lwb(get_box(S_cc(n), i))
           hi =  upb(get_box(S_cc(n), i))
           select case (dm)
@@ -142,7 +142,7 @@ contains
     end do ! end loop over levels
     
     do n = 1, nlevs
-       call destroy(rhs_cc(n))
+       call destroy(ccrhs(n))
        if (spherical .eq. 1) then
           call destroy(Sbar_cart(n))
           call destroy(div_coeff_cart(n))
@@ -153,11 +153,11 @@ contains
     
   end subroutine make_nodalrhs
   
-  subroutine make_rhscc_1d(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
+  subroutine make_ccrhs_1d(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
                            div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
-    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-ng_rh:)
+    real (kind=dp_t), intent(  out) ::             ccrhs(lo(1)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
@@ -167,16 +167,16 @@ contains
     integer :: i
     
     do i = lo(1),hi(1)
-       rhs_cc(i) = div_coeff(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
+       ccrhs(i) = div_coeff(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
     end do
     
-  end subroutine make_rhscc_1d
+  end subroutine make_ccrhs_1d
   
-  subroutine make_rhscc_2d(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
+  subroutine make_ccrhs_2d(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
                            div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
-    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:)
+    real (kind=dp_t), intent(  out) ::             ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
@@ -187,17 +187,17 @@ contains
     
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          rhs_cc(i,j) = div_coeff(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
+          ccrhs(i,j) = div_coeff(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
        end do
     end do
     
-  end subroutine make_rhscc_2d
+  end subroutine make_ccrhs_2d
   
-  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_ccrhs_3d_cart(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                                 Sbar,div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
-    real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+    real (kind=dp_t), intent(  out) ::          ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
@@ -210,20 +210,20 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff(k) * (S_cc(i,j,k) - Sbar(k) + &
+             ccrhs(i,j,k) = div_coeff(k) * (S_cc(i,j,k) - Sbar(k) + &
                   delta_gamma1_term(i,j,k))
           end do
        end do
     end do
     !$OMP END PARALLEL DO
     
-  end subroutine make_rhscc_3d_cart
+  end subroutine make_ccrhs_3d_cart
    
-  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
+  subroutine make_ccrhs_3d_sphr(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
                                 Sbar_cart,ng_sb,div_coeff_cart,ng_dc)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_sb, ng_dc
-    real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+    real (kind=dp_t), intent(  out) ::          ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar_cart(lo(1)-ng_sb:,lo(2)-ng_sb:,lo(3)-ng_sb:)
@@ -236,7 +236,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff_cart(i,j,k) * (S_cc(i,j,k) - Sbar_cart(i,j,k) + &
+             ccrhs(i,j,k) = div_coeff_cart(i,j,k) * (S_cc(i,j,k) - Sbar_cart(i,j,k) + &
                   delta_gamma1_term(i,j,k))
              
           end do
@@ -244,52 +244,52 @@ contains
     end do
     !$OMP END PARALLEL DO
     
-  end subroutine make_rhscc_3d_sphr
+  end subroutine make_ccrhs_3d_sphr
   
-  subroutine make_nodalrhs_1d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+  subroutine make_nodalrhs_1d(lo,hi,nodalrhs,ng_hg,ccrhs,ng_rh)
 
     use bl_constants_module
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_hg, ng_rh
-    real (kind=dp_t), intent(  out) ::    rhs(lo(1)-ng_hg:)
-    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-ng_rh:)
+    real (kind=dp_t), intent(  out) :: nodalrhs(lo(1)-ng_hg:)
+    real (kind=dp_t), intent(in   ) ::    ccrhs(lo(1)-ng_rh:)
     
     ! Local variables
     integer :: i
     
     do i = lo(1), hi(1)+1
-       rhs(i) = HALF * ( rhs_cc(i) + rhs_cc(i-1) )
+       nodalrhs(i) = HALF * ( ccrhs(i) + ccrhs(i-1) )
     end do
     
   end subroutine make_nodalrhs_1d
   
-  subroutine make_nodalrhs_2d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+  subroutine make_nodalrhs_2d(lo,hi,nodalrhs,ng_hg,ccrhs,ng_rh)
 
     use bl_constants_module
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_hg, ng_rh
-    real (kind=dp_t), intent(  out) ::    rhs(lo(1)-ng_hg:,lo(2)-ng_hg:)  
-    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:)
+    real (kind=dp_t), intent(  out) :: nodalrhs(lo(1)-ng_hg:,lo(2)-ng_hg:)  
+    real (kind=dp_t), intent(in   ) ::    ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:)
     
     ! Local variables
     integer :: i, j
     
     do j = lo(2),hi(2)+1
        do i = lo(1), hi(1)+1
-          rhs(i,j) = FOURTH * ( rhs_cc(i,j  ) + rhs_cc(i-1,j  ) &
-                              + rhs_cc(i,j-1) + rhs_cc(i-1,j-1) )
+          nodalrhs(i,j) = FOURTH * ( ccrhs(i,j  ) + ccrhs(i-1,j  ) &
+                                   + ccrhs(i,j-1) + ccrhs(i-1,j-1) )
        end do
     end do
     
   end subroutine make_nodalrhs_2d
   
-  subroutine make_nodalrhs_3d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
+  subroutine make_nodalrhs_3d(lo,hi,nodalrhs,ng_hg,ccrhs,ng_rh)
 
     use bl_constants_module
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_hg, ng_rh
-    real (kind=dp_t), intent(  out) ::    rhs(lo(1)-ng_hg:,lo(2)-ng_hg:,lo(3)-ng_hg:)  
-    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)  
+    real (kind=dp_t), intent(  out) :: nodalrhs(lo(1)-ng_hg:,lo(2)-ng_hg:,lo(3)-ng_hg:)  
+    real (kind=dp_t), intent(in   ) ::    ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)  
     
     ! Local variables
     integer :: i, j,k
@@ -298,10 +298,10 @@ contains
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)+1
-             rhs(i,j,k) = EIGHTH * ( rhs_cc(i,j  ,k-1) + rhs_cc(i-1,j  ,k-1) &
-                  +rhs_cc(i,j-1,k-1) + rhs_cc(i-1,j-1,k-1) &
-                  +rhs_cc(i,j  ,k  ) + rhs_cc(i-1,j  ,k  ) &
-                  +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) )
+             nodalrhs(i,j,k) = EIGHTH * ( ccrhs(i,j ,k-1) + ccrhs(i-1,j  ,k-1) &
+                                        +ccrhs(i,j-1,k-1) + ccrhs(i-1,j-1,k-1) &
+                                        +ccrhs(i,j  ,k  ) + ccrhs(i-1,j  ,k  ) &
+                                        +ccrhs(i,j-1,k  ) + ccrhs(i-1,j-1,k  ) )
           end do
        end do
     end do
