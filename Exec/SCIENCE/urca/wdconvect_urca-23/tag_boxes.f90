@@ -53,12 +53,12 @@ contains
   end subroutine tag_boxes
 
   subroutine tag_boxes_2d(tagbox,mf,lo,ng,lev)
-    use variables, ONLY: rho_comp, spec_comp
+    use variables, ONLY: rho_comp, spec_comp, temp_comp
     use network, ONLY: get_electron_fraction, nspec
     use probin_module, ONLY : base_cutoff_density, &
          tag_density_1, &
          tag_rhoye_lo_2, &
-         tag_rhoye_lo_3
+         tag_density_3, tag_temperature_3, tag_rhoye_hi_3, tag_rhoye_lo_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
@@ -99,7 +99,10 @@ contains
           do i = lo(1),lo(1)+nx-1
              call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
              rhoye = mf(i, j, k, rho_comp) * ye
-             if (rhoye .gt. tag_rhoye_lo_3) then
+             if ((mf(i, j, k, rho_comp) .gt. tag_density_3 .and. &
+                  mf(i, j, k, temp_comp) .gt. tag_temperature_3) .or. &
+                 (rhoye .gt. tag_rhoye_lo_3 .and. &
+                  rhoye .lt. tag_rhoye_hi_3)) then
                 tagbox(i,j) = .true.
              end if
           end do
@@ -110,12 +113,12 @@ contains
 
   subroutine tag_boxes_3d(tagbox,mf,lo,ng,lev)
 
-    use variables, ONLY: rho_comp, spec_comp
+    use variables, ONLY: rho_comp, spec_comp, temp_comp
     use network, ONLY: get_electron_fraction, nspec
     use probin_module, ONLY : base_cutoff_density, &
          tag_density_1, &
          tag_rhoye_lo_2, &
-         tag_rhoye_lo_3
+         tag_density_3, tag_temperature_3, tag_rhoye_hi_3, tag_rhoye_lo_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
@@ -167,7 +170,10 @@ contains
              do i = lo(1),lo(1)+nx-1
                 call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
                 rhoye = mf(i, j, k, rho_comp) * ye
-                if (rhoye .gt. tag_rhoye_lo_3) then
+                if ((mf(i, j, k, rho_comp) .gt. tag_density_3 .and. &
+                     mf(i, j, k, temp_comp) .gt. tag_temperature_3) .or. &
+                     (rhoye .gt. tag_rhoye_lo_3 .and. &
+                     rhoye .lt. tag_rhoye_hi_3)) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
