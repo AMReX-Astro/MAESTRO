@@ -16,7 +16,7 @@ module hg_multigrid_module
 contains 
 
   subroutine hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
-                          stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
+                          stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
 
     use bl_prof_module
 
@@ -42,7 +42,7 @@ contains
     real(dp_t)     , intent(in   ) :: rel_solver_eps
     real(dp_t)     , intent(in   ) :: abs_solver_eps
 
-    type(multifab ), intent(inout), optional :: divu_rhs(:)
+    type(multifab ), intent(inout), optional :: nodalrhs(:)
 
     ! Local variables
     type(box     )  :: pd
@@ -208,10 +208,10 @@ contains
     ! Subtract S:  RHS = div(U) - S
     ! ********************************************************************************
 
-    ! Note that we now set divu_rhs at outflow and at the fine nodes
+    ! Note that we now set nodalrhs at outflow and at the fine nodes
     !      on coarse-fine boundaries in a call to enforce_dirichlet_rhs from ml_nd_solve.
-    if (present(divu_rhs)) then
-       call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
+    if (present(nodalrhs)) then
+       call subtract_divu_from_rh(nlevs,mgt,rh,nodalrhs)
     end if
 
     ! ********************************************************************************

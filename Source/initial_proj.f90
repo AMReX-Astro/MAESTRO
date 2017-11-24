@@ -21,7 +21,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(uold,sold,pi,gpi,S_cc,normal,S_nodal,thermal, &
+  subroutine initial_proj(uold,sold,pi,gpi,S_cc,normal,nodalrhs,thermal, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: foextrap_comp
@@ -32,7 +32,7 @@ contains
     use make_explicit_thermal_module
     use make_S_cc_module
     use average_module
-    use make_S_nodal_module
+    use make_nodalrhs_module
     use fill_3d_module
     use hgproject_module
     use multifab_module
@@ -45,7 +45,7 @@ contains
     type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: normal(:)
-    type(multifab) , intent(inout) :: S_nodal(:)
+    type(multifab) , intent(inout) :: nodalrhs(:)
     type(multifab) , intent(inout) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(inout) :: p0(:,0:)
@@ -155,7 +155,7 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_S_nodal(the_bc_tower,mla,S_nodal,S_cc,delta_gamma1_term,Sbar, &
+    call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc,delta_gamma1_term,Sbar, &
                     div_coeff_old,dx)
 
     do n=1,nlevs
@@ -180,7 +180,7 @@ contains
     end if
 
     call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
-                   dt_temp,the_bc_tower,div_coeff_cart,S_nodal,eps_init)
+                   dt_temp,the_bc_tower,div_coeff_cart,nodalrhs,eps_init)
     
     do n=1,nlevs
        call destroy(div_coeff_cart(n))
