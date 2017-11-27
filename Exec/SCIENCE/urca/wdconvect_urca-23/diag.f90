@@ -838,8 +838,8 @@ contains
     ! IMPORTANT: make sure that there are enough entries in the format
     ! statement to write out all of the data in each file.
 999 format("# job name: ",a)
-1000 format(1x,16(g20.10,1x))
-1001 format("#",16(a20,1x))
+1000 format(1x,16(g20.10,2x))
+1001 format("#",16(a20,2x))
 800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
 801 format("# ",a,i2.2,':',i2.2,':',i2.2)
 802 format("# ",a,a)

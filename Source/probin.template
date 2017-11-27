@@ -15,7 +15,6 @@ module probin_module
 
   @@declarationsA@@
 
-  real(dp_t), save, public    :: burning_cutoff_density  ! note: presently not runtime parameter
 
 
   ! Keep track of the inputs file that was used to read in runtime
@@ -323,8 +322,11 @@ contains
     endif
 
 
-    ! for the moment, set the cutoff for burning to be base_cutoff_density
-    burning_cutoff_density = base_cutoff_density
+    ! check to see if user set burning_cutoff_density, otherwise
+    ! set it to base_cutoff_density
+    if (burning_cutoff_density .lt. ZERO) then
+       burning_cutoff_density = base_cutoff_density
+    end if
 
     ! initialize nodal
     allocate(nodal(dm_in))

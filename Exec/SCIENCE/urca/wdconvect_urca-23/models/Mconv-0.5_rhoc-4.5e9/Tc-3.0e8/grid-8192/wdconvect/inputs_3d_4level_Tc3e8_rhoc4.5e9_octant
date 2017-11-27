@@ -1,0 +1,176 @@
+&PROBIN
+
+ ! initial model
+ model_file = "WD_urca_nuc_M-0.5_hot_atan.hse.8192"
+ drdxfac = 4
+
+ job_name = "4-level, rhoc = 4.5e9 g/cc, Tc = 3.0e8 K"
+
+
+ ! Gridding and Geometry
+ max_levs = 4
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 128
+
+ !... Max grid size for all levels
+ max_grid_size = 32
+
+ regrid_int = 2
+ min_eff = 0.8
+
+ spherical_in = 1
+ dm_in = 3
+
+ octant = T
+
+ prob_hi_x = 2.56d8
+ prob_hi_y = 2.56d8
+ prob_hi_z = 2.56d8
+
+ xlo_boundary_type = "outlet"
+ ylo_boundary_type = "outlet"
+ zlo_boundary_type = "outlet"
+
+ xhi_boundary_type = "outlet"
+ yhi_boundary_type = "outlet"
+ zhi_boundary_type = "outlet"
+
+
+ ! Stepping
+ max_step  = 100000000
+
+ !... It should take about 1000 seconds for the model
+ !... to equilibrate.
+ stop_time = 10000.
+
+ cflfac = 0.8d0
+
+ init_shrink = 0.1d0
+ max_dt_growth = 1.1d0
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+
+ ! Algorithm details
+ verbose = 1	
+ 
+ do_burning = T
+
+ enthalpy_pred_type = 1
+ evolve_base_state = T
+
+ dpdt_factor = 0.0d0
+
+ use_tfromp = T
+
+ use_eos_coulomb = T
+
+
+ ! Cutoffs
+ anelastic_cutoff       = 1.d6
+ base_cutoff_density    = 1.d5
+ !... Stop burning at densities below 10^6 g/cm^3
+ burning_cutoff_density = 1.d6 
+
+
+ ! Sponge
+ do_sponge = .true.
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
+
+
+ ! Multigrid
+ max_mg_bottom_nlevels = 16
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+ mg_verbose = 1
+ cg_verbose = 0
+
+
+ ! Initialization
+ init_iter = 1
+ do_initial_projection = T
+ init_divu_iter = 3
+
+
+ ! I/O
+ plot_base_name = "wd_4lev_Tc3e8_rhoc4-5e9_plt"
+ plot_int = -1
+ plot_deltat = 2.0d0
+
+ check_base_name = "wd_4lev_Tc3e8_rhoc4-5e9_chk"
+ chk_int   = 100
+
+ single_prec_plotfiles = T
+
+ plot_base = T
+ plot_trac = F
+ plot_gpi = F
+ plot_h_with_use_tfromp = F
+
+
+ ! Diagnostic buffer size
+ diag_buf_size = 5
+
+
+ ! Initial Velocity Perturbation
+ !... Set amplitude to an order of magnitude lower
+ !... than the expected convective velocity in the core.
+ velpert_amplitude = 1.d2
+
+ !... Set the spatial scale of fourier modes to roughly
+ !... the expected size of central convective zone.
+ velpert_scale     = 2.5d7
+
+ !... Set the radius of the perturbation to roughly
+ !... the expected size of central convective zone.
+ velpert_radius    = 2.5d7
+
+ !... Set the steepness distance to the grid width
+ !... on the finest zone. It will take roughly 5 zones
+ !... to damp the velocity perturbation.
+ velpert_steep     = 2.5d5
+
+
+ ! Tagging criteria for AMR
+ !... On level 1, tag inside the density
+ !... at which beta decays are significant
+ tag_density_1 = 1.d8
+
+ !... On level 2, tag within the Urca shell
+ tag_rhoye_lo_2    =  5.012d8 ! 10**(8.7)
+
+ !... On level 3, tag around the Urca shell
+ !... and within the C-burning core.
+ !... For the C-burning core, require density
+ !... and temperature above the tag values.
+ !... For the Urca shell, require rho*ye to
+ !... be between the hi and lo values.
+ tag_density_3     = 1.d9
+ tag_temperature_3 = 2.25d8
+ tag_rhoye_lo_3    =  5.012d8 ! 10**(8.7)
+ tag_rhoye_hi_3    = 15.849d8 ! 10**(9.2)
+
+
+ ! VODE Reactions ODE settings
+ burner_verbose = .false.
+
+ ! Set which jacobian to use
+ ! 1 = analytic jacobian
+ ! 2 = numerical jacobian
+ jacobian   = 1
+
+ retry_burn = .false.
+ renormalize_abundances = .true.
+
+ rtol_spec = 1.0d-12
+ rtol_enuc = 1.0d-9
+ rtol_temp = 1.0d-9
+ atol_spec = 1.0d-12
+ atol_enuc = 1.0d-9
+ atol_temp = 1.0d-9
+
+/

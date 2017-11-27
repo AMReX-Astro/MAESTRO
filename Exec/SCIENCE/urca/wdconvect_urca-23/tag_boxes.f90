@@ -44,28 +44,34 @@ contains
 
        select case (get_dim(mf))
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,1,rho_comp),lo,ng,lev)
+          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,:,:),lo,ng,lev)
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,rho_comp),lo,ng,lev)
+          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,:),lo,ng,lev)
        end select
     end do
 
   end subroutine tag_boxes
 
   subroutine tag_boxes_2d(tagbox,mf,lo,ng,lev)
-
+    use variables, ONLY: rho_comp, spec_comp, temp_comp
+    use network, ONLY: get_electron_fraction, nspec
     use probin_module, ONLY : base_cutoff_density, &
-         tag_density_1, tag_density_2, tag_density_3
+         tag_density_1, &
+         tag_rhoye_lo_2, &
+         tag_density_3, tag_temperature_3, tag_rhoye_hi_3, tag_rhoye_lo_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
-    real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:)
+    real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     integer, optional, intent(in   ) :: lev
-    integer :: i,j,nx,ny,llev
+    integer :: i,j,k,nx,ny,llev
+
+    real(kind = dp_t) :: ye, rhoye
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(tagbox,dim=1)
     ny = size(tagbox,dim=2)
+    k  = lo(3)-ng
 
     tagbox = .false.
 
@@ -73,7 +79,7 @@ contains
     case (1)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. tag_density_1) then
+             if (mf(i,j,k,rho_comp) .gt. tag_density_1) then
                 tagbox(i,j) = .true.
              end if
           end do
@@ -81,7 +87,9 @@ contains
     case (2)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. tag_density_2) then
+             call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
+             rhoye = mf(i, j, k, rho_comp) * ye
+             if (rhoye .gt. tag_rhoye_lo_2) then
                 tagbox(i,j) = .true.
              end if
           end do
@@ -89,7 +97,12 @@ contains
     case (3)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. tag_density_3) then
+             call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
+             rhoye = mf(i, j, k, rho_comp) * ye
+             if ((mf(i, j, k, rho_comp) .gt. tag_density_3 .and. &
+                  mf(i, j, k, temp_comp) .gt. tag_temperature_3) .or. &
+                 (rhoye .gt. tag_rhoye_lo_3 .and. &
+                  rhoye .lt. tag_rhoye_hi_3)) then
                 tagbox(i,j) = .true.
              end if
           end do
@@ -100,13 +113,19 @@ contains
 
   subroutine tag_boxes_3d(tagbox,mf,lo,ng,lev)
 
+    use variables, ONLY: rho_comp, spec_comp, temp_comp
+    use network, ONLY: get_electron_fraction, nspec
     use probin_module, ONLY : base_cutoff_density, &
-         tag_density_1, tag_density_2, tag_density_3
+         tag_density_1, &
+         tag_rhoye_lo_2, &
+         tag_density_3, tag_temperature_3, tag_rhoye_hi_3, tag_rhoye_lo_3
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
-    real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     integer, optional, intent(in   ) :: lev
+
+    real(kind = dp_t) :: ye, rhoye
 
     integer :: i,j,k,nx,ny,nz,llev
 
@@ -123,7 +142,7 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. tag_density_1) then
+                if (mf(i,j,k, rho_comp) .gt. tag_density_1) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
@@ -135,7 +154,9 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. tag_density_2) then
+                call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
+                rhoye = mf(i, j, k, rho_comp) * ye
+                if (rhoye .gt. tag_rhoye_lo_2) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
@@ -147,7 +168,12 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. tag_density_3) then
+                call get_electron_fraction(ye, mf(i, j, k, spec_comp:spec_comp + nspec - 1))
+                rhoye = mf(i, j, k, rho_comp) * ye
+                if ((mf(i, j, k, rho_comp) .gt. tag_density_3 .and. &
+                     mf(i, j, k, temp_comp) .gt. tag_temperature_3) .or. &
+                     (rhoye .gt. tag_rhoye_lo_3 .and. &
+                     rhoye .lt. tag_rhoye_hi_3)) then
                    tagbox(i,j,k) = .true.
                 end if
              end do
