@@ -49,7 +49,7 @@ contains
   ! NOTE: this routine differs from that in varden because phi is passed in/out 
   !       rather than allocated here
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
-                        macrhs,div_coeff_1d,div_coeff_1d_edge,div_coeff_cart_edge)
+                        macrhs,beta0_1d,beta0_1d_edge,beta0_cart_edge)
 
     use mac_hypre_module               , only : mac_hypre
     use mac_multigrid_module           , only : mac_multigrid
@@ -71,9 +71,9 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
 
     type(multifab ), intent(in   ), optional :: macrhs(:)
-    real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
-    real(dp_t)     , intent(in   ), optional :: div_coeff_1d_edge(:,:)
-    type(multifab ), intent(in   ), optional :: div_coeff_cart_edge(:,:)
+    real(dp_t)     , intent(in   ), optional :: beta0_1d(:,:)
+    real(dp_t)     , intent(in   ), optional :: beta0_1d_edge(:,:)
+    type(multifab ), intent(in   ), optional :: beta0_cart_edge(:,:)
 
     type(multifab)  :: rh(mla%nlevel),solver_alpha(mla%nlevel),solver_beta(mla%nlevel,mla%dim)
     type(bndry_reg) :: fine_flx(mla%nlevel)
@@ -83,7 +83,7 @@ contains
     real(dp_t)                   :: rel_solver_eps
     real(dp_t)                   :: abs_solver_eps
     integer                      :: stencil_order,i,n,comp,dm,nlevs
-    logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_cart_edge
+    logical                      :: use_rhs, use_beta0_1d, use_beta0_cart_edge
 
     type(bl_prof_timer), save :: bpt
 
@@ -93,18 +93,18 @@ contains
     nlevs = mla%nlevel
 
     use_rhs          = .false. ; if (present(macrhs)    ) use_rhs          = .true.
-    use_div_coeff_1d = .false. ; if (present(div_coeff_1d)) use_div_coeff_1d = .true.
-    use_div_coeff_cart_edge = .false. ; if (present(div_coeff_cart_edge)) use_div_coeff_cart_edge = .true.
+    use_beta0_1d = .false. ; if (present(beta0_1d)) use_beta0_1d = .true.
+    use_beta0_cart_edge = .false. ; if (present(beta0_cart_edge)) use_beta0_cart_edge = .true.
 
-    if (use_div_coeff_1d .and. use_div_coeff_cart_edge) then
+    if (use_beta0_1d .and. use_beta0_cart_edge) then
        call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN MACPROJECT')
     end if
 
-    if (spherical .eq. 1 .and. use_div_coeff_1d) then
+    if (spherical .eq. 1 .and. use_beta0_1d) then
        call bl_error('CANT HAVE SPHERICAL .eq. 1 and 1D DIV_COEFF IN MACPROJECT')
     end if
 
-    if (spherical .eq. 0 .and. use_div_coeff_cart_edge) then
+    if (spherical .eq. 0 .and. use_beta0_cart_edge) then
        call bl_error('CANT HAVE SPHERICAL .eq. 0 and 3D DIV_COEFF IN MACPROJECT')
     end if
 
@@ -120,7 +120,7 @@ contains
     end do
 
     ! Print the norm of each component separately -- make sure to do
-    !       this before we multiply the velocities by the div_coeff.
+    !       this before we multiply the velocities by the beta0.
     if (verbose .eq. 1) then
        if (parallel_IOProcessor()) print *,''
        do n = 1,nlevs
@@ -151,15 +151,15 @@ contains
        end do
     end if
 
-    if (use_div_coeff_1d) then
+    if (use_beta0_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_1d_edge(n,:),&
+          call mult_edge_by_1d_coeff(umac(n,:),beta0_1d(n,:),beta0_1d_edge(n,:),&
                                      .true.)
        end do
-    else if (use_div_coeff_cart_edge) then
+    else if (use_beta0_cart_edge) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_mult_mult(umac(n,comp),div_coeff_cart_edge(n,comp))
+             call multifab_mult_mult(umac(n,comp),beta0_cart_edge(n,comp))
           end do
        end do
     end if
@@ -182,21 +182,21 @@ contains
     call mk_mac_coeffs(mla,rho,solver_beta)
 
     ! now make solver_beta = beta0/rho
-    if (use_div_coeff_1d) then
+    if (use_beta0_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(solver_beta(n,:),div_coeff_1d(n,:), &
-                                     div_coeff_1d_edge(n,:),.true.)
+          call mult_edge_by_1d_coeff(solver_beta(n,:),beta0_1d(n,:), &
+                                     beta0_1d_edge(n,:),.true.)
           if (use_alt_energy_fix) then
-             call mult_edge_by_1d_coeff(solver_beta(n,:),div_coeff_1d(n,:), &
-                                        div_coeff_1d_edge(n,:),.true.)
+             call mult_edge_by_1d_coeff(solver_beta(n,:),beta0_1d(n,:), &
+                                        beta0_1d_edge(n,:),.true.)
           endif
        end do
-    else if (use_div_coeff_cart_edge) then
+    else if (use_beta0_cart_edge) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_mult_mult(solver_beta(n,comp),div_coeff_cart_edge(n,comp))
+             call multifab_mult_mult(solver_beta(n,comp),beta0_cart_edge(n,comp))
              if (use_alt_energy_fix) then
-                call multifab_mult_mult(solver_beta(n,comp),div_coeff_cart_edge(n,comp))                
+                call multifab_mult_mult(solver_beta(n,comp),beta0_cart_edge(n,comp))                
              endif
           end do
        end do
@@ -229,15 +229,15 @@ contains
     call mkumac(mla,umac,phi,solver_beta,fine_flx,dx,the_bc_tower)
 
     ! divide out the beta0
-    if (use_div_coeff_1d) then
+    if (use_beta0_1d) then
        do n = 1,nlevs
-          call mult_edge_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_1d_edge(n,:), &
+          call mult_edge_by_1d_coeff(umac(n,:),beta0_1d(n,:),beta0_1d_edge(n,:), &
                                      .false.)
        end do
-    else if (use_div_coeff_cart_edge) then
+    else if (use_beta0_cart_edge) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_div_div(umac(n,comp),div_coeff_cart_edge(n,comp))
+             call multifab_div_div(umac(n,comp),beta0_cart_edge(n,comp))
           end do
        end do
     end if
@@ -275,7 +275,7 @@ contains
     end if
     
     ! Print the norm of each component separately -- make sure to do this after we divide
-    !       the velocities by the div_coeff.                                 
+    !       the velocities by the beta0.                                 
     if (verbose .eq. 1) then
        do n = 1,nlevs
           umin = multifab_max(umac(n,1))
@@ -479,11 +479,11 @@ contains
 
     end subroutine divumac_3d
 
-    subroutine mult_edge_by_1d_coeff(edge,div_coeff,div_coeff_edge,do_mult)
+    subroutine mult_edge_by_1d_coeff(edge,beta0,beta0_edge,do_mult)
 
       type(multifab) , intent(inout) :: edge(:)
-      real(dp_t)     , intent(in   ) :: div_coeff(0:)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(0:)
+      real(dp_t)     , intent(in   ) :: beta0(0:)
+      real(dp_t)     , intent(in   ) :: beta0_edge(0:)
       logical        , intent(in   ) :: do_mult
 
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -504,77 +504,77 @@ contains
          select case (dm)
          case (1)
             call mult_edge_by_1d_coeff_1d(ump(:,1,1,1), lo, hi, ng_um, &
-                                          div_coeff_edge(lo(dm):), &
+                                          beta0_edge(lo(dm):), &
                                           do_mult)
          case (2)
             vmp => dataptr(edge(2), i)
             call mult_edge_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), lo, hi, ng_um, &
-                                          div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
+                                          beta0(lo(dm):), beta0_edge(lo(dm):), &
                                           do_mult)
          case (3)
             vmp => dataptr(edge(2), i)
             wmp => dataptr(edge(3), i)
             call mult_edge_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, ng_um, &
-                                          div_coeff(lo(dm):), div_coeff_edge(lo(dm):), &
+                                          beta0(lo(dm):), beta0_edge(lo(dm):), &
                                           do_mult)
          end select
       end do
 
     end subroutine mult_edge_by_1d_coeff
 
-    subroutine mult_edge_by_1d_coeff_1d(uedge,lo,hi,ng_um,div_coeff_edge,do_mult)
+    subroutine mult_edge_by_1d_coeff_1d(uedge,lo,hi,ng_um,beta0_edge,do_mult)
 
       integer                        :: lo(:),hi(:)
       integer                        :: ng_um
       real(kind=dp_t), intent(inout) :: uedge(lo(1)-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(lo(1):)
+      real(dp_t)     , intent(in   ) :: beta0_edge(lo(1):)
       logical        , intent(in   ) :: do_mult
 
       integer :: i
 
       if (do_mult) then
          do i = lo(1),hi(1)+1
-            uedge(i) = uedge(i) * div_coeff_edge(i)
+            uedge(i) = uedge(i) * beta0_edge(i)
          end do
       else
          do i = lo(1),hi(1)+1
-            uedge(i) = uedge(i) / div_coeff_edge(i)
+            uedge(i) = uedge(i) / beta0_edge(i)
          end do
       end if
 
     end subroutine mult_edge_by_1d_coeff_1d
 
-    subroutine mult_edge_by_1d_coeff_2d(uedge,vedge,lo,hi,ng_um,div_coeff,div_coeff_edge,do_mult)
+    subroutine mult_edge_by_1d_coeff_2d(uedge,vedge,lo,hi,ng_um,beta0,beta0_edge,do_mult)
 
       integer                        :: lo(:),hi(:)
       integer                        :: ng_um
       real(kind=dp_t), intent(inout) :: uedge(lo(1)-ng_um:,lo(2)-ng_um:)
       real(kind=dp_t), intent(inout) :: vedge(lo(1)-ng_um:,lo(2)-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff(lo(2):)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(lo(2):)
+      real(dp_t)     , intent(in   ) :: beta0(lo(2):)
+      real(dp_t)     , intent(in   ) :: beta0_edge(lo(2):)
       logical        , intent(in   ) :: do_mult
 
       integer :: j
 
       if (do_mult) then
          do j = lo(2),hi(2)
-            uedge(lo(1):hi(1)+1,j) = uedge(lo(1):hi(1)+1,j) * div_coeff(j)
+            uedge(lo(1):hi(1)+1,j) = uedge(lo(1):hi(1)+1,j) * beta0(j)
          end do
          do j = lo(2),hi(2)+1
-            vedge(lo(1):hi(1),j) = vedge(lo(1):hi(1),j) * div_coeff_edge(j)
+            vedge(lo(1):hi(1),j) = vedge(lo(1):hi(1),j) * beta0_edge(j)
          end do
       else
          do j = lo(2),hi(2)
-            uedge(lo(1):hi(1)+1,j) = uedge(lo(1):hi(1)+1,j) / div_coeff(j)
+            uedge(lo(1):hi(1)+1,j) = uedge(lo(1):hi(1)+1,j) / beta0(j)
          end do
          do j = lo(2),hi(2)+1
-            vedge(lo(1):hi(1),j) = vedge(lo(1):hi(1),j) / div_coeff_edge(j)
+            vedge(lo(1):hi(1),j) = vedge(lo(1):hi(1),j) / beta0_edge(j)
          end do
       end if
 
     end subroutine mult_edge_by_1d_coeff_2d
 
-    subroutine mult_edge_by_1d_coeff_3d(uedge,vedge,wedge,lo,hi,ng_um,div_coeff,div_coeff_edge, &
+    subroutine mult_edge_by_1d_coeff_3d(uedge,vedge,wedge,lo,hi,ng_um,beta0,beta0_edge, &
                                         do_mult)
 
       integer                        :: lo(:),hi(:)
@@ -582,27 +582,27 @@ contains
       real(kind=dp_t), intent(inout) :: uedge(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
       real(kind=dp_t), intent(inout) :: vedge(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
       real(kind=dp_t), intent(inout) :: wedge(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-      real(dp_t)     , intent(in   ) :: div_coeff(lo(3):)
-      real(dp_t)     , intent(in   ) :: div_coeff_edge(lo(3):)
+      real(dp_t)     , intent(in   ) :: beta0(lo(3):)
+      real(dp_t)     , intent(in   ) :: beta0_edge(lo(3):)
       logical        , intent(in   ) :: do_mult
 
       integer :: k
 
       if (do_mult) then
          do k = lo(3),hi(3)
-            uedge(lo(1):hi(1)+1,lo(2):hi(2),k) = uedge(lo(1):hi(1)+1,lo(2):hi(2),k) * div_coeff(k)
-            vedge(lo(1):hi(1),lo(2):hi(2)+1,k) = vedge(lo(1):hi(1),lo(2):hi(2)+1,k) * div_coeff(k)
+            uedge(lo(1):hi(1)+1,lo(2):hi(2),k) = uedge(lo(1):hi(1)+1,lo(2):hi(2),k) * beta0(k)
+            vedge(lo(1):hi(1),lo(2):hi(2)+1,k) = vedge(lo(1):hi(1),lo(2):hi(2)+1,k) * beta0(k)
          end do
          do k = lo(3),hi(3)+1
-            wedge(lo(1):hi(1),lo(2):hi(2),k) = wedge(lo(1):hi(1),lo(2):hi(2),k) * div_coeff_edge(k)
+            wedge(lo(1):hi(1),lo(2):hi(2),k) = wedge(lo(1):hi(1),lo(2):hi(2),k) * beta0_edge(k)
          end do
       else
          do k = lo(3),hi(3)
-            uedge(lo(1):hi(1)+1,lo(2):hi(2),k) = uedge(lo(1):hi(1)+1,lo(2):hi(2),k) / div_coeff(k)
-            vedge(lo(1):hi(1),lo(2):hi(2)+1,k) = vedge(lo(1):hi(1),lo(2):hi(2)+1,k) / div_coeff(k)
+            uedge(lo(1):hi(1)+1,lo(2):hi(2),k) = uedge(lo(1):hi(1)+1,lo(2):hi(2),k) / beta0(k)
+            vedge(lo(1):hi(1),lo(2):hi(2)+1,k) = vedge(lo(1):hi(1),lo(2):hi(2)+1,k) / beta0(k)
          end do
          do k = lo(3),hi(3)+1
-            wedge(lo(1):hi(1),lo(2):hi(2),k) = wedge(lo(1):hi(1),lo(2):hi(2),k) / div_coeff_edge(k)
+            wedge(lo(1):hi(1),lo(2):hi(2),k) = wedge(lo(1):hi(1),lo(2):hi(2),k) / beta0_edge(k)
          end do
       end if
 

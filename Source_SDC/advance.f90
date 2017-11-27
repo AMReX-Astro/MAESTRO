@@ -22,7 +22,7 @@ contains
                               gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,rho_Hext,diff_new, &
-                              div_coeff_old,div_coeff_new, &
+                              beta0_old,beta0_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
                               dSdt,S_cc_old,S_cc_new,etarho_ec,etarho_cc, &
                               psi,sponge,nodalrhs,tempbar_init,particles)
@@ -32,7 +32,7 @@ contains
     use velocity_advance_module     , only : velocity_advance
     use  density_advance_module     , only : density_advance
     use enthalpy_advance_module     , only : enthalpy_advance
-    use make_div_coeff_module       , only : make_div_coeff
+    use make_beta0_module       , only : make_beta0
     use make_w0_module              , only : make_w0
     use advect_base_module          , only : advect_base_dens, advect_base_enthalpy
     use react_state_module          , only : react_state, instantaneous_reaction_rates
@@ -103,8 +103,8 @@ contains
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
     type(multifab),  intent(inout) :: rho_Hext(:)
     type(multifab),  intent(inout) ::  diff_new(:)
-    real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
-    real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
+    real(dp_t)    ,  intent(inout) :: beta0_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: beta0_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
     real(dp_t)    ,  intent(in   ) :: dx(:,:),dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
@@ -132,8 +132,8 @@ contains
     type(multifab) ::            diff_hat(mla%nlevel)
     type(multifab) ::      diff_hterm_new(mla%nlevel)
     type(multifab) ::      diff_hterm_hat(mla%nlevel)
-    type(multifab) ::        div_coeff_cart(mla%nlevel)
-    type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
+    type(multifab) ::        beta0_cart(mla%nlevel)
+    type(multifab) :: beta0_cart_edge(mla%nlevel,mla%dim)
     type(multifab) ::              gamma1(mla%nlevel)
     type(multifab) ::          etarhoflux(mla%nlevel)
     type(multifab) ::               intra(mla%nlevel)
@@ -176,13 +176,13 @@ contains
     real(kind=dp_t), allocatable ::              peosbar(:,:)
     real(kind=dp_t), allocatable ::             w0_force(:,:)
     real(kind=dp_t), allocatable ::                 Sbar(:,:)
-    real(kind=dp_t), allocatable ::        div_coeff_nph(:,:)
+    real(kind=dp_t), allocatable ::        beta0_nph(:,:)
     real(kind=dp_t), allocatable ::        gamma1bar_old(:,:)
     real(kind=dp_t), allocatable ::      gamma1bar_temp1(:,:)
     real(kind=dp_t), allocatable ::      gamma1bar_temp2(:,:)
     real(kind=dp_t), allocatable :: delta_gamma1_termbar(:,:)
     real(kind=dp_t), allocatable ::               w0_old(:,:)
-    real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
+    real(kind=dp_t), allocatable ::       beta0_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
 
     integer    :: i,n,comp,proj_type,nlevs,dm,misdc
@@ -223,13 +223,13 @@ contains
     allocate(             peosbar(nlevs_radial,0:nr_fine-1))
     allocate(            w0_force(nlevs_radial,0:nr_fine-1))
     allocate(                Sbar(nlevs_radial,0:nr_fine-1))
-    allocate(       div_coeff_nph(nlevs_radial,0:nr_fine-1))
+    allocate(       beta0_nph(nlevs_radial,0:nr_fine-1))
     allocate(       gamma1bar_old(nlevs_radial,0:nr_fine-1))
     allocate(     gamma1bar_temp1(nlevs_radial,0:nr_fine-1))
     allocate(     gamma1bar_temp2(nlevs_radial,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs_radial,0:nr_fine-1))
     allocate(              w0_old(nlevs_radial,0:nr_fine))
-    allocate(      div_coeff_edge(nlevs_radial,0:nr_fine))
+    allocate(      beta0_edge(nlevs_radial,0:nr_fine))
     allocate( rho0_predicted_edge(nlevs_radial,0:nr_fine))
 
     advect_time  = 0.d0
@@ -408,7 +408,7 @@ contains
 
     macproj_time_start = parallel_wtime()
 
-    call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
+    call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,beta0_old,dx, &
                      gamma1bar_old,p0_old,delta_p_term,dt,delta_chi,.true.)
 
     do n=1,nlevs
@@ -426,25 +426,25 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
+             call multifab_build_edge(beta0_cart_edge(n,comp), mla%la(n),1,1,comp)
           end do
        end do
 
-       call make_s0mac(mla,div_coeff_old,div_coeff_cart_edge,dx,foextrap_comp, &
+       call make_s0mac(mla,beta0_old,beta0_cart_edge,dx,foextrap_comp, &
                        the_bc_tower%bc_tower_array)
 
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower,macrhs, &
-                       div_coeff_cart_edge=div_coeff_cart_edge)
+                       beta0_cart_edge=beta0_cart_edge)
 
        do n=1,nlevs
           do comp=1,dm
-             call destroy(div_coeff_cart_edge(n,comp))
+             call destroy(beta0_cart_edge(n,comp))
           end do
        end do
     else
-       call cell_to_edge(div_coeff_old,div_coeff_edge)
+       call cell_to_edge(beta0_old,beta0_edge)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_1d_edge=div_coeff_edge)
+                       macrhs,beta0_1d=beta0_old,beta0_1d_edge=beta0_edge)
     end if
 
     do n=1,nlevs
@@ -813,16 +813,16 @@ contains
 !          call destroy(gamma1(n))
 !       end do
 !
-!       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+!       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 !
 !    else
         
-    ! Just copy div_coeff_new from div_coeff_old if not evolving the base state
-    div_coeff_new = div_coeff_old
+    ! Just copy beta0_new from beta0_old if not evolving the base state
+    beta0_new = beta0_old
 
 !    end if
 
-    div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
+    beta0_nph = HALF*(beta0_old + beta0_new)
 
     ! reset cutoff coordinates to old time value
 !    call compute_cutoff_coords(rho0_old)
@@ -978,7 +978,7 @@ contains
 
           ! note delta_gamma1_term here is not time-centered
           call make_macrhs(macrhs,rho0_new,S_cc_nph,delta_gamma1_term,Sbar, &
-                           div_coeff_nph,dx,gamma1bar,p0_new, &
+                           beta0_nph,dx,gamma1bar,p0_new, &
                            delta_p_term,dt,delta_chi,.false.)
 
           do n=1,nlevs
@@ -997,25 +997,25 @@ contains
           if (spherical .eq. 1) then
              do n=1,nlevs
                 do comp=1,dm
-                   call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
+                   call multifab_build_edge(beta0_cart_edge(n,comp), mla%la(n),1,1,comp)
                 end do
              end do
 
-             call make_s0mac(mla,div_coeff_nph,div_coeff_cart_edge,dx,foextrap_comp, &
+             call make_s0mac(mla,beta0_nph,beta0_cart_edge,dx,foextrap_comp, &
                              the_bc_tower%bc_tower_array)
 
              call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                             div_coeff_cart_edge=div_coeff_cart_edge)
+                             beta0_cart_edge=beta0_cart_edge)
 
              do n=1,nlevs
                 do comp=1,dm
-                   call destroy(div_coeff_cart_edge(n,comp))
+                   call destroy(beta0_cart_edge(n,comp))
                 end do
              end do
           else
-             call cell_to_edge(div_coeff_nph,div_coeff_edge)
+             call cell_to_edge(beta0_nph,beta0_edge)
              call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                             div_coeff_1d=div_coeff_nph,div_coeff_1d_edge=div_coeff_edge)
+                             beta0_1d=beta0_nph,beta0_1d_edge=beta0_edge)
           end if
 
           do n=1,nlevs
@@ -1358,16 +1358,16 @@ contains
 !       end do
 !
 !       !  We used to call this even if evolve_base was false,but we don't need to
-!       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+!       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 !
 !    else
         
-       ! Just copy div_coeff_new from div_coeff_old if not evolving the base state
-       div_coeff_new = div_coeff_old
+       ! Just copy beta0_new from beta0_old if not evolving the base state
+       beta0_new = beta0_old
 
 !    end if
 
-       div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
+       beta0_nph = HALF*(beta0_old+beta0_new)
 
        if (barrier_timers) call parallel_barrier()
        misc_time = misc_time + parallel_wtime() - misc_time_start
@@ -1515,7 +1515,7 @@ contains
           call multifab_copy(nodalrhs_old(n),nodalrhs(n))
        end do
        call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc_new,delta_gamma1_term, &
-                         Sbar,div_coeff_nph,dx)
+                         Sbar,beta0_nph,dx)
        do n=1,nlevs
           call multifab_sub_sub(nodalrhs(n),nodalrhs_old(n))
           call multifab_div_div_s(nodalrhs(n),dt)
@@ -1526,7 +1526,7 @@ contains
        proj_type = regular_timestep_comp
 
        call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc_new,delta_gamma1_term, &
-                         Sbar,div_coeff_nph,dx)
+                         Sbar,beta0_nph,dx)
 
        ! compute delta_p_term = peos_new - peosbar_cart (for RHS of projection)
        if (dpdt_factor .gt. ZERO) then
@@ -1566,7 +1566,7 @@ contains
              call destroy(peosbar_cart(n))
           end do
           
-          call correct_nodalrhs(the_bc_tower,mla,rho0_new,nodalrhs,div_coeff_nph,dx,dt, &
+          call correct_nodalrhs(the_bc_tower,mla,rho0_new,nodalrhs,beta0_nph,dx,dt, &
                                gamma1bar,p0_new,delta_p_term)
           
           do n=1,nlevs
@@ -1582,17 +1582,17 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_build(div_coeff_cart(n), mla%la(n), 1, 1)
+       call multifab_build(beta0_cart(n), mla%la(n), 1, 1)
     end do
        
-    call put_1d_array_on_cart(div_coeff_nph,div_coeff_cart,foextrap_comp,.false., &
+    call put_1d_array_on_cart(beta0_nph,beta0_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                   div_coeff_cart,nodalrhs)
+                   beta0_cart,nodalrhs)
 
     do n=1,nlevs
-       call destroy(div_coeff_cart(n))
+       call destroy(beta0_cart(n))
        call destroy(rhohalf(n))
     end do
     
@@ -1622,7 +1622,7 @@ contains
        ! pass in the new time value, time+dt
        call diag(time+dt,dt,dx,snew,rho_Hnuc2,rho_Hext,diff_new,rho_omegadot2,&
                  rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,div_coeff_new, &
+                 gamma1bar,beta0_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
 
@@ -1631,7 +1631,7 @@ contains
        if (mach_max_abort > ZERO) then
           call sanity_check(time+dt,dx,snew, &
                  rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,div_coeff_new, &
+                 gamma1bar,beta0_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
        endif

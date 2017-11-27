@@ -20,7 +20,7 @@ module divu_iter_module
 contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
-                       S_cc,normal,nodalrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
+                       S_cc,normal,nodalrhs,dSdt,beta0_old,rho0_old,p0_old,gamma1bar, &
                        tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
     use variables, only: nscal, foextrap_comp
@@ -52,7 +52,7 @@ contains
     type(multifab) , intent(inout) :: normal(:)
     type(multifab) , intent(inout) :: nodalrhs(:)
     type(multifab) , intent(in   ) :: dSdt(:)
-    real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -76,7 +76,7 @@ contains
     type(multifab) :: rho_omegadot(mla%nlevel)
     type(multifab) :: rho_Hnuc(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
-    type(multifab) :: div_coeff_cart(mla%nlevel)
+    type(multifab) :: beta0_cart(mla%nlevel)
     type(multifab) :: Tcoeff(mla%nlevel)
     type(multifab) :: hcoeff(mla%nlevel)
     type(multifab) :: Xkcoeff(mla%nlevel)
@@ -178,7 +178,7 @@ contains
     ! This needs to be a separate loop so Sbar is fully defined before 
     ! we get here.
     call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc,delta_gamma1_term, &
-                    Sbar,div_coeff_old,dx)
+                    Sbar,beta0_old,dx)
     
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -220,18 +220,18 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(div_coeff_cart(n), mla%la(n), 1, 1)
+       call multifab_build(beta0_cart(n), mla%la(n), 1, 1)
     end do
        
-    call put_1d_array_on_cart(div_coeff_old,div_coeff_cart,foextrap_comp,.false., &
+    call put_1d_array_on_cart(beta0_old,beta0_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
 
     call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                   the_bc_tower,div_coeff_cart,nodalrhs,eps_divu)
+                   the_bc_tower,beta0_cart,nodalrhs,eps_divu)
     
     do n=1,nlevs
-       call destroy(div_coeff_cart(n))
+       call destroy(beta0_cart(n))
        call destroy(rhohalf(n))
     end do
 

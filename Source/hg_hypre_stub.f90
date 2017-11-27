@@ -13,7 +13,7 @@ module hg_hypre_module
 
 contains 
 
-  subroutine hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
+  subroutine hg_hypre(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
                       stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
  
     use hg_multigrid_module, only : hg_multigrid
@@ -22,7 +22,7 @@ contains
     type(multifab ), intent(inout) :: rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
-    type(multifab ), intent(in   ) :: div_coeff_cart(:)
+    type(multifab ), intent(in   ) :: beta0_cart(:)
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
@@ -32,7 +32,7 @@ contains
 
     type(multifab ), intent(inout), optional :: nodalrhs(:)
 
-    call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
+    call hg_multigrid(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
                       stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
 
   end subroutine hg_hypre

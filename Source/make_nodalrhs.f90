@@ -23,7 +23,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   subroutine make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc,delta_gamma1_term,Sbar, &
-                           div_coeff,dx)
+                           beta0,dx)
 
     use define_bc_module
     use ml_layout_module
@@ -40,12 +40,12 @@ contains
     type(multifab) , intent(in   ) :: S_cc(:)
     type(multifab) , intent(in   ) :: delta_gamma1_term(:)
     real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     type(multifab) ::          ccrhs(mla%nlevel)
     type(multifab) ::      Sbar_cart(mla%nlevel)
-    type(multifab) :: div_coeff_cart(mla%nlevel)
+    type(multifab) :: beta0_cart(mla%nlevel)
     type(layout  ) :: la
 
     real(kind=dp_t), pointer:: hp(:,:,:,:),gp(:,:,:,:),rp(:,:,:,:)
@@ -64,12 +64,12 @@ contains
        do n = 1, nlevs
           la = get_layout(S_cc(n))
           call multifab_build(Sbar_cart(n),     la,1,0)
-          call multifab_build(div_coeff_cart(n),la,1,0)
+          call multifab_build(beta0_cart(n),la,1,0)
           call setval(Sbar_cart(n),     ZERO,all=.true.)
-          call setval(div_coeff_cart(n),ZERO,all=.true.)
+          call setval(beta0_cart(n),ZERO,all=.true.)
        end do
 
-       call put_1d_array_on_cart(div_coeff,div_coeff_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(beta0,beta0_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(Sbar,Sbar_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
@@ -83,7 +83,7 @@ contains
     ng_rh = nghost(ccrhs(1))
     ng_sr = nghost(S_cc(1))
     ng_dg = nghost(delta_gamma1_term(1))
-    ng_dc = nghost(div_coeff_cart(1))
+    ng_dc = nghost(beta0_cart(1))
     ng_sb = nghost(Sbar_cart(1))
     ng_hg = nghost(nodalrhs(1))
 
@@ -97,20 +97,20 @@ contains
           select case (dm)
           case (1)
              call make_ccrhs_1d(lo,hi,rp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
-                                gp(:,1,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
+                                gp(:,1,1,1),ng_dg,Sbar(n,:),beta0(n,:))
           case (2)
              call make_ccrhs_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
-                                gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
+                                gp(:,:,1,1),ng_dg,Sbar(n,:),beta0(n,:))
           case (3)
              if (spherical .eq. 1) then
-                dp => dataptr(div_coeff_cart(n), i)
+                dp => dataptr(beta0_cart(n), i)
                 sbp => dataptr(Sbar_cart(n), i)
                 call make_ccrhs_3d_sphr(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
                                         gp(:,:,:,1),ng_dg,sbp(:,:,:,1),ng_sb, &
                                         dp(:,:,:,1),ng_dc)
              else
                 call make_ccrhs_3d_cart(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
-                                        gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:))
+                                        gp(:,:,:,1),ng_dg,Sbar(n,:),beta0(n,:))
              end if
           end select
        end do
@@ -145,7 +145,7 @@ contains
        call destroy(ccrhs(n))
        if (spherical .eq. 1) then
           call destroy(Sbar_cart(n))
-          call destroy(div_coeff_cart(n))
+          call destroy(beta0_cart(n))
        end if
     end do
 
@@ -154,54 +154,54 @@ contains
   end subroutine make_nodalrhs
   
   subroutine make_ccrhs_1d(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
-                           div_coeff)
+                           beta0)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
     real (kind=dp_t), intent(  out) ::             ccrhs(lo(1)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     
     ! Local variables
     integer :: i
     
     do i = lo(1),hi(1)
-       ccrhs(i) = div_coeff(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
+       ccrhs(i) = beta0(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
     end do
     
   end subroutine make_ccrhs_1d
   
   subroutine make_ccrhs_2d(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg,Sbar, &
-                           div_coeff)
+                           beta0)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
     real (kind=dp_t), intent(  out) ::             ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     
     ! Local variables
     integer :: i, j
     
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          ccrhs(i,j) = div_coeff(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
+          ccrhs(i,j) = beta0(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
        end do
     end do
     
   end subroutine make_ccrhs_2d
   
   subroutine make_ccrhs_3d_cart(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
-                                Sbar,div_coeff)
+                                Sbar,beta0)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
     real (kind=dp_t), intent(  out) ::          ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     
     ! Local variables
     integer :: i,j,k
@@ -210,7 +210,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             ccrhs(i,j,k) = div_coeff(k) * (S_cc(i,j,k) - Sbar(k) + &
+             ccrhs(i,j,k) = beta0(k) * (S_cc(i,j,k) - Sbar(k) + &
                   delta_gamma1_term(i,j,k))
           end do
        end do
@@ -220,14 +220,14 @@ contains
   end subroutine make_ccrhs_3d_cart
    
   subroutine make_ccrhs_3d_sphr(lo,hi,ccrhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
-                                Sbar_cart,ng_sb,div_coeff_cart,ng_dc)
+                                Sbar_cart,ng_sb,beta0_cart,ng_dc)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_sb, ng_dc
     real (kind=dp_t), intent(  out) ::          ccrhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar_cart(lo(1)-ng_sb:,lo(2)-ng_sb:,lo(3)-ng_sb:)
-    real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
+    real (kind=dp_t), intent(in   ) :: beta0_cart(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
     
     ! Local variables
     integer :: i,j,k
@@ -236,7 +236,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             ccrhs(i,j,k) = div_coeff_cart(i,j,k) * (S_cc(i,j,k) - Sbar_cart(i,j,k) + &
+             ccrhs(i,j,k) = beta0_cart(i,j,k) * (S_cc(i,j,k) - Sbar_cart(i,j,k) + &
                   delta_gamma1_term(i,j,k))
              
           end do
@@ -309,7 +309,7 @@ contains
     
   end subroutine make_nodalrhs_3d
 
-  subroutine correct_nodalrhs(the_bc_tower,mla,rho0,nodalrhs,div_coeff,dx,dt,gamma1bar,p0, &
+  subroutine correct_nodalrhs(the_bc_tower,mla,rho0,nodalrhs,beta0,dx,dt,gamma1bar,p0, &
                            delta_p_term)
 
     use define_bc_module
@@ -326,7 +326,7 @@ contains
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: nodalrhs(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:), dt
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
@@ -336,7 +336,7 @@ contains
     type(multifab) :: correction_nodal(mla%nlevel)
     type(multifab) ::   gamma1bar_cart(mla%nlevel)
     type(multifab) ::          p0_cart(mla%nlevel)
-    type(multifab) ::   div_coeff_cart(mla%nlevel)
+    type(multifab) ::   beta0_cart(mla%nlevel)
     type(multifab) ::        rho0_cart(mla%nlevel)
 
     type(layout)   :: la
@@ -359,11 +359,11 @@ contains
           la = get_layout(delta_p_term(n))
           call multifab_build(gamma1bar_cart(n),la,1,0)
           call multifab_build(p0_cart(n),       la,1,0)
-          call multifab_build(div_coeff_cart(n),la,1,0)
+          call multifab_build(beta0_cart(n),la,1,0)
           call multifab_build(rho0_cart(n),     la,1,0)
           call setval(gamma1bar_cart(n),ZERO,all=.true.)
           call setval(p0_cart(n),       ZERO,all=.true.)
-          call setval(div_coeff_cart(n),ZERO,all=.true.)
+          call setval(beta0_cart(n),ZERO,all=.true.)
           call setval(rho0_cart(n),     ZERO,all=.true.)
        end do
 
@@ -371,7 +371,7 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(p0,p0_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-       call put_1d_array_on_cart(div_coeff,div_coeff_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(beta0,beta0_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(rho0,rho0_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
@@ -389,7 +389,7 @@ contains
     ng_dp = nghost(delta_p_term(1))
     ng_gb = nghost(gamma1bar_cart(1))
     ng_p0 = nghost(p0_cart(1))
-    ng_dc = nghost(div_coeff_cart(1))
+    ng_dc = nghost(beta0_cart(1))
     ng_r0 = nghost(rho0_cart(1))
     ng_cn = nghost(correction_nodal(1))
 
@@ -402,15 +402,15 @@ contains
           select case (dm)
           case (1)
              call create_correction_cc_1d(n,lo,hi,ccp(:,1,1,1),ng_cc,ptp(:,1,1,1),ng_dp, &
-                                          div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
+                                          beta0(n,:),gamma1bar(n,:),p0(n,:),dt)
           case (2)
              call create_correction_cc_2d(n,lo,hi,ccp(:,:,1,1),ng_cc,ptp(:,:,1,1),ng_dp, &
-                                          div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
+                                          beta0(n,:),gamma1bar(n,:),p0(n,:),dt)
           case (3)
              if (spherical .eq. 1) then
                 gbp  => dataptr(gamma1bar_cart(n),i)
                 p0p  => dataptr(p0_cart(n),i)
-                dcp  => dataptr(div_coeff_cart(n),i)
+                dcp  => dataptr(beta0_cart(n),i)
                 r0p  => dataptr(rho0_cart(n),i)
                 call create_correction_cc_3d_sphr(lo,hi,ccp(:,:,:,1),ng_cc,ptp(:,:,:,1), &
                                                   ng_dp,dcp(:,:,:,1),ng_dc,gbp(:,:,:,1), &
@@ -419,7 +419,7 @@ contains
 
              else
                 call create_correction_cc_3d_cart(n,lo,hi,ccp(:,:,:,1),ng_cc,ptp(:,:,:,1), &
-                                                  ng_dp,div_coeff(n,:),gamma1bar(n,:), &
+                                                  ng_dp,beta0(n,:),gamma1bar(n,:), &
                                                   p0(n,:),dt)
              end if
           end select
@@ -462,7 +462,7 @@ contains
        if (spherical .eq. 1) then
           call destroy(gamma1bar_cart(n))
           call destroy(p0_cart(n))
-          call destroy(div_coeff_cart(n))
+          call destroy(beta0_cart(n))
           call destroy(rho0_cart(n))
        end if
     end do
@@ -472,7 +472,7 @@ contains
   end subroutine correct_nodalrhs
   
   subroutine create_correction_cc_1d(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
-                                     div_coeff,gamma1bar,p0,dt)
+                                     beta0,gamma1bar,p0,dt)
 
     use probin_module, only: dpdt_factor
     use geometry, only: base_cutoff_density_coord
@@ -480,7 +480,7 @@ contains
     integer         , intent(in   ) :: n, lo(:), hi(:), ng_cc, ng_dp
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-ng_cc:)
     real (kind=dp_t), intent(in   ) ::  delta_p_term(lo(1)-ng_dp:)
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)    
     real (kind=dp_t), intent(in   ) :: dt
@@ -491,7 +491,7 @@ contains
     
     do i = lo(1),hi(1)
        if(i .lt. base_cutoff_density_coord(n)) then
-          correction_factor = div_coeff(i)*(dpdt_factor/(gamma1bar(i)*p0(i))) / dt
+          correction_factor = beta0(i)*(dpdt_factor/(gamma1bar(i)*p0(i))) / dt
        else
           correction_factor = 0.0d0
        end if
@@ -501,7 +501,7 @@ contains
   end subroutine create_correction_cc_1d
   
   subroutine create_correction_cc_2d(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
-                                     div_coeff,gamma1bar,p0,dt)
+                                     beta0,gamma1bar,p0,dt)
 
     use probin_module, only: dpdt_factor
     use geometry, only: base_cutoff_density_coord
@@ -509,7 +509,7 @@ contains
     integer         , intent(in   ) :: n, lo(:), hi(:), ng_cc, ng_dp
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-ng_cc:,lo(2)-ng_cc:)
     real (kind=dp_t), intent(in   ) ::  delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:)
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)    
     real (kind=dp_t), intent(in   ) :: dt
@@ -520,7 +520,7 @@ contains
     
     do j = lo(2),hi(2)
        if(j .lt. base_cutoff_density_coord(n)) then
-          correction_factor = div_coeff(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
+          correction_factor = beta0(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
        else
           correction_factor = 0.0d0
        end if
@@ -532,7 +532,7 @@ contains
   end subroutine create_correction_cc_2d
 
   subroutine create_correction_cc_3d_cart(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
-                                          div_coeff,gamma1bar,p0,dt)
+                                          beta0,gamma1bar,p0,dt)
 
     use probin_module, only: dpdt_factor
     use geometry, only: base_cutoff_density_coord
@@ -540,7 +540,7 @@ contains
     integer         , intent(in   ) :: n, lo(:), hi(:),ng_cc,ng_dp
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-ng_cc:,lo(2)-ng_cc:,lo(3)-ng_cc:)
     real (kind=dp_t), intent(in   ) ::  delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:,lo(3)-ng_dp:)
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)    
     real (kind=dp_t), intent(in   ) :: dt
@@ -552,7 +552,7 @@ contains
     !$OMP PARALLEL DO PRIVATE(i,j,k,correction_factor)
     do k = lo(3),hi(3)
        if(k .lt. base_cutoff_density_coord(n)) then
-          correction_factor = div_coeff(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
+          correction_factor = beta0(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
        else
           correction_factor = 0.0d0
        end if
@@ -567,7 +567,7 @@ contains
   end subroutine create_correction_cc_3d_cart
 
   subroutine create_correction_cc_3d_sphr(lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
-                                          div_coeff_cart,ng_dc,gamma1bar_cart,ng_gb, &
+                                          beta0_cart,ng_dc,gamma1bar_cart,ng_gb, &
                                           p0_cart,ng_p0,rho0_cart,ng_r0,dt)
 
     use probin_module, only: dpdt_factor, base_cutoff_density
@@ -575,7 +575,7 @@ contains
     integer         , intent(in   ) :: lo(:),hi(:),ng_cc,ng_dp,ng_dc,ng_gb,ng_p0,ng_r0
     real (kind=dp_t), intent(  out) ::  correction_cc(lo(1)-ng_cc:,lo(2)-ng_cc:,lo(3)-ng_cc:)
     real (kind=dp_t), intent(in   ) ::   delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:,lo(3)-ng_dp:)
-    real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
+    real (kind=dp_t), intent(in   ) :: beta0_cart(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
     real (kind=dp_t), intent(in   ) :: gamma1bar_cart(lo(1)-ng_gb:,lo(2)-ng_gb:,lo(3)-ng_gb:)
     real (kind=dp_t), intent(in   ) ::        p0_cart(lo(1)-ng_p0:,lo(2)-ng_p0:,lo(3)-ng_p0:)
     real (kind=dp_t), intent(in   ) ::      rho0_cart(lo(1)-ng_r0:,lo(2)-ng_r0:,lo(3)-ng_r0:)
@@ -590,7 +590,7 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              if(rho0_cart(i,j,k) .gt. base_cutoff_density) then
-                correction_factor = div_coeff_cart(i,j,k) * &
+                correction_factor = beta0_cart(i,j,k) * &
                      (dpdt_factor/(gamma1bar_cart(i,j,k)*p0_cart(i,j,k))) / dt
              else
                 correction_factor = 0.0d0

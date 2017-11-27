@@ -19,7 +19,7 @@ contains
 
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   subroutine sanity_check(newtime,dx,s,rho0,rhoh0,p0,tempbar, &
-                          gamma1bar,div_coeff, &
+                          gamma1bar,beta0, &
                           u,w0,normal, &
                           mla,the_bc_tower)
 
@@ -40,7 +40,7 @@ contains
     real(kind=dp_t), intent(in   ) ::        p0(:,0:)
     real(kind=dp_t), intent(in   ) ::   tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0(:,0:)
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     type(ml_layout), intent(in   ) :: mla
     type(bc_tower) , intent(in   ) :: the_bc_tower

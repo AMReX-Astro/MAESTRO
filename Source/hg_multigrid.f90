@@ -15,7 +15,7 @@ module hg_multigrid_module
 
 contains 
 
-  subroutine hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
+  subroutine hg_multigrid(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
                           stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
 
     use bl_prof_module
@@ -34,7 +34,7 @@ contains
     type(multifab ), intent(inout) :: rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
-    type(multifab ), intent(in   ) :: div_coeff_cart(:)
+    type(multifab ), intent(in   ) :: beta0_cart(:)
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
@@ -174,7 +174,7 @@ contains
 
        call multifab_div_div_c(coeffs(mgt(n)%nlevels),1,rhohalf(n),1,1,0)
        if (ncomp(coeffs(mgt(n)%nlevels)) .gt. 1) &
-          call multifab_div_div_c(coeffs(mgt(n)%nlevels),2,div_coeff_cart(n),1,1,0)
+          call multifab_div_div_c(coeffs(mgt(n)%nlevels),2,beta0_cart(n),1,1,0)
 
        call multifab_fill_boundary(coeffs(mgt(n)%nlevels))
 
