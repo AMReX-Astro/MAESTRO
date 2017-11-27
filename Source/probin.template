@@ -289,8 +289,8 @@ contains
        if (evolve_base_state) then
           call bl_error("do_smallscale requires evolve_base_state = F")
        end if
-       if (beta_type .ne. 3) then
-          call bl_error("do_smallscale requires beta_type = 3")
+       if (beta0_type .ne. 3) then
+          call bl_error("do_smallscale requires beta0_type = 3")
        end if
     end if
 

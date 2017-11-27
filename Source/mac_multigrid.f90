@@ -15,7 +15,7 @@ module mac_multigrid_module
 
 contains
 
-  subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp,&
+  subroutine mac_multigrid(mla,rh,phi,fine_flx,solver_alpha,solver_beta,dx,the_bc_tower,bc_comp,&
                            stencil_order,rel_solver_eps,abs_solver_eps)
 
     use cc_stencil_fill_module, only : stencil_fill_cc_all_mglevels
@@ -28,7 +28,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: rh(:),phi(:)
     type(bndry_reg), intent(inout) :: fine_flx(:)
-    type(multifab) , intent(in   ) :: alpha(:), beta(:,:)
+    type(multifab) , intent(in   ) :: solver_alpha(:), solver_beta(:,:)
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: bc_comp
@@ -53,7 +53,7 @@ contains
        do_diagnostics = 0
     end if
 
-    call ml_cc_solve(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
+    call ml_cc_solve(mla,rh,phi,fine_flx,solver_alpha,solver_beta,dx,the_bc_tower,bc_comp, &
                      eps = rel_solver_eps, &
                      abs_eps = abs_solver_eps, &
                      nub = mg_bottom_nu, &

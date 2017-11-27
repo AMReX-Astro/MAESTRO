@@ -53,8 +53,8 @@ contains
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
-    type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
-    type(multifab) :: rhsbeta(mla%nlevel,mla%dim),lhsbeta(mla%nlevel,mla%dim)
+    type(multifab) :: rhs_solver_alpha(mla%nlevel),lhs_solver_alpha(mla%nlevel)
+    type(multifab) :: rhs_solver_beta(mla%nlevel,mla%dim),lhs_solver_beta(mla%nlevel,mla%dim)
     type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
 
     integer                     :: stencil_order,dm,nlevs
@@ -84,7 +84,7 @@ contains
     !           dt/2 div . ( pcoeff2 grad p_0^new + pcoeff1 grad p_0^old)
     !
     ! or 
-    ! (lhsalpha - div . lhsbeta grad) h^2 = RHS
+    ! (lhs_solver_alpha - div . lhs_solver_beta grad) h^2 = RHS
     !
     ! First we will construct the RHS by adding each of the terms in
     ! turn.  
@@ -92,9 +92,9 @@ contains
     ! To actually construct each div . (c grad q) term for the RHS, we will 
     ! make use of the cc_applyop routine, which constructs the quantity
     !
-    !     (rhsalpha - div . rhsbeta grad) phi = Lphi
+    !     (rhs_solver_alpha - div . rhs_solver_beta grad) phi = Lphi
     !
-    ! For all RHS terms, we set rhsalpha = 0, rhsbeta = the appropriate 
+    ! For all RHS terms, we set rhs_solver_alpha = 0, rhs_solver_beta = the appropriate 
     ! coefficient, and phi = the quantity being diffused.
 
 
@@ -104,42 +104,42 @@ contains
 
     do n=1,nlevs
        do i = 1,dm
-          call multifab_build_edge(rhsbeta(n,i), mla%la(n), 1, 1, i)
-          call setval(rhsbeta(n,i), ZERO, all=.true.)
+          call multifab_build_edge(rhs_solver_beta(n,i), mla%la(n), 1, 1, i)
+          call setval(rhs_solver_beta(n,i), ZERO, all=.true.)
        end do
     end do
 
     ! put beta on faces
-    call put_data_on_faces(mla,hcoeff1,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,hcoeff1,1,rhs_solver_beta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
           do i = 1,dm 
-             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+             call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt/2.d0,1,1)
           enddo
        enddo
     else
        do n=1,nlevs
           do i = 1,dm 
-             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+             call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt,1,1)
           end do
        enddo
     end if
 
-    ! set rhsalpha = 0
+    ! set rhs_solver_alpha = 0
     ! set phi = h^{(1)}
     do n=1,nlevs
        call multifab_build(phi(n), mla%la(n),  1, 1)
-       call multifab_build(rhsalpha(n), mla%la(n),  1, 1)
+       call multifab_build(rhs_solver_alpha(n), mla%la(n),  1, 1)
        call multifab_build(Lphi(n), mla%la(n),  1, 0)
-       call setval(rhsalpha(n), ZERO, all=.true.)
+       call setval(rhs_solver_alpha(n), ZERO, all=.true.)
        call multifab_copy_c(phi(n),1,s1(n),rhoh_comp,1,1)
        call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
     end do
 
     ! apply the operator
-    call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+    call cc_applyop(mla,Lphi,phi,rhs_solver_alpha,rhs_solver_beta,dx,the_bc_tower, &
                     dm+rhoh_comp,stencil_order)
 
     ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
@@ -164,19 +164,19 @@ contains
 
        ! do X_k^{(1)} term first
        ! put beta on faces
-       call put_data_on_faces(mla,Xkcoeff1,comp,rhsbeta,.true.)
+       call put_data_on_faces(mla,Xkcoeff1,comp,rhs_solver_beta,.true.)
 
        ! scale by dt/2
        if (thermal_diffusion_type .eq. 1) then
           do n=1,nlevs
              do i = 1,dm 
-                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+                call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt/2.d0,1,1)
              enddo
           enddo
        else
           do n=1,nlevs
              do i = 1,dm 
-                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+                call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt,1,1)
              enddo
           enddo
        end if
@@ -188,7 +188,7 @@ contains
        enddo
 
        ! apply the operator
-       call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+       call cc_applyop(mla,Lphi,phi,rhs_solver_alpha,rhs_solver_beta,dx,the_bc_tower, &
                        dm+spec_comp+comp-1,stencil_order)
 
        if(thermal_diffusion_type .eq. 1) then
@@ -200,19 +200,19 @@ contains
 
        ! now do X_k^{(2)} term
        ! put beta on faces
-       call put_data_on_faces(mla,Xkcoeff2,comp,rhsbeta,.true.)
+       call put_data_on_faces(mla,Xkcoeff2,comp,rhs_solver_beta,.true.)
 
        ! scale by dt/2
        if (thermal_diffusion_type .eq. 1) then
           do n=1,nlevs
              do i = 1,dm 
-                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+                call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt/2.d0,1,1)
              end do
           enddo
        else
           do n=1,nlevs
              do i = 1,dm 
-                call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+                call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt,1,1)
              enddo
           enddo
        end if
@@ -224,7 +224,7 @@ contains
        enddo
 
        ! apply the operator
-       call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+       call cc_applyop(mla,Lphi,phi,rhs_solver_alpha,rhs_solver_beta,dx,the_bc_tower, &
                        dm+spec_comp+comp-1,stencil_order)
 
        ! add lphi to rhs
@@ -239,19 +239,19 @@ contains
 
     ! do p0_old term first
     ! put beta on faces
-    call put_data_on_faces(mla,pcoeff1,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,pcoeff1,1,rhs_solver_beta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
           do i = 1,dm 
-             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+             call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt/2.d0,1,1)
           end do
        enddo
     else
        do n=1,nlevs
           do i = 1,dm 
-             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+             call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt,1,1)
           end do
        enddo
     end if
@@ -259,7 +259,7 @@ contains
     call put_1d_array_on_cart(p0_old,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
     ! apply the operator
-    call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+    call cc_applyop(mla,Lphi,phi,rhs_solver_alpha,rhs_solver_beta,dx,the_bc_tower, &
                     foextrap_comp,stencil_order)
 
     if(thermal_diffusion_type .eq. 1) then
@@ -271,19 +271,19 @@ contains
 
     ! now do p0_new term
     ! put beta on faces
-    call put_data_on_faces(mla,pcoeff2,1,rhsbeta,.true.)
+    call put_data_on_faces(mla,pcoeff2,1,rhs_solver_beta,.true.)
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
           do i = 1,dm 
-             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt/2.d0,1,1)
+             call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt/2.d0,1,1)
           end do
        enddo
     else
        do n=1,nlevs
           do i = 1,dm 
-             call multifab_mult_mult_s_c(rhsbeta(n,i),1,dt,1,1)
+             call multifab_mult_mult_s_c(rhs_solver_beta(n,i),1,dt,1,1)
           end do
        enddo
     end if
@@ -292,13 +292,13 @@ contains
                               dx,the_bc_tower%bc_tower_array,mla)
 
     ! apply the operator
-    call cc_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+    call cc_applyop(mla,Lphi,phi,rhs_solver_alpha,rhs_solver_beta,dx,the_bc_tower, &
                     foextrap_comp,stencil_order)
 
     do n=1,nlevs
-       call destroy(rhsalpha(n))
+       call destroy(rhs_solver_alpha(n))
        do i = 1,dm
-          call destroy(rhsbeta(n,i))
+          call destroy(rhs_solver_beta(n,i))
        end do
     end do
 
@@ -317,26 +317,26 @@ contains
 
     do n=1,nlevs
        do i = 1,dm
-          call multifab_build_edge(lhsbeta(n,i), mla%la(n), 1, 1, i)
-          call setval(lhsbeta(n,i), ZERO, all=.true.)
+          call multifab_build_edge(lhs_solver_beta(n,i), mla%la(n), 1, 1, i)
+          call setval(lhs_solver_beta(n,i), ZERO, all=.true.)
        end do
     end do
 
-    ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
+    ! create lhs_solver_beta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! put beta on faces (remember to scale by -dt/2 afterwards)
-    call put_data_on_faces(mla,hcoeff2,1,lhsbeta,.true.)
+    call put_data_on_faces(mla,hcoeff2,1,lhs_solver_beta,.true.)
 
     ! scale by -dt/2
     if (thermal_diffusion_type .eq. 1) then
        do n=1,nlevs
           do i = 1,dm
-             call multifab_mult_mult_s_c(lhsbeta(n,i),1,-dt/2.d0,1,1)
+             call multifab_mult_mult_s_c(lhs_solver_beta(n,i),1,-dt/2.d0,1,1)
           end do
        enddo
     else
        do n=1,nlevs
           do i = 1,dm
-             call multifab_mult_mult_s_c(lhsbeta(n,i),1,-dt,1,1)
+             call multifab_mult_mult_s_c(lhs_solver_beta(n,i),1,-dt,1,1)
           end do
        enddo
     end if
@@ -352,10 +352,10 @@ contains
        call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
     enddo
 
-    ! lhsalpha = \rho^{(2),*} or \rho^{(2)}
+    ! lhs_solver_alpha = \rho^{(2),*} or \rho^{(2)}
     do n=1,nlevs
-       call multifab_build(lhsalpha(n), mla%la(n), 1, 1)
-       call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1,1)
+       call multifab_build(lhs_solver_alpha(n), mla%la(n), 1, 1)
+       call multifab_copy_c(lhs_solver_alpha(n),1,s2(n),rho_comp,1,1)
     enddo
 
     ! Compute norm(phi) to be used inside the MG solver as part of a stopping criterion
@@ -369,7 +369,7 @@ contains
 
     ! Call the solver to obtain h^(2) (it will be stored in phi)
     ! solves (alpha - nabla dot beta nabla)phi = rhs
-    call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
+    call mac_multigrid(mla,rhs,phi,fine_flx,lhs_solver_alpha,lhs_solver_beta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,rel_solver_eps,abs_solver_eps)
 
     do n = 1,nlevs
@@ -377,9 +377,9 @@ contains
     end do
 
     do n=1,nlevs
-       call destroy(lhsalpha(n))
+       call destroy(lhs_solver_alpha(n))
        do i = 1,dm
-          call destroy(lhsbeta(n,i))
+          call destroy(lhs_solver_beta(n,i))
        end do
        call destroy(rhs(n))
     end do

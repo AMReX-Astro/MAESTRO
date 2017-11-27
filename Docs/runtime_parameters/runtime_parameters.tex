@@ -495,7 +495,7 @@
 \verb= base_cutoff_density = &  The density below which we keep the initial model constant. Refer to Section \ref{Sec:Base Cutoff Density} & 3.d6 \\
 \rowcolor{tableShade}
 \verb= bds_type = &  0 = use ppm instead for multi-d integrator \newline 1 = bilinear & 0 \\
-\verb= beta_type = &  what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion). & 1 \\
+\verb= beta0_type = &  what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion). & 1 \\
 \rowcolor{tableShade}
 \verb= buoyancy_cutoff_factor = &  The multiplicative factor (over base\_cutoff\_density) below which we do zero out the buoyancy term in the momentum equation. & 5.0 \\
 \verb= co_latitude = &  latitude, in radians, for problems with rotation where the domain is only a subset of a full star. & ZERO \\
@@ -540,7 +540,7 @@
 \verb= use_delta_gamma1_term = &  turns on second order correction to delta gamma1 term & .false. \\
 \rowcolor{tableShade}
 \verb= use_etarho = &  turn on the etarho term as described in flow chart & .true. \\
-\verb= use_linear_grav_in_beta = &  how to represent gravity in the $\beta_0$ integration: .true. = piecewise linear .false. = piecewise constant & .false. \\
+\verb= use_linear_grav_in_beta0 = &  how to represent gravity in the $\beta_0$ integration: .true. = piecewise linear .false. = piecewise constant & .false. \\
 
 
 \end{longtable}

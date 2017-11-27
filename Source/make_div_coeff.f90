@@ -21,7 +21,7 @@ contains
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
          nr, numdisjointchunks, nlevs_radial
     use restrict_base_module
-    use probin_module, only: beta_type, use_linear_grav_in_beta
+    use probin_module, only: beta0_type, use_linear_grav_in_beta0
 
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
@@ -38,7 +38,7 @@ contains
 
     div_coeff = 0.d0
 
-    if (beta_type .eq. 1) then
+    if (beta0_type .eq. 1) then
 
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        ! Compute beta0 on the edges and average to the center      
@@ -126,7 +126,7 @@ contains
                       
                    else 
 
-                      if ( use_linear_grav_in_beta ) then
+                      if ( use_linear_grav_in_beta0 ) then
                          
                          ! also do piecewise linear reconstruction of
                          ! gravity -- not documented in publication yet.
@@ -247,7 +247,7 @@ contains
           end do
        end do
 
-    else if (beta_type .eq. 2) then
+    else if (beta0_type .eq. 2) then
 
        ! beta_0 = rho_0
        do n=1,nlevs_radial
@@ -258,7 +258,7 @@ contains
           end do
        end do
 
-    else if (beta_type .eq. 3) then
+    else if (beta0_type .eq. 3) then
 
        ! beta_0 = 1.d0
        do n=1,nlevs_radial

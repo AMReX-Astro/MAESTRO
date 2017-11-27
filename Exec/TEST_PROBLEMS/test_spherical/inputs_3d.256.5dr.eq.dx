@@ -57,7 +57,7 @@
 
  enthalpy_pred_type = 1
  evolve_base_state = F
- beta_type = 2
+ beta0_type = 2
 
  dpdt_factor = 0.0
 
