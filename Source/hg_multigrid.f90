@@ -169,7 +169,7 @@ contains
        ! Build coeffs(i,j,1) = (rho/beta0)
        ! (and) coeffs(i,j,2) =   1./beta0 if coeff_ncomp > 1
        !
-       ! Note: either rhohalf = rho/beta_0 or rho/beta_0^2
+       ! Note: either rhohalf = rho/beta0 or rho/beta0^2
        ! (depending on use_alt_energy_fix).
 
        call multifab_div_div_c(coeffs(mgt(n)%nlevels),1,rhohalf(n),1,1,0)

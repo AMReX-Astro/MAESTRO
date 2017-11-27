@@ -1,5 +1,5 @@
-! compute beta_0, the coefficient in our constraint equation,
-! div{beta_0 U} = beta_0 S
+! compute beta0, the coefficient in our constraint equation,
+! div{beta0 U} = beta0 S
 
 module make_div_coeff_module
 
@@ -249,7 +249,7 @@ contains
 
     else if (beta0_type .eq. 2) then
 
-       ! beta_0 = rho_0
+       ! beta0 = rho_0
        do n=1,nlevs_radial
           do j=1,numdisjointchunks(n)
              do r=r_start_coord(n,j),r_end_coord(n,j)
@@ -260,7 +260,7 @@ contains
 
     else if (beta0_type .eq. 3) then
 
-       ! beta_0 = 1.d0
+       ! beta0 = 1.d0
        do n=1,nlevs_radial
           do j=1,numdisjointchunks(n)
              do r=r_start_coord(n,j),r_end_coord(n,j)

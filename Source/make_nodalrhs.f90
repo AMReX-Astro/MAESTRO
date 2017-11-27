@@ -1,5 +1,5 @@
 ! Create the righthand side to the elliptic equation that is solved in
-! the final project step, \beta * (S - \bar{S}).  This quantity is 
+! the final project step, \beta0 * (S - \bar{S}).  This quantity is 
 ! node-centered.  The computation is done is two steps -- first we 
 ! compute it on the cell-centers and then we average to the nodes.
 !

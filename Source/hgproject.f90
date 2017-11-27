@@ -2,16 +2,16 @@
 !
 ! Here, U is cell-centered.  phi is on the nodes, and we solve:
 !
-!  D [ (beta_0/rho) G phi ] = D ( beta_0 U ) - beta_0 S
+!  D [ (beta0/rho) G phi ] = D ( beta0 U ) - beta0 S
 !
 ! If use_alt_energy_fix = T, then we solve:
 !
-!  D [ (beta_0**2/rho) G (phi/beta_0) ] = D ( beta_0 U ) - beta_0 S
+!  D [ (beta0**2/rho) G (phi/beta0) ] = D ( beta0 U ) - beta0 S
 !
 !
 ! Note: if use_alt_energy_fix = T, then we come out of here with
-! (beta_0 grad pi) instead of just grad pi (and also, pi in this
-! case is pi/beta_0).  This beta_0 weighting makes the use of gpi in
+! (beta0 grad pi) instead of just grad pi (and also, pi in this
+! case is pi/beta0).  This beta0 weighting makes the use of gpi in
 ! mkforce.f90 correct.
 
 module hgproject_module
@@ -142,11 +142,11 @@ contains
           call multifab_mult_mult_c(unew(n),d,div_coeff_cart(n),1,1,nghost(div_coeff_cart(n)))
        end do
 
-       ! rhohalf = rho/beta_0
+       ! rhohalf = rho/beta0
        call multifab_div_div_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
                                nghost(div_coeff_cart(n)))
 
-       ! rhohalf = rho/beta_0^2
+       ! rhohalf = rho/beta0^2
        if (using_alt_energy_fix) then
           call multifab_div_div_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
                                   nghost(div_coeff_cart(n)))
@@ -197,17 +197,17 @@ contains
 
     do n=1,nlevs
 
-       ! Convert (beta_0 U) back to U
+       ! Convert (beta0 U) back to U
        do d=1,dm
           call multifab_div_div_c(unew(n),d,div_coeff_cart(n),1,1,nghost(div_coeff_cart(n)))
        end do
 
-       ! Convert (rhohalf/beta_0)   back to rhohalf
-       !  OR     (rhohalf/beta_0^2) back to (rhohalf/beta_0^2)
+       ! Convert (rhohalf/beta0)   back to rhohalf
+       !  OR     (rhohalf/beta0^2) back to (rhohalf/beta0^2)
        call multifab_mult_mult_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
                                  nghost(div_coeff_cart(n)))
 
-       ! Convert (rhohalf/beta_0)   back to rhohalf
+       ! Convert (rhohalf/beta0)   back to rhohalf
        if (using_alt_energy_fix) then
           call multifab_mult_mult_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
                                     nghost(div_coeff_cart(n)))

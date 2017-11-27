@@ -109,7 +109,7 @@ contains
        end do
     end do
 
-    ! put beta on faces
+    ! put solver_beta on faces
     call put_data_on_faces(mla,hcoeff1,1,rhs_solver_beta,.true.)
 
     ! scale by dt/2
@@ -163,7 +163,7 @@ contains
     do comp=1,nspec
 
        ! do X_k^{(1)} term first
-       ! put beta on faces
+       ! put solver_beta on faces
        call put_data_on_faces(mla,Xkcoeff1,comp,rhs_solver_beta,.true.)
 
        ! scale by dt/2
@@ -199,7 +199,7 @@ contains
        end if
 
        ! now do X_k^{(2)} term
-       ! put beta on faces
+       ! put solver_beta on faces
        call put_data_on_faces(mla,Xkcoeff2,comp,rhs_solver_beta,.true.)
 
        ! scale by dt/2
@@ -238,7 +238,7 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! do p0_old term first
-    ! put beta on faces
+    ! put solver_beta on faces
     call put_data_on_faces(mla,pcoeff1,1,rhs_solver_beta,.true.)
 
     ! scale by dt/2
@@ -270,7 +270,7 @@ contains
     end if
 
     ! now do p0_new term
-    ! put beta on faces
+    ! put solver_beta on faces
     call put_data_on_faces(mla,pcoeff2,1,rhs_solver_beta,.true.)
 
     ! scale by dt/2
@@ -323,7 +323,7 @@ contains
     end do
 
     ! create lhs_solver_beta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
-    ! put beta on faces (remember to scale by -dt/2 afterwards)
+    ! put solver_beta on faces (remember to scale by -dt/2 afterwards)
     call put_data_on_faces(mla,hcoeff2,1,lhs_solver_beta,.true.)
 
     ! scale by -dt/2
@@ -368,7 +368,7 @@ contains
     rel_solver_eps = eps_mac
 
     ! Call the solver to obtain h^(2) (it will be stored in phi)
-    ! solves (alpha - nabla dot beta nabla)phi = rhs
+    ! solves (solver_alpha - nabla dot solver_beta nabla)phi = rhs
     call mac_multigrid(mla,rhs,phi,fine_flx,lhs_solver_alpha,lhs_solver_beta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,rel_solver_eps,abs_solver_eps)
 

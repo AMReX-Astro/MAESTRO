@@ -1,5 +1,5 @@
 ! Create the righthand side to the elliptic equation that is solved in 
-! the MAC project step, \beta * (S - \bar{S}).  For the MAC projection, 
+! the MAC project step, \beta0 * (S - \bar{S}).  For the MAC projection, 
 ! this quantity is cell-centered.
 !
 ! Note, we include the delta_gamma1_term here, to (possibly) account for
