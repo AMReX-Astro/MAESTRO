@@ -26,15 +26,21 @@ parser.add_argument('-res', '--resolution', type=int, default=2048,
                     help='Resolution to use in each direction in pixels. Default is 2048.')
 parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied, draw the cell edges.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
+parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice view appropriately for octant dataset.')
 args = parser.parse_args()
 
 def slicefield(ds, field, field_short_name):
     if not args.width:
         width = max(ds.domain_width)
     else:
-        width = (args.width, 'cm')
+        width = yt.YTQuantity(args.width, 'cm')
 
-    s = yt.SlicePlot(ds, args.axis, field, center='c', width=width)
+    if args.octant:
+        dcenter = width.in_units('cm').v/2.0
+        cpos    = ds.arr([dcenter, dcenter, dcenter], 'cm')
+        s = yt.SlicePlot(ds, args.axis, field, center=cpos, width=width, origin="native")
+    else:
+        s = yt.SlicePlot(ds, args.axis, field, center='c', width=width, origin="native")
 
     # Colormaps and Scaling
     maxv = ds.all_data().max(field)
@@ -83,12 +89,15 @@ def slicefield(ds, field, field_short_name):
 if __name__=="__main__":
     ds = yt.load(args.infile)
     if args.field:
-        if len(field.split(',')) > 1:
-            fs = field.strip('()').split(',')
+        if len(args.field.split(',')) > 1:
+            fs = args.field.strip('()').split(',')
             fs[0] = fs[0].strip()
             fs[1] = fs[1].strip()
             field = (fs[0], fs[1])
             field_short_name = fs[1]
+        else:
+            field = args.field
+            field_short_name = field
         slicefield(ds, field, field_short_name)
     else:
         for f in ds.field_list:
