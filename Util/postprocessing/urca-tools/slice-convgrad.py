@@ -18,6 +18,7 @@ parser.add_argument('-symlog', '--symlog', action='store_true', help='If supplie
 parser.add_argument('-linthresh', '--linthresh', type=float, help='Linear threshold for symlog scaling. (Default is 0.1)')
 parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied, draw the cell edges.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
+parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice view appropriately for octant dataset.')
 args = parser.parse_args()
 
 @derived_field(name='adiabatic_excess')
@@ -51,7 +52,7 @@ def doit(field):
     if not args.width:
         width = max(ds.domain_width)
     else:
-        width = (args.width, 'cm')
+        width = yt.YTQuantity(args.width, 'cm')
 
     maxv = ds.all_data().max(field)
     minv = ds.all_data().min(field)
@@ -59,9 +60,14 @@ def doit(field):
     neg_maxv = np.ceil(np.log10(minv))
     logmaxv = max(pos_maxv, neg_maxv)
     linminv = min(abs(maxv), abs(minv))
-        
-    s = yt.SlicePlot(ds, 'x', field, center='c', width=width)
-    
+
+    if args.octant:
+        dcenter = width.in_units('cm').v/2.0
+        cpos    = ds.arr([dcenter, dcenter, dcenter], 'cm')
+        s = yt.SlicePlot(ds, 'x', field, center=cpos, width=width, origin="native")
+    else:
+        s = yt.SlicePlot(ds, 'x', field, center='c', width=width, origin="native")
+
     s.annotate_scale()
 
     if args.drawcells:
