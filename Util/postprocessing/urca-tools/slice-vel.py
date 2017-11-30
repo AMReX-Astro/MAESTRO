@@ -14,10 +14,10 @@ args = parser.parse_args()
 
 @derived_field(name='pos_radial_velocity', units='cm/s')
 def _pos_radial_velocity(field, data):
-    return np.maximum(data[('boxlib','radial_velocity')], 1.0e-99)
+    return np.maximum(data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'cm/s'))
 @derived_field(name='neg_radial_velocity', units='cm/s')
 def _neg_radial_velocity(field, data):
-    return np.maximum(-data[('boxlib','radial_velocity')], 1.0e-99)
+    return np.maximum(-data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'cm/s'))
 
 ds = yt.load(args.infile)
 
