@@ -10,6 +10,7 @@ parser.add_argument('-w', '--width', type=float,
 parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied, draw the cell edges.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice view appropriately for octant dataset.')
+parser.add_argument('-rho', '--rhocontours', type=float, nargs='+', help='Draws contours for the densities provided (g/cm^3).')
 args = parser.parse_args()
 
 @derived_field(name='pos_radial_velocity', units='cm/s')
@@ -34,10 +35,15 @@ if args.octant:
     dcenter = width.in_units('cm').v/2.0
     cpos    = ds.arr([dcenter, dcenter, dcenter], 'cm')
     s = yt.SlicePlot(ds, 'x', ('boxlib', 'radial_velocity'),
-                     center=cpos, width=width, origin="native")
+                     center=cpos, width=width, origin='native')
 else:
     s = yt.SlicePlot(ds, 'x', ('boxlib', 'radial_velocity'),
-                     center='c', width=width, origin="native")
+                     center='c', width=width, origin='native')
+
+if args.rhocontours:
+    for rhoc in args.rhocontours:
+        rhounit = yt.YTQuantity(rhoc, 'g/(cm**3)')
+        s.annotate_contour('density', ncont=1, clim=(rhounit, rhounit))
 
 s.set_cmap(('boxlib', 'radial_velocity'), 'RdBu')
 s.set_log(('boxlib', 'radial_velocity'), True, linthresh=1.0e3)
@@ -61,6 +67,11 @@ if args.octant:
 else:
     s = yt.SlicePlot(ds, 'x', ('boxlib', 'circum_velocity'),
                      center='c', width=width, origin="native")
+
+if args.rhocontours:
+    for rhoc in args.rhocontours:
+        rhounit = yt.YTQuantity(rhoc, 'g/(cm**3)')
+        s.annotate_contour('density', ncont=1, clim=(rhounit, rhounit))
 
 s.annotate_velocity(normalize=True)
 s.annotate_scale()
