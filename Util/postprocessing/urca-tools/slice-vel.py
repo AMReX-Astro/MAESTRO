@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import yt
 from yt import derived_field
 import numpy as np

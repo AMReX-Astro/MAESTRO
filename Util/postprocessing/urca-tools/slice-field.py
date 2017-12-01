@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Use yt to slice a boxlib plotfile supplied through the domain center.
 
