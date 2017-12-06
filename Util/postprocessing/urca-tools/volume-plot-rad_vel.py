@@ -15,6 +15,8 @@ parser.add_argument('-zoom', '--zoom', type=float, default=1.0, help='Camera zoo
 parser.add_argument('-dd', '--drawdomain', action='store_true', help='If supplied, draw the boundaries of the domain.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-da', '--drawaxes', action='store_true', help='If supplied, draw an axes triad.')
+parser.add_argument('-alpha_ones', '--alpha_ones', action='store_true', help='If supplied, set the transfer function values to ones.')
+parser.add_argument('-res', '--resolution', type=int, default=2048, help='Resolution for output plot.')
 args = parser.parse_args()
 
 # Hack: because rendering likes log fields ...
@@ -22,10 +24,10 @@ args = parser.parse_args()
 ## must do this before opening dataset
 @derived_field(name='pos_radial_velocity', units='cm/s')
 def _pos_radial_velocity(field, data):
-    return np.maximum(data[('boxlib','radial_velocity')], 1.0e-99)
+    return np.maximum(data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'cm/s'))
 @derived_field(name='neg_radial_velocity', units='cm/s')
 def _neg_radial_velocity(field, data):
-    return np.maximum(-data[('boxlib','radial_velocity')], 1.0e-99)
+    return np.maximum(-data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'cm/s'))
 
 # Open Dataset
 ds = yt.load(args.infile)
@@ -50,8 +52,14 @@ so_neg_vrad = VolumeSource(core, 'neg_radial_velocity')
 # tfh_en.plot('{}_tfun_enuc.png'.format(args.infile), profile_field=('boxlib','enucdot'))
 # so_enuc.transfer_function = tfh_en.tf
 
-mag_vel_bounds = np.array([1.0e4, 1.0e6])
+mag_vel_bounds = np.array([1.0e3, 1.0e6])
 mag_vel_sigma  = 0.08
+
+nlayers = 4
+if args.alpha_ones:
+    alphavec = np.ones(nlayers)
+else:
+    alphavec = np.logspace(-3,0,nlayers)
 
 tfh = TransferFunctionHelper(ds)
 tfh.set_field('pos_radial_velocity')
@@ -59,8 +67,7 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
-nlayers = 3
-tfh.tf.add_layers(nlayers, colormap='Blues', w=mag_vel_sigma**2, mi=4, ma=6, alpha=np.logspace(-2,0,nlayers))
+tfh.tf.add_layers(nlayers, colormap='Blues', w=mag_vel_sigma**2, mi=3, ma=6, alpha=alphavec)
 tfh.plot('{}_tfun_pos_vrad.png'.format(args.infile))
 so_pos_vrad.transfer_function = tfh.tf
 
@@ -70,8 +77,7 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
-nlayers = 3
-tfh.tf.add_layers(nlayers, colormap='Reds', w=mag_vel_sigma**2, mi=4, ma=6, alpha=np.logspace(-2,0,nlayers))
+tfh.tf.add_layers(nlayers, colormap='Reds', w=mag_vel_sigma**2, mi=3, ma=6, alpha=alphavec)
 tfh.plot('{}_tfun_neg_vrad.png'.format(args.infile))
 so_neg_vrad.transfer_function = tfh.tf
 
@@ -85,7 +91,7 @@ sc.add_camera()
 
 # Set camera properties
 sc.camera.focus = ds.domain_center
-sc.camera.resolution = 800
+sc.camera.resolution = args.resolution
 sc.camera.north_vector = [0, 0, 1]
 sc.camera.position = ds.domain_center + [1.0, 1.0, 1.0] * ds.domain_width * args.rup/5.12e8
 sc.camera.zoom(2.5*args.zoom)
@@ -104,4 +110,4 @@ if args.drawaxes:
 
 # Render
 sc.render()
-sc.save('{}_rendering_rad-vel.png'.format(args.infile), sigma_clip=6)
+sc.save('{}_rendering_rad-vel.png'.format(args.infile), sigma_clip=3)
