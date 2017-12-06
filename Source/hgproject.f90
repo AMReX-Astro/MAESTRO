@@ -218,7 +218,7 @@ contains
        call multifab_build(gphi(n), mla%la(n), dm, 0)
     end do
 
-    call mkgphi(gphi,phi,beta0_cart,dx)
+    call mkgphi(gphi,phi,dx)
 
     call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
                    pi,phi,dt,mla,the_bc_tower%bc_tower_array,beta0_cart, &
@@ -514,11 +514,10 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine mkgphi(gphi,phi,beta0_cart,dx)
+    subroutine mkgphi(gphi,phi,dx)
 
       type(multifab), intent(inout) :: gphi(:)
       type(multifab), intent(in   ) :: phi(:)
-      type(multifab), intent(in   ) :: beta0_cart(:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
 
       integer :: lo(phi(1)%dim),hi(phi(1)%dim)
@@ -526,7 +525,6 @@ contains
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
 
       type(bl_prof_timer), save :: bpt
 
@@ -542,7 +540,6 @@ contains
             hi = upb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
-            bp  => dataptr(beta0_cart(n),i)
             select case (dm)
             case (1)
                call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, &
