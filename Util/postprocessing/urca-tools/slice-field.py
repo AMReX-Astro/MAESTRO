@@ -41,7 +41,7 @@ def slicefield(ds, field, field_short_name):
         cpos    = ds.arr([dcenter, dcenter, dcenter], 'cm')
         s = yt.SlicePlot(ds, args.axis, field, center=cpos, width=width, origin="native")
     else:
-        s = yt.SlicePlot(ds, args.axis, field, center='c', width=width, origin="native")
+        s = yt.SlicePlot(ds, args.axis, field, center='c', width=width)
 
     # Colormaps and Scaling
     maxv = ds.all_data().max(field)
@@ -85,9 +85,17 @@ def slicefield(ds, field, field_short_name):
 
     # Sizing and saving
     s.set_buff_size(args.resolution)
-    s.save('{}.slice.{}.png'.format(args.infile, field_short_name))
+    s.save('{}.slice.{}.{}.png'.format(args.infile, args.axis, field_short_name))
 
 if __name__=="__main__":
+    # Check axis input
+    axes_list = ['x', 'y', 'z']
+    if (args.axis != 'x' and
+        args.axis != 'y' and
+        args.axis != 'z'):
+        print('Improper axis argument.')
+        exit()
+
     ds = yt.load(args.infile)
     if args.field:
         if len(args.field.split(',')) > 1:
