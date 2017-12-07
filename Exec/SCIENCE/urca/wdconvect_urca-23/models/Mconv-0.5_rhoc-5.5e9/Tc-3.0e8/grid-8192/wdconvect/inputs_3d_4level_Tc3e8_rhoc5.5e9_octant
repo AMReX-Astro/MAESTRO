@@ -76,9 +76,9 @@
 
  ! Sponge
  do_sponge = .true.
- sponge_center_density = 3.d6
- sponge_start_factor = 3.333d0
- sponge_kappa = 10.0d0
+ sponge_center_density = 5.d6
+ sponge_start_factor = 3.d0
+ sponge_kappa = 1.0d5
 
 
  ! Multigrid

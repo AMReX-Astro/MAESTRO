@@ -14,7 +14,7 @@
  n_cellz = 256
 
  ! ... Max grid size for all levels
- max_grid_size = 64
+ max_grid_size = 32
 
  regrid_int = 2
  min_eff = 0.8
@@ -76,9 +76,9 @@
 
  ! Sponge
  do_sponge = .true.
- sponge_center_density = 3.d6
- sponge_start_factor = 3.333d0
- sponge_kappa = 10.0d0
+ sponge_center_density = 5.d6
+ sponge_start_factor = 3.d0
+ sponge_kappa = 1.0d5
 
 
  ! Multigrid
@@ -99,7 +99,7 @@
  ! I/O
  plot_base_name = "wd_4lev_Tc3e8_rhoc5-5e9_plt"
  plot_int = -1
- plot_deltat = 2.0d0
+ plot_deltat = 5.0d0
 
  check_base_name = "wd_4lev_Tc3e8_rhoc5-5e9_chk"
  chk_int   = 100
