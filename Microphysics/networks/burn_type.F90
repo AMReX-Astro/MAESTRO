@@ -11,12 +11,23 @@ module burn_type_module
   ! temperature, enuc + the number of species which participate
   ! in the evolution equations.
 
+#ifndef SDC
   integer, parameter :: neqs = 2 + nspec_evolve
 
   ! Indices of the temperature and energy variables in the work arrays.
 
   integer, parameter :: net_itemp = nspec_evolve + 1
   integer, parameter :: net_ienuc = nspec_evolve + 2
+#else
+  ! SDC evolves all species concurrently
+  integer, parameter :: neqs = 2 + nspec
+
+  ! Indices of the temperature and energy variables in the work arrays.
+
+  integer, parameter :: net_itemp = nspec + 1
+  integer, parameter :: net_ienuc = nspec + 2
+#endif
+
 
   type :: burn_t
 
