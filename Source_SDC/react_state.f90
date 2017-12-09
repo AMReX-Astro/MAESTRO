@@ -379,6 +379,10 @@ contains
        firstCall = .false.
     endif
 
+    !$OMP PARALLEL DO PRIVATE(i,j,cell_valid,sdc_rhoX,sdc_rhoh,p0_in,rho_in,rhox_in) &
+    !$OMP PRIVATE(rhoh_in,x_test,rho_out,rhox_out,rhoh_out) &
+    !$OMP PRIVATE(state_in, state_out) &
+    !$OMP SCHEDULE(DYNAMIC,1)
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
@@ -451,6 +455,7 @@ contains
           
        enddo
     enddo
+    !$OMP END PARALLEL DO
 
   end subroutine burner_loop_2d
 
@@ -757,11 +762,11 @@ contains
 
   subroutine instantaneous_reaction_rates_1d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
 
-    use network, only: nspec
+    use network, only: aion, nspec, nspec_evolve
     use actual_rhs_module, only: actual_rhs
     use variables, only: spec_comp, rhoh_comp, rho_comp
     use bl_constants_module   , only: ZERO
-    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn
+    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn, net_ienuc
     use eos_type_module, only: eos_t, eos_input_rh, &
                                eos_get_small_temp, eos_get_max_temp
     use eos_module, only: eos
@@ -785,9 +790,9 @@ contains
     do i=lo(1),hi(1)
 
        ! initialize state variables
-       eos_state % xn(1:nspec) = s(i,spec_comp:spec_comp+nspec-1)
        eos_state % rho = s(i,rho_comp)
-       eos_state % h   = s(i,rhoh_comp) / state % rho
+       eos_state % xn(1:nspec) = s(i,spec_comp:spec_comp+nspec-1) / eos_state % rho
+       eos_state % h   = s(i,rhoh_comp) / eos_state % rho
 
        call eos_get_small_temp(temp_min)
        call eos_get_max_temp(temp_max)
@@ -802,8 +807,10 @@ contains
 
        call actual_rhs(state)
 
-       rho_omegadot(i,1:nspec) = state % ydot(1:nspec)
-       rho_Hnuc(i) = state % ydot(nspec+1)
+       rho_omegadot(i,1:nspec_evolve) = state % rho * aion(1:nspec_evolve) * &
+                                        state % ydot(1:nspec_evolve)
+       rho_omegadot(i,nspec_evolve+1:nspec) = ZERO
+       rho_Hnuc(i) = state % rho * state % ydot(net_ienuc)
 
     end do
 
@@ -811,11 +818,11 @@ contains
 
   subroutine instantaneous_reaction_rates_2d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
 
-    use network, only: nspec
+    use network, only: aion, nspec, nspec_evolve
     use actual_rhs_module, only: actual_rhs
     use variables, only: spec_comp, rhoh_comp, rho_comp
     use bl_constants_module   , only: ZERO
-    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn
+    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn, net_ienuc
     use eos_type_module, only: eos_t, eos_input_rh, &
                                eos_get_small_temp, eos_get_max_temp
     use eos_module, only: eos
@@ -840,9 +847,9 @@ contains
        do i=lo(1),hi(1)
 
           ! initialize state variables
-          eos_state % xn(1:nspec) = s(i,j,spec_comp:spec_comp+nspec-1)
           eos_state % rho = s(i,j,rho_comp)
-          eos_state % h   = s(i,j,rhoh_comp) / state % rho
+          eos_state % xn(1:nspec) = s(i,j,spec_comp:spec_comp+nspec-1) / eos_state % rho
+          eos_state % h   = s(i,j,rhoh_comp) / eos_state % rho
 
           call eos_get_small_temp(temp_min)
           call eos_get_max_temp(temp_max)
@@ -857,8 +864,10 @@ contains
 
           call actual_rhs(state)
 
-          rho_omegadot(i,j,1:nspec) = state % ydot(1:nspec)
-          rho_Hnuc(i,j) = state % ydot(nspec+1)
+          rho_omegadot(i,j,1:nspec_evolve) = state % rho * aion(1:nspec_evolve) * &
+                                             state % ydot(1:nspec_evolve)
+          rho_omegadot(i,j,nspec_evolve+1:nspec) = ZERO
+          rho_Hnuc(i,j) = state % rho * state % ydot(net_ienuc)
 
        end do
     end do
