@@ -519,6 +519,7 @@ contains
        ! we are using rho_omegadot2 and rho_Hnuc2 to store intra for checkpoint
        ! purposes.  Copy them back into intra
        call multifab_build(intra(n), mla%la(n), nscal, 0)
+       call setval(intra(n),ZERO,all=.true.)
        call multifab_copy_c(intra(n), spec_comp, rho_omegadot2(n), 1, nspec, 0)
        call multifab_copy_c(intra(n), rhoh_comp, rho_Hnuc2(n), 1, 1, 0)
     end do
