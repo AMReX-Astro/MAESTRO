@@ -507,6 +507,7 @@ contains
 
     do n=1,nlevs
        call multifab_build(shat(n),mla%la(n),nscal,nghost(sold(n)))
+       call multifab_copy_c(shat(n), 1, sold(n), 1, nscal, 0)
        do comp = 1,dm
           call multifab_build_edge(sedge(n,comp),mla%la(n),nscal,0,comp)
           call multifab_build_edge(sflux(n,comp),mla%la(n),nscal,0,comp)
