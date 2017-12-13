@@ -726,41 +726,36 @@ contains
     real(kind=dp_t), pointer :: wp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
 
-    integer :: lo(mla%dim),hi(mla%dim)
-    integer :: dm,nlevs,i,n
-    integer :: ng_s, ng_w, ng_h
+    integer :: lo(3),hi(3)
+    integer :: dm, nlevs,i,n
+    integer :: ng_s(3), ng_w(3), ng_h(3)
 
-    dm = mla%dim
+    dm    = mla%dim
     nlevs = mla%nlevel
 
-    ng_s = s(1)%ng
-    ng_w = rho_omegadot(1)%ng
-    ng_h = rho_Hnuc(1)%ng
+    lo = 1; hi = 1
+    ng_s = 0; ng_w = 0; ng_h = 0
+
+    ng_s(1:dm) = s(1)%ng
+    ng_w(1:dm) = rho_omegadot(1)%ng
+    ng_h(1:dm) = rho_Hnuc(1)%ng
 
     do n=1,nlevs
        do i=1,nfabs(s(n))
           sp => dataptr(s(n), i)
           wp => dataptr(rho_omegadot(n), i)
           hp => dataptr(rho_Hnuc(n), i)
-          lo = lwb(get_box(s(n), i))
-          hi = upb(get_box(s(n), i))
-          select case(dm)
-          case (1)
-             call instantaneous_reaction_rates_1d(sp(:,1,1,:),ng_s,wp(:,1,1,:),ng_w, &
-                                                  hp(:,1,1,1),ng_h,lo,hi)
+          lo(1:dm) = lwb(get_box(s(n), i))
+          hi(1:dm) = upb(get_box(s(n), i))
 
-          case (2)
-             call instantaneous_reaction_rates_2d(sp(:,:,1,:),ng_s,wp(:,:,1,:),ng_w, &
-                                                  hp(:,:,1,1),ng_h,lo,hi)
-          case (3)
-             call bl_error("instantaneous_reaction_rates_3d not written yet")
-          end select
+          call instantaneous_reaction_rates_nd(sp(:,:,:,:),ng_s,wp(:,:,:,:),ng_w, &
+                                               hp(:,:,:,1),ng_h,lo,hi)
        end do
     end do
 
   end subroutine instantaneous_reaction_rates
 
-  subroutine instantaneous_reaction_rates_1d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
+  subroutine instantaneous_reaction_rates_nd(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
 
     use network, only: aion, nspec, nspec_evolve
     use actual_rhs_module, only: actual_rhs
@@ -771,107 +766,52 @@ contains
                                eos_get_small_temp, eos_get_max_temp
     use eos_module, only: eos
 
-    integer,         intent(in   ) :: ng_s,ng_w,ng_h,lo(:),hi(:)
-    real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s:,:)
-    real(kind=dp_t), intent(inout) :: rho_omegadot(lo(1)-ng_w:,:)
-    real(kind=dp_t), intent(inout) ::     rho_Hnuc(lo(1)-ng_h:)
+    integer,         intent(in   ) :: ng_s(:),ng_w(:),ng_h(:),lo(:),hi(:)
+    real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s(1):,lo(2)-ng_s(2):,lo(3)-ng_s(3):,:)
+    real(kind=dp_t), intent(inout) :: rho_omegadot(lo(1)-ng_w(1):,lo(2)-ng_w(2):,lo(3)-ng_w(3):,:)
+    real(kind=dp_t), intent(inout) ::     rho_Hnuc(lo(1)-ng_h(1):,lo(2)-ng_h(2):,lo(3)-ng_h(3):)
 
     ! local
-    integer :: i
-
-    real(kind=dp_t) :: y(nspec+1)
-    real(kind=dp_t) :: ydot(nspec+1)
-    real(kind=dp_t) :: rho_Hnuc_out
+    integer :: i,j,k
 
     real(kind=dp_t) :: temp_max, temp_min
     type (burn_t)   :: state
     type (eos_t)    :: eos_state
 
-    do i=lo(1),hi(1)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,temp_max,temp_min,state,eos_state) &
+    !$OMP SCHEDULE(DYNAMIC,1)
+    do k=lo(3),hi(3)
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
 
-       ! initialize state variables
-       eos_state % rho = s(i,rho_comp)
-       eos_state % xn(1:nspec) = s(i,spec_comp:spec_comp+nspec-1) / eos_state % rho
-       eos_state % h   = s(i,rhoh_comp) / eos_state % rho
+             ! initialize state variables
+             eos_state % rho = s(i,j,k,rho_comp)
+             eos_state % xn(1:nspec) = s(i,j,k,spec_comp:spec_comp+nspec-1) / eos_state % rho
+             eos_state % h   = s(i,j,k,rhoh_comp) / eos_state % rho
 
-       call eos_get_small_temp(temp_min)
-       call eos_get_max_temp(temp_max)
-       eos_state % T = sqrt(temp_min * temp_max)
+             call eos_get_small_temp(temp_min)
+             call eos_get_max_temp(temp_max)
+             eos_state % T = sqrt(temp_min * temp_max)
 
-       ! call the EOS with input rh to set T for rate evaluation
-       call eos(eos_input_rh, eos_state)
-       call eos_to_burn(eos_state, state)
+             ! call the EOS with input rh to set T for rate evaluation
+             call eos(eos_input_rh, eos_state)
+             call eos_to_burn(eos_state, state)
 
-       ! initialize arbitrary time
-       state % time = ZERO
+             ! initialize arbitrary time
+             state % time = ZERO
 
-       call actual_rhs(state)
+             call actual_rhs(state)
 
-       rho_omegadot(i,1:nspec_evolve) = state % rho * aion(1:nspec_evolve) * &
-                                        state % ydot(1:nspec_evolve)
-       rho_omegadot(i,nspec_evolve+1:nspec) = ZERO
-       rho_Hnuc(i) = state % rho * state % ydot(net_ienuc)
+             rho_omegadot(i,j,k,1:nspec_evolve) = state % rho * aion(1:nspec_evolve) * &
+                                                  state % ydot(1:nspec_evolve)
+             rho_omegadot(i,j,k,nspec_evolve+1:nspec) = ZERO
+             rho_Hnuc(i,j,k) = state % rho * state % ydot(net_ienuc)
 
-    end do
-
-  end subroutine instantaneous_reaction_rates_1d
-
-  subroutine instantaneous_reaction_rates_2d(s,ng_s,rho_omegadot,ng_w,rho_Hnuc,ng_h,lo,hi)
-
-    use network, only: aion, nspec, nspec_evolve
-    use actual_rhs_module, only: actual_rhs
-    use variables, only: spec_comp, rhoh_comp, rho_comp
-    use bl_constants_module   , only: ZERO
-    use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn, net_ienuc
-    use eos_type_module, only: eos_t, eos_input_rh, &
-                               eos_get_small_temp, eos_get_max_temp
-    use eos_module, only: eos
-
-    integer,         intent(in   ) :: ng_s,ng_w,ng_h,lo(:),hi(:)
-    real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t), intent(inout) :: rho_omegadot(lo(1)-ng_w:,lo(2)-ng_w:,:)
-    real(kind=dp_t), intent(inout) ::     rho_Hnuc(lo(1)-ng_h:,lo(2)-ng_h:)
-
-    ! local
-    integer :: i,j
-
-    real(kind=dp_t) :: y(nspec+1)
-    real(kind=dp_t) :: ydot(nspec+1)
-    real(kind=dp_t) :: rho_Hnuc_out
-
-    real(kind=dp_t) :: temp_max, temp_min
-    type (burn_t)   :: state
-    type (eos_t)    :: eos_state
-
-    do j=lo(2),hi(2)
-       do i=lo(1),hi(1)
-
-          ! initialize state variables
-          eos_state % rho = s(i,j,rho_comp)
-          eos_state % xn(1:nspec) = s(i,j,spec_comp:spec_comp+nspec-1) / eos_state % rho
-          eos_state % h   = s(i,j,rhoh_comp) / eos_state % rho
-
-          call eos_get_small_temp(temp_min)
-          call eos_get_max_temp(temp_max)
-          eos_state % T = sqrt(temp_min * temp_max)
-
-          ! call the EOS with input rh to set T for rate evaluation
-          call eos(eos_input_rh, eos_state)
-          call eos_to_burn(eos_state, state)
-
-          ! initialize arbitrary time
-          state % time = ZERO
-
-          call actual_rhs(state)
-
-          rho_omegadot(i,j,1:nspec_evolve) = state % rho * aion(1:nspec_evolve) * &
-                                             state % ydot(1:nspec_evolve)
-          rho_omegadot(i,j,nspec_evolve+1:nspec) = ZERO
-          rho_Hnuc(i,j) = state % rho * state % ydot(net_ienuc)
-
+          end do
        end do
     end do
+    !$OMP END PARALLEL DO
 
-  end subroutine instantaneous_reaction_rates_2d
+  end subroutine instantaneous_reaction_rates_nd
 
 end module react_state_module
