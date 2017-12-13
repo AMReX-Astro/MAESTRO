@@ -42,7 +42,7 @@
 
  !... It should take about 1000 seconds for the model
  !... to equilibrate.
- stop_time = 10000.
+ stop_time = 30.
 
  cflfac = 0.8d0
 
@@ -55,7 +55,7 @@
  ! Algorithm details
  verbose = 1	
  
- do_burning = T
+ do_burning = F
 
  enthalpy_pred_type = 1
  evolve_base_state = T
@@ -78,7 +78,7 @@
  do_sponge = .true.
  sponge_center_density = 5.d6
  sponge_start_factor = 3.d0
- sponge_kappa = 1.d5
+ sponge_kappa = 1.0d5
 
 
  ! Multigrid
@@ -98,8 +98,8 @@
 
  ! I/O
  plot_base_name = "wd_4lev_Tc3e8_rhoc4-5e9_plt"
- plot_int = -1
- plot_deltat = 5.0d0
+ plot_int = 1
+! plot_deltat = 2.0d0
 
  check_base_name = "wd_4lev_Tc3e8_rhoc4-5e9_chk"
  chk_int   = 100

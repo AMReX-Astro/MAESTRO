@@ -1,10 +1,10 @@
 &PROBIN
 
  ! initial model
- model_file = "WD_urca_nuc_M-0.5_hot_atan.hse.8192"
+ model_file = "WD_urca_nuc_M-0.5_cold_atan.hse.8192"
  drdxfac = 4
 
- job_name = "4-level, rhoc = 4.5e9 g/cc, Tc = 3.0e8 K"
+ job_name = "4-level, rhoc = 5.5e9 g/cc, Tc = 3.0e8 K"
 
 
  ! Gridding and Geometry
@@ -14,7 +14,7 @@
  n_cellz = 256
 
  ! ... Max grid size for all levels
- max_grid_size = 32
+ max_grid_size = 64
 
  regrid_int = 2
  min_eff = 0.8
@@ -42,7 +42,7 @@
 
  !... It should take about 1000 seconds for the model
  !... to equilibrate.
- stop_time = 10000.
+ stop_time = 100.
 
  cflfac = 0.8d0
 
@@ -75,10 +75,10 @@
 
 
  ! Sponge
- do_sponge = .true.
- sponge_center_density = 5.d6
- sponge_start_factor = 3.d0
- sponge_kappa = 1.d5
+ do_sponge = .false.
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
 
 
  ! Multigrid
@@ -97,11 +97,11 @@
 
 
  ! I/O
- plot_base_name = "wd_4lev_Tc3e8_rhoc4-5e9_plt"
- plot_int = -1
- plot_deltat = 5.0d0
+ plot_base_name = "wd_4lev_Tc3e8_rhoc5-5e9_plt"
+ plot_int = 1
+! plot_deltat = 2.0d0
 
- check_base_name = "wd_4lev_Tc3e8_rhoc4-5e9_chk"
+ check_base_name = "wd_4lev_Tc3e8_rhoc5-5e9_chk"
  chk_int   = 100
 
  single_prec_plotfiles = T

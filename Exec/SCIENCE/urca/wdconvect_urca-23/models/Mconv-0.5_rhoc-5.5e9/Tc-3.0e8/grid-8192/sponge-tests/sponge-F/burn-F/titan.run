@@ -1,9 +1,9 @@
 #!/bin/ksh
 #PBS -A ast106sbu
-#PBS -N urca_rhoc-5.5_Tc-3.0
+#PBS -N rhoc-5.5_Tc-3.0_sF_bF
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=06:00:00,nodes=512
+#PBS -l walltime=06:00:00,nodes=128
 
 # this script runs with 8 threads per MPI task, 2 MPI tasks/node, and 128 nodes on titan 
 #
@@ -81,6 +81,6 @@ fi
 #   This can boost performance by preventing costly remote memory I/O, though 
 #   it also restricts the amount of memory available to MPI tasks.
 
-aprun -n 1024 -S 1 -d 8 -ss ./main.Linux.Cray.mpi.omp.exe inputs_3d_4level_Tc3e8_rhoc5.5e9 ${restartString}
+aprun -n 256 -S 1 -d 8 -ss ./main.Linux.Cray.mpi.omp.exe inputs_3d_4level_Tc3e8_rhoc5.5e9 ${restartString}
 
 rm -f process.pid

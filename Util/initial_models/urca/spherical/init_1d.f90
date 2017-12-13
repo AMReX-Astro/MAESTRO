@@ -55,7 +55,7 @@ program init_1d
 
   real (kind=dp_t) :: TOL = 1.e-11
 
-  integer :: MAX_ITER = 1000
+  integer :: MAX_ITER = 1000000
 
   integer :: iter
 
@@ -77,6 +77,8 @@ program init_1d
   character (len=8) num
 
   real (kind=dp_t) :: max_hse_error, dpdr, rhog
+
+  real (kind=dp_t), parameter :: dtol_fac = 0.000001_dp_t
 
   integer :: i_conv, i_fluff
 
@@ -229,6 +231,7 @@ program init_1d
      ! start off the Newton loop by saying that the zone has not converged
      converged_hse = .FALSE.
 
+
      if (.not. fluff) then
 
         do iter = 1, MAX_ITER
@@ -273,11 +276,11 @@ program init_1d
 
               drho = -(A + dAdT*dtemp)/dAdrho
 
-              dens_zone = max(0.9_dp_t*dens_zone, &
-                              min(dens_zone + drho, 1.1_dp_t*dens_zone))
+              dens_zone = max((ONE-dtol_fac)*dens_zone, &
+                              min(dens_zone + drho, (ONE+dtol_fac)*dens_zone))
 
-              temp_zone = max(0.9_dp_t*temp_zone, &
-                              min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
+              temp_zone = max((ONE-dtol_fac)*temp_zone, &
+                              min(temp_zone + dtemp, (ONE+dtol_fac)*temp_zone))
 
 
               ! check if the density falls below our minimum cut-off --
@@ -430,10 +433,17 @@ program init_1d
 
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
-           print *, 'density (dens_zone): ', dens_zone
-           print *, 'temperature (temp_zone): ', temp_zone
+           print *, 'trial density (dens_zone): ', dens_zone
+           print *, 'trial temperature (temp_zone): ', temp_zone
+           print *, 'current pressure (pres_zone): ', pres_zone
            print *, 'desired pressure (p_want): ', p_want
+           print *, 'desired pressure rel tolerance: ', abs(pres_zone-p_want)/pres_zone
            print *, 'delta density (drho): ', drho
+           print *, 'delta temperature (dtemp): ', dtemp
+           print *, 'pressure gradient (dpdr): ', dpdr
+           print *, 'density * gravitational accel. (rhog): ', rhog
+           print *, 'difference... abs(dpdr-rhog): ', abs(dpdr-rhog)
+           print *, 'target... TOL*abs(dpdr): ', TOL*abs(dpdr)
            call bl_error('Error: HSE non-convergence')
 
         endif
