@@ -11,6 +11,7 @@ module initialize_module
   use network, only: nspec
   use bl_constants_module
   use base_state_module
+  use fabio_module
 
   implicit none
 
@@ -357,7 +358,7 @@ contains
           call enforce_HSE(rho0_old,p0_old,grav_cell)
 
           ! call eos with r,p as input to recompute T,h
-          call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+          call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx,updateRhoH_in=1)
 
           ! set rhoh0 to be the average
           call average(mla,sold,rhoh0_old,dx,rhoh_comp)
@@ -870,7 +871,7 @@ contains
        call enforce_HSE(rho0_old,p0_old,grav_cell)
 
        ! call eos with r,p as input to recompute T,h
-       call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+       call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx,updateRhoH_in=1)
 
        ! set rhoh0 to be the average
        call average(mla,sold,rhoh0_old,dx,rhoh_comp)
@@ -1279,6 +1280,9 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
+    call fabio_ml_multifab_write_d(sold,mla%mba%rr(:,1),"a_sold")
+
+
     p0_old       = p0_init
     rho0_old     = s0_init(:,:,rho_comp)
     rhoh0_old    = s0_init(:,:,rhoh_comp)
@@ -1308,7 +1312,7 @@ contains
        call enforce_HSE(rho0_old,p0_old,grav_cell)
 
        ! call eos with r,p as input to recompute T,h
-       call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
+       call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx,updateRhoH_in=1)
 
        ! set rhoh0 to be the average
        call average(mla,sold,rhoh0_old,dx,rhoh_comp)
