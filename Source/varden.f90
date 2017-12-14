@@ -364,9 +364,9 @@ subroutine varden()
 
   if (do_sponge) then
      if (spherical .eq. 0) then
-        call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
+        call init_sponge(rho0_old(1,:),prob_lo(dm))
      else
-        call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
+        call init_sponge(rho0_old(1,:),ZERO)
      end if
   end if
 
@@ -1126,9 +1126,9 @@ subroutine varden()
         init_mode = .false.
         if (do_sponge) then
            if (spherical .eq. 0) then
-              call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
+              call init_sponge(rho0_old(1,:),prob_lo(dm))
            else
-              call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
+              call init_sponge(rho0_old(1,:),ZERO)
            end if
            call make_sponge(sponge,dx,dt,mla)
         end if

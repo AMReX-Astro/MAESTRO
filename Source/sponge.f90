@@ -26,7 +26,7 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(rho0,dx,prob_lo_r)
+  subroutine init_sponge(rho0,prob_lo_r)
 
     ! The sponge has a HALF * ( 1 - cos( (r - r_sp)/L)) profile, where
     ! the width, L, is r_tp - r_sp.
@@ -41,10 +41,9 @@ contains
 
     use geometry, only: dr, r_end_coord, spherical
     use bl_constants_module
-    use probin_module, only: verbose, sponge_start_factor, sponge_center_density
+    use probin_module, only: verbose, sponge_start_factor, sponge_center_density, drdxfac
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
-    real(kind=dp_t), intent(in   ) :: dx(:)
 
     real (kind = dp_t) :: r_top
     integer            :: r
@@ -77,7 +76,7 @@ contains
     ! outer sponge parameters used for spherical problems
     if (spherical .eq. 1) then
        r_sp_outer = r_tp
-       r_tp_outer = r_sp_outer + 4.d0 * dx(3)
+       r_tp_outer = r_sp_outer + 4.d0 * drdxfac * dr(1)
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) write(6,1000) r_sp, r_tp
