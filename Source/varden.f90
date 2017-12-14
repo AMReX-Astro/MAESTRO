@@ -363,16 +363,10 @@ subroutine varden()
   call make_normal(normal,dx)
 
   if (do_sponge) then
-     if (spherical .eq. 0) then
-        call init_sponge(rho0_old(1,:),prob_lo(dm))
-     else
-        call init_sponge(rho0_old(1,:),ZERO)
-     end if
+     call init_sponge(rho0_old(1,:))
   end if
 
   call make_grav_cell(grav_cell,rho0_old)
-
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Print out some diagnostics and warnings about cutoff / sponge parameter
@@ -1125,11 +1119,7 @@ subroutine varden()
         !---------------------------------------------------------------------
         init_mode = .false.
         if (do_sponge) then
-           if (spherical .eq. 0) then
-              call init_sponge(rho0_old(1,:),prob_lo(dm))
-           else
-              call init_sponge(rho0_old(1,:),ZERO)
-           end if
+           call init_sponge(rho0_old(1,:))
            call make_sponge(sponge,dx,dt,mla)
         end if
         runtime1 = parallel_wtime()

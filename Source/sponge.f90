@@ -26,7 +26,7 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(rho0,prob_lo_r)
+  subroutine init_sponge(rho0)
 
     ! The sponge has a HALF * ( 1 - cos( (r - r_sp)/L)) profile, where
     ! the width, L, is r_tp - r_sp.
@@ -41,12 +41,19 @@ contains
 
     use geometry, only: dr, r_end_coord, spherical
     use bl_constants_module
-    use probin_module, only: verbose, sponge_start_factor, sponge_center_density, drdxfac
+    use probin_module, only: verbose, sponge_start_factor, sponge_center_density, &
+                             dm_in, drdxfac, prob_lo
 
-    real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
 
-    real (kind = dp_t) :: r_top
+    real (kind = dp_t) :: prob_lo_r,r_top
     integer            :: r
+
+    if (spherical .eq. 1) then
+       prob_lo_r = 0.d0
+    else
+       prob_lo_r = prob_lo(dm_in)
+    end if
 
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     r_sp = r_top
