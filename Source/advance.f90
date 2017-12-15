@@ -28,7 +28,8 @@ contains
 
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpi,pi,normal,rho0_old,rhoh0_old, &
-                              rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
+                              rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar_old, &
+                              gamma1bar_new,w0, &
                               rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
                               beta0_old,beta0_new, &
                               grav_cell_old,grav_cell_new,dx,dt,dtold,the_bc_tower, &
@@ -98,7 +99,8 @@ contains
     real(dp_t)    ,  intent(inout) ::    p0_new(:,0:)
     real(dp_t)    ,  intent(inout) ::   tempbar(:,0:)
     real(dp_t)    ,  intent(inout) ::   tempbar_init(:,0:)
-    real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:)
+    real(dp_t)    ,  intent(inout) :: gamma1bar_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: gamma1bar_new(:,0:)
     real(dp_t)    ,  intent(inout) ::        w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
@@ -161,7 +163,6 @@ contains
     real(kind=dp_t), allocatable ::             w0_force(:,:)
     real(kind=dp_t), allocatable ::                 Sbar(:,:)
     real(kind=dp_t), allocatable ::        beta0_nph(:,:)
-    real(kind=dp_t), allocatable ::        gamma1bar_old(:,:)
     real(kind=dp_t), allocatable ::      gamma1bar_temp1(:,:)
     real(kind=dp_t), allocatable ::      gamma1bar_temp2(:,:)
     real(kind=dp_t), allocatable :: delta_gamma1_termbar(:,:)
@@ -210,7 +211,6 @@ contains
     allocate(            w0_force(nlevs_radial,0:nr_fine-1))
     allocate(                Sbar(nlevs_radial,0:nr_fine-1))
     allocate(           beta0_nph(nlevs_radial,0:nr_fine-1))
-    allocate(       gamma1bar_old(nlevs_radial,0:nr_fine-1))
     allocate(     gamma1bar_temp1(nlevs_radial,0:nr_fine-1))
     allocate(     gamma1bar_temp2(nlevs_radial,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs_radial,0:nr_fine-1))
@@ -245,8 +245,7 @@ contains
     end if
 
     ! Initialize these to previous values
-    w0_old        = w0
-    gamma1bar_old = gamma1bar
+    w0_old = w0
 
     halfdt = half*dt
 
@@ -702,9 +701,9 @@ contains
     ! compute gamma1bar
     if (evolve_base_state) then
 
-       call make_gamma1bar(mla,snew,gamma1bar,p0_new,dx)
+       call make_gamma1bar(mla,snew,gamma1bar_new,p0_new,dx)
 
-       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar_new,grav_cell_new)
 
     else
         
@@ -767,7 +766,7 @@ contains
                    snew,uold, &
                    normal, &
                    rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
-                   p0_old,gamma1bar,delta_gamma1_termbar,psi, &
+                   p0_old,gamma1bar_new,delta_gamma1_termbar,psi, &
                    dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
@@ -841,7 +840,7 @@ contains
        end if
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
-                    gamma1bar_old,gamma1bar,p0_minus_peosbar, &
+                    gamma1bar_old,gamma1bar_new,p0_minus_peosbar, &
                     psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,.false.)
 
        if (spherical .eq. 1) then
@@ -883,7 +882,7 @@ contains
 
     ! note delta_gamma1_term here is not time-centered
     call make_macrhs(macrhs,rho0_new,S_cc_nph,delta_gamma1_term,Sbar,beta0_nph,dx, &
-                     gamma1bar,p0_new,delta_p_term,dt,delta_chi,.false.)
+                     gamma1bar_new,p0_new,delta_p_term,dt,delta_chi,.false.)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -1177,10 +1176,10 @@ contains
     if (evolve_base_state) then
 
        ! compute gamma1bar
-       call make_gamma1bar(mla,snew,gamma1bar,p0_new,dx)
+       call make_gamma1bar(mla,snew,gamma1bar_new,p0_new,dx)
 
        !  We used to call this even if evolve_base was false,but we don't need to
-       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar_new,grav_cell_new)
 
     end if
 
@@ -1236,7 +1235,7 @@ contains
                    snew,uold, &
                    normal, &
                    rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
-                   p0_new,gamma1bar,delta_gamma1_termbar,psi, &
+                   p0_new,gamma1bar_new,delta_gamma1_termbar,psi, &
                    dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
@@ -1358,7 +1357,7 @@ contains
           end do
           
           call correct_nodalrhs(the_bc_tower,mla,rho0_new,nodalrhs,beta0_nph,dx,dt, &
-                               gamma1bar,p0_new,delta_p_term)
+                               gamma1bar_new,p0_new,delta_p_term)
           
           do n=1,nlevs
              call destroy(delta_p_term(n))
@@ -1415,7 +1414,7 @@ contains
        ! pass in the new time value, time+dt
        call diag(time+dt,dt,dx,snew,rho_Hnuc2,rho_Hext,thermal2,rho_omegadot2,&
                  rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,beta0_new, &
+                 gamma1bar_new,beta0_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
 
@@ -1424,7 +1423,7 @@ contains
        if (mach_max_abort > ZERO) then
           call sanity_check(time+dt,dx,snew, &
                  rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,beta0_new, &
+                 gamma1bar_new,beta0_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
        endif
