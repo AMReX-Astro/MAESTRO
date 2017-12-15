@@ -122,7 +122,8 @@ subroutine varden()
   real(dp_t), pointer :: psi(:,:)
   real(dp_t), pointer :: tempbar(:,:)
   real(dp_t), pointer :: tempbar_init(:,:)
-  real(dp_t), pointer :: grav_cell(:,:)
+  real(dp_t), pointer :: grav_cell_old(:,:)
+  real(dp_t), pointer :: grav_cell_new(:,:)
 
   real(dp_t), allocatable :: psi_temp(:,:)
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
@@ -205,7 +206,7 @@ subroutine varden()
                                   beta0_old,beta0_new,gamma1bar,gamma1bar_init, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
-                                  tempbar,tempbar_init,grav_cell)
+                                  tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
      check_file_name = make_filename(check_base_name, restart)
 
@@ -225,7 +226,8 @@ subroutine varden()
                                       beta0_old,beta0_new,gamma1bar, &
                                       gamma1bar_init,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                      etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
+                                      etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
+                                      grav_cell_old,grav_cell_new)
 
   else
 
@@ -238,7 +240,8 @@ subroutine varden()
                                          beta0_old,beta0_new,gamma1bar, &
                                          gamma1bar_init,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                         etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
+                                         etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
+                                         grav_cell_old,grav_cell_new)
 
   end if
 
@@ -366,7 +369,7 @@ subroutine varden()
      call init_sponge(rho0_old(1,:))
   end if
 
-  call make_grav_cell(grav_cell,rho0_old)
+  call make_grav_cell(grav_cell_old,rho0_old)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Print out some diagnostics and warnings about cutoff / sponge parameter
@@ -404,7 +407,7 @@ subroutine varden()
 
      call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
 
-     call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar,grav_cell)
+     call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar,grav_cell_old)
 
      if(do_initial_projection) then
         call initial_proj(uold,sold,pi,gpi,S_cc_old,normal,nodalrhs,thermal2, &
@@ -416,7 +419,7 @@ subroutine varden()
      !----------------------------------------------------------------------
     
      call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpi,sold,S_cc_old, &
-                  rho0_old,p0_old,grav_cell,gamma1bar,dx,cflfac,dt)
+                  rho0_old,p0_old,grav_cell_old,gamma1bar,dx,cflfac,dt)
 
      if (parallel_IOProcessor() .and. verbose .ge. 1) then
         print*,"Minimum firstdt over all levels =",dt
@@ -454,7 +457,7 @@ subroutine varden()
 
         call divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal2, &
                        S_cc_old,normal,nodalrhs,dSdt,beta0_old,rho0_old,p0_old, &
-                       gamma1bar,tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
+                       gamma1bar,tempbar_init,w0,grav_cell_old,dx,dt,the_bc_tower,mla)
 
      end do
 
@@ -552,7 +555,8 @@ subroutine varden()
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                                  tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2, &
                                  rho_Hext,thermal2, &
-                                 beta0_old,beta0_new,grav_cell,dx,dt,dtold, &
+                                 beta0_old,beta0_new,grav_cell_old,grav_cell_new, &
+                                 dx,dt,dtold, &
                                  the_bc_tower,dSdt,S_cc_old,S_cc_new,etarho_ec, &
                                  etarho_cc,psi,sponge,nodalrhs,tempbar_init,particles)
 
@@ -1026,10 +1030,10 @@ subroutine varden()
            ! recompute p0 based on the new rho0 
            call compute_cutoff_coords(rho0_old)
            
-           call make_grav_cell(grav_cell,rho0_old)
+           call make_grav_cell(grav_cell_old,rho0_old)
 
            ! enforce HSE
-           call enforce_HSE(rho0_old,p0_old,grav_cell)
+           call enforce_HSE(rho0_old,p0_old,grav_cell_old)
 
            if (use_tfromp) then
               ! compute full state T = T(rho,p0,X)
@@ -1046,7 +1050,7 @@ subroutine varden()
            call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
 
            ! beta0_old needs to be recomputed
-           call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar,grav_cell)
+           call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar,grav_cell_old)
 
            ! redistribute the particles to their new processor locations
            if (use_particles) call redistribute(particles,mla,dx,prob_lo)
@@ -1063,7 +1067,7 @@ subroutine varden()
            dt = 1.d20
 
            call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc_old,dSdt, &
-                      w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+                      w0,rho0_old,p0_old,gamma1bar,grav_cell_old,dx,cflfac,dt)
 
            if (parallel_IOProcessor() .and. verbose .ge. 1) then
               print*,''
@@ -1128,7 +1132,8 @@ subroutine varden()
                               rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               beta0_old,beta0_new, &
-                              grav_cell,dx,dt,dtold,the_bc_tower,dSdt,S_cc_old, &
+                              grav_cell_old,grav_cell_new, &
+                              dx,dt,dtold,the_bc_tower,dSdt,S_cc_old, &
                               S_cc_new,etarho_ec,etarho_cc,psi,sponge,nodalrhs,tempbar_init, &
                               particles)
 
@@ -1236,13 +1241,15 @@ subroutine varden()
            call multifab_copy_c(S_cc_old(n),1,S_cc_new(n),1,    1)
         end do
 
-        ! Set beta0_old equal to beta0_new from the last time step
+        ! update beta0 and grav_cell
         beta0_old = beta0_new
+        grav_cell_old = grav_cell_new
 
         ! Copy the base state
         rho0_old = rho0_new
         rhoh0_old = rhoh0_new
         p0_old = p0_new
+        
 
         !---------------------------------------------------------------------
         ! output
@@ -1481,6 +1488,6 @@ subroutine varden()
   deallocate(rho_Hnuc2,rho_Hext,thermal2,tag_mf)
   deallocate(dx,beta0_old,beta0_new,gamma1bar,gamma1bar_init,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
-  deallocate(psi,tempbar,tempbar_init,grav_cell)
+  deallocate(psi,tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
 end subroutine varden

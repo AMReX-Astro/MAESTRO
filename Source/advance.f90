@@ -31,7 +31,7 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
                               beta0_old,beta0_new, &
-                              grav_cell_old,dx,dt,dtold,the_bc_tower, &
+                              grav_cell_old,grav_cell_new,dx,dt,dtold,the_bc_tower, &
                               dSdt,S_cc_old,S_cc_new,etarho_ec,etarho_cc, &
                               psi,sponge,nodalrhs,tempbar_init,particles)
 
@@ -107,6 +107,7 @@ contains
     real(dp_t)    ,  intent(inout) :: beta0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: beta0_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: grav_cell_new(:,0:)
     real(dp_t)    ,  intent(in   ) :: dx(:,:),dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(multifab),  intent(inout) ::       dSdt(:)
@@ -153,7 +154,6 @@ contains
     type(multifab) :: beta0_cart_edge(mla%nlevel,mla%dim)
 
     real(kind=dp_t), allocatable ::        grav_cell_nph(:,:)
-    real(kind=dp_t), allocatable ::        grav_cell_new(:,:)
     real(kind=dp_t), allocatable ::             rho0_nph(:,:)
     real(kind=dp_t), allocatable ::               p0_nph(:,:)
     real(kind=dp_t), allocatable ::     p0_minus_peosbar(:,:)
@@ -203,7 +203,6 @@ contains
     misc_time_start = parallel_wtime()
 
     allocate(       grav_cell_nph(nlevs_radial,0:nr_fine-1))
-    allocate(       grav_cell_new(nlevs_radial,0:nr_fine-1))
     allocate(            rho0_nph(nlevs_radial,0:nr_fine-1))
     allocate(              p0_nph(nlevs_radial,0:nr_fine-1))
     allocate(    p0_minus_peosbar(nlevs_radial,0:nr_fine-1))
@@ -1407,8 +1406,6 @@ contains
 
     if (.not. init_mode) then
        
-       grav_cell_old = grav_cell_new
-
        if (.not. fix_base_state) then
           ! compute tempbar by "averaging"
           call average(mla,snew,tempbar,dx,temp_comp)

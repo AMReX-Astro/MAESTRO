@@ -28,7 +28,7 @@ contains
                                      beta0_old,beta0_new,gamma1bar,gamma1bar_init, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                      p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
-                                     tempbar,tempbar_init,grav_cell)
+                                     tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
     use restart_module
     use multifab_fill_ghost_module
@@ -67,7 +67,8 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:)
+    real(dp_t)    , pointer       :: grav_cell_old(:,:), grav_cell_new(:,:)
 
     ! local
     type(ml_boxarray) :: mba, mba_old
@@ -314,7 +315,7 @@ contains
     call initialize_1d_arrays(nlevs,beta0_old,beta0_new,gamma1bar,gamma1bar_init, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                               p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
-                              grav_cell)
+                              grav_cell_old,grav_cell_new)
 
     if (restart_with_vel_field) then
 
@@ -337,7 +338,7 @@ contains
        
        if (fix_base_state) then
           call compute_cutoff_coords(rho0_old)
-          call make_grav_cell(grav_cell,rho0_old)
+          call make_grav_cell(grav_cell_old,rho0_old)
           call destroy(mba)
           return
        end if
@@ -354,8 +355,8 @@ contains
           call compute_cutoff_coords(rho0_old)
 
           ! compute p0 with HSE
-          call make_grav_cell(grav_cell,rho0_old)
-          call enforce_HSE(rho0_old,p0_old,grav_cell)
+          call make_grav_cell(grav_cell_old,rho0_old)
+          call enforce_HSE(rho0_old,p0_old,grav_cell_old)
 
           ! call eos with r,p as input to recompute T,h
           call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx,updateRhoH_in=1)
@@ -570,13 +571,13 @@ contains
        ! deallocate 1D arrays
        deallocate(beta0_old,beta0_new,gamma1bar,gamma1bar_init,s0_init,rho0_old)
        deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec)
-       deallocate(etarho_cc,psi,tempbar,tempbar_init,grav_cell)
+       deallocate(etarho_cc,psi,tempbar,tempbar_init,grav_cell_old)
 
        ! reallocate 1D arrays
        call initialize_1d_arrays(nlevs,beta0_old,beta0_new,gamma1bar, &
                                  gamma1bar_init,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                  rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                 psi,tempbar,tempbar_init,grav_cell)
+                                 psi,tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
        ! copy outer pressure for reference
        p0_old(1,nr_fine-1) = p0_temp
@@ -629,10 +630,10 @@ contains
        call compute_cutoff_coords(rho0_old)
 
        ! compute gravity
-       call make_grav_cell(grav_cell,rho0_old)
+       call make_grav_cell(grav_cell_old,rho0_old)
 
        ! compute p0 by HSE
-       call enforce_HSE(rho0_old,p0_old,grav_cell)
+       call enforce_HSE(rho0_old,p0_old,grav_cell_old)
 
        ! compute temperature with EOS
        if (use_tfromp) then
@@ -654,12 +655,12 @@ contains
        call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
 
        ! compute beta0_old
-       call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar,grav_cell)
+       call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar,grav_cell_old)
 
        ! recompute time step
        dt = 1.d20
        call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc_old,dSdt, &
-                  w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+                  w0,rho0_old,p0_old,gamma1bar,grav_cell_old,dx,cflfac,dt)
 
     end if ! end spherical restart_into_finer initialization
 
@@ -678,7 +679,7 @@ contains
                                          gamma1bar,gamma1bar_init,s0_init,rho0_old, &
                                          rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                          p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                         psi,tempbar,tempbar_init,grav_cell)
+                                         psi,tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
     use box_util_module
     use init_scalar_module
@@ -704,7 +705,8 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:)
+    real(dp_t)    , pointer       :: grav_cell_old(:,:),grav_cell_new(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -827,7 +829,7 @@ contains
     call initialize_1d_arrays(nlevs,beta0_old,beta0_new,gamma1bar,gamma1bar_init, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                               p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
-                              grav_cell)
+                              grav_cell_old,grav_cell_new)
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
@@ -850,7 +852,7 @@ contains
 
     if (fix_base_state) then
        call compute_cutoff_coords(rho0_old)
-       call make_grav_cell(grav_cell,rho0_old)
+       call make_grav_cell(grav_cell_old,rho0_old)
        call destroy(mba)
        return
     end if
@@ -867,8 +869,8 @@ contains
        call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
-       call make_grav_cell(grav_cell,rho0_old)
-       call enforce_HSE(rho0_old,p0_old,grav_cell)
+       call make_grav_cell(grav_cell_old,rho0_old)
+       call enforce_HSE(rho0_old,p0_old,grav_cell_old)
 
        ! call eos with r,p as input to recompute T,h
        call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx,updateRhoH_in=1)
@@ -895,7 +897,8 @@ contains
                                             gamma1bar,gamma1bar_init,s0_init,rho0_old, &
                                             rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                             p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                            psi,tempbar,tempbar_init,grav_cell)
+                                            psi,tempbar,tempbar_init, &
+                                            grav_cell_old,grav_cell_new)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, &
          amr_buf_width, max_grid_size_1, max_grid_size_2, max_grid_size_3, &
@@ -926,7 +929,8 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),tempbar_init(:,:)
+    real(dp_t)    , pointer       :: grav_cell_old(:,:),grav_cell_new(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -1026,7 +1030,7 @@ contains
     call initialize_1d_arrays(max_levs,beta0_old,beta0_new,gamma1bar, &
                               gamma1bar_init,s0_init,rho0_old,rhoh0_old,rho0_new, &
                               rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                              psi,tempbar,tempbar_init,grav_cell)
+                              psi,tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
@@ -1288,7 +1292,7 @@ contains
 
     if (fix_base_state) then
        call compute_cutoff_coords(rho0_old)
-       call make_grav_cell(grav_cell,rho0_old)
+       call make_grav_cell(grav_cell_old,rho0_old)
        call destroy(mba)
        return
     end if
@@ -1305,8 +1309,8 @@ contains
        call compute_cutoff_coords(rho0_old)
 
        ! compute p0 with HSE
-       call make_grav_cell(grav_cell,rho0_old)
-       call enforce_HSE(rho0_old,p0_old,grav_cell)
+       call make_grav_cell(grav_cell_old,rho0_old)
+       call enforce_HSE(rho0_old,p0_old,grav_cell_old)
 
        ! call eos with r,p as input to recompute T,h
        call makeTfromRhoP(sold,p0_old,mla,the_bc_tower%bc_tower_array,dx,updateRhoH_in=1)
@@ -1327,14 +1331,15 @@ contains
   subroutine initialize_1d_arrays(num_levs,beta0_old,beta0_new,gamma1bar, &
                                   gamma1bar_init,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                   rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                  psi,tempbar,tempbar_init,grav_cell)
+                                  psi,tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
     integer    , intent(in) :: num_levs    
     real(dp_t) , pointer    :: beta0_old(:,:),beta0_new(:,:),gamma1bar(:,:)
     real(dp_t) , pointer    :: gamma1bar_init(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t) , pointer    :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t) , pointer    :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
-    real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
+    real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),tempbar_init(:,:)
+    real(dp_t) , pointer    :: grav_cell_old(:,:),grav_cell_new(:,:)
     
     if (spherical .eq. 0) then
        allocate(beta0_old (num_levs,0:nr_fine-1))
@@ -1355,7 +1360,8 @@ contains
        allocate(psi           (num_levs,0:nr_fine-1))
        allocate(tempbar       (num_levs,0:nr_fine-1))
        allocate(tempbar_init  (num_levs,0:nr_fine-1))
-       allocate(grav_cell     (num_levs,0:nr_fine-1))
+       allocate(grav_cell_old (num_levs,0:nr_fine-1))
+       allocate(grav_cell_new (num_levs,0:nr_fine-1))
     else
        allocate(beta0_old (1,0:nr_fine-1))
        allocate(beta0_new (1,0:nr_fine-1))
@@ -1375,7 +1381,8 @@ contains
        allocate(psi           (1,0:nr_fine-1))
        allocate(tempbar       (1,0:nr_fine-1))
        allocate(tempbar_init  (1,0:nr_fine-1))
-       allocate(grav_cell     (1,0:nr_fine-1))
+       allocate(grav_cell_old (1,0:nr_fine-1))
+       allocate(grav_cell_new (1,0:nr_fine-1))
     end if
 
     beta0_old = ZERO
@@ -1396,7 +1403,8 @@ contains
     psi = ZERO
     tempbar = ZERO
     tempbar_init = ZERO
-    grav_cell = ZERO
+    grav_cell_old = ZERO
+    grav_cell_new = ZERO
 
   end subroutine initialize_1d_arrays
   
