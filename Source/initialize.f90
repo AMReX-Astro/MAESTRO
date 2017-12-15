@@ -1280,9 +1280,6 @@ contains
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
 
-    call fabio_ml_multifab_write_d(sold,mla%mba%rr(:,1),"a_sold")
-
-
     p0_old       = p0_init
     rho0_old     = s0_init(:,:,rho_comp)
     rhoh0_old    = s0_init(:,:,rhoh_comp)

@@ -121,8 +121,6 @@ contains
     call react_state(mla,tempbar_init,sold,s1,rho_omegadot,rho_Hnuc,rho_Hext,p0_old, &
                      halfdt,dx,the_bc_tower%bc_tower_array)
 
-    call fabio_ml_multifab_write_d(rho_omegadot,mla%mba%rr(:,1),"a_rod")
-
     do n=1,nlevs
        call destroy(s1(n))
     end do
