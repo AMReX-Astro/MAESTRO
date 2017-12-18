@@ -698,17 +698,17 @@ contains
     
     misc_time_start = parallel_wtime()
 
-    ! compute gamma1bar
     if (evolve_base_state) then
 
+       ! compute beta0 and gamma1bar
        call make_gamma1bar(mla,snew,gamma1bar_new,p0_new,dx)
-
        call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar_new,grav_cell_new)
 
     else
         
-       ! Just copy beta0_new from beta0_old if not evolving the base state
+       ! Just pass beta0 and gamma1bar through if not evolving base state
        beta0_new = beta0_old
+       gamma1bar_new = gamma1bar_old
 
     end if
 
@@ -1175,10 +1175,8 @@ contains
 
     if (evolve_base_state) then
 
-       ! compute gamma1bar
+       ! compute beta0 and gamma1bar
        call make_gamma1bar(mla,snew,gamma1bar_new,p0_new,dx)
-
-       !  We used to call this even if evolve_base was false,but we don't need to
        call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar_new,grav_cell_new)
 
     end if
