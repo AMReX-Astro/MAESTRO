@@ -90,7 +90,7 @@ contains
     real(dp_t) ::                  psi(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::            etarho_cc(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::   p0_minus_pthermbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::     p0_minus_peosbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         delta_chi_w0(nlevs_radial,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
@@ -105,7 +105,7 @@ contains
     psi = ZERO
     etarho_cc = ZERO
     delta_gamma1_termbar = ZERO
-    p0_minus_pthermbar = ZERO
+    p0_minus_peosbar = ZERO
 
     halfdt = HALF*dt
     ng_s   = nghost(sold(1))
@@ -168,7 +168,7 @@ contains
     if (evolve_base_state) then
        call average(mla,S_cc,Sbar,dx,1)
        call make_w0(w0,w0,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,p0_minus_pthermbar, &
+                    gamma1bar,gamma1bar,p0_minus_peosbar, &
                     psi,etarho_ec,etarho_cc,dt,dt,delta_chi_w0,.true.)
     end if
     
