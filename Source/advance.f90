@@ -290,9 +290,12 @@ contains
     end do
 
     if (time .eq. ZERO) then
+        ! this is either a pressure iteration or the first time step
+        ! set S_cc_nph = (1/2) (S_cc_old + S_cc_new)
        call make_S_at_halftime(mla,S_cc_nph,S_cc_old,S_cc_new, &
                                the_bc_tower%bc_tower_array)
     else
+       ! set S_cc_nph = S_cc_old + (dt/2) * dSdt
        call extrap_to_halftime(mla,S_cc_nph,dSdt,S_cc_old,dt, &
                                the_bc_tower%bc_tower_array)
     end if
@@ -359,17 +362,21 @@ contains
 
     if (evolve_base_state) then
 
+       ! compute Sbar = average(S_cc_nph)
        call average(mla,S_cc_nph,Sbar,dx,1)
 
        ! save old-time value
        w0_old = w0
 
+       ! compute w0, w0_force, and delta_chi_w0
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
                     gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold, &
                     delta_chi_w0,.true.)
 
        if (spherical .eq. 1) then
+          ! put w0 on Cartesian edges
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
+          ! put w0_force on Cartesian cells
           call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
@@ -396,6 +403,7 @@ contains
        end do
     end do
     
+    ! compute unprojected MAC velocities
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
@@ -419,6 +427,7 @@ contains
 
     macproj_time_start = parallel_wtime()
 
+    ! compute RHS for MAC projection
     call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,beta0_old,dx, &
                      gamma1bar_old,p0_old,delta_p_term,dt,delta_chi,.true.)
 
@@ -433,7 +442,7 @@ contains
        call setval(macphi(n), ZERO, all=.true.)
     end do
 
-    ! MAC projection !
+    ! MAC projection
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
@@ -475,6 +484,7 @@ contains
        write(6,*) '<<< STEP  4 : advect base        '
     end if
     
+    ! advect the base state density
     if (evolve_base_state) then
        call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
        call compute_cutoff_coords(rho0_new)
@@ -484,7 +494,6 @@ contains
 
     do n=1,nlevs
        call multifab_build(thermal1(n), mla%la(n), 1, 0)
-       call setval(thermal1(n),ZERO,all=.true.)
     end do
     
     ! thermal is the forcing for rhoh or temperature
@@ -504,12 +513,16 @@ contains
        do n=1,nlevs
           call destroy(Tcoeff(n))
        end do
+    else
+       do n=1,nlevs
+          call setval(thermal1(n),ZERO,all=.true.)
+       end do
     end if
 
+    ! copy temperature into s2 for seeding eos calls only
+    ! temperature will be overwritten later after enthalpy advance
     do n=1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, nghost(sold(n)))
-       ! copy temperature into s2 for seeding eos calls only
-       ! temperature will be overwritten later after enthalpy advance
        call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, nghost(sold(n)))
     end do
 
@@ -530,29 +543,27 @@ contains
           call multifab_build(scal_force(n), mla%la(n), nscal, nghost(sold(n)))
        endif
        call multifab_build_edge(etarhoflux(n), mla%la(n), 1, 0, dm)
+       ! set etarhoflux to zero
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
+    ! advect rhoX, rho, and tracers
     call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
-    ! Now compute the new etarho
-    if (evolve_base_state) then
-       if (use_etarho) then
-
-          if (spherical .eq. 0) then
-             call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
-          else
-             call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
-                                        etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
-          endif
-
+    ! compute the new etarho
+    if (evolve_base_state .and. use_etarho) then
+       if (spherical .eq. 0) then
+          call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
+       else
+          call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
+                                     etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
        endif
     end if
 
-    ! Correct the base state by "averaging"
-    if (use_etarho .and. evolve_base_state) then
+    ! correct the base state density by "averaging"
+    if (evolve_base_state .and. use_etarho) then
        call average(mla,s2,rho0_new,dx,rho_comp)
        call compute_cutoff_coords(rho0_new)
     end if
@@ -563,6 +574,7 @@ contains
        grav_cell_new = grav_cell_old
     end if
 
+    ! base state pressure update
     if (evolve_base_state) then
 
        ! set new p0 through HSE
@@ -595,6 +607,7 @@ contains
 
     end if
 
+    ! base state enthalpy update
     if (evolve_base_state) then
 
        ! compute rhoh0_old by "averaging"
@@ -728,7 +741,9 @@ contains
     end if
 
     ! reset cutoff coordinates to old time value
-    call compute_cutoff_coords(rho0_old)
+    if (evolve_base_state) then
+       call compute_cutoff_coords(rho0_old)
+    end if
 
     if(use_thermal_diffusion) then
 
@@ -839,12 +854,15 @@ contains
           Sbar = Sbar + delta_gamma1_termbar
        end if
 
+       ! compute w0, w0_force, and delta_chi_w0
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                     gamma1bar_old,gamma1bar_new,p0_minus_peosbar, &
                     psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,.false.)
 
        if (spherical .eq. 1) then
+          ! put w0 on Cartesian edges
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
+          ! put w0_force on Cartesian cells
           call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
@@ -992,16 +1010,12 @@ contains
                          the_bc_tower%bc_tower_array)
 
     ! Now compute the new etarho
-    if (evolve_base_state) then
-       if (use_etarho) then
-
-          if (spherical .eq. 0) then
-             call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
-          else
-             call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
-                                        etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
-          endif
-
+    if (evolve_base_state .and. use_etarho) then
+       if (spherical .eq. 0) then
+          call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
+       else
+          call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
+                                     etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
        endif
     end if
 
@@ -1009,8 +1023,8 @@ contains
        call destroy(etarhoflux(n))
     end do
 
-    ! Correct the base state using "averaging"
-    if (use_etarho .and. evolve_base_state) then
+    ! Correct the base state density using "averaging"
+    if (evolve_base_state .and. use_etarho) then
        call average(mla,s2,rho0_new,dx,rho_comp)
        call compute_cutoff_coords(rho0_new)
     end if
@@ -1025,6 +1039,7 @@ contains
        grav_cell_nph = grav_cell_old
     end if
 
+    ! base state pressure update
     if (evolve_base_state) then
        
        ! set new p0 through HSE
@@ -1053,6 +1068,7 @@ contains
 
     end if
 
+    ! base state enthalpy update
     if (evolve_base_state) then
        call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                  rho0_predicted_edge,psi,dt)
@@ -1194,7 +1210,6 @@ contains
     end if
           
     if(use_thermal_diffusion) then
-
        do n=1,nlevs
           call multifab_build(Tcoeff(n),  mla%la(n), 1,     1)
           call multifab_build(hcoeff2(n),  mla%la(n), 1,     1)
@@ -1212,11 +1227,6 @@ contains
           call destroy(hcoeff2(n))
           call destroy(Xkcoeff2(n))
           call destroy(pcoeff2(n))
-       end do
-
-    else
-       do n=1,nlevs
-          call setval(thermal2(n),ZERO,all=.true.)
        end do
     end if
     
