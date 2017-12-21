@@ -568,6 +568,7 @@ contains
        call compute_cutoff_coords(rho0_new)
     end if
 
+    ! update grav_cell_new
     if (evolve_base_state) then
        call make_grav_cell(grav_cell_new,rho0_new)
     else
@@ -971,11 +972,10 @@ contains
        write(6,*) '<<< STEP  8 : advect base   '
     end if
 
+    ! advect the base state density
     if (evolve_base_state) then
        call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
        call compute_cutoff_coords(rho0_new)
-    else
-       rho0_new = rho0_old
     end if
 
     do n=1,nlevs
@@ -983,8 +983,6 @@ contains
        ! copy temperature into s2 for seeding eos calls only
        ! temperature will be overwritten later after enthalpy advance
        call multifab_copy_c(s2(n), temp_comp, s1(n), temp_comp, 1, nghost(sold(n)))
-
-       call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -1003,13 +1001,16 @@ contains
        else
           call multifab_build(scal_force(n), mla%la(n), nscal, nghost(sold(n)))
        endif
+       ! set etarhoflux to zero
+       call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
+    ! advect rhoX, rho, and tracers
     call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
                          the_bc_tower%bc_tower_array)
 
-    ! Now compute the new etarho
+    ! compute the new etarho
     if (evolve_base_state .and. use_etarho) then
        if (spherical .eq. 0) then
           call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
@@ -1029,6 +1030,7 @@ contains
        call compute_cutoff_coords(rho0_new)
     end if
 
+    ! update grav_cell_new, rho0_nph, grav_cell_nph
     if (evolve_base_state) then
        call make_grav_cell(grav_cell_new,rho0_new)
        rho0_nph = HALF*(rho0_old+rho0_new)
