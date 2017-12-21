@@ -41,7 +41,7 @@ contains
     use velocity_advance_module     , only : velocity_advance
     use  density_advance_module     , only : density_advance
     use enthalpy_advance_module     , only : enthalpy_advance
-    use make_beta0_module       , only : make_beta0
+    use make_beta0_module           , only : make_beta0
     use make_w0_module              , only : make_w0
     use advect_base_module          , only : advect_base_dens, advect_base_enthalpy
     use react_state_module          , only : react_state
@@ -172,11 +172,11 @@ contains
     real(kind=dp_t), allocatable ::         delta_chi_w0(:,:)
 
     integer    :: i,n,comp,proj_type,nlevs,dm
-    real(dp_t) :: halfdt
 
     ! need long int to store numbers greater than 2^31
     integer(kind=ll_t) :: numcell
 
+    ! keep track of wallclock time of various parts of the code
     real(kind=dp_t) :: advect_time , advect_time_start , advect_time_max
     real(kind=dp_t) :: macproj_time, macproj_time_start, macproj_time_max
     real(kind=dp_t) :: ndproj_time , ndproj_time_start , ndproj_time_max
@@ -194,6 +194,7 @@ contains
     nlevs = mla%nlevel
     dm = mla%dim
 
+    ! keep track of wallclock time of various parts of the code
     advect_time  = 0.d0
     macproj_time = 0.d0
     ndproj_time  = 0.d0
@@ -244,11 +245,6 @@ contains
        end if
     end if
 
-    ! Initialize these to previous values
-    w0_old = w0
-
-    halfdt = half*dt
-
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
     
@@ -268,8 +264,8 @@ contains
 
     ! note: rho_omegadot2 and rho_Hnuc2 are just temporaries, and are overwritten in the
     ! next call to react_state before they are used
-    call react_state(mla,tempbar_init,sold,s1,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_old,halfdt,dx, &
-                     the_bc_tower%bc_tower_array)
+    call react_state(mla,tempbar_init,sold,s1,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_old, &
+                     half*dt,dx,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
@@ -345,15 +341,19 @@ contains
 
     end if
 
-    if (dm .eq. 3) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
           call multifab_build(w0_force_cart(n),mla%la(n),dm,1)
           call setval(w0_force_cart(n),ZERO,all=.true.)
+       end do
+    end if
+
+    if (dm .eq. 3) then
+       do n=1,nlevs
           do comp=1,dm
              call multifab_build_edge(w0mac(n,comp),mla%la(n),1,1,comp)
              call setval(w0mac(n,comp),ZERO,all=.true.)
           end do
-
        end do
     end if
 
@@ -361,15 +361,15 @@ contains
 
        call average(mla,S_cc_nph,Sbar,dx,1)
 
+       ! save old-time value
+       w0_old = w0
+
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
                     gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold, &
                     delta_chi_w0,.true.)
 
        if (spherical .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
-       end if
-
-       if (dm .eq. 3) then
           call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
@@ -399,7 +399,7 @@ contains
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
-    if (dm .eq. 3) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(w0_force_cart(n))
        end do
@@ -686,8 +686,8 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
     
-    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-                     the_bc_tower%bc_tower_array)
+    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
+                     half*dt,dx,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -823,7 +823,7 @@ contains
 
     end if
 
-    if (dm .eq. 3) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
           call multifab_build(w0_force_cart(n), mla%la(n), dm, 1)
           call setval(w0_force_cart(n),ZERO,all=.true.)
@@ -845,9 +845,6 @@ contains
 
        if (spherical .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
-       end if
-
-       if (dm .eq. 3) then
           call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
@@ -1161,8 +1158,8 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
 
-    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
-                     the_bc_tower%bc_tower_array)
+    call react_state(mla,tempbar_init,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new, &
+                     half*dt,dx,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(s2(n))
@@ -1297,6 +1294,11 @@ contains
           do comp=1,dm
              call destroy(w0mac(n,comp))
           end do
+       end do
+    end if
+
+    if (spherical .eq. 1) then
+       do n=1,nlevs
           call destroy(w0_force_cart(n))
        end do
     end if
