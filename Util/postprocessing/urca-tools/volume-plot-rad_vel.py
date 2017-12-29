@@ -12,11 +12,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument('infile', type=str, help='Name of input plotfile.')
 parser.add_argument('-rup', '--rup', type=float, default=1.0e8, help='Maximum radius (cm). Default 1.0e8.')
 parser.add_argument('-zoom', '--zoom', type=float, default=1.0, help='Camera zoom factor. Default 1.0.')
+parser.add_argument('-cpos', '--camera_position', type=float, nargs=3, help='3-D Camera position in fractions of maximum radius (--rup).')
+parser.add_argument('-cnorth', '--camera_north', type=float, nargs=3, help='Camera north vector (direction of up).')
+parser.add_argument('-vmin', '--velocity_minimum', type=float, default=1.0e3, help='Minimum velocity for transfer function. (Default is 1.0e3 cm/s).')
+parser.add_argument('-vmax', '--velocity_maximum', type=float, default=1.0e7, help='Maximum velocity for transfer function. (Default is 1.0e7 cm/s).')
+parser.add_argument('-vsig', '--velocity_sigma', type=float, default=0.08, help='Velocity transfer function width parameter. (Default is 0.08).')
+parser.add_argument('-n', '--num_layers', type=int, default=5, help='Number of layers for each of +/- velocity. (Default is 5).')
 parser.add_argument('-dd', '--drawdomain', action='store_true', help='If supplied, draw the boundaries of the domain.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-da', '--drawaxes', action='store_true', help='If supplied, draw an axes triad.')
 parser.add_argument('-alpha_ones', '--alpha_ones', action='store_true', help='If supplied, set the transfer function values to ones.')
 parser.add_argument('-res', '--resolution', type=int, default=2048, help='Resolution for output plot.')
+parser.add_argument('-dry', '--dry_run', action='store_true', help='Plot only the transfer functions and quit.')
 args = parser.parse_args()
 
 # Hack: because rendering likes log fields ...
@@ -52,14 +59,16 @@ so_neg_vrad = VolumeSource(core, 'neg_radial_velocity')
 # tfh_en.plot('{}_tfun_enuc.png'.format(args.infile), profile_field=('boxlib','enucdot'))
 # so_enuc.transfer_function = tfh_en.tf
 
-mag_vel_bounds = np.array([1.0e3, 1.0e6])
-mag_vel_sigma  = 0.08
+mag_vel_bounds = np.array([args.velocity_minimum, args.velocity_maximum])
+mag_vel_sigma  = args.velocity_sigma
+log_min = np.log10(args.velocity_minimum)
+log_max = np.log10(args.velocity_maximum)
 
-nlayers = 4
+nlayers = args.num_layers
 if args.alpha_ones:
     alphavec = np.ones(nlayers)
 else:
-    alphavec = np.logspace(-3,0,nlayers)
+    alphavec = np.logspace(-3, 0, num=nlayers, endpoint=True)
 
 tfh = TransferFunctionHelper(ds)
 tfh.set_field('pos_radial_velocity')
@@ -67,7 +76,7 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
-tfh.tf.add_layers(nlayers, colormap='Blues', w=mag_vel_sigma**2, mi=3, ma=6, alpha=alphavec)
+tfh.tf.add_layers(nlayers, colormap='Blues', w=mag_vel_sigma**2, mi=log_min, ma=log_max, alpha=alphavec)
 tfh.plot('{}_tfun_pos_vrad.png'.format(args.infile))
 so_pos_vrad.transfer_function = tfh.tf
 
@@ -77,9 +86,12 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
-tfh.tf.add_layers(nlayers, colormap='Reds', w=mag_vel_sigma**2, mi=3, ma=6, alpha=alphavec)
+tfh.tf.add_layers(nlayers, colormap='Reds', w=mag_vel_sigma**2, mi=log_min, ma=log_max, alpha=alphavec)
 tfh.plot('{}_tfun_neg_vrad.png'.format(args.infile))
 so_neg_vrad.transfer_function = tfh.tf
+
+if args.dry_run:
+    exit()
 
 # Add sources to scene
 #sc.add_source(so_enuc)
@@ -92,9 +104,9 @@ sc.add_camera()
 # Set camera properties
 sc.camera.focus = ds.domain_center
 sc.camera.resolution = args.resolution
-sc.camera.north_vector = [0, 0, 1]
-sc.camera.position = ds.domain_center + [1.0, 1.0, 1.0] * ds.domain_width * args.rup/5.12e8
-sc.camera.zoom(2.5*args.zoom)
+sc.camera.north_vector = yt.YTArray(args.camera_north, 'cm')
+sc.camera.position = ds.domain_center + yt.YTArray(args.camera_position, 'cm') * args.rup
+sc.camera.zoom(args.zoom)
 
 # Annotate domain - draw boundaries
 if args.drawdomain:
@@ -110,4 +122,4 @@ if args.drawaxes:
 
 # Render
 sc.render()
-sc.save('{}_rendering_rad-vel.png'.format(args.infile), sigma_clip=3)
+sc.save('{}_rendering_rad-vel.png'.format(args.infile), sigma_clip=5)

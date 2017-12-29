@@ -15,6 +15,8 @@ parser.add_argument('-zoom', '--zoom', type=float, default=1.0, help='Camera zoo
 parser.add_argument('-dd', '--drawdomain', action='store_true', help='If supplied, draw the boundaries of the domain.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-da', '--drawaxes', action='store_true', help='If supplied, draw an axes triad.')
+parser.add_argument('-alpha_ones', '--alpha_ones', action='store_true', help='If supplied, set the transfer function values to ones.')
+parser.add_argument('-res', '--resolution', type=int, default=2048, help='Resolution for volume-rendering.')
 args = parser.parse_args()
 
 # Hack: because rendering likes log fields ...
@@ -46,6 +48,12 @@ rat_neg_pos = 10.0**(neg_maxv-pos_maxv)
 # Assign Transfer Functions to Sources
 mag_enuc_sigma  = 0.1
 
+nlayers = 10
+if args.alpha_ones:
+    alphavec = np.ones(nlayers)
+else:
+    alphavec = np.logspace(-2,0,nlayers)
+
 tfh = TransferFunctionHelper(ds)
 tfh.set_field('pos_enucdot')
 mag_enuc_bounds = np.array([10.0**-(pos_maxv-3), 10.0**pos_maxv])
@@ -53,8 +61,7 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_enuc_bounds)
 tfh.build_transfer_function()
-nlayers = 10
-tfh.tf.add_layers(nlayers, colormap='PiYG', w=mag_enuc_sigma**2, mi=pos_maxv-nlayers+1, ma=pos_maxv, alpha=np.logspace(-2,0,nlayers))
+tfh.tf.add_layers(nlayers, colormap='PiYG', w=mag_enuc_sigma**2, mi=pos_maxv-nlayers+1, ma=pos_maxv, alpha=alphavec)
 try:
     tfh.plot('{}_tfun_pos_enucdot.png'.format(args.infile))
 except:
@@ -68,8 +75,7 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_enuc_bounds)
 tfh.build_transfer_function()
-nlayers = 10
-tfh.tf.add_layers(nlayers, colormap='PiYG_r', w=mag_enuc_sigma**2, mi=neg_maxv-nlayers+1, ma=neg_maxv, alpha=rat_neg_pos*np.logspace(-2,0,nlayers))
+tfh.tf.add_layers(nlayers, colormap='PiYG_r', w=mag_enuc_sigma**2, mi=neg_maxv-nlayers+1, ma=neg_maxv, alpha=rat_neg_pos*alphavec)
 try:
     tfh.plot('{}_tfun_neg_enucdot.png'.format(args.infile))
 except:
@@ -85,7 +91,7 @@ sc.add_camera()
 
 # Set camera properties
 sc.camera.focus = ds.domain_center
-sc.camera.resolution = 2048
+sc.camera.resolution = args.resolution
 sc.camera.north_vector = [0, 0, 1]
 sc.camera.position = ds.domain_center + [1.0, 1.0, 1.0] * ds.domain_width * args.rup/5.12e8
 #sc.camera.zoom(2.5*args.zoom)
@@ -104,4 +110,4 @@ if args.drawaxes:
 
 # Render
 sc.render()
-sc.save('{}_rendering_enucdot.png'.format(args.infile))
+sc.save('{}_rendering_enucdot.png'.format(args.infile), sigma_clip=3)

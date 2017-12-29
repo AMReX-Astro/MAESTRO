@@ -10,6 +10,8 @@ parser.add_argument('-w', '--width', type=float,
                     help='Width of slice (cm). Default is domain width.')
 parser.add_argument('-axis', '--axis', type=str, default='x', help='Axis along which to slice. Should be "x", "y", or "z".')
 parser.add_argument('-symlog', '--symlog', action='store_true', help='If supplied, use symlog scaling, which is linear near zero, to accomodate positive and negative values of enucdot.')
+parser.add_argument('-logmax', '--logmax', type=float,
+                    help='Log of the +/- maximum enucdot value.')
 parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied, draw the cell edges.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-lic', '--lic_velocity', action='store_true', help='If supplied, draw line-integral convolution for in-plane velocity field.')
@@ -59,13 +61,18 @@ else:
     s = yt.SlicePlot(ds, args.axis, ('boxlib', 'enucdot'),
                      center='c', width=width)
 
+if args.logmax:
+    log_max_val = args.logmax
+else:
+    log_max_val = maxv
+    
 if args.symlog:
     s.set_cmap(('boxlib', 'enucdot'), 'PiYG')
-    s.set_log(('boxlib', 'enucdot'),  True, linthresh=10.0**(maxv-6))
-    s.set_zlim(('boxlib', 'enucdot'), -10.0**maxv, 10.0**maxv)
+    s.set_log(('boxlib', 'enucdot'),  True, linthresh=10.0**(log_max_val-6))
+    s.set_zlim(('boxlib', 'enucdot'), -10.0**log_max_val, 10.0**log_max_val)
 else:
     s.set_cmap(('boxlib', 'enucdot'), 'PiYG')
-    s.set_zlim(('boxlib', 'enucdot'), -10.0**maxv, 10.0**maxv)
+    s.set_zlim(('boxlib', 'enucdot'), -10.0**log_max_val, 10.0**log_max_val)
 
 #s.annotate_velocity(normalize=True)
 #s.annotate_streamlines(('boxlib', 'y_vel'), ('boxlib', 'z_vel'), density=5)

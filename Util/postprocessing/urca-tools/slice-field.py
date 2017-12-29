@@ -19,6 +19,7 @@ parser.add_argument('-w', '--width', type=float,
                     help='Width of slice (cm). Default is domain width.')
 parser.add_argument('-log', '--logscale', action='store_true', help='If supplied, use a log scale for the field.')
 parser.add_argument('-symlog', '--symlog', action='store_true', help='If supplied, use symlog scaling, which is linear near zero, to accomodate positive and negative values of the field.')
+parser.add_argument('-ctr', '--center', type=float, nargs='+', help='Centers the plot on the coordinates provided (x, y, z).')
 parser.add_argument('-min', '--field_min', type=float, help='Minimim field value for colormap.')
 parser.add_argument('-max', '--field_max', type=float, help='Maximum field value for colormap.')
 parser.add_argument('-cmap', '--colormap', type=str, default='viridis',
@@ -28,6 +29,7 @@ parser.add_argument('-res', '--resolution', type=int, default=2048,
 parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied, draw the cell edges.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice view appropriately for octant dataset.')
+parser.add_argument('-natorg', '--native_origin', action='store_true', help='Use the native origin location for the axes.')
 args = parser.parse_args()
 
 def slicefield(ds, field, field_short_name):
@@ -36,12 +38,24 @@ def slicefield(ds, field, field_short_name):
     else:
         width = yt.YTQuantity(args.width, 'cm')
 
+    center_loc = None
+
     if args.octant:
-        dcenter = width.in_units('cm').v/2.0
-        cpos    = ds.arr([dcenter, dcenter, dcenter], 'cm')
-        s = yt.SlicePlot(ds, args.axis, field, center=cpos, width=width, origin="native")
+        if args.center and len(args.center) == 3:
+            center_loc = ds.arr(args.center, 'cm')
+        else:
+            dcenter = width.in_units('cm').v/2.0
+            center_loc = ds.arr([dcenter, dcenter, dcenter], 'cm')
+        s = yt.SlicePlot(ds, args.axis, field, center=center_loc, width=width, origin="native")
     else:
-        s = yt.SlicePlot(ds, args.axis, field, center='c', width=width)
+        if args.center and len(args.center) == 3:
+            center_loc = ds.arr(args.center, 'cm')
+        else:
+            center_loc = 'c'
+        if args.native_origin:
+            s = yt.SlicePlot(ds, args.axis, field, center=center_loc, width=width, origin="native")
+        else:
+            s = yt.SlicePlot(ds, args.axis, field, center=center_loc, width=width)
 
     # Colormaps and Scaling
     maxv = ds.all_data().max(field)
