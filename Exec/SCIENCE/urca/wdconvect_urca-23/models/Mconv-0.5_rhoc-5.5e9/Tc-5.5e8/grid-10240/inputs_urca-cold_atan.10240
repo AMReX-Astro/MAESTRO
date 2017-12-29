@@ -1,0 +1,57 @@
+&PROBIN
+
+ use_eos_coulomb = T
+ 
+/
+
+
+&params 
+
+ nx = 10240
+ dens_base = 5.5d9
+ temp_base = 5.5d8
+
+ dens_conv_zone = -1.0
+ M_conv_zone = 0.5d0
+
+ low_density_cutoff = 5.d-2
+ temp_fluff = 1.8d7
+
+ fluff_type = "continuous"
+
+ test_hse_convergence = T
+ TOL = 2.0d-10
+ MAX_ITER = 1000000
+ dtol_fac = 1.0d-8
+
+ xmin = 0.0
+ xmax = 5.12d8
+
+! in/out relative to urca threshold density
+! which atm assumes ye = 0.5 throughout
+! O16 0.6 in - 2.5e-4, 0.5 out - 1e-4
+! C12 0.4 in - 2.5e-4, 0.5 out - 1e-4
+! Ne23 5e-4 in, 0 out
+! Na23 0    in, 2e-4 out
+
+ c12_in   = 0.39975d0
+ c12_out  = 0.49990d0
+ o16_in   = 0.59975d0
+ o16_out  = 0.49990d0
+ ne23_in  = 5.00000d-4
+ ne23_out = 0.00000d0
+ na23_in  = 0.00000d0
+ na23_out = 2.00000d-4
+
+! Following 0.5 Ye and Log10(rho*Ye)=8.92 from Toki+ 2013:
+ urca_23_dens = 1.66d9 
+
+! Parameters controlling the species gradients near the urca shell
+ urca_shell_type  = "atan"
+ shell_atan_kappa = 1.0d-9
+
+ prefix = "WD_urca_nuc_M-0.5_rc5.5e9_Tc5.5e8_atan"
+
+/
+
+  
