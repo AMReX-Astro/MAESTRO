@@ -78,7 +78,7 @@ program init_1d
 
   real (kind=dp_t) :: max_hse_error, dpdr, rhog
 
-  real (kind=dp_t), parameter :: dtol_fac = 0.000001_dp_t
+  real (kind=dp_t) :: dtol_fac = 0.000001_dp_t
 
   integer :: i_conv, i_fluff
 
@@ -86,7 +86,7 @@ program init_1d
 
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
-       test_hse_convergence, TOL, MAX_ITER, &
+       test_hse_convergence, TOL, MAX_ITER, dtol_fac, &
        xmin, xmax, &
        fluff_type, &
        c12_in, c12_out, o16_in, o16_out, &
