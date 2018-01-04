@@ -203,7 +203,7 @@ contains
        end do
 
        ! Convert (rhohalf/beta0)   back to rhohalf
-       !  OR     (rhohalf/beta0^2) back to (rhohalf/beta0^2)
+       !  OR     (rhohalf/beta0^2) back to (rhohalf/beta0)
        call multifab_mult_mult_c(rhohalf(n),1,beta0_cart(n),1,1, &
                                  nghost(beta0_cart(n)))
 
