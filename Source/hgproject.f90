@@ -397,7 +397,7 @@ contains
       ! quantity projected is U
       else if (proj_type .eq. divu_iters_comp) then
 
-      ! quantity projected is (Ustar - Un)
+      ! quantity projected is (Ustar - Un) / dt
       else if (proj_type .eq. pressure_iters_comp) then
 
          unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
@@ -457,7 +457,7 @@ contains
       ! quantity projected is U
       else if (proj_type .eq. divu_iters_comp) then
 
-      ! quantity projected is (Ustar - Un)
+      ! quantity projected is (Ustar - Un) / dt
       else if (proj_type .eq. pressure_iters_comp) then
 
          !$OMP PARALLEL PRIVATE(i,j,k,m)
@@ -767,8 +767,10 @@ contains
          unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
       endif
 
-      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
+      if (proj_type .eq. pressure_iters_comp) then
+         ! unew held the projection of (ustar-uold) / dt
            unew(lo(1):hi(1)) = uold(lo(1):hi(1)) + dt * unew(lo(1):hi(1))
+        end if
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -822,8 +824,6 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       logical        , intent(in   ) :: using_alt_energy_fix
 
-      integer                        :: i,j
-
       !     Subtract off the density-weighted gradient.
       if (using_alt_energy_fix) then
          unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
@@ -841,9 +841,11 @@ contains
               gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
       endif
 
-      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
-           unew(lo(1):hi(1),lo(2):hi(2),:) = uold(lo(1):hi(1),lo(2):hi(2),:) + &
-               dt * unew(lo(1):hi(1),lo(2):hi(2),:)
+      if (proj_type .eq. pressure_iters_comp) then
+         ! unew held the projection of (ustar-uold) / dt
+         unew(lo(1):hi(1),lo(2):hi(2),:) = uold(lo(1):hi(1),lo(2):hi(2),:) + &
+              dt * unew(lo(1):hi(1),lo(2):hi(2),:)
+      end if
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -955,7 +957,7 @@ contains
 
       if (proj_type .eq. pressure_iters_comp) then
          !
-         ! unew held the projection of (ustar-uold)
+         ! unew held the projection of (ustar-uold) / dt
          !
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3

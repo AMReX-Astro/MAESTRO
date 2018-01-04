@@ -177,12 +177,12 @@ contains
     integer(kind=ll_t) :: numcell
 
     ! keep track of wallclock time of various parts of the code
-    real(kind=dp_t) :: advect_time , advect_time_start , advect_time_max
-    real(kind=dp_t) :: macproj_time, macproj_time_start, macproj_time_max
-    real(kind=dp_t) :: ndproj_time , ndproj_time_start , ndproj_time_max
-    real(kind=dp_t) :: thermal_time, thermal_time_start, thermal_time_max
-    real(kind=dp_t) :: react_time  , react_time_start  , react_time_max
-    real(kind=dp_t) :: misc_time   , misc_time_start   , misc_time_max
+    real(kind=dp_t) :: advect_time , advect_time_start
+    real(kind=dp_t) :: macproj_time, macproj_time_start
+    real(kind=dp_t) :: ndproj_time , ndproj_time_start
+    real(kind=dp_t) :: thermal_time, thermal_time_start
+    real(kind=dp_t) :: react_time  , react_time_start
+    real(kind=dp_t) :: misc_time   , misc_time_start
 
     integer :: nreduce
     real(kind=dp_t), allocatable :: times_local(:), times_global(:)
