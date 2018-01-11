@@ -1290,7 +1290,7 @@ contains
                           w0_force_cart,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
                           dx,dt,the_bc_tower%bc_tower_array,sponge)
 
-    if (init_mode) then
+    if (evolve_base_state .and. init_mode) then
        ! throw away w0 by setting w0 = w0_old
        w0 = w0_old
     end if
