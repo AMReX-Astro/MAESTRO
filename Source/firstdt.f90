@@ -28,7 +28,7 @@ contains
     use geometry, only: nlevs_radial, spherical, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
-    use probin_module, only: init_shrink, verbose, small_dt
+    use probin_module, only: init_shrink, verbose, small_dt, fixed_dt, max_dt
     use mk_vel_force_module
 
     type(ml_layout), intent(inout) :: mla
@@ -171,26 +171,48 @@ contains
        call parallel_reduce(dt_lev,     dt_proc, MPI_MIN)
        call parallel_reduce(umax_lev, umax_proc, MPI_MAX)
           
+       ! update umax over all levels
        umax = max(umax,umax_lev)
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           print*,"Call to firstdt for level",n,"gives dt_lev =",dt_lev
        end if
        
+       ! multiply by init_shrink
        dt_lev = dt_lev*init_shrink
        
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           print*, "Multiplying dt_lev by init_shrink; dt_lev =",dt_lev
        end if
        
+       ! update dt over all levels
        dt = min(dt,dt_lev)
 
     end do   ! end loop over levels
 
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       print*,"Minimum firstdt over all levels =",dt
+       print*,""
+    end if
+
     if (dt < small_dt) then
        call bl_error("ERROR: timestep < small_dt")
     endif
+
+    if(dt .gt. max_dt) then
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          print*,'max_dt limits the new dt =',max_dt
+       end if
+       dt = max_dt
+    end if
        
+    if(fixed_dt .ne. -1.0d0) then
+       dt = fixed_dt
+       if (parallel_IOProcessor()) then
+          print*, "Setting fixed dt =",dt
+       end if
+    end if
+
     rel_eps = 1.d-8*umax
 
      do n=1,nlevs

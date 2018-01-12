@@ -421,25 +421,6 @@ subroutine varden()
      call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpi,sold,S_cc_old, &
                   rho0_old,p0_old,grav_cell_old,gamma1bar_old,dx,cflfac,dt)
 
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*,"Minimum firstdt over all levels =",dt
-        print*,""
-     end if
-
-     if(fixed_dt .ne. -1.0d0) then
-        dt = fixed_dt
-        if (parallel_IOProcessor()) then
-           print*, "Setting fixed dt =",dt
-        end if
-     end if
-
-     if(dt .gt. max_dt) then
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-           print*,'max_dt limits the new dt =',max_dt
-        end if
-        dt = max_dt
-     end if
-
      !------------------------------------------------------------------------
      ! do the initial iterations to define a velocity field consistent with S
      !------------------------------------------------------------------------
