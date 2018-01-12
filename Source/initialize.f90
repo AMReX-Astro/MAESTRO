@@ -371,7 +371,6 @@ contains
 
        ! reset the time, timestep size, and restart integer
        time = ZERO
-       dt = 1.d20
        restart = -1
 
        ! end of restart_with_vel_field = T
@@ -658,7 +657,6 @@ contains
        call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar_old,grav_cell_old)
 
        ! recompute time step
-       dt = 1.d20
        call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc_old,dSdt, &
                   w0,rho0_old,p0_old,gamma1bar_old,grav_cell_old,dx,cflfac,dt)
 
@@ -719,7 +717,6 @@ contains
     
     ! set time and dt
     time = ZERO
-    dt = 1.d20
 
     ! create mba
     call read_a_hgproj_grid(mba,test_set)
@@ -949,7 +946,6 @@ contains
 
     ! set time and dt
     time = ZERO
-    dt = 1.d20
 
     dm = dm_in
 

@@ -238,7 +238,6 @@ contains
     end do
     
     dt_hold = dt
-    dt      = HUGE(dt)
 
     call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc,dSdt, &
                w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)

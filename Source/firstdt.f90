@@ -75,6 +75,7 @@ contains
     w0_dummy = 0.d0
 
     umax = 0.d0
+    dt = 1.d20
 
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
