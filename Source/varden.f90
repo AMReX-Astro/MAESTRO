@@ -485,8 +485,11 @@ subroutine varden()
      istep = restart
   end if
 
-  if (stop_time >= 0.d0) then
-     if (time+dt > stop_time) dt = min(dt, stop_time - time)
+  if (stop_time >= 0.d0 .and. time+dt > stop_time) then
+     dt = stop_time - time 
+     if (parallel_IOProcessor()) then
+        print*, "Stop time limits dt =",dt
+     end if
   end if
 
   dtold = dt
