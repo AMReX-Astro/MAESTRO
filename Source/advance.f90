@@ -1036,7 +1036,6 @@ contains
        rho0_nph = HALF*(rho0_old+rho0_new)
        call make_grav_cell(grav_cell_nph,rho0_nph)
     else
-       grav_cell_new = grav_cell_old
        rho0_nph = rho0_old
        grav_cell_nph = grav_cell_old
     end if
@@ -1064,18 +1063,12 @@ contains
           call make_psi_spherical(psi,w0,gamma1bar_temp2,p0_nph,Sbar)
        end if
 
-    else
-
-       p0_new = p0_old
-
     end if
 
     ! base state enthalpy update
     if (evolve_base_state) then
        call advect_base_enthalpy(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                  rho0_predicted_edge,psi,dt)
-    else
-       rhoh0_new = rhoh0_old
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
