@@ -122,4 +122,4 @@ if args.drawaxes:
 
 # Render
 sc.render()
-sc.save('{}_rendering_rad-vel.png'.format(args.infile), sigma_clip=5)
+sc.save('{}_rendering_rad-vel.png'.format(args.infile), sigma_clip=3)
