@@ -1,8 +1,8 @@
 &PROBIN
- model_file = "sub_chandra.M_WD-0.80.M_He-0.130.hse.C.5120"
+ model_file = "sub_chandra.M_WD-1.10.M_He-0.030.hse.C.10240"
  drdxfac = 5
 
- job_name = "256^3 base grid, T_core = 10^7, T_base = 185 MK -- M_WD=0.8, M_He=0.13"
+ job_name = "256^3 base grid, T_core = 10^7, T_base = 190 MK -- M_WD=1.1, M_He=0.03"
 
  use_alt_energy_fix = T
  ppm_trace_forces = 0
@@ -11,7 +11,7 @@
  mg_bottom_solver = 4
  max_mg_bottom_nlevels = 2
 
- max_levs = 3
+ max_levs = 4
  regrid_int = 2
 
  n_cellx = 256
@@ -32,11 +32,11 @@
 
  the_sfc_threshold = 32768
 
- anelastic_cutoff = 125000.0d0
- base_cutoff_density = 1.d4
+ anelastic_cutoff = 39000.0
+ base_cutoff_density = 10000.0
  buoyancy_cutoff_factor = 2.d0
- sponge_center_density = 125000.0d0
- sponge_start_factor = 2.0d0
+ sponge_center_density = 39000.0
+ sponge_start_factor = 2.0
  sponge_kappa = 10.0d0
 
  spherical_in = 1
@@ -44,15 +44,15 @@
  dm_in = 3
  do_sponge = .true.
 
- prob_hi_x = 810000000.0d0
- prob_hi_y = 810000000.0d0
- prob_hi_z = 810000000.0d0
+ prob_hi_x = 660000000.0
+ prob_hi_y = 660000000.0
+ prob_hi_z = 660000000.0
 
- plot_base_name = "08130-107-185-3lev_plt"
+ plot_base_name = "11030-107-190-4lev-d100_plt"
  plot_int = -1
  plot_deltat = 5.0d0
 
- check_base_name = "08130-107-185-3lev_chk"
+ check_base_name = "11030-107-190-4lev-d100_chk"
  chk_int = 10
 
  cflfac = 0.7d0

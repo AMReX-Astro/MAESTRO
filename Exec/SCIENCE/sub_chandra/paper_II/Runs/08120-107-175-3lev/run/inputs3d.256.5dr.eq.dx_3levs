@@ -1,8 +1,8 @@
 &PROBIN
- model_file = "sub_chandra.M_WD-0.80.M_He-0.130.hse.C.5120"
+ model_file = "sub_chandra.M_WD-0.80.M_He-0.120.hse.C.5120"
  drdxfac = 5
 
- job_name = "256^3 base grid, T_core = 10^7, T_base = 185 MK -- M_WD=0.8, M_He=0.13"
+ job_name = "256^3 base grid, T_core = 10^7, alternative anelastic_cutoff, T_base = 175 MK -- M_WD=0.8, M_He=0.12"
 
  use_alt_energy_fix = T
  ppm_trace_forces = 0
@@ -32,10 +32,10 @@
 
  the_sfc_threshold = 32768
 
- anelastic_cutoff = 125000.0d0
+ anelastic_cutoff = 122000.0d0
  base_cutoff_density = 1.d4
  buoyancy_cutoff_factor = 2.d0
- sponge_center_density = 125000.0d0
+ sponge_center_density = 122000.0d0
  sponge_start_factor = 2.0d0
  sponge_kappa = 10.0d0
 
@@ -48,11 +48,11 @@
  prob_hi_y = 810000000.0d0
  prob_hi_z = 810000000.0d0
 
- plot_base_name = "08130-107-185-3lev_plt"
+ plot_base_name = "08120-107-175-3lev_plt"
  plot_int = -1
  plot_deltat = 5.0d0
 
- check_base_name = "08130-107-185-3lev_chk"
+ check_base_name = "08120-107-175-3lev_chk"
  chk_int = 10
 
  cflfac = 0.7d0
