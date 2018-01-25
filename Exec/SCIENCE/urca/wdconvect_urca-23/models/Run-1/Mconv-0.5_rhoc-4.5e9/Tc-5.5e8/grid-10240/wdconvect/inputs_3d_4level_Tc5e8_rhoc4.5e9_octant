@@ -99,7 +99,7 @@
  ! I/O
  plot_base_name = "wd_4lev_Tc5e8_rhoc4-5e9_plt"
  plot_int = -1
- plot_deltat = 2.0d0
+ plot_deltat = 5.0d0
 
  check_base_name = "wd_4lev_Tc5e8_rhoc4-5e9_chk"
  chk_int   = 100
