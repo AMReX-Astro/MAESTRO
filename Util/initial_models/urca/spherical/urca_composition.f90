@@ -14,7 +14,8 @@ module urca_composition_module
                       o16_in  = 0.0d0, o16_out  = 0.0d0, &
                       ne23_in = 0.0d0, ne23_out = 0.0d0, &
                       na23_in = 0.0d0, na23_out = 0.0d0, &
-                      urca_23_dens = 0.0d0, shell_atan_kappa = 0.0d0
+                      urca_23_dens = 0.0d0, shell_atan_kappa = 0.0d0, &
+                      na_ne_23 = 0.0d0
 
   real (kind=dp_t) :: xn_in(nspec), xn_out(nspec)
 
@@ -88,7 +89,7 @@ contains
   end subroutine init_urca_composition
 
 
-  subroutine set_urca_composition(dens, xn)
+  subroutine set_urca_composition(eos_state, xn)
 
     ! Construct composition profiles given a choice of
     ! the type of profile denoted by urca_shell_type.
@@ -97,14 +98,17 @@ contains
     use bl_error_module
     use bl_types, only: dp_t
     use network
+    use eos_type_module, only: eos_t
 
-    real (kind=dp_t), intent(in) :: dens
+    type (eos_t), intent(in) :: eos_state
     real (kind=dp_t), intent(out), DIMENSION(nspec) :: xn
 
     if (urca_shell_type .eq. "jump") then
-       call composition_jump(dens, urca_23_dens, xn, xn_in, xn_out)
+       call composition_jump(eos_state, urca_23_dens, xn, xn_in, xn_out)
     else if (urca_shell_type .eq. "atan") then
-       call composition_atan(dens, urca_23_dens, xn, xn_in, xn_out, shell_atan_kappa)
+       call composition_atan(eos_state, urca_23_dens, xn, xn_in, xn_out, shell_atan_kappa)
+    else if (urca_shell_type .eq. "equilibrium") then
+       call composition_equilibrium(eos_state, xn)
     else
        call bl_error("ERROR: invalid urca_shell_type")
     end if
@@ -129,18 +133,20 @@ contains
   end subroutine renormalize_species
 
 
-  subroutine composition_jump(rho, shell_rho, xn, xn_left, xn_right)
+  subroutine composition_jump(eos_state, shell_rho, xn, xn_left, xn_right)
     use bl_types
     use bl_constants_module, only: HALF
     use network
+    use eos_type_module, only: eos_t
 
-    real (kind=dp_t), intent( in) :: rho, shell_rho
+    type (eos_t), intent(in) :: eos_state
+    real (kind=dp_t), intent( in) :: shell_rho
     real (kind=dp_t), intent(out), dimension(nspec) :: xn
     real (kind=dp_t), intent( in), dimension(nspec) :: xn_left, xn_right
 
-    if (rho < shell_rho) then
+    if (eos_state % rho < shell_rho) then
        xn = xn_right
-    else if (rho > shell_rho) then
+    else if (eos_state % rho > shell_rho) then
        xn = xn_left
     else
        xn = HALF*(xn_right + xn_left)
@@ -148,13 +154,15 @@ contains
   end subroutine composition_jump
 
 
-  subroutine composition_atan(rho, shell_rho, xn, xn_left, xn_right, &
+  subroutine composition_atan(eos_state, shell_rho, xn, xn_left, xn_right, &
                               shell_atan_kappa)
     use bl_types
     use bl_constants_module, only: TWO, HALF, M_PI
     use network
+    use eos_type_module, only: eos_t
 
-    real (kind=dp_t), intent(in) :: rho, shell_rho, shell_atan_kappa
+    type (eos_t), intent(in) :: eos_state
+    real (kind=dp_t), intent(in) :: shell_rho, shell_atan_kappa
     real (kind=dp_t), intent(out), dimension(nspec) :: xn
     real (kind=dp_t), intent(in),  dimension(nspec) :: xn_left, xn_right
     real (kind=dp_t), dimension(nspec) :: A, B
@@ -162,7 +170,27 @@ contains
     B = HALF * (xn_left + xn_right)
     A = xn_right - B
 
-    xn = (TWO/M_PI) * A * atan(shell_atan_kappa * (shell_rho - rho)) + B
+    xn = (TWO/M_PI) * A * atan(shell_atan_kappa * (shell_rho - eos_state % rho)) + B
   end subroutine composition_atan
+
+
+  subroutine composition_equilibrium(eos_state, xn)
+    use bl_types
+    use network
+    use eos_type_module, only: eos_t
+    use burn_type_module, only: burn_t, eos_to_burn
+
+    type (eos_t), intent(in) :: eos_state
+    real (kind=dp_t), intent(out), dimension(nspec) :: xn
+    type (burn_t) :: burn_state
+
+    call eos_to_burn(eos_state, burn_state)
+
+    ! Keep the mass fraction sum X(ne23) + X(na23) = na_ne_23
+    ! Find the A=23 mass fractions such that the A=23 Urca rate equilibrium is maintained
+    ! STUB
+
+  end subroutine composition_equilibrium
+    
 
 end module urca_composition_module
