@@ -8,7 +8,7 @@ module urca_composition_module
   private xn_in, xn_out
   public set_urca_composition, c12_in, c12_out, o16_in, o16_out, &
          ne23_in, ne23_out, na23_in, na23_out, urca_23_dens, &
-         urca_shell_type, shell_atan_kappa
+         urca_shell_type, shell_atan_kappa, na_ne_23
 
   real (kind=dp_t) :: c12_in  = 0.0d0, c12_out  = 0.0d0, &
                       o16_in  = 0.0d0, o16_out  = 0.0d0, &
@@ -175,22 +175,71 @@ contains
 
 
   subroutine composition_equilibrium(eos_state, xn)
+
     use bl_types
+    use bl_constants_module, only: ZERO, HALF
     use network
+    use actual_rhs_module, only: rate_eval_t, evaluate_rates
     use eos_type_module, only: eos_t
     use burn_type_module, only: burn_t, eos_to_burn
 
+    implicit none
+
     type (eos_t), intent(in) :: eos_state
     real (kind=dp_t), intent(out), dimension(nspec) :: xn
-    type (burn_t) :: burn_state
+    double precision :: fopt, frel
+    double precision, parameter :: rate_equilibrium_tol = 1.0e-10
+    integer, parameter :: max_equilibrium_iters = 10000
 
-    call eos_to_burn(eos_state, burn_state)
+    ! Initialize mass fractions given "in" values
+    xn(:)    = 0.0d0
+    xn(ic12) = c12_in
+    xn(io16) = o16_in
+    xn(ine23) = HALF * na_ne_23
+    xn(ina23) = HALF * na_ne_23
+
+    eos_state % xn(:) = xn(:)
 
     ! Keep the mass fraction sum X(ne23) + X(na23) = na_ne_23
-    ! Find the A=23 mass fractions such that the A=23 Urca rate equilibrium is maintained
-    ! STUB
+    ! Find the A=23 mass fractions such that A=23 Urca rates are in equilibrium
+    ! This is just simple bisection between the initial values and ZERO
+    call fopt_urca_23(eos_state, fopt, frel)
+    do while (abs(frel) > rate_equilibrium_tol)
+       if (fopt > ZERO) then
+          eos_state % xn(ina23) = HALF * eos_state % xn(ina23)
+          eos_state % xn(ine23) = na_ne_23 - eos_state % xn(ina23)
+          call fopt_urca_23(eos_state, fopt, frel)
+       else
+          eos_state % xn(ine23) = HALF * eos_state % xn(ine23)
+          eos_state % xn(ina23) = na_ne_23 - eos_state % xn(ine23)
+          call fopt_urca_23(eos_state, fopt, frel)
+       end if
+    end do
 
   end subroutine composition_equilibrium
-    
+
+
+  subroutine fopt_urca_23(eos_state, fopt, frel)
+
+    use bl_constants_module, only: HALF
+    use eos_type_module, only: eos_t
+    use actual_network, only: k_na23_ne23, k_ne23_na23
+    use actual_rhs_module, only: rate_eval_t, evaluate_rates
+    use burn_type_module, only: burn_t, eos_to_burn
+
+    implicit none
+
+    type (eos_t) :: eos_state
+    double precision :: fopt, frel
+    type (burn_t) :: burn_state
+    type (rate_eval_t) :: rate_eval
+
+    call eos_to_burn(eos_state, burn_state)
+    call evaluate_rates(burn_state, rate_eval)
+
+    fopt = rate_eval(k_na23_ne23) - rate_eval(k_ne23_na23)
+    frel = fopt/(HALF*(rate_eval(k_na23_ne23) + rate_eval(k_ne23_na23)))
+
+  end subroutine fopt_urca_23
 
 end module urca_composition_module
