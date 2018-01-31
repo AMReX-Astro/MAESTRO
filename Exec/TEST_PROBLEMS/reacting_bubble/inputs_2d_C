@@ -54,4 +54,6 @@
  init_divu_iter = 1
 
  perturb_model = T
+
+ use_alt_energy_fix = F
 /
