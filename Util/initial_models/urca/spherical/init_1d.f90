@@ -11,6 +11,7 @@ program init_1d
   use eos_type_module, only: eos_t
   use extern_probin_module, only: use_eos_coulomb
   use network
+  use actual_burner_module, only: actual_burner_init
   use fundamental_constants_module, only: Gconst
   use urca_composition_module
 
@@ -151,6 +152,7 @@ program init_1d
   use_eos_coulomb = .true.
   call eos_init()
   call network_init()
+  call actual_burner_init()
 
   ! Initialize the composition module
   call init_urca_composition()
