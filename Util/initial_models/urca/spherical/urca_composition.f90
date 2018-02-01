@@ -100,7 +100,7 @@ contains
     use network
     use eos_type_module, only: eos_t
 
-    type (eos_t), intent(in) :: eos_state
+    type (eos_t), intent(inout) :: eos_state
     real (kind=dp_t), intent(out), DIMENSION(nspec) :: xn
 
     if (urca_shell_type .eq. "jump") then
@@ -177,20 +177,33 @@ contains
   subroutine composition_equilibrium(eos_state, xn)
 
     use bl_types
-    use bl_constants_module, only: ZERO, HALF
+    use bl_constants_module, only: ZERO, HALF, ONE
+    use bl_error_module,  only: bl_error
     use network
+    use actual_network, only: k_na23_ne23, k_ne23_na23
     use actual_rhs_module, only: rate_eval_t, evaluate_rates
-    use eos_type_module, only: eos_t
+    use eos_type_module, only: eos_t, composition
     use burn_type_module, only: burn_t, eos_to_burn
 
     implicit none
 
-    type (eos_t), intent(in) :: eos_state
+    type (eos_t), intent(inout) :: eos_state
     real (kind=dp_t), intent(out), dimension(nspec) :: xn
-    double precision :: fopt, frel
+    type (burn_t) :: burn_state
+    double precision :: fopt, r_ecap, r_beta, dx
     double precision, parameter :: rate_equilibrium_tol = 1.0e-10
     integer, parameter :: max_equilibrium_iters = 10000
+    type (rate_eval_t) :: rate_eval
 
+    ! Get some mass fraction indices
+    integer :: ic12, io16, ine23, ina23, j
+
+    ! get the species indices
+    ic12  = network_species_index("carbon-12")
+    io16  = network_species_index("oxygen-16")
+    ine23 = network_species_index("neon-23")
+    ina23 = network_species_index("sodium-23")
+    
     ! Initialize mass fractions given "in" values
     xn(:)    = 0.0d0
     xn(ic12) = c12_in
@@ -200,45 +213,81 @@ contains
 
     eos_state % xn(:) = xn(:)
 
+    ! Estimate the mass fractions approximating the rates as
+    ! independent of ye.
+    call composition(eos_state)
+    call eos_to_burn(eos_state, burn_state)
+    call evaluate_rates(burn_state, rate_eval)
+
+    r_ecap = rate_eval % screened_rates(k_na23_ne23)
+    r_beta = rate_eval % screened_rates(k_ne23_na23)
+
+    eos_state % xn(ine23) = na_ne_23/(ONE + r_beta/r_ecap)
+    eos_state % xn(ina23) = na_ne_23 - eos_state % xn(ine23)
+
     ! Keep the mass fraction sum X(ne23) + X(na23) = na_ne_23
     ! Find the A=23 mass fractions such that A=23 Urca rates are in equilibrium
-    ! This is just simple bisection between the initial values and ZERO
-    call fopt_urca_23(eos_state, fopt, frel)
-    do while (abs(frel) > rate_equilibrium_tol)
+    ! Do Newton iterations approximating the rates as independent of mass fraction
+    call fopt_urca_23(eos_state, fopt, r_ecap, r_beta)
+!    write(*,*) 'fopt = ', fopt
+    j = 1
+    do while (abs(fopt) > rate_equilibrium_tol .and. j < max_equilibrium_iters)
+!       write(*,*) 'iteration ', j, ' fopt = ', fopt
+       dx = -fopt/(r_ecap + r_beta)       
        if (fopt > ZERO) then
-          eos_state % xn(ina23) = HALF * eos_state % xn(ina23)
+          eos_state % xn(ina23) = eos_state % xn(ina23) + dx
           eos_state % xn(ine23) = na_ne_23 - eos_state % xn(ina23)
-          call fopt_urca_23(eos_state, fopt, frel)
+          call fopt_urca_23(eos_state, fopt, r_ecap, r_beta)
        else
-          eos_state % xn(ine23) = HALF * eos_state % xn(ine23)
+          eos_state % xn(ine23) = eos_state % xn(ine23) - dx
           eos_state % xn(ina23) = na_ne_23 - eos_state % xn(ine23)
-          call fopt_urca_23(eos_state, fopt, frel)
+          call fopt_urca_23(eos_state, fopt, r_ecap, r_beta)
        end if
+       j = j + 1
+!       write(*,*) 'xn = ', eos_state % xn
     end do
+
+    if (j == max_equilibrium_iters) then
+       call bl_error("species iteration did not converge!")
+    else
+       xn(:) = eos_state % xn(:)
+    end if
 
   end subroutine composition_equilibrium
 
 
-  subroutine fopt_urca_23(eos_state, fopt, frel)
+  subroutine fopt_urca_23(eos_state, fopt, r_ecap, r_beta)
 
     use bl_constants_module, only: HALF
-    use eos_type_module, only: eos_t
+    use eos_type_module, only: eos_t, composition
+    use network
     use actual_network, only: k_na23_ne23, k_ne23_na23
     use actual_rhs_module, only: rate_eval_t, evaluate_rates
     use burn_type_module, only: burn_t, eos_to_burn
 
     implicit none
 
-    type (eos_t) :: eos_state
-    double precision :: fopt, frel
+    type (eos_t), intent(inout) :: eos_state
+    double precision, intent(out) :: fopt, r_ecap, r_beta
+    double precision :: xr_ecap, xr_beta
+    integer :: ine23, ina23
     type (burn_t) :: burn_state
     type (rate_eval_t) :: rate_eval
 
+    ine23 = network_species_index("neon-23")
+    ina23 = network_species_index("sodium-23")
+
+    call composition(eos_state)
     call eos_to_burn(eos_state, burn_state)
     call evaluate_rates(burn_state, rate_eval)
 
-    fopt = rate_eval(k_na23_ne23) - rate_eval(k_ne23_na23)
-    frel = fopt/(HALF*(rate_eval(k_na23_ne23) + rate_eval(k_ne23_na23)))
+    r_ecap = rate_eval % screened_rates(k_na23_ne23)
+    r_beta = rate_eval % screened_rates(k_ne23_na23)
+
+    xr_ecap = burn_state % xn(ina23) * r_ecap
+    xr_beta = burn_state % xn(ine23) * r_beta
+
+    fopt = xr_ecap - xr_beta
 
   end subroutine fopt_urca_23
 
