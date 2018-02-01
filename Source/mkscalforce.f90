@@ -17,6 +17,8 @@ module mkscalforce_module
   use ml_layout_module
   use define_bc_module
   use ml_restrict_fill_module
+  use pred_parameters
+  use probin_module, only: enthalpy_pred_type
 
   implicit none
 
@@ -35,8 +37,6 @@ contains
     use geometry, only: spherical, nr_fine, nlevs_radial
     use fill_3d_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
     logical        , intent(in   ) :: is_prediction
@@ -77,16 +77,17 @@ contains
 
     call build(bpt, "mkrhohforce")
 
+    ! if we are doing the prediction, then it only makes sense to be in
+    ! this routine if the quantity we are predicting is rhoh', h, or rhoh
+    if (is_prediction .and. &
+         .not. (enthalpy_pred_type .eq. predict_rhohprime .or. &
+                enthalpy_pred_type .eq. predict_h .or. &
+                enthalpy_pred_type .eq. predict_rhoh) ) then
+       call bl_error("ERROR: should only call mkrhohforce when predicting rhoh', h, or rhoh")
+    endif
+
     dm = mla%dim
     nlevs = mla%nlevel
-
-    ! if we are doing the prediction, then it only makes sense to be in
-    ! this routine if the quantity we are predicting is (rho h)' or h
-    if (is_prediction .AND. &
-         (enthalpy_pred_type == predict_T_then_rhohprime .OR. &
-          enthalpy_pred_type == predict_T_then_h)) then
-       call bl_error("ERROR: should not call mkrhohforce when predicting T")
-    endif
 
     if (spherical .eq. 1) then
        p0_nph = HALF * (p0_old + p0_new)
@@ -184,8 +185,6 @@ contains
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
@@ -251,8 +250,6 @@ contains
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
@@ -326,8 +323,6 @@ contains
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -409,8 +404,6 @@ contains
                                  ng_pm,lo,hi,dx,psi,add_thermal)
 
     use fill_3d_module
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -501,8 +494,6 @@ contains
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
     use geometry, only: spherical, nr_fine
     use fill_3d_module, only: put_1d_array_on_cart
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(in   ) :: sold(:), snew(:)
@@ -543,8 +534,8 @@ contains
 
     ! if we are doing the prediction, then it only makes sense to be in
     ! this routine if the quantity we are predicting is h'
-    if (is_prediction .AND. enthalpy_pred_type .ne. predict_hprime) then
-       call bl_error("ERROR: should not call mkhprimeforce if enthalpy_pred_type .ne. predict_hprime")
+    if (is_prediction .and. enthalpy_pred_type .ne. predict_hprime) then
+       call bl_error("ERROR: should only call mkhprimeforce when predicting h'")
     endif
 
     dm = mla%dim
@@ -628,7 +619,6 @@ contains
                                    dx,psi,add_thermal)
 
     use fill_3d_module
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -784,6 +774,14 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mktempforce")
+
+    ! it only makes sense to be in
+    ! this routine if the quantity we are predicting is T or T'
+    if (.not. (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
+               enthalpy_pred_type .eq. predict_T_then_h .or. &
+               enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
+       call bl_error("ERROR: should only call mkrhohforce when predicting T or T'")
+    endif
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -1074,7 +1072,6 @@ contains
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
     use network, only: nspec
-    use pred_parameters
 
     ! compute the source terms for temperature
 
