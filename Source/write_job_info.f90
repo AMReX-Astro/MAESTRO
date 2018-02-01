@@ -18,7 +18,7 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
                                f90_compile_line, f_compile_line, &
                                C_compile_line, link_line, &
                                source_git_hash, amrex_git_hash, &
-                               extra_git_hash, extra_git_hash2, &
+                               extra_git_hash, &
                                different_build_tree, build_git_hash, &
                                eos_dir, network_dir, conductivity_dir
   use omp_module

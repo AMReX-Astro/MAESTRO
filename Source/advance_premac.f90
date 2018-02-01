@@ -30,7 +30,6 @@ contains
     use bl_constants_module, only: ONE
     use variables, only: rho_comp
     use fill_3d_module, only: put_1d_array_on_cart
-    use probin_module, only: ppm_trace_forces
 
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
