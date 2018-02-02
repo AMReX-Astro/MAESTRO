@@ -17,7 +17,7 @@ module density_advance_module
 
 contains
 
-  subroutine density_advance(mla,is_predictor,sold,snew,sedge,sflux,scal_force,&
+  subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,scal_force,&
                              umac,w0,w0mac,etarhoflux, &
                              rho0_old,rho0_new,p0_dummy, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
@@ -41,7 +41,7 @@ contains
     use pred_parameters
 
     type(ml_layout), intent(inout) :: mla
-    integer        , intent(in   ) :: is_predictor
+    integer        , intent(in   ) :: which_step
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: sedge(:,:)
@@ -261,9 +261,9 @@ contains
     !     Compute fluxes
     !**************************************************************************
 
-    ! for is_predictor .eq. 1, we pass in only the old base state quantities
-    ! for is_predictor .eq. 2, we pass in the old and new for averaging within mkflux
-    if (is_predictor .eq. 1) then
+    ! for which_step .eq. 1, we pass in only the old base state quantities
+    ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
+    if (which_step .eq. 1) then
 
        if (spherical .eq. 1) then
           do n=1,nlevs
@@ -299,7 +299,7 @@ contains
           end do
        end if
 
-    else if (is_predictor .eq. 2) then
+    else if (which_step .eq. 2) then
 
        if (spherical .eq. 1) then
           do n=1,nlevs
