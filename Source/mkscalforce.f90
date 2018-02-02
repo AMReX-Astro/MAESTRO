@@ -337,8 +337,10 @@ contains
        if (k .lt. base_cutoff_density_coord(n)) then
           gradp0 = rho0(k) * grav(k)
        else if (k.eq.nr(n)-1) then
+          ! NOTE: this should be zero since p0 is constant up here
           gradp0 = ( p0(k) - p0(k-1) ) / dr(n)
        else
+          ! NOTE: this should be zero since p0 is constant up here
           gradp0 = ( p0(k+1) - p0(k) ) / dr(n)
        end if
 
@@ -353,7 +355,7 @@ contains
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
         (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
         (.NOT. is_prediction)) then
@@ -437,7 +439,7 @@ contains
     !
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     !
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
         (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
@@ -682,7 +684,7 @@ contains
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     if (.NOT. is_prediction) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
