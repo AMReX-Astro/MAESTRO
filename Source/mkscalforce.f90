@@ -627,7 +627,7 @@ contains
     !
     ! Here we make u grad p = div (u p) - p div (u)
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,rhoavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
