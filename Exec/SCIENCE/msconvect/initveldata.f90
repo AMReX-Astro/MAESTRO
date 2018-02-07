@@ -99,14 +99,10 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             if (do_self_grav) then
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
                                  s0_init(n,:,:), p0_init(n,:), &
                                  alpha(:,:,1),beta(:,:,1),gamma(:,:,1), &
                                  phix(:,:,1),phiy(:,:,1),normk(:,:,1))
-	     else
-	      call bl_error('initveldata_2d not written')
-	     end if 
           case (3)
              if (spherical .eq. 1) then
                 call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &

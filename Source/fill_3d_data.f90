@@ -1468,6 +1468,7 @@ contains
        do i=1, nfabs(s0mac(n,1))
           s0xp => dataptr(s0mac(n,1), i)
           s0yp => dataptr(s0mac(n,2), i)
+          s0p  => dataptr(s0_cart(n), i)
           lo = lwb(get_box(s0mac(n,1), i))
           hi = upb(get_box(s0mac(n,1), i))
           select case(dm)
@@ -1477,7 +1478,6 @@ contains
                                     lo,hi,dx(n,:))
           case(3)
             s0zp => dataptr(s0mac(n,3), i)
-            s0p  => dataptr(s0_cart(n), i)
             call make_s0mac_3d_sphr(s0(1,:),s0xp(:,:,:,1),s0yp(:,:,:,1), &
                                     s0zp(:,:,:,1),ng_sm,s0p(:,:,:,1),ng_s0, &
                                     lo,hi,dx(n,:))

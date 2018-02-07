@@ -359,7 +359,7 @@ contains
 
     end if
 
-    if (dm .eq. 3) then
+    if (dm .gt. 1) then
        do n=1,nlevs
           call multifab_build(w0_force_cart(n),mla%la(n),dm,1)
           call setval(w0_force_cart(n),ZERO,all=.true.)
@@ -383,7 +383,7 @@ contains
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
        end if
 
-       if (dm .eq. 3) then
+       if (dm .gt. 1) then
           call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
@@ -413,7 +413,7 @@ contains
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
-    if (dm .eq. 3) then
+    if (dm .gt. 1) then
        do n=1,nlevs
           call destroy(w0_force_cart(n))
        end do
@@ -860,7 +860,7 @@ contains
 
     end if
 
-    if (dm .eq. 3) then
+    if (dm .gt. 1) then
        do n=1,nlevs
           call multifab_build(w0_force_cart(n), mla%la(n), dm, 1)
           call setval(w0_force_cart(n),ZERO,all=.true.)
@@ -884,7 +884,7 @@ contains
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
        end if
 
-       if (dm .eq. 3) then
+       if (dm .gt. 1) then
           call put_1d_array_on_cart(w0_force,w0_force_cart,foextrap_comp,.false., &
                                     .true.,dx,the_bc_tower%bc_tower_array,mla)
        end if
@@ -1352,7 +1352,7 @@ contains
        end do
     end do
 
-    if (dm .eq. 3) then
+    if (dm .gt. 1) then
        do n=1,nlevs
           do comp=1,dm
              call destroy(w0mac(n,comp))

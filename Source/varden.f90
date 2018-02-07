@@ -315,7 +315,7 @@ subroutine varden()
 ! Initialize all remaining arrays and multifabs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  if (spherical .eq. 0) then
+  if (spherical .eq. 0 .and. polar .eq. 0) then
      allocate(       psi_temp(max_levs,0:nr_fine-1))
      allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
      allocate(      rho0_temp(max_levs,0:nr_fine-1))
@@ -340,7 +340,7 @@ subroutine varden()
      call multifab_build(      snew(n), mla%la(n), nscal, nghost(sold(n)))
      call multifab_build(    sponge(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
-     if (dm .eq. 3) then
+     if (dm .ge. 2) then
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
      call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
@@ -948,7 +948,7 @@ subroutine varden()
               call multifab_destroy(rho_Hnuc2(n))
               call multifab_destroy(rho_Hext(n))
               call multifab_destroy(thermal2(n))
-              if (dm .eq. 3) then
+              if (dm .gt. 1) then
                  call multifab_destroy(normal(n))
               end if
            end do
@@ -978,7 +978,7 @@ subroutine varden()
               call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
               call multifab_build(    rho_Hext(n), mla%la(n),     1, 0)
               call multifab_build(     thermal2(n), mla%la(n),     1, 1)
-              if (dm .eq. 3) then
+              if (dm .gt. 1) then
                  call multifab_build(normal(n), mla%la(n),    dm, 1)
               end if
               
@@ -1474,7 +1474,7 @@ subroutine varden()
      call destroy(tag_mf(n))
   end do
 
-  if(dm .eq. 3) then
+  if(dm .gt. 1) then
      do n=1,nlevs
         call destroy(normal(n))
      end do
