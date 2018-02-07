@@ -13,6 +13,7 @@ module geometry
 
   integer   , save :: nlevs_radial
   integer   , save :: spherical
+  integer   , save :: polar
   real(dp_t), save :: center(3)
   integer   , save :: nr_fine, nr_irreg
   real(dp_t), save :: dr_fine
@@ -26,7 +27,7 @@ module geometry
 
   private
 
-  public :: nlevs_radial, spherical, center, nr_fine, dr_fine, nr_irreg
+  public :: nlevs_radial, spherical, polar, center, nr_fine, dr_fine, nr_irreg
   public :: dr, r_cc_loc, r_edge_loc
   public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr
@@ -44,10 +45,11 @@ contains
 
   subroutine init_spherical()
 
-    use probin_module, only: spherical_in
+    use probin_module, only: spherical_in, polar_in
 
     spherical = spherical_in
-
+    polar = polar_in
+    
   end subroutine init_spherical
 
 
@@ -85,11 +87,16 @@ contains
     if (.not. octant) then
        center(1:dm_in) = HALF * (prob_lo(1:dm_in) + prob_hi(1:dm_in))
     else
-       if (.not. (spherical == 1 .and. dm_in == 3 .and. &
-                  prob_lo(1) == ZERO .and. &
+       if ((spherical == 1 .and. dm_in == 3) .and. &
+                 .not. (prob_lo(1) == ZERO .and. &
                   prob_lo(2) == ZERO .and. &
                   prob_lo(3) == ZERO)) then
           call bl_error("ERROR: octant requires spherical with prob_lo = 0.0")
+       endif
+       if ((polar == 1 .and. dm_in == 2) .and. &
+               .not. (prob_lo(1) == ZERO .and. &
+                  prob_lo(2) == ZERO)) then
+          call bl_error("ERROR: octant requires polar with prob_lo = 0.0")
        endif
        center(1:dm_in) = ZERO
     endif
@@ -111,7 +118,7 @@ contains
     ! local
     integer :: n,i
 
-    if (spherical .eq. 0) then
+    if ((spherical .eq. 0) .and. (polar .eq. 0)) then
        
        allocate(dr(num_levs))
        allocate(nr(num_levs))
@@ -166,7 +173,7 @@ contains
 
     integer, intent(in)    :: num_levs
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        allocate(      anelastic_cutoff_coord(num_levs))
        allocate(   base_cutoff_density_coord(num_levs))
        allocate(burning_cutoff_density_coord(num_levs))
@@ -352,7 +359,7 @@ contains
     dm = get_dim(mf(1))
     nlevs = size(mf)
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
     
        ! create a "bounding box" for each level
        ! this the smallest possible box that fits every grid at a particular level

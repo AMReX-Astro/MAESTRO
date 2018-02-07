@@ -21,7 +21,7 @@ contains
 
   subroutine put_in_pert_form(mla,s,base,dx,comp,bc_comp,flag,the_bc_level)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use ml_layout_module
     use define_bc_module
     use ml_cc_restriction_module, only: ml_cc_restriction_c
@@ -66,7 +66,11 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
+             if (polar .eq. 1) then
+                call pert_form_2d_polar(sp(:,:,1,:),base(1,:),lo,hi,ng,dx_temp(n,:),comp,flag)
+             else
+                call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx_temp(n,:),comp,flag)
@@ -91,7 +95,7 @@ contains
 
   subroutine put_in_pert_form_one_level(n,s,base,dx,comp,flag)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use bl_prof_module
 
     integer        , intent(in   ) :: n
@@ -120,7 +124,11 @@ contains
        hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
-          call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
+          if (polar .eq. 1) then
+            call pert_form_2d_polar(sp(:,:,1,:),base(1,:),lo,hi,ng,dx(:),comp,flag)
+          else
+            call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
+          end if
        case (3)
           if (spherical .eq. 1) then
              call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx(:),comp,flag)
@@ -159,6 +167,45 @@ contains
 
   end subroutine pert_form_2d
 
+  subroutine pert_form_2d_polar(s,s0,lo,hi,ng,dx,comp,flag)
+
+    use fill_3d_module
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng,comp
+    real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)
+    real(kind=dp_t), intent(in   ) :: s0(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    logical        , intent(in   ) :: flag
+
+    ! local
+    integer :: i,j,mult
+
+    real(kind=dp_t), allocatable :: s0_cart(:,:,:)
+
+    allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),1))
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,s0,s0_cart,lo,hi,dx,0)
+
+    if (flag) then
+       mult = -1
+    else
+       mult = +1
+    end if
+
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+            s(i,j,comp) = s(i,j,comp) + mult*s0_cart(i,j,1)
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+    deallocate(s0_cart)
+
+  end subroutine pert_form_2d_polar
+
+  
+  
   subroutine pert_form_3d_cart(s,s0,lo,hi,ng,comp,flag)
 
     integer        , intent(in   ) ::  lo(:),hi(:),ng,comp

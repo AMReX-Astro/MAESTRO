@@ -7,7 +7,7 @@ module initialize_module
   use variables, only: nscal, rho_comp, rhoh_comp, temp_comp, foextrap_comp
   use geometry, only: spherical, nr_irreg, nr_fine, dr_fine, nlevs_radial, &
        init_cutoff, init_multilevel, init_radial, destroy_geometry, &
-       compute_cutoff_coords, initialize_dx
+       compute_cutoff_coords, initialize_dx, polar
   use network, only: nspec
   use bl_constants_module
   use base_state_module
@@ -139,7 +139,7 @@ contains
 
     ! initialize nlevs
     nlevs = mla%nlevel
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+    nlevs_radial = merge(1, nlevs, (spherical .eq. 1) .or. (polar .eq. 1))
 
 
     ! initialize boundary conditions
@@ -307,7 +307,32 @@ contains
        else
           nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
        endif
-    else
+    else if (polar .eq. 1) then
+
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
+       
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+       end if
+       
+       max_dist = sqrt(lenx**2 + leny**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+
+       ! compute nr_irreg
+       domain = get_pd(get_layout(sold(nlevs)))
+       domhi  = upb(domain)+1
+       if (.not. octant) then
+          nr_irreg = (2*(domhi(1)/2-0.5d0)**2-0.75d0)/2.d0
+       else
+          nr_irreg = (2*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
+       endif
+
+    
+    else 
        
        nr_fine = extent(mla%mba%pd(nlevs),dm)
        dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
@@ -328,7 +353,7 @@ contains
 
     if (restart_with_vel_field) then
 
-       if (spherical .eq. 1) then
+       if ((spherical .eq. 1) .or. (polar .eq. 1)) then
           call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
        else
           ! init_base_state requires loop backwards over levels
@@ -758,7 +783,7 @@ contains
     
     ! initialize nlevs
     nlevs = mla%nlevel
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+    nlevs_radial = merge(1, nlevs, (spherical .eq. 1) .or. (polar .eq. 1))
 
     ! initialize boundary conditions
     call initialize_bc(the_bc_tower,nlevs,pmask)
@@ -836,7 +861,32 @@ contains
           nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
        endif
 
-    else
+    else if (polar .eq. 1) then
+    
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
+       
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+       end if
+       
+       max_dist = sqrt(lenx**2 + leny**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+
+       ! compute nr_irreg
+       domain = get_pd(get_layout(sold(nlevs)))
+       domhi  = upb(domain)+1
+       if (.not.octant) then
+          nr_irreg = (2*(domhi(1)/2-0.5d0)**2-0.5d0)/2.d0
+       else
+          nr_irreg = (2*(domhi(1)-0.5d0)**2-0.5d0)/2.d0
+       endif
+
+    
+    else 
        
        nr_fine = extent(mla%mba%pd(nlevs),dm)
        dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
@@ -856,7 +906,7 @@ contains
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    if (spherical .eq. 1) then
+    if ((spherical .eq. 1) .or. (polar .eq. 1)) then
        call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(nlevs,:))
     else
        ! init_base_state requires loop backwards over levels
@@ -1038,6 +1088,21 @@ contains
        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
        nr_fine = int(max_dist / dr_fine) + 1
 
+    else if (polar .eq. 1) then
+
+       dr_fine = dx(max_levs,1) / dble(drdxfac)
+
+       if (.not. octant) then
+          lenx = HALF * (prob_hi(1) - prob_lo(1))
+          leny = HALF * (prob_hi(2) - prob_lo(2))
+       else
+          lenx = prob_hi(1) - prob_lo(1)
+          leny = prob_hi(2) - prob_lo(2)
+       end if
+
+       max_dist = sqrt(lenx**2 + leny**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+    
     else
 
        nr_fine = extent(mba%pd(max_levs),dm)
@@ -1055,7 +1120,7 @@ contains
                               psi,tempbar,tempbar_init,grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    if (spherical .eq. 1) then
+    if ((spherical .eq. 1) .or. (polar .eq. 1)) then
        call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
     else
           ! init_base_state requires loop backwards over levels
@@ -1111,7 +1176,7 @@ contains
              call bc_tower_level_build(the_bc_tower,nl,la_array(nl))
             
              ! Fill the nl level valid region 
-             if (spherical .eq. 1) then
+             if ((spherical .eq. 1) .or. (polar .eq. 1)) then
                 call initscalardata_on_level(nl,sold(nl),s0_init(1,:,:), &
                                              p0_init(1,:),dx(nl,:), &
                                              the_bc_tower%bc_tower_array(nl))
@@ -1203,7 +1268,7 @@ contains
                    !   changed the layout.
                    call multifab_build(sold(n),la_array(n),nscal,ng_s)
                    ! fills the physical (valid) region of each level with problem data
-                   if (spherical .eq. 1) then
+                   if ((spherical .eq. 1) .or. (polar .eq. 1)) then
                      call initscalardata_on_level(n,sold(n),s0_init(1,:,:), &
                                                   p0_init(1,:),dx(n,:), &
                                                   the_bc_tower%bc_tower_array(n))
@@ -1226,7 +1291,7 @@ contains
              endif !end proper nesting enforcement
 
              nlevs = nl+1
-             nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+             nlevs_radial = merge(1, nlevs, (spherical .eq. 1) .or. (polar .eq. 1))
              nl = nl + 1
              
           endif ! if (new_grid) 
@@ -1238,7 +1303,7 @@ contains
        end do
 
        nlevs = nl
-       nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+       nlevs_radial = merge(1, nlevs, (spherical .eq. 1) .or. (polar .eq. 1))
 
        ! A final enforcement of proper nesting
        if (nlevs .ge. 3) then
@@ -1264,7 +1329,7 @@ contains
        call bc_tower_level_build(the_bc_tower,n,mla%la(n))
     end do
 
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+    nlevs_radial = merge(1, nlevs, (spherical .eq. 1) .or. (polar .eq. 1))
     
     ! build states
     do n = 1,nlevs
@@ -1364,7 +1429,7 @@ contains
     real(dp_t) , pointer    :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
     real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),tempbar_init(:,:),grav_cell(:,:)
     
-    if (spherical .eq. 0) then
+    if ((spherical .eq. 0) .and. (polar .eq. 0)) then
        allocate(div_coeff_old (num_levs,0:nr_fine-1))
        allocate(div_coeff_new (num_levs,0:nr_fine-1))
        allocate(gamma1bar     (num_levs,0:nr_fine-1))

@@ -155,9 +155,9 @@ contains
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init,alpha,beta,gamma,phix,phiy,norm)
     
     
-    use probin_module, only: prob_lo, prob_hi, &
+    use probin_module, only: prob_lo, prob_hi, octant, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
-         
+    use geometry, only: polar    
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
@@ -186,6 +186,9 @@ contains
 
     ! the point we're at
     real(kind=dp_t) :: xloc(2)
+    
+    ! the center
+    real(kind=dp_t) :: xc(2)
 
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(2)
@@ -193,20 +196,36 @@ contains
     ! initialize the velocity to zero everywhere
     u = ZERO
 
-
+    ! define where center of star is
+    if (octant) then 
+      xc(1) = prob_lo(1)
+      xc(2) = prob_lo(2)
+    else 
+      xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
+      xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
+    endif
+    
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
 
              ! set perturbational velocity to zero
              upert = ZERO
-
+            
              ! compute where we physically are
              xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
              xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
 
              ! compute distance to the center of the star
-             rloc = xloc(2)
+             if (polar .eq. 1) then
+                rloc = ZERO
+                do i=1,2
+                    rloc = rloc + (xloc(i) - xc(i))**2
+                enddo
+                rloc = sqrt(rloc)            
+             else 
+                rloc = xloc(2)
+             end if
 
              ! loop over the 9 combinations of fourier components
              do i=1,3

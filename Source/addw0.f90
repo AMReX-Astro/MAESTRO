@@ -20,7 +20,7 @@ contains
 
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use create_umac_grown_module, only: create_umac_grown
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use define_bc_module, only: bc_level
     use ml_layout_module, only: ml_layout
     use ml_cc_restriction_module, only: ml_edge_restriction
@@ -61,7 +61,18 @@ contains
           case(1)
              call addw0_1d(wmp(:,1,1,1),ng_um,w0(n,:),lo,hi,mult)
           case(2)
-             call addw0_2d(wmp(:,:,1,1),ng_um,w0(n,:),lo,hi,mult)
+             if (polar .eq. 0) then
+                call addw0_2d(wmp(:,:,1,1),ng_um,w0(n,:),lo,hi,mult)
+             else
+                ump  => dataptr(umac(n,1), i)
+                vmp  => dataptr(umac(n,2), i)
+                w0xp  => dataptr(w0mac(n,1), i)
+                w0yp  => dataptr(w0mac(n,2), i)
+                ng_w0 = nghost(w0mac(n,1))
+                call addw0_2d_polar(ump(:,:,1,1),vmp(:,:,1,1),ng_um, &
+                                   w0xp(:,:,1,1),w0yp(:,:,1,1),ng_w0, &
+                                   lo,hi,mult)
+             end if
           case(3)
              if (spherical .eq. 0) then
                 call addw0_3d(wmp(:,:,:,1),ng_um,w0(n,:),lo,hi,mult)
@@ -147,6 +158,38 @@ contains
 
   end subroutine addw0_2d
 
+  subroutine addw0_2d_polar(umac,vmac,ng_um,w0macx,w0macy,ng_w0,lo,hi,mult)
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um,ng_w0
+    real(kind=dp_t), intent(inout) ::    umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(inout) ::    vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: mult
+
+    integer :: i,j
+
+    !$OMP PARALLEL PRIVATE(i,j)
+    !$OMP DO
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)+1
+            umac(i,j) = umac(i,j) + mult * w0macx(i,j)
+        end do
+    end do
+    !$OMP END DO NOWAIT
+    !$OMP DO
+    do j = lo(2),hi(2)+1
+        do i = lo(1),hi(1)
+            vmac(i,j) = vmac(i,j) + mult * w0macy(i,j)
+        end do
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL
+
+  end subroutine addw0_2d_polar
+
+  
+  
   subroutine addw0_3d(wmac,ng_um,w0,lo,hi,mult)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_um

@@ -32,7 +32,7 @@ contains
     use cell_to_edge_module
     use rhoh_vs_t_module
     use geometry,      only: spherical, nr_fine, r_start_coord, r_end_coord, &
-         numdisjointchunks, nlevs_radial
+         numdisjointchunks, nlevs_radial, polar
     use variables,     only: temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, verbose, bds_type
     use pred_parameters
@@ -108,7 +108,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        call cell_to_edge(rho0_old,rho0_edge_old)
        call cell_to_edge(rho0_new,rho0_edge_new)
        call cell_to_edge(rhoh0_old,rhoh0_edge_old)
@@ -300,7 +300,7 @@ contains
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call multifab_build_edge(rho0mac_old(n,comp),mla%la(n),1,1,comp)
@@ -330,7 +330,7 @@ contains
                          rhoh0_old,rhoh0_edge_old,rhoh0mac_old, &
                          h0mac_old,h0mac_old)
 
-      if (spherical .eq. 1) then
+      if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call destroy(rho0mac_old(n,comp))
@@ -342,7 +342,7 @@ contains
 
     else if (which_step .eq. 2) then
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call multifab_build_edge( rho0mac_old(n,comp),mla%la(n),1,1,comp)
@@ -379,7 +379,7 @@ contains
                          rhoh0_new,rhoh0_edge_new,rhoh0mac_new, &
                          h0mac_old,h0mac_new)
 
-      if (spherical .eq. 1) then
+      if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call destroy(rho0mac_old(n,comp))
@@ -419,7 +419,7 @@ contains
                         psi,dx,.false.,the_bc_level)
     end if
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call build(p0_new_cart(n), get_layout(sold(n)), 1, 1)
        end do
@@ -431,7 +431,7 @@ contains
     call update_scal(mla,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
                      p0_new,p0_new_cart,dx,dt,the_bc_level)
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy(p0_new_cart(n))
        end do

@@ -33,7 +33,7 @@ contains
     use pert_form_module, only: put_in_pert_form
     use cell_to_edge_module, only: cell_to_edge
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine, nlevs_radial
+    use geometry,      only: spherical, polar, nr_fine, nlevs_radial
     use variables,     only: ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose, bds_type, species_pred_type
     use modify_scal_force_module, only: modify_scal_force
@@ -80,7 +80,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
 
        ! create edge-centered base state quantities.
        ! Note: rho0_edge_{old,new} 
@@ -102,7 +102,7 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call build(rho0_old_cart(n), get_layout(sold(n)), 1, 1)
        end do
@@ -135,7 +135,7 @@ contains
     ! for predict_rhoX, we are predicting (rho X)
     ! as a conservative equation, and there is no force.
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy(rho0_old_cart(n))
        end do
@@ -265,7 +265,7 @@ contains
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call multifab_build_edge(rho0mac_old(n,comp),mla%la(n),1,1,comp) 
@@ -291,7 +291,7 @@ contains
        end if
 
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call destroy(rho0mac_old(n,comp))
@@ -301,7 +301,7 @@ contains
 
     else if (which_step .eq. 2) then
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call multifab_build_edge(rho0mac_old(n,comp),mla%la(n),1,1,comp)
@@ -328,7 +328,7 @@ contains
                             rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
        end if
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
                 call destroy(rho0mac_old(n,comp))
@@ -351,7 +351,7 @@ contains
     end do
 
     ! p0 only used in rhoh update so we just pass in a dummy version
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call build(p0_dummy_cart(n), get_layout(sold(n)), 1, 1)          
        end do
@@ -365,7 +365,7 @@ contains
                         p0_dummy,p0_dummy_cart,dx,dt,the_bc_level)
     end if
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy(p0_dummy_cart(n))
        end do

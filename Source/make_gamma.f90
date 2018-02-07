@@ -21,7 +21,7 @@ contains
     use bl_prof_module
     use ml_cc_restriction_module
     use multifab_fill_ghost_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: gamma(:)
@@ -54,7 +54,12 @@ contains
           case (1)
              call make_gamma_1d(lo,hi,gamp(:,1,1,1),ng_g,sp(:,1,1,:),ng_s,p0(n,:))
           case (2)
-             call make_gamma_2d(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s,p0(n,:))
+             if (polar .eq. 1) then
+                call make_gamma_2d_polar(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s, &
+                                         p0(1,:),dx(n,:))
+             else
+                call make_gamma_2d(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s,p0(n,:))
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call make_gamma_3d_sphr(lo,hi,gamp(:,:,:,1),ng_g,sp(:,:,:,:),ng_s,p0(1,:), &
@@ -161,6 +166,62 @@ contains
 
   end subroutine make_gamma_2d
 
+  subroutine make_gamma_2d_polar(lo,hi,gamma,ng_g,s,ng_s,p0,dx)
+
+    use eos_module, only: eos, eos_input_rp
+    use eos_type_module
+    use network, only: nspec
+    use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
+    use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
+    real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:)
+    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    ! local variables
+    integer :: i, j
+
+    real (kind=dp_t), allocatable :: p0_cart(:,:,:)
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+
+    !$OMP PARALLEL DO PRIVATE(i,j,eos_state,pt_index)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            eos_state%rho   = s(i,j,rho_comp)
+            if (use_pprime_in_tfromp) then
+                eos_state%p     = p0_cart(i,j,1) + s(i,j,pi_comp)
+            else
+                eos_state%p     = p0_cart(i,j,1)
+            endif
+            eos_state%T     = s(i,j,temp_comp)
+            eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            pt_index(:) = (/i, j, -1/)
+
+            ! dens, pres, and xmass are inputs
+            call eos(eos_input_rp, eos_state, pt_index)
+
+            gamma(i,j) = eos_state%gam1
+
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+    deallocate(p0_cart)
+
+  end subroutine make_gamma_2d_polar  
+  
+  
+  
   subroutine make_gamma_3d(lo,hi,gamma,ng_g,s,ng_s,p0)
 
     use eos_module, only: eos, eos_input_rp

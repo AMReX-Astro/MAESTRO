@@ -233,6 +233,10 @@ contains
        call bl_error("ERROR: do_planar_invsq_grav invalid for spherical geometries")
     endif
 
+    if (polar_in == 1 .and. do_planar_invsq_grav) then
+       call bl_error("ERROR: do_planar_invsq_grav invalid for polar geometries")
+    endif
+    
     if (do_self_grav) then
        if ( dm_in == 3 .and. planar_invsq_mass > ZERO .and. prob_lo_z <= ZERO) then
           call bl_error("ERROR: planar_invsq_mass with self gravitation requires prob_lo(dm) > 0")

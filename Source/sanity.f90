@@ -24,7 +24,7 @@ contains
                           mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use bl_constants_module
     use network, only: network_species_index
     use inlet_bc_module
@@ -71,7 +71,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        do n=1,nlevs
           
@@ -100,7 +100,7 @@ contains
     endif
 
     ng_n   = nghost(normal(1))
-    if (spherical == 1) then
+    if (spherical == 1 .or. polar .eq. 1) then
        ng_n   = nghost(normal(1))
        ng_w   = nghost(w0r_cart(1))
        ng_wm  = nghost(w0mac(1,1))
@@ -170,6 +170,39 @@ contains
                                    mp(:,:,:,1))
              endif
 
+          else if (polar .eq. 1) then
+          
+            nop => dataptr(normal(n) , i)
+             w0rp => dataptr(w0r_cart(n), i)
+             w0xp => dataptr(w0mac(n,1), i)
+             w0yp => dataptr(w0mac(n,2), i)
+            
+             if (n .eq. nlevs) then
+                call sanity_2d_polar(n,newtime,dx(n,:), &
+                                   sp, lbound(sp),ubound(sp), &
+                                   rho0(1,:),rhoh0(1,:), &
+                                   p0(1,:),tempbar(1,:),gamma1bar(1,:), &
+                                   up, lbound(up),ubound(up), &
+                                   w0rp(:,:,1,1), ng_w, &
+                                   w0xp(:,:,1,1),w0yp(:,:,1,1),ng_wm, &
+                                   nop(:,:,1,:),ng_n, &
+                                   lo,hi, &
+                                   Mach_max_local)
+             else
+                mp => dataptr(mla%mask(n), i)
+                call sanity_2d_polar(n,newtime,dx(n,:), &
+                                   sp, lbound(sp),ubound(sp), &
+                                   rho0(1,:),rhoh0(1,:), &
+                                   p0(1,:),tempbar(1,:),gamma1bar(1,:), &
+                                   up, lbound(up),ubound(up), &
+                                   w0rp(:,:,1,1), ng_w, &
+                                   w0xp(:,:,1,1),w0yp(:,:,1,1),ng_wm, &
+                                   nop(:,:,1,:),ng_n, &
+                                   lo,hi, &
+                                   Mach_max_local, &
+                                   mp(:,:,1,1))
+             endif
+
           else
              if (n .eq. nlevs) then
                 call sanity_cart(dm, n,newtime,dx(n,:), &
@@ -235,7 +268,7 @@ contains
     !=========================================================================
     call destroy(bpt)
 
-    if (spherical == 1) then
+    if (spherical == 1 .or. polar .eq. 1) then
        do n = 1, nlevs
           call destroy(w0r_cart(n))
           do comp=1, dm
@@ -326,7 +359,79 @@ contains
 
   end subroutine sanity_cart
 
+!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  subroutine sanity_2d_polar(n,newtime,dx, &
+                           s,slo,shi, &
+                           rho0,rhoh0,p0,tempbar,gamma1bar, &
+                           u,ulo,uhi, &
+                           w0r,ng_w, &
+                           w0macx,w0macy,ng_wm, &
+                           normal,ng_n, &
+                           lo,hi, &                         
+                           Mach_max, &
+                           mask)
 
+    use variables, only: rho_comp, spec_comp, temp_comp
+    use bl_constants_module
+    use network, only: nspec
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
+
+    integer, intent(in) :: n, lo(:), hi(:), ng_w, ng_wm, ng_n
+    integer, intent(in) :: slo(4), shi(4), ulo(4), uhi(4)
+    real (kind=dp_t), intent(in   ) :: s(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))    
+    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
+                                         p0(0:),tempbar(0:),gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: u(ulo(1):uhi(1),ulo(2):uhi(2),ulo(3):uhi(3),ulo(4):uhi(4))    
+    real (kind=dp_t), intent(in   ) ::      w0r(lo(1)-ng_w:  ,lo(2)-ng_w:  )
+    real (kind=dp_t), intent(in   ) ::   w0macx(lo(1)-ng_wm: ,lo(2)-ng_wm: )
+    real (kind=dp_t), intent(in   ) ::   w0macy(lo(1)-ng_wm: ,lo(2)-ng_wm: )
+    real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n: , :)
+    real (kind=dp_t), intent(in   ) :: newtime, dx(:)
+    real (kind=dp_t), intent(inout) :: Mach_max
+    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
+
+    !     Local variables
+    integer            :: i, j
+    logical            :: cell_valid
+    real (kind=dp_t)   :: vel
+ 
+    type (eos_t) :: eos_state
+
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            cell_valid = .true.
+            if (present(mask)) then
+                if ( (.not. mask(i,j)) ) cell_valid = .false.
+            endif
+
+            if (cell_valid) then
+
+                ! vel is the magnitude of the velocity, including w0
+                vel = sqrt( (u(i,j,1,1)+HALF*(w0macx(i,j)+w0macx(i+1,j)))**2 + &
+                            (u(i,j,1,2)+HALF*(w0macy(i,j)+w0macy(i,j+1)))**2)
+
+                
+                ! call the EOS to get the sound speed and internal energy       
+                eos_state%T     = s(i,j,1,temp_comp)
+                eos_state%rho   = s(i,j,1,rho_comp)
+                eos_state%xn(:) = s(i,j,1,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                call eos(eos_input_rt, eos_state)
+
+
+                ! max Mach number                                       
+                Mach_max = max(Mach_max,vel/eos_state%cs)
+
+            endif  ! cell valid
+
+        enddo
+    enddo
+
+  end subroutine sanity_2d_polar
+  
+  
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   subroutine sanity_3d_sph(n,newtime,dx, &
                            s,slo,shi, &

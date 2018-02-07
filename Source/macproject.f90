@@ -56,7 +56,7 @@ contains
     use create_umac_grown_module       , only : create_umac_grown
     use multifab_physbc_edgevel_module , only : multifab_physbc_edgevel
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use probin_module, only: verbose, use_hypre, use_alt_energy_fix
     use variables, only: press_comp
     use ml_cc_restriction_module, only: ml_edge_restriction
@@ -100,12 +100,12 @@ contains
        call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN MACPROJECT')
     end if
 
-    if (spherical .eq. 1 .and. use_div_coeff_1d) then
-       call bl_error('CANT HAVE SPHERICAL .eq. 1 and 1D DIV_COEFF IN MACPROJECT')
+    if ((spherical .eq. 1 .or. polar .eq. 1) .and. use_div_coeff_1d) then
+       call bl_error('CANT HAVE SPHERICAL .or. POLAR .eq. 1 and 1D DIV_COEFF IN MACPROJECT')
     end if
 
-    if (spherical .eq. 0 .and. use_div_coeff_cart_edge) then
-       call bl_error('CANT HAVE SPHERICAL .eq. 0 and 3D DIV_COEFF IN MACPROJECT')
+    if ((spherical .eq. 0 .and. polar .eq. 0) .and. use_div_coeff_cart_edge) then
+       call bl_error('CANT HAVE SPHERICAL .and. POLAR .eq. 0 and 3D DIV_COEFF IN MACPROJECT')
     end if
 
     stencil_order = 2

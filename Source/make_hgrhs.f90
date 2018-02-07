@@ -29,7 +29,7 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use fill_3d_module
     use variables, only: foextrap_comp
     use ml_restrict_fill_module
@@ -60,7 +60,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n = 1, nlevs
           la = get_layout(Source(n))
           call multifab_build(Sbar_cart(n),     la,1,0)
@@ -99,8 +99,16 @@ contains
              call make_rhscc_1d(lo,hi,rp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
                                 gp(:,1,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
           case (2)
-             call make_rhscc_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
-                                gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
+             if (polar .eq. 1) then
+                dp => dataptr(div_coeff_cart(n), i)
+                sbp => dataptr(Sbar_cart(n), i)
+                call make_rhscc_2d_polar(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
+                                        gp(:,:,1,1),ng_dg,sbp(:,:,1,1),ng_sb, &
+                                        dp(:,:,1,1),ng_dc)
+             else
+                call make_rhscc_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
+                                    gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
+             end if
           case (3)
              if (spherical .eq. 1) then
                 dp => dataptr(div_coeff_cart(n), i)
@@ -143,7 +151,7 @@ contains
     
     do n = 1, nlevs
        call destroy(rhs_cc(n))
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           call destroy(Sbar_cart(n))
           call destroy(div_coeff_cart(n))
        end if
@@ -192,6 +200,31 @@ contains
     end do
     
   end subroutine make_rhscc_2d
+
+  subroutine make_rhscc_2d_polar(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                                Sbar_cart,ng_sb,div_coeff_cart,ng_dc)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_sb, ng_dc
+    real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
+    real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::      Sbar_cart(lo(1)-ng_sb:,lo(2)-ng_sb:)
+    real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)-ng_dc:,lo(2)-ng_dc:)
+    
+    ! Local variables
+    integer :: i,j
+    
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+            rhs_cc(i,j) = div_coeff_cart(i,j) * (Source(i,j) - Sbar_cart(i,j) + &
+                delta_gamma1_term(i,j))
+            
+        end do
+    end do
+    !$OMP END PARALLEL DO
+    
+  end subroutine make_rhscc_2d_polar
   
   subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
                                 Sbar,div_coeff)
@@ -316,7 +349,7 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use fill_3d_module
     use variables, only: foextrap_comp, rho_comp
     use probin_module, only: nodal
@@ -354,7 +387,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n = 1, nlevs
           la = get_layout(delta_p_term(n))
           call multifab_build(gamma1bar_cart(n),la,1,0)
@@ -404,8 +437,20 @@ contains
              call create_correction_cc_1d(n,lo,hi,ccp(:,1,1,1),ng_cc,ptp(:,1,1,1),ng_dp, &
                                           div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
           case (2)
-             call create_correction_cc_2d(n,lo,hi,ccp(:,:,1,1),ng_cc,ptp(:,:,1,1),ng_dp, &
-                                          div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
+             if (polar .eq. 1) then
+                gbp  => dataptr(gamma1bar_cart(n),i)
+                p0p  => dataptr(p0_cart(n),i)
+                dcp  => dataptr(div_coeff_cart(n),i)
+                r0p  => dataptr(rho0_cart(n),i)
+                call create_correction_cc_2d_polar(lo,hi,ccp(:,:,1,1),ng_cc,ptp(:,:,1,1), &
+                                                  ng_dp,dcp(:,:,1,1),ng_dc,gbp(:,:,1,1), &
+                                                  ng_gb,p0p(:,:,1,1),ng_p0,r0p(:,:,1,1), &
+                                                  ng_r0,dt)
+
+             else
+                call create_correction_cc_2d(n,lo,hi,ccp(:,:,1,1),ng_cc,ptp(:,:,1,1),ng_dp, &
+                                            div_coeff(n,:),gamma1bar(n,:),p0(n,:),dt)
+             end if
           case (3)
              if (spherical .eq. 1) then
                 gbp  => dataptr(gamma1bar_cart(n),i)
@@ -459,7 +504,7 @@ contains
     do n = 1, nlevs
        call destroy(correction_cc(n))
        call destroy(correction_nodal(n))
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           call destroy(gamma1bar_cart(n))
           call destroy(p0_cart(n))
           call destroy(div_coeff_cart(n))
@@ -531,6 +576,41 @@ contains
     
   end subroutine create_correction_cc_2d
 
+subroutine create_correction_cc_2d_polar(lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
+                                          div_coeff_cart,ng_dc,gamma1bar_cart,ng_gb, &
+                                          p0_cart,ng_p0,rho0_cart,ng_r0,dt)
+
+    use probin_module, only: dpdt_factor, base_cutoff_density
+
+    integer         , intent(in   ) :: lo(:),hi(:),ng_cc,ng_dp,ng_dc,ng_gb,ng_p0,ng_r0
+    real (kind=dp_t), intent(  out) ::  correction_cc(lo(1)-ng_cc:,lo(2)-ng_cc:)
+    real (kind=dp_t), intent(in   ) ::   delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:)
+    real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)-ng_dc:,lo(2)-ng_dc:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar_cart(lo(1)-ng_gb:,lo(2)-ng_gb:)
+    real (kind=dp_t), intent(in   ) ::        p0_cart(lo(1)-ng_p0:,lo(2)-ng_p0:)
+    real (kind=dp_t), intent(in   ) ::      rho0_cart(lo(1)-ng_r0:,lo(2)-ng_r0:)
+    real (kind=dp_t), intent(in   ) :: dt
+    
+    ! Local variables
+    integer :: i, j
+    real(kind=dp_t) :: correction_factor
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,correction_factor)
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+            if(rho0_cart(i,j) .gt. base_cutoff_density) then
+                correction_factor = div_coeff_cart(i,j) * &
+                        (dpdt_factor/(gamma1bar_cart(i,j)*p0_cart(i,j))) / dt
+            else
+                correction_factor = 0.0d0
+            end if
+            correction_cc(i,j) = correction_factor*delta_p_term(i,j)
+        end do
+    end do
+    !$OMP END PARALLEL DO
+    
+  end subroutine create_correction_cc_2d_polar  
+  
   subroutine create_correction_cc_3d_cart(n,lo,hi,correction_cc,ng_cc,delta_p_term,ng_dp, &
                                           div_coeff,gamma1bar,p0,dt)
 

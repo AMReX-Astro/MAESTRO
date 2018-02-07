@@ -39,7 +39,7 @@ contains
     ! 
     ! The top of the sponge is then 2 * r_md - r_tp
 
-    use geometry, only: dr, r_end_coord, spherical
+    use geometry, only: dr, r_end_coord, spherical, polar
     use bl_constants_module
     use probin_module, only: verbose, sponge_start_factor, sponge_center_density
 
@@ -78,13 +78,13 @@ contains
     r_tp = TWO * r_md - r_sp
 
     ! outer sponge parameters used for spherical problems
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        r_sp_outer = r_tp
        r_tp_outer = r_sp_outer + 4.d0 * dx(3)
     end if
 
     if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1000) r_sp, r_tp
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1001) r_sp_outer, r_tp_outer
     end if
     if ( parallel_IOProcessor() .and. verbose .ge. 1) print*,""
@@ -169,29 +169,70 @@ contains
 
     use bl_constants_module
     use probin_module, only: prob_lo, sponge_kappa
+    use geometry, only: polar, center
 
     integer        , intent(in   ) ::  lo(:),hi(:), ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
     real(kind=dp_t), intent(in   ) ::     dx(:),dt
 
-    integer         :: j
-    real(kind=dp_t) :: y,smdamp
+    integer         :: i,j
+    real(kind=dp_t) :: x,y,r,smdamp
 
     sponge = ONE
+    
+    if (polar .eq. 0) then
+        do j = lo(2),hi(2)
+        y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+            
+        if (y >= r_sp) then
+            if (y < r_tp) then
+                smdamp = HALF*(ONE - cos(M_PI*(y - r_sp)/(r_tp - r_sp)))
+            else
+                smdamp = ONE
+            endif
+            sponge(:,j) = ONE / (ONE + dt * smdamp* sponge_kappa)
+        endif
 
-    do j = lo(2),hi(2)
-       y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+        end do
+    
+    else
 
-       if (y >= r_sp) then
-          if (y < r_tp) then
-             smdamp = HALF*(ONE - cos(M_PI*(y - r_sp)/(r_tp - r_sp)))
-          else
-             smdamp = ONE
-          endif
-          sponge(:,j) = ONE / (ONE + dt * smdamp* sponge_kappa)
-       endif
+       !$OMP PARALLEL DO PRIVATE(i,j,x,y,r,smdamp)
+        do j = lo(2),hi(2)
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2)
+            
+            do i = lo(1),hi(1)
+            x = prob_lo(1) + (dble(i)+HALF)*dx(1)
 
-    end do
+            r = sqrt( (x-center(1))**2 + (y-center(2))**2 )
+            
+            ! Inner sponge: damps velocities at edge of star
+            if (r >= r_sp) then
+                if (r < r_tp) then
+                    smdamp = HALF*(ONE - cos(M_PI*(r - r_sp)/(r_tp - r_sp)))
+                else
+                    smdamp = ONE
+                endif
+                sponge(i,j) = ONE / (ONE + dt * smdamp * sponge_kappa)
+            endif
+
+            ! Outer sponge: damps velocities in the corners of the domain
+            if (r >= r_sp_outer) then
+                if (r < r_tp_outer) then
+                    smdamp = HALF * &
+                        (ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+                else
+                    smdamp = ONE
+                endif
+                sponge(i,j) = sponge(i,j) / &
+                    (ONE + dt * smdamp * 10.d0 * sponge_kappa)
+            endif
+
+            end do
+        end do
+       !$OMP END PARALLEL DO
+
+    end if
 
   end subroutine mk_sponge_2d
 

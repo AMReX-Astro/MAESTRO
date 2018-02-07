@@ -135,7 +135,7 @@ contains
          plot_omegadot, plot_Hnuc, plot_Hext, plot_eta, plot_ad_excess, plot_brunt_freq, &
          use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, dm_in, use_particles, &
          plot_processors, plot_pidivu, plot_hp, plot_grav
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(plot_t), intent(inout) :: p
     integer, intent(in) :: plot_int
@@ -167,7 +167,7 @@ contains
        p%icomp_p0    = p%next_index(1)
     end if
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        p%icomp_velr = p%next_index(1)
        p%icomp_velc = p%next_index(1)
     end if

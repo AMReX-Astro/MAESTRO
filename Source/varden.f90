@@ -250,6 +250,11 @@ subroutine varden()
   if (spherical .eq. 1 .and. dm .ne. 3) then
      call bl_error("spherical = 1 and dm != 3")
   end if
+
+  ! check to make sure polar is only used for 2d
+  if (polar .eq. 1 .and. dm .ne. 2) then
+     call bl_error("polar = 1 and dm != 2")
+  end if  
   
   ! check to make sure our grid is square -- the solvers assume this
   if (dm == 2) then
@@ -351,7 +356,7 @@ subroutine varden()
   call make_normal(normal,dx)
 
   if (do_sponge) then
-     if (spherical .eq. 0) then
+     if ((spherical .eq. 0) .and. (polar .eq. 0)) then
         call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
      else
         call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
@@ -750,7 +755,7 @@ subroutine varden()
            ! contains 1 level of refinement.
            ! We do not regrid these if evolve_base_state=F since they are
            ! identically zero, set this way in initialize.
-           if (spherical .eq. 0) then
+           if ((spherical .eq. 0) .and. (polar .eq. 0)) then
               if (evolve_base_state) then
               
                  ! copy the coarsest level only, interpolate to all
@@ -993,7 +998,7 @@ subroutine varden()
 
            else
 
-              if (spherical .eq. 0) then
+              if ((spherical .eq. 0) .and. (polar .eq. 0)) then
                  ! copy the old base state density with piecewise linear
                  ! interpolated data in the new positions -- this is 
                  ! only necessary for evolve_base_state = F and
@@ -1131,7 +1136,7 @@ subroutine varden()
         !---------------------------------------------------------------------
         init_mode = .false.
         if (do_sponge) then
-           if (spherical .eq. 0) then
+           if ((spherical .eq. 0) .and. (polar .eq. 0)) then
               call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
            else
               call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)

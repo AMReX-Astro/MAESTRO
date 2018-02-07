@@ -27,7 +27,7 @@ contains
     use variables, only: foextrap_comp
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state
-    use geometry, only: spherical, nr_fine, nlevs_radial
+    use geometry, only: spherical, polar, nr_fine, nlevs_radial
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
     use make_S_module
@@ -173,7 +173,7 @@ contains
     call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        eps_init = eps_init_proj_sph
     else
        eps_init = eps_init_proj_cart

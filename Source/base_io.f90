@@ -20,7 +20,7 @@ contains
     
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
-    use geometry, only : dr, nr, nlevs_radial, spherical
+    use geometry, only : dr, nr, nlevs_radial, spherical, polar
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module, only: HALF, ZERO
@@ -56,7 +56,7 @@ contains
        write(unit=w0_name,fmt='("model_ec_",i7.7)') istep
     endif
     
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        start_rad = problo
     else
        start_rad = ZERO

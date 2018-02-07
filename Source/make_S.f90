@@ -36,7 +36,7 @@ contains
     use average_module
     use ml_restrict_fill_module
     use variables, only: foextrap_comp
-    use geometry, only: spherical, nr_fine, dr
+    use geometry, only: spherical, polar, nr_fine, dr
     use fill_3d_module, only : put_1d_array_on_cart
 
     type(multifab) , intent(inout) :: Source(:)
@@ -81,7 +81,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical == 1) then
+    if (spherical == 1 .or. polar == 1) then
        do n = 1, nlevs
           call build(gradp0_cart(n), mla%la(n), 1, 0)
           call setval(gradp0_cart(n), ZERO, all=.true.)
@@ -150,7 +150,7 @@ contains
           lo(1:dm) = lwb(get_box(state(n), i))
           hi(1:dm) = upb(get_box(state(n), i))
 
-          if (spherical == 1) then
+          if (spherical == 1 .or. polar == 1) then
 
              gp0p => dataptr(gradp0_cart(n), i)
              ng_gp = nghost(gradp0_cart(1))
@@ -163,8 +163,22 @@ contains
 
              np => dataptr(normal(n), i)
              ng_n = nghost(normal(1))
-
-             call make_S_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+             
+             select case(dm)
+             case(2)
+                call make_S_2d_polar(lo, hi, srcp(:,:,1,1), ng_sr, dgtp(:,:,1,1), ng_dt, &
+                                 dgp(:,:,1,1), ng_dg, &
+                                 sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
+                                 omegap(:,:,1,:), ng_rw, hnp(:,:,1,1), ng_hn, &
+                                 hep(:,:,1,1), ng_he, &
+                                 tp(:,:,1,1), ng_th, &
+                                 gp0p(:,:,1,1), ng_gp, &
+                                 p0p(:,:,1,1), ng_p0, &
+                                 g1p(:,:,1,1), ng_g1, &
+                                 np(:,:,1,:), ng_n)
+ 
+             case(3)
+                call make_S_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
                                  dgp(:,:,:,1), ng_dg, &
                                  sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
                                  omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
@@ -174,6 +188,7 @@ contains
                                  p0p(:,:,:,1), ng_p0, &
                                  g1p(:,:,:,1), ng_g1, &
                                  np(:,:,:,:), ng_n)
+             end select
           else
              call make_S_cart(dm, n, lo, hi, &
                               srcp(:,:,:,1), lbound(srcp), &
@@ -223,9 +238,27 @@ contains
                                                   dgp(:,1,1,1),ng_dg, &
                                                   gamma1bar(n,:),psi(n,:),p0(n,:))
              case (2)
-                call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),ng_dt, &
+                if (polar == 1) then
+                    g1p => dataptr(gamma1bar_cart(n), i)
+                    ng_g1 = nghost(gamma1bar_cart(1))
+
+                    p0p => dataptr(p0_cart(n), i)
+                    ng_p0 = nghost(p0_cart(1))
+
+                    psp => dataptr(psi_cart(n), i)
+                    ng_ps = nghost(psi_cart(1))
+
+                    call correct_delta_gamma1_term_2d_polar(lo,hi,dgtp(:,:,1,1),ng_dt, &
+                                                          dgp(:,:,1,1),ng_dg, &
+                                                          g1p(:,:,1,1),ng_g1, &
+                                                          psp(:,:,1,1),ng_ps, &
+                                                          p0p(:,:,1,1),ng_p0)
+               
+                else
+                    call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),ng_dt, &
                                                   dgp(:,:,1,1),ng_dg, &
                                                   gamma1bar(n,:),psi(n,:),p0(n,:))
+                end if
              case (3)
                 if (spherical == 1) then
                    g1p => dataptr(gamma1bar_cart(n), i)
@@ -253,7 +286,7 @@ contains
 
     end if
 
-    if (spherical == 1) then
+    if (spherical == 1 .or. polar == 1) then
        do n = 1, nlevs
           call destroy(gradp0_cart(n))
           call destroy(p0_cart(n))
@@ -380,6 +413,105 @@ contains
 
   end subroutine make_S_cart
 
+  
+  subroutine make_S_2d_polar(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
+                            ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                            rho_Hext,ng_he,thermal,ng_th, &
+                            gradp0_cart,ng_gp,p0_cart,ng_p0, &
+                            gamma1bar_cart,ng_g1,normal,ng_n)
+
+    use bl_constants_module
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
+    use network, only: nspec
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use probin_module, only: use_delta_gamma1_term
+
+    integer         , intent(in   ) :: lo(:),hi(:)
+    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u, &
+                                       ng_rw,ng_he, &
+                                       ng_hn,ng_th,ng_gp,ng_p0,ng_g1,ng_n
+
+    real (kind=dp_t), intent(  out) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
+    real (kind=dp_t), intent(  out) ::       dg1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
+    real (kind=dp_t), intent(  out) ::   delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:) 
+    real (kind=dp_t), intent(in   ) ::              s(lo(1)-ng_s :,lo(2)-ng_s :,:)
+    real (kind=dp_t), intent(in   ) ::              u(lo(1)-ng_s :,lo(2)-ng_s :,:)
+    real (kind=dp_t), intent(in   ) ::   rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
+    real (kind=dp_t), intent(in   ) ::       rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
+    real (kind=dp_t), intent(in   ) ::       rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
+    real (kind=dp_t), intent(in   ) ::        thermal(lo(1)-ng_th:,lo(2)-ng_th:)
+    real (kind=dp_t), intent(in   ) ::    gradp0_cart(lo(1)-ng_gp:,lo(2)-ng_gp:)
+    real (kind=dp_t), intent(in   ) ::        p0_cart(lo(1)-ng_p0:,lo(2)-ng_p0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar_cart(lo(1)-ng_g1:,lo(2)-ng_g1:)
+    real (kind=dp_t), intent(in   ) ::         normal(lo(1)-ng_n:,lo(2)-ng_n:,:)
+
+    !     Local variables
+    integer         :: i, j, comp
+    real(kind=dp_t) :: sigma, xi_term, pres_term
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
+
+    real(kind=dp_t) :: Ut_dot_er
+
+    Source = zero
+
+    !$OMP PARALLEL DO PRIVATE(i,j,comp,sigma,xi_term,pres_term,eos_state,pt_index,Ut_dot_er)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            eos_state%rho   = s(i,j,rho_comp)
+            eos_state%T     = s(i,j,temp_comp)
+            eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            pt_index(:) = (/i, j, -1/)
+
+            ! dens, temp, and xmass are inputs
+            call eos(eos_input_rt, eos_state, pt_index)
+
+            sigma = eos_state%dpdt / &
+                (eos_state%rho * eos_state%cp * eos_state%dpdr)
+
+            xi_term = ZERO
+            pres_term = ZERO
+            do comp = 1, nspec
+            xi_term = xi_term - &
+                    eos_state%dhdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho 
+
+            pres_term = pres_term + &
+                    eos_state%dpdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho
+            enddo
+
+            Source(i,j) = (sigma/eos_state%rho) * &
+                ( rho_Hext(i,j) + rho_Hnuc(i,j) + thermal(i,j) ) &
+                + sigma*xi_term &
+                + pres_term/(eos_state%rho*eos_state%dpdr)
+
+
+            if (use_delta_gamma1_term) then
+            delta_gamma1(i,j) = eos_state%gam1 - gamma1bar_cart(i,j)
+            
+            Ut_dot_er = &
+                    u(i,j,1)*normal(i,j,1) + &
+                    u(i,j,2)*normal(i,j,2) 
+                    
+            dg1_term(i,j) = delta_gamma1(i,j)*Ut_dot_er* &
+                    gradp0_cart(i,j)/ &
+                        (gamma1bar_cart(i,j)**2*p0_cart(i,j))
+
+            else
+            dg1_term(i,j) = ZERO
+            delta_gamma1(i,j) = ZERO
+            end if
+
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+  end subroutine make_S_2d_polar
+  
+  
   subroutine make_S_3d_sphr(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
                             ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
                             rho_Hext,ng_he,thermal,ng_th, &
@@ -526,6 +658,35 @@ contains
 
   end subroutine correct_delta_gamma1_term_2d
 
+  subroutine correct_delta_gamma1_term_2d_polar(lo,hi,delta_gamma1_term,ng_dt, &
+                                               delta_gamma1,ng_dg, &
+                                               gamma1bar_cart,ng_g1, &
+                                               psi_cart,ng_ps, &
+                                               p0_cart,ng_p0)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg, ng_g1, ng_ps, ng_p0
+    real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
+    real (kind=dp_t), intent(in   ) ::    delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::  gamma1bar_cart(lo(1)-ng_g1:,lo(2)-ng_g1:)
+    real (kind=dp_t), intent(in   ) ::         p0_cart(lo(1)-ng_p0:,lo(2)-ng_p0:)
+    real (kind=dp_t), intent(in   ) ::        psi_cart(lo(1)-ng_ps:,lo(2)-ng_ps:)
+
+    integer :: i, j
+
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            delta_gamma1_term(i,j) = delta_gamma1_term(i,j) &
+                + delta_gamma1(i,j)*psi_cart(i,j)/(gamma1bar_cart(i,j)**2*p0_cart(i,j))
+
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine correct_delta_gamma1_term_2d_polar  
+  
+  
   subroutine correct_delta_gamma1_term_3d(lo,hi,delta_gamma1_term,ng_dt, &
                                           delta_gamma1,ng_dg, &
                                           gamma1bar,psi,p0)

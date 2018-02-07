@@ -51,7 +51,7 @@ contains
     use thermal_conduct_module      , only : thermal_conduct
     use make_explicit_thermal_module, only : make_explicit_thermal, make_thermal_coeffs 
     use make_grav_module            , only : make_grav_cell
-    use make_eta_module             , only : make_etarho_planar, make_etarho_spherical
+    use make_eta_module             , only : make_etarho_planar, make_etarho_spherical, make_etarho_polar
     use make_psi_module             , only : make_psi_planar, make_psi_spherical
     use fill_3d_module              , only : put_1d_array_on_cart, make_w0mac, make_s0mac
     use cell_to_edge_module         , only : cell_to_edge
@@ -70,7 +70,7 @@ contains
 
     use variables                   , only : nscal, temp_comp, rho_comp, rhoh_comp, pi_comp, &
                                              foextrap_comp
-    use geometry                    , only : nlevs_radial, spherical, nr_fine, compute_cutoff_coords
+    use geometry                    , only : nlevs_radial, spherical, polar, nr_fine, compute_cutoff_coords
     use network                     , only : nspec
     use probin_module               , only : barrier_timers, evolve_base_state, fix_base_state, &
                                              use_etarho, dpdt_factor, verbose, &
@@ -379,7 +379,7 @@ contains
                     gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold, &
                     delta_chi_w0,.true.)
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
        end if
 
@@ -448,7 +448,7 @@ contains
     end do
 
     ! MAC projection !
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
              call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
@@ -555,10 +555,13 @@ contains
     if (evolve_base_state) then
        if (use_etarho) then
 
-          if (spherical .eq. 0) then
+          if (spherical .eq. 0 .and. polar .eq. 0) then
              call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
-          else
+          else if (spherical .eq. 1) then
              call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
+                                        etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
+          else if (polar .eq. 1) then
+             call make_etarho_polar(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
                                         etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
@@ -584,7 +587,7 @@ contains
        call enforce_HSE(rho0_new,p0_new,grav_cell_new)
 
        ! make psi
-       if (spherical .eq. 0) then
+       if (spherical .eq. 0 .and. polar .eq. 0) then
           call make_psi_planar(etarho_cc,psi)
        else
           ! compute p0_nph
@@ -877,7 +880,7 @@ contains
                     gamma1bar_old,gamma1bar,p0_minus_peosbar, &
                     psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,.false.)
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           call make_w0mac(mla,w0,w0mac,dx,the_bc_tower%bc_tower_array)
        end if
 
@@ -932,7 +935,7 @@ contains
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
 
     ! MAC projection !
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
              call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
@@ -1032,10 +1035,13 @@ contains
     if (evolve_base_state) then
        if (use_etarho) then
 
-          if (spherical .eq. 0) then
+          if (spherical .eq. 0 .and. polar .eq. 0) then
              call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
-          else
+          else if (spherical .eq. 1) then
              call make_etarho_spherical(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
+                                        etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
+          else if (polar .eq. 1) then
+             call make_etarho_polar(s1,s2,umac,w0mac,rho0_old,rho0_new,dx,normal, &
                                         etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
@@ -1070,7 +1076,7 @@ contains
        p0_nph = HALF*(p0_old+p0_new)
 
        ! make psi
-       if (spherical .eq. 0) then
+       if (spherical .eq. 0 .and. polar .eq. 0) then
           call make_psi_planar(etarho_cc,psi)
        else
           p0_nph = HALF*(p0_old+p0_new)

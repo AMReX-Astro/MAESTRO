@@ -23,7 +23,7 @@ contains
 
     use parallel
     use bl_prof_module
-    use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs_radial
+    use geometry, only: spherical, polar, dr, r_start_coord, r_end_coord, nlevs_radial
     use bl_constants_module
     use probin_module, only: verbose, do_planar_invsq_grav, do_self_grav
 
@@ -54,7 +54,7 @@ contains
 
     w0_force = ZERO
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
 
        if (do_planar_invsq_grav .OR. do_self_grav) then
           
@@ -73,7 +73,7 @@ contains
 
 
     else
-
+       
        call make_w0_spherical(w0(1,:),w0_old(1,:),Sbar_in(1,:), &
                               rho0_old(1,:),rho0_new(1,:), &
                               p0_old(1,:),p0_new(1,:), &

@@ -25,7 +25,7 @@ module make_eta_module
 
   private
 
-  public :: make_etarho_planar, make_etarho_spherical
+  public :: make_etarho_planar, make_etarho_spherical, make_etarho_polar
 
 contains
 
@@ -36,7 +36,7 @@ contains
   subroutine make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks
+    use geometry, only: spherical, polar, nr_fine, r_start_coord, r_end_coord, numdisjointchunks
     use restrict_base_module
 
     real(kind=dp_t)   , intent(  out) :: etarho_ec(:,0:)
@@ -71,8 +71,8 @@ contains
     etarho_ec       = ZERO
     etarho_cc       = ZERO
     
-    if (spherical .eq. 1) then
-       call bl_error("ERROR: make_eta should not be called for spherical")
+    if (spherical .eq. 1 .or. polar .eq. 1) then
+       call bl_error("ERROR: make_eta should not be called for spherical or polar")
     end if
     
     do n=1,nlevs
@@ -247,6 +247,170 @@ contains
 
   end subroutine sum_etarho_3d
 
+  
+  
+  !---------------------------------------------------------------------------
+  ! polar routines
+  !---------------------------------------------------------------------------
+
+  subroutine make_etarho_polar(sold,snew,umac,w0mac,rho0_old,rho0_new, &
+                                   dx,normal,etarho_ec,etarho_cc,mla,the_bc_level)
+
+    use bl_constants_module
+    use geometry, only: polar, nr_fine
+    use variables
+    use average_module
+    use ml_restrict_fill_module
+
+    type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
+    type(multifab) , intent(in   ) :: sold(:), snew(:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(  out) :: etarho_ec(:,0:)
+    real(kind=dp_t), intent(  out) :: etarho_cc(:,0:)
+    type(ml_layout), intent(in   ) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+
+    type(multifab) :: eta_cart(mla%nlevel)
+    
+    real(kind=dp_t), pointer :: ep(:,:,:,:)
+    real(kind=dp_t), pointer :: sop(:,:,:,:), snp(:,:,:,:)
+    real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:)
+    real(kind=dp_t), pointer :: wxp(:,:,:,:), wyp(:,:,:,:)
+    real(kind=dp_t), pointer :: nop(:,:,:,:)
+
+    integer :: n,i,lo(mla%dim),hi(mla%dim),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_wm
+    integer :: r,dm,nlevs
+
+    dm = mla%dim
+    nlevs = mla%nlevel
+
+    if (polar .eq. 0) then
+       call bl_error("ERROR: make_eta_polar should not be called for plane-parallel")
+    end if
+
+    ! construct a multifab containing  [ rho' (U dot e_r) ] 
+    ! and another containing [ rho' ]
+    ng_so = nghost(sold(1))
+    ng_sn = nghost(snew(1))
+    ng_um = nghost(umac(1,1))
+    ng_n  = nghost(normal(1))
+    ng_wm = nghost(w0mac(1,1))
+
+    do n=1,nlevs
+
+       call multifab_build( eta_cart(n), get_layout(sold(n)), 1, 1)
+
+       ng_e = nghost(eta_cart(n))
+
+       do i=1, nfabs(eta_cart(n))
+          ep  => dataptr(eta_cart(n), i)
+          sop => dataptr(sold(n), i)
+          snp => dataptr(snew(n), i)
+          ump => dataptr(umac(n,1), i)
+          vmp => dataptr(umac(n,2), i)
+          wxp => dataptr(w0mac(n,1), i)
+          wyp => dataptr(w0mac(n,2), i)
+          nop  => dataptr(normal(n), i)
+          lo = lwb(get_box(eta_cart(n),i))
+          hi = upb(get_box(eta_cart(n),i))
+          call construct_eta_2d_cart(sop(:,:,1,rho_comp), ng_so, &
+                                  snp(:,:,1,rho_comp), ng_sn, &
+                                  ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                  wxp(:,:,1,1), wyp(:,:,1,1), ng_wm, &
+                                  nop(:,:,1,:), ng_n, ep(:,:,1,1), ng_e, &
+                                  rho0_old(1,:), rho0_new(1,:), &
+                                  dx(n,:), lo, hi)
+       enddo
+
+    enddo
+
+    call ml_restrict_and_fill(nlevs, eta_cart, mla%mba%rr, the_bc_level, &
+         icomp=1, bcomp=foextrap_comp, nc=1, ng=ng_e)
+
+    ! compute etarho_cc as the average of eta_cart = [ rho' (U dot e_r) ]
+    call average(mla,eta_cart,etarho_cc,dx,1)
+
+    do n=1,nlevs
+       call destroy(eta_cart(n))
+    enddo
+
+    ! put eta on base state edges
+    ! note that in spherical the base state has no refinement
+    ! the 0th value of etarho = 0, since U dot . e_r must be 
+    ! zero at the center (since e_r is not defined there)
+    etarho_ec(1,0) = ZERO
+    do r=1,nr_fine-1
+       etarho_ec(1,r) = HALF*(etarho_cc(1,r) + etarho_cc(1,r-1))
+    enddo
+    ! probably should do some better extrapolation here eventually
+    etarho_ec(1,nr_fine) = etarho_cc(1,nr_fine-1)
+
+  end subroutine make_etarho_polar
+  
+  subroutine construct_eta_2d_cart(rho_old, ng_so, rho_new, ng_sn, umac, vmac, ng_um, &
+                                w0macx, w0macy, ng_wm, &
+                                normal, ng_n, eta_cart, ng_e, rho0_old, rho0_new, dx, lo, hi)
+
+    use bl_constants_module
+    use geometry, only: nr_fine
+    use fill_3d_module
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e, ng_wm
+    real(kind=dp_t), intent(in   ) ::       rho_old(lo(1)-ng_so:,lo(2)-ng_so:)
+    real(kind=dp_t), intent(in   ) ::       rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:)
+    real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:)
+    real(kind=dp_t), intent(in   ) ::        normal(lo(1)-ng_n :,lo(2)-ng_n :,:)
+    real(kind=dp_t), intent(inout) ::      eta_cart(lo(1)-ng_e :,lo(2)-ng_e :)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_new(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    real(kind=dp_t) ::      rho0_nph(0:nr_fine-1)
+
+    real(kind=dp_t), allocatable :: rho0_new_cart(:,:,:)
+    real(kind=dp_t), allocatable :: rho0_nph_cart(:,:,:)
+
+    real(kind=dp_t) :: U_dot_er
+    integer :: i,j,r
+
+    allocate(rho0_new_cart(lo(1):hi(1),lo(2):hi(2),1))
+    allocate(rho0_nph_cart(lo(1):hi(1),lo(2):hi(2),1))
+
+    ! put the time-centered base state density on a Cartesian patch.
+    do r = 0, nr_fine-1
+       rho0_nph(r) = HALF*(rho0_old(r) + rho0_new(r))
+    enddo
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0)
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0)
+
+    !$OMP PARALLEL DO PRIVATE(i,j,U_dot_er)
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+
+            U_dot_er = HALF*(    umac(i,j) +   umac(i+1,j) &
+                            + w0macx(i,j) + w0macx(i+1,j)) * normal(i,j,1) + &
+                    HALF*(    vmac(i,j) +   vmac(i,j+1) &
+                            + w0macy(i,j) + w0macy(i,j+1)) * normal(i,j,2) 
+                            
+            ! construct time-centered [ rho' (U dot e_r) ]
+            eta_cart(i,j) = (HALF*(rho_old(i,j) + rho_new(i,j)) - &
+                            rho0_nph_cart(i,j,1)) * U_dot_er
+
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    deallocate(rho0_new_cart,rho0_nph_cart)
+    
+  end subroutine construct_eta_2d_cart  
+  
+  
   !---------------------------------------------------------------------------
   ! spherical routines
   !---------------------------------------------------------------------------
@@ -316,7 +480,7 @@ contains
           nop  => dataptr(normal(n), i)
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
-          call construct_eta_cart(sop(:,:,:,rho_comp), ng_so, &
+          call construct_eta_3d_cart(sop(:,:,:,rho_comp), ng_so, &
                                   snp(:,:,:,rho_comp), ng_sn, &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                   wxp(:,:,:,1), wyp(:,:,:,1), wzp(:,:,:,1), ng_wm, &
@@ -350,7 +514,7 @@ contains
 
   end subroutine make_etarho_spherical
 
-  subroutine construct_eta_cart(rho_old, ng_so, rho_new, ng_sn, umac, vmac, wmac, ng_um, &
+  subroutine construct_eta_3d_cart(rho_old, ng_so, rho_new, ng_sn, umac, vmac, wmac, ng_um, &
                                 w0macx, w0macy, w0macz, ng_wm, &
                                 normal, ng_n, eta_cart, ng_e, rho0_old, rho0_new, dx, lo, hi)
 
@@ -414,6 +578,6 @@ contains
 
     deallocate(rho0_new_cart,rho0_nph_cart)
     
-  end subroutine construct_eta_cart
+  end subroutine construct_eta_3d_cart
 
 end module make_eta_module

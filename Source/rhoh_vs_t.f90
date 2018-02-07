@@ -26,7 +26,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, polar
     use variables
     use network
     use fill_3d_module
@@ -78,7 +78,7 @@ contains
     ng_u  = nghost(u(1))
     ng_se = nghost(sedge(1,1))
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        do n=1,nlevs
           la=get_layout(u(n))
@@ -123,12 +123,22 @@ contains
 
           case (2)
              sepy => dataptr(sedge(n,2), i)
-             call makeHfromRhoT_edge_2d(sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
-                                        rho0_old(n,:), rhoh0_old(n,:), t0_old(n,:), &
-                                        rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
-                                        t0_edge_old(n,:), rho0_new(n,:), rhoh0_new(n,:), &
-                                        t0_new(n,:), rho0_edge_new(n,:), &
-                                        rhoh0_edge_new(n,:), t0_edge_new(n,:), lo, hi)
+             if (polar .eq. 1) then
+               rp   => dataptr( rho0_cart(n), i)
+               rhp  => dataptr(rhoh0_cart(n), i)
+               tp   => dataptr(   t0_cart(n), i)
+               call makeHfromRhoT_edge_2d_polar(sepx(:,:,1,:), sepy(:,:,1,:), &
+                                               ng_se, rp(:,:,1,1), ng_r0, rhp(:,:,1,1), &
+                                               ng_rh0, tp(:,:,1,1), ng_t0, lo, hi)
+             
+             else
+                call makeHfromRhoT_edge_2d(sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
+                                            rho0_old(n,:), rhoh0_old(n,:), t0_old(n,:), &
+                                            rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
+                                            t0_edge_old(n,:), rho0_new(n,:), rhoh0_new(n,:), &
+                                            t0_new(n,:), rho0_edge_new(n,:), &
+                                            rhoh0_edge_new(n,:), t0_edge_new(n,:), lo, hi)
+             end if
           case (3)
              sepy => dataptr(sedge(n,2), i)
              sepz => dataptr(sedge(n,3), i)
@@ -154,7 +164,7 @@ contains
 
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy( rho0_cart(n))
           call destroy(rhoh0_cart(n))
@@ -385,6 +395,149 @@ contains
     enddo
     
   end subroutine makeHfromRhoT_edge_2d
+
+    !----------------------------------------------------------------------------
+  ! makeHfromRhoT_edge_2d_polar
+  !----------------------------------------------------------------------------
+  subroutine makeHfromRhoT_edge_2d_polar(sx,sy,ng_se,rho0_cart,ng_r0,rhoh0_cart,ng_rh0, &
+                                        t0_cart,ng_t0,lo,hi)
+
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use eos_module,    only: eos, eos_input_rt
+    use eos_type_module
+    use network,       only: nspec
+    use probin_module, only: specieS_pred_type, enthalpy_pred_type, small_temp
+    use pred_parameters
+    use bl_constants_module
+
+    integer        , intent(in   ) :: ng_se,ng_r0,ng_rh0,ng_t0
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::  rho0_cart(lo(1)-ng_r0:,lo(2)-ng_r0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_cart(lo(1)-ng_rh0:,lo(2)-ng_rh0:)
+    real(kind=dp_t), intent(in   ) ::    t0_cart(lo(1)-ng_t0 :,lo(2)-ng_t0 :)
+    
+    ! Local variables
+    integer :: i, j
+    real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge
+
+    integer :: pt_index(MAX_SPACEDIM)
+    type(eos_t) :: eos_state
+    
+    ! x-edge
+    !$OMP PARALLEL DO PRIVATE(i,j,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)+1
+            
+            ! get edge-centered temperature
+            if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                t0_edge = HALF* (t0_cart(i-1,j) + t0_cart(i,j))
+                eos_state%T = max(sx(i,j,temp_comp)+t0_edge,small_temp)
+            else
+                eos_state%T = max(sx(i,j,temp_comp),small_temp)
+            end if
+
+            ! get edge-centered density and species
+            if (species_pred_type .eq. predict_rhoprime_and_X) then
+            
+                ! interface states are rho' and X
+                rho0_edge = HALF * (rho0_cart(i-1,j) + rho0_cart(i,j))
+                eos_state%rho = sx(i,j,rho_comp) + rho0_edge
+
+                eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+
+            else if (species_pred_type .eq. predict_rhoX) then
+
+                ! interface states are rho and (rho X)
+                eos_state%rho = sx(i,j,rho_comp) 
+
+                eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            else if (species_pred_type .eq. predict_rho_and_X) then
+
+                ! interface states are rho and X
+                eos_state%rho = sx(i,j,rho_comp) 
+
+                eos_state%xn(:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+
+            endif
+
+            pt_index(:) = (/i, j, -1/)
+
+            call eos(eos_input_rt, eos_state, pt_index)
+            
+            if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+                enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                sx(i,j,rhoh_comp) = eos_state%h
+
+            else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                rhoh0_edge = HALF * (rhoh0_cart(i-1,j) + rhoh0_cart(i,j))
+                sx(i,j,rhoh_comp) = eos_state%rho*eos_state%h - rhoh0_edge
+            end if
+
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+
+    ! y-edge
+    !$OMP PARALLEL DO PRIVATE(i,j,t0_edge,rho0_edge,rhoh0_edge,eos_state,pt_index)
+    do j = lo(2), hi(2)+1
+        do i = lo(1), hi(1)
+             
+            ! get edge-centered temperature
+            if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                t0_edge = HALF * (t0_cart(i,j-1) + t0_cart(i,j))
+                eos_state%T = max(sy(i,j,temp_comp)+t0_edge,small_temp)
+            else
+                eos_state%T = max(sy(i,j,temp_comp),small_temp)
+            end if
+
+             ! get edge-centered density and species
+            if (species_pred_type .eq. predict_rhoprime_and_X) then
+                
+                ! interface states are rho' and X
+                rho0_edge = HALF * (rho0_cart(i,j-1) + rho0_cart(i,j))
+                eos_state%rho = sy(i,j,rho_comp) + rho0_edge
+
+                eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1) 
+
+            else if (species_pred_type .eq. predict_rhoX) then
+
+                ! interface states are rho and (rho X)
+                eos_state%rho = sy(i,j,rho_comp)
+
+                eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            else if (species_pred_type .eq. predict_rho_and_X) then
+
+                ! interface states are rho and X
+                eos_state%rho = sy(i,j,rho_comp)
+
+                eos_state%xn(:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+
+            endif
+
+            pt_index(:) = (/i, j, -1/)
+
+            call eos(eos_input_rt, eos_state, pt_index)
+             
+            if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+                 enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                sy(i,j,rhoh_comp) = eos_state%h
+
+            else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                rhoh0_edge = HALF * (rhoh0_cart(i,j-1) + rhoh0_cart(i,j))
+                sy(i,j,rhoh_comp) = eos_state%rho*eos_state%h - rhoh0_edge
+            end if
+             
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+  end subroutine makeHfromRhoT_edge_2d_polar
+
   
   !----------------------------------------------------------------------------
   ! makeHfromRhoT_edge_3d_cart
@@ -801,7 +954,7 @@ contains
 
     use variables,             only: temp_comp
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab)    , intent(inout) :: state(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
@@ -833,7 +986,11 @@ contains
           case (1)
              call makeTfromRhoH_1d(sp(:,1,1,:), lo, hi, ng, p0(n,:))
           case (2)
-             call makeTfromRhoH_2d(sp(:,:,1,:), lo, hi, ng, p0(n,:))
+             if (polar .eq. 1) then
+                call makeTfromRhoH_2d_polar(sp(:,:,1,:), lo, hi, ng, p0(1,:), dx(n,:))
+             else
+                call makeTfromRhoH_2d(sp(:,:,1,:), lo, hi, ng, p0(n,:))
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call makeTfromRhoH_3d_sphr(sp(:,:,:,:), lo, hi, ng, p0(1,:), dx(n,:))
@@ -993,6 +1150,91 @@ contains
 
   end subroutine makeTfromRhoH_2d
 
+
+  !----------------------------------------------------------------------------
+  ! makeTfromRhoH_2d_polar
+  !----------------------------------------------------------------------------
+  subroutine makeTfromRhoH_2d_polar(state,lo,hi,ng,p0,dx)
+
+    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use eos_module,    only: eos_input_re, eos_input_rh, eos
+    use eos_type_module
+    use network,       only: nspec
+    use probin_module, only: use_eos_e_instead_of_h
+    use fill_3d_module
+
+    integer          , intent(in)    :: lo(:), hi(:), ng
+    real(kind=dp_t)  , intent(inout) :: state(lo(1)-ng:,lo(2)-ng:,:)
+    real(kind=dp_t)  , intent(in   ) ::  p0(0:)
+    real(kind=dp_t)  , intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i, j, k
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:)
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
+    if (use_eos_e_instead_of_h) then
+
+       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),1))
+       call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+
+       !$OMP PARALLEL DO PRIVATE(i,j, eos_state, pt_index)
+        do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+             
+                ! (rho, (h->e)) --> T, p
+             
+                eos_state%rho   = state(i,j,rho_comp)
+                eos_state%T     = state(i,j,temp_comp)
+                eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                ! e = h - p/rho
+                eos_state%e = state(i,j,rhoh_comp) / state(i,j,rho_comp) - &
+                     p0_cart(i,j,1) / state(i,j,rho_comp)
+                
+                pt_index(:) = (/i, j, -1/)
+             
+                call eos(eos_input_re, eos_state, pt_index)
+             
+                state(i,j,temp_comp) = eos_state%T
+             
+            enddo
+        enddo
+       !$OMP END PARALLEL DO
+
+       deallocate(p0_cart)
+
+    else
+
+       !$OMP PARALLEL DO PRIVATE(i,j, eos_state, pt_index)
+        do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+             
+                ! (rho, h) --> T, p
+             
+                eos_state%rho   = state(i,j,rho_comp)
+                eos_state%T     = state(i,j,temp_comp)
+                eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                eos_state%h = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+                
+                pt_index(:) = (/i, j, -1/)
+             
+                call eos(eos_input_rh, eos_state, pt_index)
+             
+                state(i,j,temp_comp) = eos_state%T
+             
+            enddo
+        enddo
+       !$OMP END PARALLEL DO
+
+    endif
+
+  end subroutine makeTfromRhoH_2d_polar
+
+  
+  
   !----------------------------------------------------------------------------
   ! makeTfromRhoH_3d
   !----------------------------------------------------------------------------
@@ -1166,7 +1408,7 @@ contains
 
     use variables,             only: temp_comp
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab)    , intent(inout) :: state(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
@@ -1198,7 +1440,11 @@ contains
           case (1)
              call makeTfromRhoP_1d(sp(:,1,1,:),lo,hi,ng,p0(n,:))
           case (2)
-             call makeTfromRhoP_2d(sp(:,:,1,:),lo,hi,ng,p0(n,:))
+             if (polar .eq. 1) then
+                call makeTfromRhoP_2d_polar(sp(:,:,1,:),lo,hi,ng,p0(1,:),dx(n,:))
+             else
+                call makeTfromRhoP_2d(sp(:,:,1,:),lo,hi,ng,p0(n,:))
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call makeTfromRhoP_3d_sphr(sp(:,:,:,:),lo,hi,ng,p0(1,:),dx(n,:))
@@ -1311,6 +1557,61 @@ contains
     
   end subroutine makeTfromRhoP_2d
 
+!----------------------------------------------------------------------------
+  ! makeTfromRhoP_2d_polar
+  !----------------------------------------------------------------------------
+  subroutine makeTfromRhoP_2d_polar(state,lo,hi,ng,p0,dx)
+
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
+    use eos_module,    only: eos_input_rp, eos
+    use eos_type_module
+    use network,       only: nspec
+    use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
+
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i, j
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:)
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+
+    !$OMP PARALLEL DO PRIVATE(i,j, eos_state, pt_index)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+             
+             ! (rho, p) --> T
+             
+             eos_state%rho  = state(i,j,rho_comp)
+             eos_state%T = state(i,j,temp_comp)
+             if (use_pprime_in_tfromp) then
+                eos_state%p = p0_cart(i,j,1) + state(i,j,pi_comp)
+             else
+                eos_state%p = p0_cart(i,j,1)
+             endif
+             eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+             pt_index(:) = (/i, j, -1/)
+             
+             call eos(eos_input_rp, eos_state, pt_index)
+             
+             state(i,j,temp_comp) = eos_state%T
+             
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+    
+    deallocate(p0_cart)
+
+  end subroutine makeTfromRhoP_2d_polar  
+  
   !----------------------------------------------------------------------------
   ! makeTfromRhoP_3d
   !----------------------------------------------------------------------------
@@ -1622,7 +1923,7 @@ contains
     use ml_layout_module
     use define_bc_module
     use variables, only: rhoh_comp, temp_comp
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
@@ -1653,7 +1954,11 @@ contains
           case (1)
              call makeTHfromRhoP_1d(sop(:,1,1,:), ng_s, lo, hi, p0(n,:))
           case (2)
-             call makeTHfromRhoP_2d(sop(:,:,1,:), ng_s, lo, hi, p0(n,:))
+             if (polar .eq. 1) then
+                call makeTHfromRhoP_2d_polar(sop(:,:,1,:), ng_s, lo, hi, p0(1,:), dx(n,:))
+             else   
+                call makeTHfromRhoP_2d(sop(:,:,1,:), ng_s, lo, hi, p0(n,:))
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call makeTHfromRhoP_3d_sphr(sop(:,:,:,:), ng_s, lo, hi, p0(1,:), dx(n,:))
@@ -1766,6 +2071,62 @@ contains
     end do
 
   end subroutine makeTHfromRhoP_2d
+
+  
+  !----------------------------------------------------------------------------
+  ! makeTHfromRhoP_2d_polar
+  !----------------------------------------------------------------------------
+  subroutine makeTHfromRhoP_2d_polar(s,ng_s,lo,hi,p0,dx)
+
+    use eos_module, only: eos_input_rp, eos
+    use eos_type_module
+    use network,    only: nspec
+    use variables
+    use fill_3d_module
+    use probin_module, only: use_pprime_in_tfromp
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng_s
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
+
+    ! local
+    integer    :: i,j
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:)
+    integer :: pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+
+    !$OMP PARALLEL DO PRIVATE(i,j, eos_state, pt_index)
+    do j=lo(2),hi(2)
+        do i=lo(1),hi(1)
+             
+             eos_state%rho   = s(i,j,rho_comp)
+             eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
+             eos_state%T     = s(i,j,temp_comp)
+             if (use_pprime_in_tfromp) then
+                eos_state%p     = p0_cart(i,j,1) + s(i,j,pi_comp)
+             else
+                eos_state%p     = p0_cart(i,j,1)
+             endif
+
+             pt_index(:) = (/i, j, -1/)
+             
+             call eos(eos_input_rp, eos_state, pt_index)
+             
+             s(i,j,rhoh_comp) = eos_state%rho*eos_state%h
+             s(i,j,temp_comp) = eos_state%T
+             
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+    deallocate(p0_cart)
+
+  end subroutine makeTHfromRhoP_2d_polar
+  
   
   !----------------------------------------------------------------------------
   ! makeTHfromRhoP_3d

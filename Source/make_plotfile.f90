@@ -50,7 +50,7 @@ contains
                              use_tfromp, plot_h_with_use_tfromp, plot_gpi, plot_cs, &
                              plot_sponge_fdamp, dm_in, use_particles, &
                              plot_processors, plot_pidivu, plot_brunt_freq
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(plot_t), intent(inout) :: p
 
@@ -194,7 +194,7 @@ contains
                              plot_cs, sponge_kappa, plot_sponge_fdamp, use_particles, &
                              plot_processors, plot_pidivu, plot_brunt_freq, use_alt_energy_fix
     use geometry, only: spherical, nr_fine, nlevs_radial, numdisjointchunks, &
-         r_start_coord, r_end_coord
+         r_start_coord, r_end_coord, polar
     use average_module
     use ml_restrict_fill_module
     use bl_constants_module
@@ -295,7 +295,7 @@ contains
 
 
        ! rhopert and rhohpert
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           if (p%icomp_rhopert > 0) then
              call make_rhopert( plotdata(n),p%icomp_rhopert, s(n), rho0(1,:),dx(n,:))
           endif
@@ -361,7 +361,7 @@ contains
 
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        do n=1,nlevs
 
@@ -390,7 +390,7 @@ contains
                                     the_bc_tower%bc_tower_array,mla)
        end if
 
-    end if  ! spherical
+    end if  ! spherical or polar
 
     ! w0
     if (p%icomp_w0 > 0) then
@@ -413,7 +413,7 @@ contains
     ! divw0
     if (p%icomp_divw0 > 0) then
        do n=1,nlevs
-          if (spherical .eq. 1) then
+          if (spherical .eq. 1 .or. polar .eq. 1) then
              n_1d = 1
           else
              n_1d = n
@@ -469,7 +469,7 @@ contains
        if (do_smallscale) then
           h0 = ZERO
        else
-          if (spherical .eq. 1) then
+          if (spherical .eq. 1 .or. polar .eq. 1) then
              ! only one level of base state so rho0 is defined everywhere
              h0 = rhoh0 / rho0
           else
@@ -519,14 +519,14 @@ contains
 
     do n = 1,nlevs
 
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           n_1d = 1
        else
           n_1d = n
        end if
 
        ! RADIAL AND CIRCUMFERENTIAL VELOCITY (spherical only)
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
           if (p%icomp_velr > 0 .or. p%icomp_velc > 0) then
              call make_velrc(plotdata(n),p%icomp_velr,p%icomp_velc, &
                              u(n),w0r_cart(n),normal(n))
@@ -556,7 +556,7 @@ contains
 
        ! make_tfromp -> TFROMP, TPERT, MACHNUMBER, CS, DELTAGAMMA, and ENTROPY
        ! make_tfromH -> TFROMP AND DELTA_P
-       if (spherical .eq. 1) then
+       if (spherical .eq. 1 .or. polar .eq. 1) then
 
           if ( p%icomp_tfromp > 0 .or. p%icomp_tpert > 0 .or. &
                p%icomp_machno > 0 .or. p%icomp_cs > 0 .or. p%icomp_dg > 0 .or. &
@@ -824,7 +824,7 @@ contains
        call destroy(pi_cc(n))
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy(w0r_cart(n))
           do comp=1,dm

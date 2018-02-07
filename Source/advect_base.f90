@@ -16,7 +16,7 @@ contains
   subroutine advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
 
     use bl_prof_module, only: bl_prof_timer, build, destroy
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use restrict_base_module, only: restrict_base, fill_ghost_base
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
@@ -30,7 +30,7 @@ contains
 
     call build(bpt, "advect_base_dens")
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        call advect_base_dens_planar(w0,rho0_old,rho0_new,rho0_predicted_edge,dt)
        call restrict_base(rho0_new,.true.)
        call fill_ghost_base(rho0_new,.true.)
@@ -151,7 +151,7 @@ contains
                                   psi,dt)
 
     use bl_prof_module, only: bl_prof_timer, build, destroy
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use restrict_base_module, only: restrict_base, fill_ghost_base
 
     real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
@@ -167,7 +167,7 @@ contains
 
     call build(bpt, "advect_base_enthalpy")
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        call advect_base_enthalpy_planar(w0,rho0_old,rhoh0_old,rhoh0_new, &
                                         rho0_predicted_edge,psi,dt)
        call restrict_base(rhoh0_new,.true.)

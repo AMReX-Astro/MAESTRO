@@ -31,7 +31,7 @@ contains
                    grav,dx,cflfac,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, nlevs_radial, nr_fine
+    use geometry, only: spherical, polar, nlevs_radial, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use mk_vel_force_module
@@ -126,7 +126,7 @@ contains
       endif
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        do n=1,nlevs
           do comp=1,dm
@@ -205,11 +205,26 @@ contains
                            w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
           case (2)
-             call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
-                           fp(:,:,1,:), ng_f, bp(:,:,1,1), ng_b, dUp(:,:,1,1), ng_dU, &
-                           dSdtp(:,:,1,1), ng_dS, &
-                           w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
-                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
+             if (polar .eq. 1) then
+                ng_w = nghost(w0mac(1,1))
+                wxp => dataptr(w0mac(n,1), i)
+                wyp => dataptr(w0mac(n,2), i)
+                
+                call estdt_2d_polar(uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
+                                   fp(:,:,1,:), ng_f ,bp(:,:,1,1) ,ng_b , dUp(:,:,1,1), ng_dU, &
+                                   dSdtp(:,:,1,1), ng_dS, &
+                                   w0(1,:),wxp(:,:,1,1),wyp(:,:,1,1),ng_w, &
+                                   p0(1,:), gamma1bar(1,:), hp(1,:), lo, hi, dx(n,:), &
+                                   rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
+             
+            else
+             
+                call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
+                            fp(:,:,1,:), ng_f, bp(:,:,1,1), ng_b, dUp(:,:,1,1), ng_dU, &
+                            dSdtp(:,:,1,1), ng_dS, &
+                            w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
+                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
+            end if
           case (3)
              if (spherical .eq. 1) then
                 ng_w = nghost(w0mac(1,1))
@@ -289,7 +304,7 @@ contains
 	endif
      end do
 
-     if (spherical .eq. 1) then
+     if (spherical .eq. 1 .or. polar .eq. 1) then
         do n=1,nlevs
            do comp=1,dm
               call destroy(w0mac(n,comp))
@@ -559,6 +574,174 @@ contains
     endif
     
   end subroutine estdt_2d
+
+  
+  subroutine estdt_2d_polar(u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
+                           divU, ng_dU, dSdt, ng_dS, &
+                           w0,w0macx,w0macy,ng_w, p0, gamma1bar, hp, &
+                           lo, hi, dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
+
+    use geometry,  only: dr, nr_fine
+    use variables, only: rho_comp
+    use probin_module, only: use_grav_dt, max_levs, buoyancy_cutoff_factor, base_cutoff_density
+    use fill_3d_module
+    
+    integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_w,ng_b
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)  
+    real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)  
+    real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)  
+    real (kind = dp_t), intent(in   ) ::  brunt(lo(1)-ng_b :,lo(2)-ng_b :)  
+    real (kind = dp_t), intent(in   ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:)
+    real (kind = dp_t), intent(in   ) ::   dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:)
+    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w :,lo(2)-ng_w :)
+    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w :,lo(2)-ng_w :)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: rho_min, cfl
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
+    
+    real (kind = dp_t), allocatable :: gp0_cart(:,:,:)
+    real (kind = dp_t), allocatable :: hp_cart(:,:,:)
+    
+    real (kind = dp_t) :: gp0(0:nr_fine)
+
+    real (kind = dp_t) :: spdx, spdy, spdr, gp_dot_u, gamma1bar_p_avg,bm
+    real (kind = dp_t) :: fx, fy, eps, denom, a, b, c
+    integer            :: i,j,r
+
+    allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),3))
+    if (use_grav_dt) then
+      allocate(hp_cart(lo(1):hi(1),lo(2):hi(2),1))
+    endif
+    
+    eps = 1.0d-8
+    
+    spdx = ZERO
+    spdy = ZERO 
+    spdr = ZERO
+    umax = ZERO
+    
+    !
+    ! Limit dt based on velocity terms
+    !
+    !$OMP PARALLEL DO PRIVATE(i,j) REDUCTION(MAX : spdx)
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdx = max(spdx ,abs(u(i,j,1)+HALF*(w0macx(i,j)+w0macx(i+1,j))))
+    enddo; enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j) REDUCTION(MAX : spdy)
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdy = max(spdy ,abs(u(i,j,2)+HALF*(w0macy(i,j)+w0macy(i,j+1))))
+    enddo; enddo
+    !$OMP END PARALLEL DO
+    
+    do j=0,nr_fine
+       spdr = max(spdr ,abs(w0(j)))
+    enddo
+
+    umax = max(umax,spdx,spdy,spdr)
+
+    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
+    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
+    if (spdr > eps) dt_adv = min(dt_adv, dr(1)/spdr)
+
+    dt_adv = dt_adv * cfl
+    
+    ! Limit dt based on forcing terms
+    fx = ZERO 
+    fy = ZERO 
+   
+    !$OMP PARALLEL DO PRIVATE(i,j) REDUCTION(MAX : fx)
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fx = max(fx,abs(force(i,j,1)))
+    enddo; enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j) REDUCTION(MAX : fy)
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fy = max(fy,abs(force(i,j,2)))
+    enddo; enddo
+    !$OMP END PARALLEL DO
+    
+    if (fx > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
+    
+    if (fy > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/fy))
+    
+    ! divU constraint
+    do r=1,nr_fine-1
+       gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
+       gp0(r) = ( (p0(r) - p0(r-1))/dr(1) ) / gamma1bar_p_avg
+    end do
+    gp0(nr_fine) = gp0(nr_fine-1)
+    gp0(      0) = gp0(        1)
+
+    call put_1d_array_on_cart_2d_polar(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,a,b,c,gp_dot_u,denom) REDUCTION(MIN : dt_divu)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+            
+            gp_dot_u = u(i,j,1) * gp0_cart(i,j,1) + &
+                    u(i,j,2) * gp0_cart(i,j,2) 
+                    
+            denom = divU(i,j) - gp_dot_u 
+            
+            if (denom > ZERO) then
+                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
+            endif
+            !
+            ! An additional dS/dt timestep constraint originally
+            ! used in nova
+            ! solve the quadratic equation
+            ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
+            ! which is equivalent to
+            ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
+            ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
+            !
+            if (dSdt(i,j) .gt. 1.d-20) then
+                a = HALF*s(i,j,rho_comp)*dSdt(i,j)
+                b = s(i,j,rho_comp)*divU(i,j)
+                c = rho_min - s(i,j,rho_comp)
+                dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+            endif
+                        
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    if (use_grav_dt) then
+      call put_1d_array_on_cart_2d_polar(.false.,.false.,hp,hp_cart,lo,hi,dx,0)
+      !
+      ! Limit dt based on brunt vaisaila frequency and the pressure scale height. 
+      ! This allows to resolve gravity waves up to a wavelength of the pressure scale height in time. 
+      !
+      
+      bm = ZERO
+
+      !$OMP PARALLEL DO PRIVATE(i,j) REDUCTION(MAX : bm)
+      do j = lo(2), hi(2); do i = lo(1), hi(1)
+        if (s(i,j,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
+	  bm = max(bm ,sqrt(abs(brunt(i,j)))*hp_cart(i,j,1))
+	endif
+      enddo; enddo
+      !$OMP END PARALLEL DO
+
+      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
+      dt_grav = dt_grav * cfl    
+      
+    endif
+    
+    deallocate(gp0_cart)
+    if (use_grav_dt) then
+      deallocate(hp_cart)
+    endif
+
+  end subroutine estdt_2d_polar
+  
+  
   
   subroutine estdt_3d_cart(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &

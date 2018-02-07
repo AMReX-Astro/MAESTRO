@@ -21,7 +21,7 @@ contains
   subroutine init_particles(particles,s,rho0,rhoh0,p0,tempbar,mla,dx,init_mode)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use fill_3d_module
 
     type(particle_container), intent(inout) :: particles
@@ -54,7 +54,7 @@ contains
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
 
-          if (spherical == 1) then
+          if (spherical == 1 .or. polar .eq. 1) then
              call init_particles_sph(n, sop(:,:,:,:), ng_s, &
                                      rho0(1,:), rhoh0(1,:), &
                                      p0(1,:), tempbar(1,:), lo, hi, &

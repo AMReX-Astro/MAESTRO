@@ -10,9 +10,9 @@ module fill_3d_module
 
   private
   
-  public :: put_1d_array_on_cart,  put_1d_array_on_cart_3d_sphr
+  public :: put_1d_array_on_cart,  put_1d_array_on_cart_3d_sphr,  put_1d_array_on_cart_2d_polar
   public :: make_w0mac, make_s0mac
-  public :: make_normal, make_normal_3d_sphr
+  public :: make_normal, make_normal_3d_sphr, make_normal_2d_polar
   public :: put_data_on_faces
   public :: put_1d_array_on_cart_irreg
   
@@ -23,7 +23,7 @@ contains
 
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use ml_layout_module
     use ml_restrict_fill_module
     use variables, only: foextrap_comp
@@ -60,8 +60,13 @@ contains
              call put_1d_array_on_cart_1d(is_input_edge_centered, &
                                           s0(n,:),sp(:,1,1,:),lo,hi,ng_s)
           case (2)
-             call put_1d_array_on_cart_2d(is_input_edge_centered,is_output_a_vector, &
+             if (polar .eq. 0) then
+                call put_1d_array_on_cart_2d(is_input_edge_centered,is_output_a_vector, &
                                           s0(n,:),sp(:,:,1,:),lo,hi,ng_s)
+             else 
+                call put_1d_array_on_cart_2d_polar(is_input_edge_centered,is_output_a_vector, &
+                                          s0(1,:),sp(:,:,1,:),lo,hi,dx(n,:),ng_s)
+             endif
           case (3)
              if (spherical .eq. 0) then
                 call put_1d_array_on_cart_3d(is_input_edge_centered,is_output_a_vector, &
@@ -210,6 +215,249 @@ contains
 
   end subroutine put_1d_array_on_cart_2d
 
+  subroutine put_1d_array_on_cart_2d_polar(is_input_edge_centered,is_output_a_vector, &
+                                          s0,s0_cart,lo,hi,dx,ng_s)
+
+    use bl_constants_module
+    use geometry, only: dr, center, r_cc_loc, nr_fine, r_edge_loc
+    use probin_module, only: s0_interp_type, w0_interp_type, prob_lo
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
+    logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
+    real(kind=dp_t), intent(in   ) :: s0(0:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,index
+    real(kind=dp_t) :: x,y
+    real(kind=dp_t) :: radius,rfac,s0_cart_val
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_3d_sphr")
+
+    if (is_input_edge_centered) then
+
+       ! we currently have three different ideas for computing s0_cart, 
+       ! where s0 is edge-centered.
+       ! 1.  Piecewise constant
+       ! 2.  Piecewise linear
+       ! 3.  Quadratic
+
+       if (w0_interp_type .eq. 1) then
+
+          !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,rfac,s0_cart_val)
+          do j = lo(2),hi(2)
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (rfac .gt. 0.5d0) then
+                    s0_cart_val = s0(index+1)
+                else
+                    s0_cart_val = s0(index)
+                end if
+
+                if (is_output_a_vector) then
+                    s0_cart(i,j,1) = s0_cart_val * x * (ONE / radius)
+                    s0_cart(i,j,2) = s0_cart_val * y * (ONE / radius)
+                else
+                    s0_cart(i,j,1) = s0_cart_val
+                end if
+
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       else if (w0_interp_type .eq. 2) then
+
+          !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,rfac,s0_cart_val)
+          do j = lo(2),hi(2)
+            y = prob_lo(2) +(dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1),hi(1)
+                x = prob_lo(1) +(dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+                if (index .lt. nr_fine) then
+                    s0_cart_val = rfac * s0(index+1) + (ONE-rfac) * s0(index)
+                else
+                    s0_cart_val = s0(nr_fine)
+                end if
+
+                if (is_output_a_vector) then
+                    s0_cart(i,j,1) = s0_cart_val * x * (ONE / radius)
+                    s0_cart(i,j,2) = s0_cart_val * y * (ONE / radius)
+                else
+                    s0_cart(i,j,1) = s0_cart_val
+                end if
+
+            end do
+          end do
+          
+          !$OMP END PARALLEL DO
+
+       else if (w0_interp_type .eq. 3) then
+
+          !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,s0_cart_val)
+          do j = lo(2),hi(2)
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                ! index refers to the lo point in the quadratic stencil
+                if (index .le. 0) then
+                    index = 0
+                else if (index .ge. nr_fine-1) then
+                    index = nr_fine-2
+                else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                    index = index-1
+                end if
+
+                call quad_interp(radius, &
+                                r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                r_edge_loc(1,index+2), &
+                                s0_cart_val, &
+                                s0(index),s0(index+1),s0(index+2))
+
+                if (is_output_a_vector) then
+                    s0_cart(i,j,1) = s0_cart_val * x * (ONE / radius)
+                    s0_cart(i,j,2) = s0_cart_val * y * (ONE / radius)
+                else
+                    s0_cart(i,j,1) = s0_cart_val
+                end if
+
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       else
+          call bl_error('Error: w0_interp_type not defined')
+       end if
+
+    else
+
+       ! we currently have three different ideas for computing s0_cart, 
+       ! where s0 is bin-centered.
+       ! 1.  Piecewise constant
+       ! 2.  Piecewise linear
+       ! 3.  Quadratic
+       
+       if (s0_interp_type .eq. 1) then
+
+          !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,s0_cart_val)
+          do j = lo(2),hi(2)
+            y = prob_lo(2) +(dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                s0_cart_val = s0(index)
+
+                if (is_output_a_vector) then
+                    s0_cart(i,j,1) = s0_cart_val * x * (ONE / radius)
+                    s0_cart(i,j,2) = s0_cart_val * y * (ONE / radius)
+                else
+                    s0_cart(i,j,1) = s0_cart_val
+                end if
+
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       else if (s0_interp_type .eq. 2) then
+
+          !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,s0_cart_val)
+          do j = lo(2),hi(2)
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                if (radius .ge. r_cc_loc(1,index)) then
+                    if (index .ge. nr_fine-1) then
+                        s0_cart_val = s0(nr_fine-1)
+                    else
+                        s0_cart_val = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                            + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
+                    endif
+                else
+                    if (index .eq. 0) then
+                        s0_cart_val = s0(index)
+                    else if (index .gt. nr_fine-1) then
+                        s0_cart_val = s0(nr_fine-1)
+                    else
+                        s0_cart_val = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                            + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
+                    end if
+                end if
+
+                if (is_output_a_vector) then
+                    s0_cart(i,j,1) = s0_cart_val * x * (ONE / radius)
+                    s0_cart(i,j,2) = s0_cart_val * y * (ONE / radius)
+                else
+                    s0_cart(i,j,1) = s0_cart_val
+                end if
+
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       else if (s0_interp_type .eq. 3) then
+
+          !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,s0_cart_val)
+          do j = lo(2),hi(2)
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1),hi(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                ! index refers to the center point in the quadratic stencil.
+                ! we need to modify this if we're too close to the edge
+                if (index .eq. 0) then
+                    index = 1
+                else if (index .ge. nr_fine-1) then
+                    index = nr_fine-2
+                end if
+
+                call quad_interp(radius, &
+                                r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                r_cc_loc(1,index+1), &
+                                s0_cart_val, &
+                                s0(index-1),s0(index),s0(index+1))
+
+                if (is_output_a_vector) then
+                    s0_cart(i,j,1) = s0_cart_val * x * (ONE / radius)
+                    s0_cart(i,j,2) = s0_cart_val * y * (ONE / radius)
+                else
+                    s0_cart(i,j,1) = s0_cart_val
+                end if
+
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       else
+          call bl_error('Error: s0_interp_type not defined')
+       end if
+
+    end if
+
+    call destroy(bpt)
+
+  end subroutine put_1d_array_on_cart_2d_polar  
+  
   subroutine put_1d_array_on_cart_3d(is_input_edge_centered,is_output_a_vector,s0,s0_cart, &
                                      lo,hi,ng_s)
 
@@ -548,7 +796,7 @@ contains
   subroutine make_w0mac(mla,w0,w0mac,dx,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use probin_module, only: w0mac_interp_type
     use define_bc_module
 
@@ -574,8 +822,8 @@ contains
 
     call build(bpt, "make_w0mac")
 
-    if (spherical .eq. 0) then
-       call bl_error('Error: only call make_w0mac for spherical')
+    if (spherical .eq. 0 .and. polar .eq. 0) then
+       call bl_error('Error: only call make_w0mac for spherical or polar')
     end if
 
     dm = mla%dim
@@ -601,12 +849,19 @@ contains
        do i=1, nfabs(w0mac(n,1))
           w0xp => dataptr(w0mac(n,1), i)
           w0yp => dataptr(w0mac(n,2), i)
-          w0zp => dataptr(w0mac(n,3), i)
-          w0p  => dataptr(w0_cart(n), i)
           lo = lwb(get_box(w0mac(n,1), i))
           hi = upb(get_box(w0mac(n,1), i))
-          call make_w0mac_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+          select case(dm)
+          case(2)
+            call make_w0mac_2d_polar(w0(1,:),w0xp(:,:,1,1),w0yp(:,:,1,1), &
+                                  ng_w0,w0p(:,:,1,:),ng_wc,lo,hi,dx(n,:))
+          
+          case(3)
+            w0zp => dataptr(w0mac(n,3), i)
+            w0p  => dataptr(w0_cart(n), i)
+            call make_w0mac_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                                   ng_w0,w0p(:,:,:,:),ng_wc,lo,hi,dx(n,:))
+          end select
        end do
     end do
 
@@ -618,6 +873,223 @@ contains
 
   end subroutine make_w0mac
 
+  subroutine make_w0mac_2d_polar(w0,w0macx,w0macy,ng_w0,w0_cart,ng_wc,lo,hi,dx)
+
+    use bl_constants_module
+    use geometry, only: dr, center, nr_fine, r_edge_loc
+    use probin_module, only: w0mac_interp_type, prob_lo
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_w0,ng_wc
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(inout) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(inout) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(inout) :: w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,index
+    real(kind=dp_t) :: x,y
+    real(kind=dp_t) :: radius,w0_cart_val,rfac
+    real(kind=dp_t), allocatable :: w0_nodal(:,:,:)
+
+    ! we currently have three different ideas for computing w0mac
+    ! 1.  Interpolate w0 to cell centers, then average to edges
+    ! 2.  Interpolate w0 to edges directly using linear interpolation
+    ! 3.  Interpolate w0 to edges directly using quadratic interpolation
+    ! 4.  Interpolate w0 to nodes, then average to edges
+
+    if (w0mac_interp_type .eq. 1) then
+
+       !$OMP PARALLEL PRIVATE(i,j)
+
+       !$OMP DO
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+2
+             w0macx(i,j) = HALF* (w0_cart(i-1,j,1) + w0_cart(i,j,1))
+          end do
+       end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+        do j=lo(2)-1,hi(2)+2
+            do i=lo(1)-1,hi(1)+1
+            w0macy(i,j) = HALF* (w0_cart(i,j-1,2) + w0_cart(i,j,2))
+            end do
+        end do
+       !$OMP END DO 
+
+       !$OMP END PARALLEL
+
+    else if (w0mac_interp_type .eq. 2) then
+
+       !$OMP PARALLEL PRIVATE(i,j,x,y,radius,index,rfac,w0_cart_val)
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+1
+         y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+         do i = lo(1)-1,hi(1)+2
+            x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
+            radius = sqrt(x**2 + y**2)
+            index  = int(radius / dr(1))
+
+            rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+            if (index .lt. nr_fine) then
+                w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
+            else
+                w0_cart_val = w0(nr_fine)
+            end if
+
+            w0macx(i,j) = w0_cart_val * x / radius
+
+         end do
+       end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+2
+          y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
+          do i = lo(1)-1,hi(1)+1
+            x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+            radius = sqrt(x**2 + y**2)
+            index  = int(radius / dr(1))
+
+            rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+            if (index .lt. nr_fine) then
+                w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
+            else
+                w0_cart_val = w0(nr_fine)
+            end if
+
+            w0macy(i,j) = w0_cart_val * y / radius
+
+          end do
+       end do
+       !$OMP END DO 
+
+       !$OMP END PARALLEL
+
+    else if (w0mac_interp_type .eq. 3) then
+
+       !$OMP PARALLEL PRIVATE(i,j,x,y,radius,index,w0_cart_val)
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+1
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1)-1,hi(1)+2
+                x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                ! index refers to the lo point in the quadratic stencil
+                if (index .le. 0) then
+                    index = 0
+                else if (index .ge. nr_fine-1) then
+                    index = nr_fine-2
+                else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                    index = index-1
+                end if
+
+                call quad_interp(radius, &
+                                    r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                    r_edge_loc(1,index+2), &
+                                    w0_cart_val, &
+                                    w0(index),w0(index+1),w0(index+2))
+
+                w0macx(i,j) = w0_cart_val * x / radius
+
+            end do
+        end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+2
+           y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
+           do i = lo(1)-1,hi(1)+1
+              x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+              radius = sqrt(x**2 + y**2)
+              index  = int(radius / dr(1))
+
+              ! index refers to the lo point in the quadratic stencil
+              if (index .le. 0) then
+                 index = 0
+              else if (index .ge. nr_fine-1) then
+                 index = nr_fine-2
+              else if (radius-r_edge_loc(1,index) .lt. r_edge_loc(1,index+1)) then
+                 index = index-1
+              end if
+
+              call quad_interp(radius, &
+                                 r_edge_loc(1,index),r_edge_loc(1,index+1), &
+                                 r_edge_loc(1,index+2), &
+                                 w0_cart_val, &
+                                 w0(index),w0(index+1),w0(index+2))
+
+              w0macy(i,j) = w0_cart_val * y / radius
+
+          end do
+       end do
+       !$OMP END DO 
+
+       !$OMP END PARALLEL
+
+    else if (w0mac_interp_type .eq. 4) then
+
+       allocate(w0_nodal(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,2))
+
+       !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index,rfac,w0_cart_val)
+       do j = lo(2)-1,hi(2)+2
+          y = prob_lo(2) + (dble(j))*dx(2) - center(2)
+          do i = lo(1)-1,hi(1)+2
+             x = prob_lo(1) + (dble(i))*dx(1) - center(1)
+
+             radius = sqrt(x**2 + y**2)
+             index  = int(radius / dr(1))
+                
+             rfac = (radius - dble(index)*dr(1)) / dr(1)
+
+             if (index .lt. nr_fine) then
+                w0_cart_val = rfac * w0(index+1) + (ONE-rfac) * w0(index)
+             else
+                w0_cart_val = w0(nr_fine)
+             end if
+
+             w0_nodal(i,j,1) = w0_cart_val * x * (ONE / radius)
+             w0_nodal(i,j,2) = w0_cart_val * y * (ONE / radius)
+
+          end do
+       end do
+       !$OMP END PARALLEL DO
+
+       !$OMP PARALLEL PRIVATE(i,j)
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+1
+          do i = lo(1)-1,hi(1)+2
+             w0macx(i,j) = HALF*( w0_nodal(i,j ,1) + w0_nodal(i,j+1,1))
+          end do
+       end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+        do j = lo(2)-1,hi(2)+2
+            do i = lo(1)-1,hi(1)+1
+                w0macy(i,j) = HALF*( w0_nodal(i,j ,2) + w0_nodal(i+1,j ,2) )
+            end do
+        end do
+       !$OMP END DO 
+       
+       !$OMP END PARALLEL
+
+       deallocate(w0_nodal)
+
+    else
+       call bl_error('Error: w0mac_interp_type not defined')
+    end if
+
+  end subroutine make_w0mac_2d_polar
+  
+  
   subroutine make_w0mac_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,w0_cart,ng_wc,lo,hi,dx)
 
     use bl_constants_module
@@ -942,7 +1414,7 @@ contains
   subroutine make_s0mac(mla,s0,s0mac,dx,bccomp,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use define_bc_module
     use probin_module, only: s0mac_interp_type
 
@@ -972,7 +1444,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        call bl_error('Error: only call make_s0mac for spherical')
     end if
 
@@ -996,13 +1468,20 @@ contains
        do i=1, nfabs(s0mac(n,1))
           s0xp => dataptr(s0mac(n,1), i)
           s0yp => dataptr(s0mac(n,2), i)
-          s0zp => dataptr(s0mac(n,3), i)
-          s0p  => dataptr(s0_cart(n), i)
           lo = lwb(get_box(s0mac(n,1), i))
           hi = upb(get_box(s0mac(n,1), i))
-          call make_s0mac_3d_sphr(s0(1,:),s0xp(:,:,:,1),s0yp(:,:,:,1), &
-                                  s0zp(:,:,:,1),ng_sm,s0p(:,:,:,1),ng_s0, &
-                                  lo,hi,dx(n,:))
+          select case(dm)
+          case(2)
+            call make_s0mac_2d_polar(s0(1,:),s0xp(:,:,1,1),s0yp(:,:,1,1), &
+                                    ng_sm,s0p(:,:,1,1),ng_s0, &
+                                    lo,hi,dx(n,:))
+          case(3)
+            s0zp => dataptr(s0mac(n,3), i)
+            s0p  => dataptr(s0_cart(n), i)
+            call make_s0mac_3d_sphr(s0(1,:),s0xp(:,:,:,1),s0yp(:,:,:,1), &
+                                    s0zp(:,:,:,1),ng_sm,s0p(:,:,:,1),ng_s0, &
+                                    lo,hi,dx(n,:))
+          end select
        end do
     end do
 
@@ -1014,6 +1493,184 @@ contains
 
   end subroutine make_s0mac
 
+  
+    subroutine make_s0mac_2d_polar(s0,s0macx,s0macy,ng_sm,s0_cart,ng_s0,lo,hi,dx)
+
+    use bl_constants_module
+    use geometry, only: dr, center, nr_fine, r_cc_loc
+    use probin_module, only: s0mac_interp_type, prob_lo
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sm,ng_s0
+    real(kind=dp_t), intent(in   ) :: s0(0:)
+    real(kind=dp_t), intent(inout) ::  s0macx(lo(1)-ng_sm:,lo(2)-ng_sm:)
+    real(kind=dp_t), intent(inout) ::  s0macy(lo(1)-ng_sm:,lo(2)-ng_sm:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s0:,lo(2)-ng_s0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,index
+    real(kind=dp_t) :: x,y
+    real(kind=dp_t) :: radius
+
+    ! we currently have three different ideas for computing s0mac
+    ! 1.  Interpolate s0 to cell centers, then average to edges
+    ! 2.  Interpolate s0 to edges directly using linear interpolation
+    ! 3.  Interpolate s0 to edges directly using quadratic interpolation
+    ! 4.  Interpolate s0 to nodes, then average to edges
+
+    if (s0mac_interp_type .eq. 1) then
+
+       !$OMP PARALLEL PRIVATE(i,j)
+
+       !$OMP DO
+        do j = lo(2)-1,hi(2)+1
+            do i = lo(1)-1,hi(1)+2
+                s0macx(i,j) = HALF*(s0_cart(i,j)+s0_cart(i-1,j))
+            end do
+        end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+        do j = lo(2)-1,hi(2)+2
+            do i = lo(1)-1,hi(1)+1
+                s0macy(i,j) = HALF*(s0_cart(i,j)+s0_cart(i,j-1))
+            end do
+        end do
+       !$OMP END DO 
+
+       !$OMP END PARALLEL
+      
+    else if (s0mac_interp_type .eq. 2) then
+
+       !$OMP PARALLEL PRIVATE(i,j,x,y,radius,index)
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+1
+          y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+          do i = lo(1)-1,hi(1)+2
+            x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
+            radius = sqrt(x**2 + y**2 )
+            index  = int(radius / dr(1))
+
+            if (radius .ge. r_cc_loc(1,index)) then
+                if (index .ge. nr_fine-1) then
+                    s0macx(i,j) = s0(nr_fine-1)
+                else
+                    s0macx(i,j) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                        + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
+                endif
+            else
+                if (index .eq. 0) then
+                    s0macx(i,j) = s0(index)
+                else if (index .gt. nr_fine-1) then
+                    s0macx(i,j) = s0(nr_fine-1)
+                else
+                    s0macx(i,j) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                        + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
+                end if
+            end if
+
+          end do
+       end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+2
+            y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
+            do i = lo(1)-1,hi(1)+1
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2)
+                index  = int(radius / dr(1))
+
+                if (radius .ge. r_cc_loc(1,index)) then
+                    if (index .ge. nr_fine-1) then
+                        s0macy(i,j) = s0(nr_fine-1)
+                    else
+                        s0macy(i,j) = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                            + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
+                    endif
+                else
+                    if (index .eq. 0) then
+                        s0macy(i,j) = s0(index)
+                    else if (index .gt. nr_fine-1) then
+                        s0macy(i,j) = s0(nr_fine-1)
+                    else
+                        s0macy(i,j) = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                            + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
+                    end if
+                end if
+
+            end do
+       end do
+       !$OMP END DO
+
+       !$OMP END PARALLEL
+
+    else if (s0mac_interp_type .eq. 3) then
+
+       !$OMP PARALLEL PRIVATE(i,j,x,y,radius,index)
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+1
+          y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+          do i = lo(1)-1,hi(1)+2
+            x = prob_lo(1) + (dble(i)     )*dx(1) - center(1)
+            radius = sqrt(x**2 + y**2)
+            index  = int(radius / dr(1))
+
+            ! index refers to the center point in the quadratic stencil.
+            ! we need to modify this if we're too close to the edge
+            if (index .eq. 0) then
+                index = 1
+            else if (index .ge. nr_fine-1) then
+                index = nr_fine-2
+            end if
+
+            call quad_interp(radius, &
+                                r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                r_cc_loc(1,index+1), &
+                                s0macx(i,j), &
+                                s0(index-1),s0(index),s0(index+1))
+          end do
+       end do
+       !$OMP END DO NOWAIT
+
+       !$OMP DO
+       do j = lo(2)-1,hi(2)+2
+            y = prob_lo(2) + (dble(j)     )*dx(2) - center(2)
+            do i = lo(1)-1,hi(1)+1
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 )
+                index  = int(radius / dr(1))
+
+                ! index refers to the center point in the quadratic stencil.
+                ! we need to modify this if we're too close to the edge
+                if (index .eq. 0) then
+                    index = 1
+                else if (index .ge. nr_fine-1) then
+                    index = nr_fine-2
+                end if
+
+                call quad_interp(radius, &
+                                    r_cc_loc(1,index-1),r_cc_loc(1,index), &
+                                    r_cc_loc(1,index+1), &
+                                    s0macy(i,j), &
+                                    s0(index-1),s0(index),s0(index+1))
+            end do
+       end do
+       !$OMP END DO 
+
+       !$OMP END PARALLEL
+
+    else
+
+       call bl_error('Error: s0mac_interp_type not defined')
+
+    end if
+
+  end subroutine make_s0mac_2d_polar
+
+  
+  
   subroutine make_s0mac_3d_sphr(s0,s0macx,s0macy,s0macz,ng_sm,s0_cart,ng_s0,lo,hi,dx)
 
     use bl_constants_module
@@ -1279,7 +1936,7 @@ contains
 
   subroutine make_normal(normal,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab) , intent(inout) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -1292,19 +1949,69 @@ contains
     dm = get_dim(normal(1))
     nlevs = size(normal)
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n = 1,nlevs
           do i = 1, nfabs(normal(n))
              nop => dataptr(normal(n), i)
              lo =  lwb(get_box(normal(n), i))
              hi =  upb(get_box(normal(n), i))
-             call make_normal_3d_sphr(nop(:,:,:,:),lo,hi,dx(n,:),ng_n)
+             select case(dm)
+             case(2)
+                call make_normal_2d_polar(nop(:,:,1,:),lo,hi,dx(n,:),ng_n)
+             case(3)
+                call make_normal_3d_sphr(nop(:,:,:,:),lo,hi,dx(n,:),ng_n)
+             end select
           end do
        end do
     end if
 
   end subroutine make_normal
 
+  subroutine make_normal_2d_polar(normal,lo,hi,dx,ng)
+
+    use bl_constants_module
+    use geometry, only: polar, center
+    use probin_module, only: prob_lo
+    
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(  out) :: normal(lo(1)-ng:,lo(2)-ng:,:)
+
+    integer         :: i,j,k
+    real(kind=dp_t) :: x,y,z,radius
+
+    ! normal is the unit vector in the radial direction (e_r) in polar
+    ! coordinates.
+    !
+    ! in terms of Cartesian coordinates, with unit vectors e_x, e_y,
+    !    e_r = cos(phi) e_x + sin(phi) e_y 
+    ! or
+    !    e_r = (x/R) e_x + (y/R) e_y 
+
+    if (polar .eq. 1) then
+
+       !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius)
+       do j = lo(2)-ng,hi(2)+ng
+            y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+            do i = lo(1)-ng,hi(1)+ng
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+
+                radius = sqrt(x**2 + y**2)
+
+                normal(i,j,1) = x * (ONE / radius)
+                normal(i,j,2) = y * (ONE / radius)
+            end do
+       end do
+       !$OMP END PARALLEL DO
+
+    else 
+       call bl_error('SHOULDNT CALL MAKE_2D_NORMAL WITH POLAR = 0')
+    end if
+
+  end subroutine make_normal_2d_polar
+
+  
+  
   subroutine make_normal_3d_sphr(normal,lo,hi,dx,ng)
 
     use bl_constants_module
@@ -1624,7 +2331,7 @@ contains
 
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical, nr_irreg
+    use geometry, only: spherical, polar, nr_irreg
     use ml_layout_module
     use ml_restrict_fill_module
     
@@ -1654,12 +2361,22 @@ contains
     ! level can map into
     allocate(radii(0:nr_irreg))
 
-    !$OMP PARALLEL DO PRIVATE(r)
-    do r=0,nr_irreg
-       radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
-    end do
-    !$OMP END PARALLEL DO
-
+    if (spherical .eq. 1) then
+        !$OMP PARALLEL DO PRIVATE(r)
+        do r=0,nr_irreg
+        radii(r) = sqrt(0.75d0+2.d0*r)*dx(nlevs,1)
+        end do
+        !$OMP END PARALLEL DO
+    end if
+    
+    if (polar .eq. 1) then
+        !$OMP PARALLEL DO PRIVATE(r)
+        do r=0,nr_irreg
+        radii(r) = sqrt(0.5d0+2.d0*r)*dx(nlevs,1)
+        end do
+        !$OMP END PARALLEL DO
+    end if
+    
     do n=1,nlevs
        
        do i = 1, nfabs(s0_cart(n))
@@ -1668,10 +2385,15 @@ contains
           hi =  upb(get_box(s0_cart(n), i))
           select case (dm)
           case (2)
-             call bl_error("Only call put_1d_array_on_cart_irreg for 3D spherical!")
+              if (polar .eq. 0) then
+                call bl_error("Only call put_1d_array_on_cart_irreg for 2D polar or 3D spherical!")
+              else
+                call put_1d_array_on_cart_irreg_polar(s0(1,:),radii,sp(:,:,1,:),lo,hi, &
+                                                         dx(n,:),ng_s)
+              end if
           case (3)
              if (spherical .eq. 0) then
-                call bl_error("Only call put_1d_array_on_cart_irreg for 3D spherical!")
+                call bl_error("Only call put_1d_array_on_cart_irreg for 2D polar or 3D spherical!")
              else
                 call put_1d_array_on_cart_irreg_sphr(s0(1,:),radii,sp(:,:,:,:),lo,hi, &
                                                      dx(n,:),ng_s)
@@ -1693,6 +2415,55 @@ contains
     
   end subroutine put_1d_array_on_cart_irreg
 
+  
+  
+  subroutine put_1d_array_on_cart_irreg_polar(s0,radii,s0_cart,lo,hi,dx,ng_s)
+
+    use bl_constants_module
+    use geometry, only: center, nr_irreg
+    use probin_module, only: prob_lo
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
+    real(kind=dp_t), intent(in   ) :: s0(0:),radii(0:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,index
+    real(kind=dp_t) :: x,y
+    real(kind=dp_t) :: radius
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_1d_array_on_cart_irreg_2d_polar")
+
+    !$OMP PARALLEL DO PRIVATE(i,j,x,y,radius,index)
+    do j = lo(2),hi(2)
+        y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+        do i = lo(1),hi(1)
+            x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+            radius = sqrt(x**2 + y**2 )
+
+            ! figure out which radii index this point maps into
+            index = ((radius / dx(1))**2 - 0.5d0) / 2.d0
+            
+            ! due to roundoff error, need to ensure that we are in the proper radial bin
+            if (index .lt. nr_irreg) then
+            if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
+                index = index+1
+            end if
+            end if
+
+            s0_cart(i,j,1) = s0(index)
+
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+    call destroy(bpt)
+
+  end subroutine put_1d_array_on_cart_irreg_polar
+
+  
   subroutine put_1d_array_on_cart_irreg_sphr(s0,radii,s0_cart,lo,hi,dx,ng_s)
 
     use bl_constants_module

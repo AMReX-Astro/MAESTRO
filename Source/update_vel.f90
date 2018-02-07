@@ -18,7 +18,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use ml_restrict_fill_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab)    , intent(in   ) :: uold(:)
     type(multifab)    , intent(inout) :: unew(:)
@@ -88,10 +88,19 @@ contains
           case (2)
              vmp  => dataptr(umac(n,2),i)
              uepy => dataptr(uedge(n,2),i)
+             
+             w0xp   => dataptr(w0mac(n,1),i)
+             w0yp   => dataptr(w0mac(n,2),i)
+             if (polar .eq. 1) then
+                n_1d = 1
+             else 
+                n_1d = n
+             end if
              call update_velocity_2d(uop(:,:,1,:), ng_uo, unp(:,:,1,:), ng_un, &
                                      ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                      uepx(:,:,1,:), uepy(:,:,1,:), ng_ue, &
-                                     fp(:,:,1,:), ng_f, w0(n,:), &
+                                     w0xp(:,:,1,1), w0yp(:,:,1,1), ng_w0, &
+                                     fp(:,:,1,:), ng_f, w0(n_1d,:), &
                                      lo, hi, dx(n,:), dt, spp(:,:,1,1), ng_sp)
           case (3)
              vmp  => dataptr(umac(n,2),i)
@@ -172,18 +181,22 @@ contains
   end subroutine update_velocity_1d
 
   subroutine update_velocity_2d(uold,ng_uo,unew,ng_un,umac,vmac,ng_um,uedgex,uedgey,ng_ue, &
+                                w0macx,w0macy,ng_w0, &
                                 force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp)
 
+    use geometry, only : polar
     use bl_constants_module
     use probin_module, only: do_sponge
 
-    integer, intent(in) :: lo(:), hi(:), ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_sp
+    integer, intent(in) :: lo(:), hi(:), ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_sp, ng_w0
     real (kind = dp_t), intent(in   ) ::   uold(lo(1)-ng_uo:,lo(2)-ng_uo:,:)  
     real (kind = dp_t), intent(  out) ::   unew(lo(1)-ng_un:,lo(2)-ng_un:,:)  
     real (kind = dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)  
     real (kind = dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)  
     real (kind = dp_t), intent(in   ) :: uedgex(lo(1)-ng_ue:,lo(2)-ng_ue:,:)  
-    real (kind = dp_t), intent(in   ) :: uedgey(lo(1)-ng_ue:,lo(2)-ng_ue:,:)  
+    real (kind = dp_t), intent(in   ) :: uedgey(lo(1)-ng_ue:,lo(2)-ng_ue:,:)
+    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)  
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)  
     real (kind = dp_t), intent(in   ) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
     real (kind = dp_t), intent(in   ) ::     w0(0:)
@@ -193,7 +206,10 @@ contains
     integer :: i, j
     real (kind = dp_t) ubar,vbar
     real (kind = dp_t) ugradu,ugradv
-
+    real (kind = dp_t) :: gradux,graduy
+    real (kind = dp_t) :: gradvx,gradvy
+    real (kind = dp_t) :: w0_gradur,w0_gradvr
+    
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -212,15 +228,61 @@ contains
           unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
           unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
 
-          ! subtract (w0 dot grad) Utilde term
-          vbar = HALF*(w0(j) + w0(j+1))
-          unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
-
-          ! Add the sponge
-          if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
-
        enddo
     enddo
+
+    if (polar .eq. 0) then
+
+       !$OMP PARALLEL DO PRIVATE(i,j,vbar)
+        do j = lo(2), hi(2)
+            ! subtract (w0 dot grad) Utilde term
+            vbar = HALF*(w0(j) + w0(j+1))
+        
+            ! Add the sponge
+            do i = lo(1), hi(1)
+
+                unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
+
+            ! Add the sponge
+                if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
+        
+            enddo
+        enddo
+
+       !$OMP END PARALLEL DO
+
+    else
+
+       !$OMP PARALLEL DO PRIVATE(i,j,gradux,gradvx,graduy,gradvy) &
+       !$OMP PRIVATE(w0_gradur,w0_gradvr)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                ! Subtract (w0 dot grad) Utilde term from new Utilde
+                gradux = (uedgex(i+1,j,1) - uedgex(i,j,1))/dx(1)
+                gradvx = (uedgex(i+1,j,2) - uedgex(i,j,2))/dx(1)
+                
+                graduy = (uedgey(i,j+1,1) - uedgey(i,j,1))/dx(2)
+                gradvy = (uedgey(i,j+1,2) - uedgey(i,j,2))/dx(2)
+                
+                w0_gradur = gradux * HALF*(w0macx(i,j)+w0macx(i+1,j)) &
+                          + graduy * HALF*(w0macy(i,j)+w0macy(i,j+1)) 
+                          
+                w0_gradvr = gradvx * HALF*(w0macx(i,j)+w0macx(i+1,j)) &
+                          + gradvy * HALF*(w0macy(i,j)+w0macy(i,j+1)) 
+
+
+                unew(i,j,1) = unew(i,j,1) - dt * w0_gradur
+                unew(i,j,2) = unew(i,j,2) - dt * w0_gradvr
+                
+                ! Add the sponge
+                if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
+
+             enddo
+          enddo
+       !$OMP END PARALLEL DO
+
+    end if       
 
   end subroutine update_velocity_2d
 

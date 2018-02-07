@@ -22,7 +22,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use fill_3d_module
     use ml_cc_restriction_module, only : ml_edge_restriction_c
 
@@ -86,11 +86,20 @@ contains
           case (2)
              vtp  => dataptr(utrans(n,2),i)
              vmp  => dataptr(  umac(n,2),i)
+             w0xp  => dataptr(w0mac(n,1),i)
+             w0yp  => dataptr(w0mac(n,2),i)
+             if (polar .eq. 1) then
+                n_1d = 1
+             else
+                n_1d = n
+             end if
              call velpred_2d(uop(:,:,1,:), ng_u, &
                              ufp(:,:,1,:), ng_uf, &
                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                              ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                             fp(:,:,1,:), ng_f, w0(n,:), lo, hi, dx(n,:), dt, &
+                             fp(:,:,1,:), ng_f, w0(n_1d,:), &
+                             w0xp(:,:,1,1), w0yp(:,:,1,1), ng_w0, &
+                             lo, hi, dx(n,:), dt, &
                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
                              the_bc_level(n)%adv_bc_level_array(i,:,:,:))
 
@@ -264,16 +273,17 @@ contains
   end subroutine velpred_1d
 
   subroutine velpred_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
-                        w0,lo,hi,dx,dt,phys_bc,adv_bc)
+                        w0,w0macx,w0macy,ng_w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use bc_module
     use slope_module
+    use geometry, only: polar
     use bl_constants_module
     use variables, only: rel_eps
     use probin_module, only: ppm_type, ppm_trace_forces
     use ppm_module
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f
+    integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -282,6 +292,8 @@ contains
     real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real(kind=dp_t), intent(in   ) ::     w0(0:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
@@ -546,12 +558,23 @@ contains
                - (dt4/hy)*(vtrans(i  ,j+1)+vtrans(i  ,j)) &
                * (uimhy(i  ,j+1,1)-uimhy(i  ,j,1)) + dt2*fr
 
-          ! solve Riemann problem using full velocity
-          uavg = HALF*(umacl(i,j)+umacr(i,j))
-          test = ((umacl(i,j) .le. ZERO .and. umacr(i,j) .ge. ZERO) .or. &
-              (abs(umacl(i,j)+umacr(i,j)) .lt. rel_eps))
-          umac(i,j) = merge(umacl(i,j),umacr(i,j),uavg .gt. ZERO)
-          umac(i,j) = merge(ZERO,umac(i,j),test)
+          if (polar .eq. 1) then
+            ! solve Riemann problem using full velocity
+            uavg = HALF*(umacl(i,j)+umacr(i,j))
+            test = ((umacl(i,j)+w0macx(i,j) .le. ZERO .and. &
+                    umacr(i,j)+w0macx(i,j) .ge. ZERO) .or. &
+                    (abs(umacl(i,j)+umacr(i,j)+TWO*w0macx(i,j)) .lt. rel_eps))
+            umac(i,j) = merge(umacl(i,j),umacr(i,j),uavg+w0macx(i,j) .gt. ZERO)
+            umac(i,j) = merge(ZERO,umac(i,j),test)     
+          else
+            ! solve Riemann problem using full velocity
+            uavg = HALF*(umacl(i,j)+umacr(i,j))
+            test = ((umacl(i,j) .le. ZERO .and. umacr(i,j) .ge. ZERO) .or. &
+                (abs(umacl(i,j)+umacr(i,j)) .lt. rel_eps))
+            umac(i,j) = merge(umacl(i,j),umacr(i,j),uavg .gt. ZERO)
+            umac(i,j) = merge(ZERO,umac(i,j),test)
+          end if
+          
        enddo
     enddo
 
@@ -595,13 +618,25 @@ contains
           vmacr(i,j) = ury(i,j,2) &
                - (dt4/hx)*(utrans(i+1,j  )+utrans(i,j  )) &
                * (uimhx(i+1,j  ,2)-uimhx(i,j  ,2)) + dt2*fr
+               
+               
+          if (polar .eq. 1) then
+            ! solve Riemann problem using full velocity
+            uavg = HALF*(vmacl(i,j)+vmacr(i,j))
+            test = ((vmacl(i,j)+w0macy(i,j) .le. ZERO .and. &
+                vmacr(i,j)+w0macy(i,j) .ge. ZERO) .or. &
+                    (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0macy(i,j)) .lt. rel_eps))
+            vmac(i,j) = merge(vmacl(i,j),vmacr(i,j),uavg+w0macy(i,j) .gt. ZERO)
+            vmac(i,j) = merge(ZERO,vmac(i,j),test)     
+          else
+            ! solve Riemann problem using full velocity
+            uavg = HALF*(vmacl(i,j)+vmacr(i,j))
+            test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
+                (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
+            vmac(i,j) = merge(vmacl(i,j),vmacr(i,j),uavg+w0(j) .gt. ZERO)
+            vmac(i,j) = merge(ZERO,vmac(i,j),test)
+          end if
           
-          ! solve Riemann problem using full velocity
-          uavg = HALF*(vmacl(i,j)+vmacr(i,j))
-          test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
-               (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
-          vmac(i,j) = merge(vmacl(i,j),vmacr(i,j),uavg+w0(j) .gt. ZERO)
-          vmac(i,j) = merge(ZERO,vmac(i,j),test)
        enddo
     enddo
 

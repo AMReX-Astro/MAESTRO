@@ -40,7 +40,7 @@ contains
                              do_planar_invsq_grav, do_self_grav, &
                              print_init_hse_diag
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, nr
+    use geometry, only: dr, spherical, nr, polar
     use inlet_bc_module, only: set_inlet_bcs
     use fundamental_constants_module, only: Gconst
     use model_parser_module, only: read_model_file, interpolate, npts_model, &
@@ -97,7 +97,9 @@ contains
        write (*,887)
        if (spherical .ne. 1) then
           call log('model file mapping, level: ', n)
-       else
+       else if (polar .eq. 1) then
+          call log('model file mapping (polar base state)')
+       else 
           call log('model file mapping (spherical base state)')
        endif
 
@@ -124,7 +126,7 @@ contains
        endif
     end if
 
-    if (spherical .eq. 0) then
+    if ((spherical .eq. 0) .and. (polar .eq. 0)) then
        starting_rad = prob_lo(size(dx))
     else
        starting_rad = ZERO
@@ -215,7 +217,7 @@ contains
 
     mencl = zero
     
-    if (spherical .eq. 1 .OR. do_self_grav) then
+    if ((spherical .eq. 1) .or. (polar .eq. 1) .or. (do_self_grav)) then
       if (planar_invsq_mass .gt. ZERO) then
 	mencl = planar_invsq_mass &
 		  + four3rd*m_pi*dr(n)*(3*starting_rad**2 + 3*starting_rad*dr(n) + dr(n)**2)*s0_init(0,rho_comp) 
@@ -236,7 +238,7 @@ contains
           r_r = starting_rad + dble(r+1)*dr(n)
           r_l = starting_rad + dble(r)*dr(n)
 
-          if (spherical .eq. 1 .OR. do_self_grav) then
+          if (spherical .eq. 1 .or. polar .eq. 1 .OR. do_self_grav) then
              g = -Gconst*mencl/r_l**2
              mencl = mencl &
                   + four3rd*m_pi*dr(n)*(r_l**2+r_l*r_r+r_r**2)*s0_init(r,rho_comp)

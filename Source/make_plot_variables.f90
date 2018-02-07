@@ -27,7 +27,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_ad_excess(plotdata,comp_ad_excess,state,normal)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab), intent(inout) :: plotdata
     integer,        intent(in   ) :: comp_ad_excess
@@ -55,9 +55,17 @@ contains
                                  sp(:,1,1,:), ng_s, &
                                  lo, hi)
        case (2)
-          call make_ad_excess_2d(cp(:,:,1,comp_ad_excess), ng_c, &
-                                 sp(:,:,1,:), ng_s, &
-                                 lo, hi)
+          if (polar .eq. 1) then
+             np => dataptr(normal, i)       
+             call make_ad_excess_2d_polar(cp(:,:,1,comp_ad_excess), ng_c, &
+                                         sp(:,:,1,:), ng_s, &
+                                         np(:,:,1,:), ng_n, lo, hi)
+          
+          else
+            call make_ad_excess_2d(cp(:,:,1,comp_ad_excess), ng_c, &
+                                    sp(:,:,1,:), ng_s, &
+                                    lo, hi)
+          end if
        case (3)
           if (spherical .eq. 1) then
              np => dataptr(normal, i)       
@@ -219,6 +227,113 @@ contains
 
   end subroutine make_ad_excess_2d
 
+  
+  subroutine make_ad_excess_2d_polar(ad_excess, ng_ad, state, ng_s, &
+                                    normal, ng_n, lo, hi)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
+    use network, only: nspec
+    use probin_module, only: base_cutoff_density
+    use bl_constants_module
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s, ng_n
+    real(kind=dp_t), intent(  out) :: ad_excess(lo(1)-ng_ad:,lo(2)-ng_ad:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,:)  
+
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_rho, chi_t, nabla
+    real(kind=dp_t) :: dp(3), dt(3)
+
+    integer :: i, j, c
+
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
+    !$OMP PARALLEL DO PRIVATE(i,j,chi_rho,chi_t,eos_state,pt_index)    
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+             eos_state%rho   = state(i,j,rho_comp)
+             eos_state%T     = state(i,j,temp_comp)
+             eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+             pt_index(:) = (/i, j, -1/)       
+
+             call eos(eos_input_rt, eos_state, pt_index)
+       
+             pres(i,j) = eos_state%p
+
+             chi_rho = eos_state%rho * eos_state%dpdr / eos_state%p
+             chi_t = eos_state%T * eos_state%dpdt / eos_state%p
+             nabla_ad(i,j) = (eos_state%gam1 - chi_rho) / (chi_t * eos_state%gam1)
+
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,dt,dp,nabla)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+             if (state(i,j,rho_comp) <= base_cutoff_density) then
+                nabla = ZERO
+             else
+                ! compute gradient
+
+                ! forward difference
+                if (j == lo(2)) then
+                   dt(2) = state(i,j+1,temp_comp) - state(i,j,temp_comp)
+                   dp(2) = pres(i,j+1) - pres(i,j)
+                   ! backward difference
+                else if (j == hi(2)) then
+                   dt(2) = state(i,j,temp_comp) - state(i,j-1,temp_comp)
+                   dp(2) = pres(i,j) - pres(i,j-1)
+                   ! centered difference
+                else
+                   dt(2) = state(i,j+1,temp_comp) - state(i,j-1,temp_comp)
+                   dp(2) = pres(i,j+1) - pres(i,j-1)
+                endif
+
+                if (i == lo(1)) then
+                   dt(1) = state(i+1,j,temp_comp) - state(i,j,temp_comp)
+                   dp(1) = pres(i+1,j) - pres(i,j)
+                   ! backward difference
+                else if (i == hi(1)) then
+                   dt(1) = state(i,j,temp_comp) - state(i-1,j,temp_comp)
+                   dp(1) = pres(i,j) - pres(i-1,j)
+                   ! centered difference
+                else
+                   dt(1) = state(i+1,j,temp_comp) - state(i-1,j,temp_comp)
+                   dp(1) = pres(i+1,j) - pres(i-1,j)
+                endif
+
+                ! dot into normal to get d/dr
+                dp(3) = 0.d0
+                dt(3) = 0.d0
+                do c = 1,2
+                   dp(3) = dp(3) + dp(c)*normal(i,j,c) 
+                   dt(3) = dt(3) + dt(c)*normal(i,j,c) 
+                enddo
+
+                ! prevent Inf
+                if (dp(3) == ZERO) then
+                   nabla = -huge(ZERO)
+                else
+                   nabla = pres(i,j)*dt(3) / (dp(3)*state(i,j,temp_comp))
+                endif
+             endif
+
+             ad_excess(i,j) = nabla - nabla_ad(i,j)
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+  end subroutine make_ad_excess_2d_polar  
+  
   subroutine make_ad_excess_3d(ad_excess, ng_ad, state, ng_s, lo, hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -700,7 +815,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_tfromH(plotdata,comp_t,comp_tpert,comp_dp,state,p0,tempbar,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     integer        , intent(in   ) :: comp_t,comp_tpert,comp_dp
     type(multifab) , intent(inout) :: plotdata
@@ -723,11 +838,11 @@ contains
        lo(1:dm) =  lwb(get_box(state, i))
        hi(1:dm) =  upb(get_box(state, i))
 
-       if (spherical .eq. 1) then
-          call make_tfromH_3d_sphr(tp, lbound(tp), ubound(tp), &
+       if (spherical .eq. 1 .or. polar .eq. 1) then
+          call make_tfromH_spherical(tp, lbound(tp), ubound(tp), &
                                    comp_t, comp_tpert, comp_dp, &
                                    sp, lbound(sp), ubound(sp), &
-                                   lo,hi,p0,tempbar,dx)
+                                   dm,lo,hi,p0,tempbar,dx)
        else
           call make_tfromH_cart(tp, lbound(tp), ubound(tp), &
                                 comp_t, comp_tpert, comp_dp, &
@@ -794,10 +909,10 @@ contains
 
   end subroutine make_tfromH_cart
 
-  subroutine make_tfromH_3d_sphr(pdata,dlo,dhi, &
+  subroutine make_tfromH_spherical(pdata,dlo,dhi, &
                                  iT,itpert,ideltaP, &
                                  state,slo,shi, &
-                                 lo,hi,p0,tempbar,dx)
+                                 dm, lo,hi,p0,tempbar,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module, only: eos_input_rh, eos
@@ -806,7 +921,7 @@ contains
     use fill_3d_module
 
     integer, intent(in) :: lo(:), hi(:), dlo(4), dhi(4), slo(4), shi(4)
-    integer, intent(in) :: it, itpert,ideltaP
+    integer, intent(in) :: it, itpert,ideltaP, dm
     real (kind = dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
     real (kind = dp_t), intent(in   ) :: state(slo(1):shi(1),slo(2):shi(2),slo(3):shi(3),slo(4):shi(4))
     real (kind = dp_t), intent(in   ) :: p0(0:),tempbar(0:)
@@ -821,36 +936,65 @@ contains
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(  tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    
+    select case(dm)
+    case(2)
+        call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart(:,:,1,:),lo,hi,dx,0)
+        call put_1d_array_on_cart_2d_polar(.false.,.false.,tempbar,tempbar_cart(:,:,1,:),lo,hi,dx,0)
 
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
+        !$OMP PARALLEL DO PRIVATE(i,j,eos_state)
+        do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+                eos_state%rho   = state(i,j,1,rho_comp)
+                eos_state%h     = state(i,j,1,rhoh_comp) / state(i,j,1,rho_comp)
+                eos_state%T     = state(i,j,1,temp_comp)
+                eos_state%xn(:) = state(i,j,1,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             eos_state%rho   = state(i,j,k,rho_comp)
-             eos_state%h     = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             eos_state%T     = state(i,j,k,temp_comp)
-             eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+                ! (rho, H) --> T, p
+                call eos(eos_input_rh, eos_state)
 
-             ! (rho, H) --> T, p
-             call eos(eos_input_rh, eos_state)
+                if (iT > 0) pdata(i,j,1,iT) = eos_state%T
+                if (.not. use_tfromp .and. itpert > 0) pdata(i,j,1,itpert) = eos_state%T - tempbar_cart(i,j,1,1)
+                
+                if(ideltaP > 0) pdata(i,j,1,ideltaP) = (eos_state%p - p0_cart(i,j,1,1))/ p0_cart(i,j,1,1)
 
-             if (iT > 0) pdata(i,j,k,iT) = eos_state%T
-             if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
-             
-             if(ideltaP > 0) pdata(i,j,k,ideltaP) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
+            enddo
+        enddo
+        !$OMP END PARALLEL DO
 
-          enddo
-       enddo
-    enddo
-    !$OMP END PARALLEL DO
+    case(3)
+
+        call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+        call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
+
+        !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
+        do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+
+                    eos_state%rho   = state(i,j,k,rho_comp)
+                    eos_state%h     = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+                    eos_state%T     = state(i,j,k,temp_comp)
+                    eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                    ! (rho, H) --> T, p
+                    call eos(eos_input_rh, eos_state)
+
+                    if (iT > 0) pdata(i,j,k,iT) = eos_state%T
+                    if (.not. use_tfromp .and. itpert > 0) pdata(i,j,k,itpert) = eos_state%T - tempbar_cart(i,j,k,1)
+                    
+                    if(ideltaP > 0) pdata(i,j,k,ideltaP) = (eos_state%p - p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
+
+                enddo
+            enddo
+        enddo
+        !$OMP END PARALLEL DO
+    end select
 
     deallocate(p0_cart,tempbar_cart)
 
-  end subroutine make_tfromH_3d_sphr
+  end subroutine make_tfromH_spherical
 
 
   !---------------------------------------------------------------------------
@@ -858,7 +1002,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_tfromp(p, plotdata, s, tempbar, gamma1bar, p0, dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(plot_t)   , intent(in   ) :: p
     type(multifab) , intent(inout) :: plotdata
@@ -881,10 +1025,10 @@ contains
        lo(1:dm) =  lwb(get_box(s, i))
        hi(1:dm) =  upb(get_box(s, i))
   
-       if (spherical .eq. 1) then
-          call make_tfromp_3d_sphr(tp, lbound(tp), ubound(tp), &
+       if (spherical .eq. 1 .or. polar .eq. 1) then
+          call make_tfromp_spherical(tp, lbound(tp), ubound(tp), &
                                    sp, lbound(sp), ubound(sp), &
-                                   p, lo, hi, tempbar, gamma1bar, p0, dx)
+                                   p, dm, lo, hi, tempbar, gamma1bar, p0, dx)
        else
           call make_tfromp_cart(tp, lbound(tp), ubound(tp), &
                                 sp, lbound(sp), ubound(sp), &
@@ -962,9 +1106,9 @@ contains
 
   end subroutine make_tfromp_cart
 
-  subroutine make_tfromp_3d_sphr(pdata,dlo,dhi, &
+  subroutine make_tfromp_spherical(pdata,dlo,dhi, &
                                  s,slo,shi, &
-                                 p, lo,hi,tempbar,gamma1bar,p0,dx)
+                                 p, dm, lo,hi,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, spec_comp, temp_comp, pi_comp
     use eos_module, only: eos_input_rp, eos
@@ -973,7 +1117,7 @@ contains
     use fill_3d_module
     use probin_module, only: use_pprime_in_tfromp
 
-    integer         , intent(in   ) :: lo(:),hi(:), dlo(4), dhi(4), slo(4), shi(4)
+    integer         , intent(in   ) :: lo(:),hi(:), dlo(4), dhi(4), slo(4), shi(4), dm
     type (plot_t), intent(in) :: p
 
     real (kind=dp_t), intent(  out) :: pdata(dlo(1):dhi(1),dlo(2):dhi(2),dlo(3):dhi(3),dlo(4):dhi(4))
@@ -995,49 +1139,90 @@ contains
     allocate(  tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(       p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    
+    select case(dm)
+    case(2)
+        call put_1d_array_on_cart_2d_polar(.false.,.false.,tempbar,tempbar_cart(:,:,1,:),lo,hi,dx,0)
+        call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart(:,:,1,:),lo,hi,dx,0)
+        call put_1d_array_on_cart_2d_polar(.false.,.false.,gamma1bar,gamma1bar_cart(:,:,1,:),lo,hi,dx,0)
 
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
+        !$OMP PARALLEL DO PRIVATE(i,j,eos_state)
+        do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+                ! Then compute the perturbation and Mach number
+                eos_state%rho   = s(i,j,1,rho_comp)
+                eos_state%T     = s(i,j,1,temp_comp)
+                if (use_pprime_in_tfromp) then
+                    eos_state%p     = p0_cart(i,j,1,1) + s(i,j,1,pi_comp)
+                else
+                    eos_state%p     = p0_cart(i,j,1,1)
+                endif
+                eos_state%xn(:) = s(i,j,1,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-             ! Then compute the perturbation and Mach number
-             eos_state%rho   = s(i,j,k,rho_comp)
-             eos_state%T     = s(i,j,k,temp_comp)
-             if (use_pprime_in_tfromp) then
-                eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
-             else
-                eos_state%p     = p0_cart(i,j,k,1)
-             endif
-             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+                ! (rho,P) --> T,h
+                call eos(eos_input_rp, eos_state)
 
-             ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state)
+                if (p%icomp_tfromp > 0) pdata(i,j,1,p%icomp_tfromp) = eos_state%T
+                if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,1,p%icomp_tpert) = eos_state%T - tempbar_cart(i,j,1,1)
 
-             if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
-             if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar_cart(i,j,k,1)
+                if (p%icomp_cs > 0) pdata(i,j,1,p%icomp_cs) = eos_state%cs
 
-             if (p%icomp_cs > 0) pdata(i,j,k,p%icomp_cs) = eos_state%cs
+                if (p%icomp_machno > 0 .and. p%icomp_magvel > 0) then
+                    pdata(i,j,1,p%icomp_machno) = pdata(i,j,1,p%icomp_magvel) / eos_state%cs
+                endif
 
-             if (p%icomp_machno > 0 .and. p%icomp_magvel > 0) then
-                pdata(i,j,k,p%icomp_machno) = pdata(i,j,k,p%icomp_magvel) / eos_state%cs
-             endif
+                if (p%icomp_dg > 0) pdata(i,j,k,p%icomp_dg) = eos_state%gam1 - gamma1bar_cart(i,j,1,1)
 
-             if (p%icomp_dg > 0) pdata(i,j,k,p%icomp_dg) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
+                if (p%icomp_entropy > 0) pdata(i,j,1,p%icomp_entropy) = eos_state%s
+            enddo
+        enddo
+        !$OMP END PARALLEL DO
+        
+    case(3)
+        call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
+        call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+        call put_1d_array_on_cart_3d_sphr(.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
 
-             if (p%icomp_entropy > 0) pdata(i,j,k,p%icomp_entropy) = eos_state%s
-          enddo
-       enddo
-    enddo
-    !$OMP END PARALLEL DO
+        !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
+        do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
 
+                    ! Then compute the perturbation and Mach number
+                    eos_state%rho   = s(i,j,k,rho_comp)
+                    eos_state%T     = s(i,j,k,temp_comp)
+                    if (use_pprime_in_tfromp) then
+                        eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
+                    else
+                        eos_state%p     = p0_cart(i,j,k,1)
+                    endif
+                    eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                    ! (rho,P) --> T,h
+                    call eos(eos_input_rp, eos_state)
+
+                    if (p%icomp_tfromp > 0) pdata(i,j,k,p%icomp_tfromp) = eos_state%T
+                    if (use_tfromp .and. p%icomp_tpert > 0) pdata(i,j,k,p%icomp_tpert) = eos_state%T - tempbar_cart(i,j,k,1)
+
+                    if (p%icomp_cs > 0) pdata(i,j,k,p%icomp_cs) = eos_state%cs
+
+                    if (p%icomp_machno > 0 .and. p%icomp_magvel > 0) then
+                        pdata(i,j,k,p%icomp_machno) = pdata(i,j,k,p%icomp_magvel) / eos_state%cs
+                    endif
+
+                    if (p%icomp_dg > 0) pdata(i,j,k,p%icomp_dg) = eos_state%gam1 - gamma1bar_cart(i,j,k,1)
+
+                    if (p%icomp_entropy > 0) pdata(i,j,k,p%icomp_entropy) = eos_state%s
+                enddo
+            enddo
+        enddo
+        !$OMP END PARALLEL DO
+    end select
+    
     deallocate(tempbar_cart,p0_cart,gamma1bar_cart)
 
-  end subroutine make_tfromp_3d_sphr
+  end subroutine make_tfromp_spherical
 
 
   !---------------------------------------------------------------------------
@@ -1045,7 +1230,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_rhopert(plotdata,comp_rhopert,s,rho0,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     integer        , intent(in   ) :: comp_rhopert
     type(multifab) , intent(inout) :: plotdata
@@ -1072,9 +1257,15 @@ contains
                                sp(:,1,1,:), ng_s, &
                                lo, hi, rho0)
        case (2)
-          call make_rhopert_2d(tp(:,:,1,comp_rhopert ),ng_p, &
-                               sp(:,:,1,:), ng_s, &
-                               lo, hi, rho0)
+          if (polar .eq. 1) then
+              call make_rhopert_2d_polar(tp(:,:,1,comp_rhopert ),ng_p, &
+                                       sp(:,:,1,:), ng_s, &
+                                       lo, hi, rho0, dx)
+          else
+              call make_rhopert_2d(tp(:,:,1,comp_rhopert ),ng_p, &
+                                sp(:,:,1,:), ng_s, &
+                                lo, hi, rho0)
+          end if
        case (3)
           if (spherical .eq. 1) then
              call make_rhopert_3d_sphr(tp(:,:,:,comp_rhopert ),ng_p, &
@@ -1130,6 +1321,36 @@ contains
 
   end subroutine make_rhopert_2d
 
+  subroutine make_rhopert_2d_polar(rhopert,ng_p,s,ng_s,lo,hi,rho0,dx)
+
+    use variables, only: rho_comp
+    use fill_3d_module
+
+    integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s
+    real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer          :: i, j
+
+    real (kind=dp_t), allocatable ::      rho0_cart(:,:,:)
+
+    allocate(     rho0_cart(lo(1):hi(1),lo(2):hi(2),1))
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
+
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+            rhopert(i,j)  = s(i,j,rho_comp)  -  rho0_cart(i,j,1)
+        enddo
+    enddo
+
+    deallocate(rho0_cart)
+
+  end subroutine make_rhopert_2d_polar
+  
   subroutine make_rhopert_3d_cart(rhopert,ng_p,s,ng_s,lo,hi,rho0)
 
     use variables, only: rho_comp
@@ -1191,7 +1412,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_rhohpert(plotdata,comp_rhohpert,s,rhoh0,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     integer        , intent(in   ) :: comp_rhohpert
     type(multifab) , intent(inout) :: plotdata
@@ -1218,9 +1439,15 @@ contains
                                 sp(:,1,1,:), ng_s, &
                                 lo, hi, rhoh0)
        case (2)
-          call make_rhohpert_2d(tp(:,:,1,comp_rhohpert ),ng_p, &
-                                sp(:,:,1,:), ng_s, &
-                                lo, hi, rhoh0)
+          if (polar .eq. 1) then
+                call make_rhohpert_2d_polar(tp(:,:,1,comp_rhohpert ),ng_p, &
+                                        sp(:,:,1,:), ng_s, &
+                                        lo, hi, rhoh0, dx)
+          else
+                call make_rhohpert_2d(tp(:,:,1,comp_rhohpert ),ng_p, &
+                                    sp(:,:,1,:), ng_s, &
+                                    lo, hi, rhoh0)
+          end if
        case (3)
           if (spherical .eq. 1) then
              call make_rhohpert_3d_sphr(tp(:,:,:,comp_rhohpert ),ng_p, &
@@ -1276,6 +1503,38 @@ contains
 
   end subroutine make_rhohpert_2d
 
+  subroutine make_rhohpert_2d_polar(rhohpert,ng_p,s,ng_s,lo,hi,rhoh0,dx)
+
+    use variables, only: rhoh_comp
+    use fill_3d_module
+
+    integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s
+    real (kind=dp_t), intent(  out) ::    rhohpert(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rhoh0(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer          :: i, j
+
+    real (kind=dp_t), allocatable ::      rhoh0_cart(:,:,:)
+
+    allocate(     rhoh0_cart(lo(1):hi(1),lo(2):hi(2),1))
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,rhoh0,rhoh0_cart,lo,hi,dx,0)
+
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+            rhohpert(i,j)  = s(i,j,rhoh_comp)  -  rhoh0_cart(i,j,1)
+        enddo
+    enddo
+
+    deallocate(rhoh0_cart)
+
+  end subroutine make_rhohpert_2d_polar
+
+
+  
   subroutine make_rhohpert_3d_cart(rhohpert,ng_p,s,ng_s,lo,hi,rhoh0)
 
     use variables, only: rhoh_comp
@@ -1337,7 +1596,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_entropypert(plotdata,comp_entropy,comp_entropypert,entropybar,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     integer        , intent(in   ) :: comp_entropy,comp_entropypert
     type(multifab) , intent(inout) :: plotdata(:)
@@ -1365,9 +1624,15 @@ contains
                                       tp(:,1,1,comp_entropypert),ng_p, &
                                       lo, hi, entropybar(n,:))
           case (2)
-             call make_entropypert_2d(tp(:,:,1,comp_entropy), &
+             if (polar .eq. 1) then
+                call make_entropypert_2d_polar(tp(:,:,1,comp_entropy), &
+                                              tp(:,:,1,comp_entropypert),ng_p, &
+                                              lo, hi, entropybar(1,:), dx(n,:))
+             else
+                call make_entropypert_2d(tp(:,:,1,comp_entropy), &
                                       tp(:,:,1,comp_entropypert),ng_p, &
                                       lo, hi, entropybar(n,:))
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call make_entropypert_3d_sphr(tp(:,:,:,comp_entropy), &
@@ -1419,6 +1684,39 @@ contains
     enddo
 
   end subroutine make_entropypert_2d
+
+  subroutine make_entropypert_2d_polar(entropy,entropypert,ng_p,lo,hi,entropybar,dx)
+
+    use fill_3d_module
+
+    integer         , intent(in)    :: lo(:),hi(:),ng_p
+    real (kind=dp_t), intent(inout) ::     entropy(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind=dp_t), intent(  out) :: entropypert(lo(1)-ng_p:,lo(2)-ng_p:)  
+    real (kind=dp_t), intent(in   ) :: entropybar(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer          :: i, j
+    real (kind=dp_t), allocatable :: entropybar_cart(:,:,:)
+
+    allocate(entropybar_cart(lo(1):hi(1),lo(2):hi(2),1))
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,entropybar,entropybar_cart, &
+                                      lo,hi,dx,0)
+
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+            ! Compute entropy-entropybar
+            entropypert(i,j) = &
+                (entropy(i,j) - entropybar_cart(i,j,1))/entropybar_cart(i,j,1)
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    deallocate(entropybar_cart)
+
+  end subroutine make_entropypert_2d_polar  
 
   subroutine make_entropypert_3d_cart(entropy,entropypert,ng_p,lo,hi,entropybar)
 
@@ -1578,7 +1876,7 @@ contains
   !---------------------------------------------------------------------------
   subroutine make_divw0(divw0,comp_divw0,w0,w0mac,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab) , intent(inout) :: divw0
     integer        , intent(in   ) :: comp_divw0
@@ -1605,7 +1903,15 @@ contains
        case (1)
           call make_divw0_1d(w0, dwp(:,1,1,comp_divw0), ng_dw, lo, hi, dx)
        case (2)
-          call make_divw0_2d(w0, dwp(:,:,1,comp_divw0), ng_dw, lo, hi, dx)
+          if (polar .eq. 1) then
+             ng_w0 = nghost(w0mac(1))
+             w0xp => dataptr(w0mac(1), i)
+             w0yp => dataptr(w0mac(2), i)
+             call make_divw0_2d_polar(w0xp(:,:,1,1), w0yp(:,:,1,1), ng_w0, &
+                                     dwp(:,:,1,comp_divw0), ng_dw, lo, hi, dx)
+          else
+            call make_divw0_2d(w0, dwp(:,:,1,comp_divw0), ng_dw, lo, hi, dx)
+          end if
        case (3)
           if(spherical .eq. 1) then
              ng_w0 = nghost(w0mac(1))
@@ -1654,6 +1960,28 @@ contains
 
   end subroutine make_divw0_2d
 
+  subroutine make_divw0_2d_polar(w0macx,w0macy,ng_w0,divw0,ng_dw,lo,hi,dx)
+
+    integer, intent(in)               :: lo(:), hi(:), ng_w0, ng_dw
+    real (kind = dp_t), intent(inout) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real (kind = dp_t), intent(inout) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real (kind = dp_t), intent(inout) ::  divw0(lo(1)-ng_dw:,lo(2)-ng_dw:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i,j
+
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j=lo(2),hi(2)
+        do i=lo(1),hi(1)
+            divw0(i,j) = (w0macx(i+1,j)-w0macx(i,j)) / dx(1) &
+                        +(w0macy(i,j+1)-w0macy(i,j)) / dx(2)
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine make_divw0_2d_polar
+  
   subroutine make_divw0_3d(w0,divw0,ng_dw,lo,hi,dx)
 
     integer, intent(in)            :: lo(:), hi(:), ng_dw
@@ -2354,7 +2682,7 @@ contains
 
     use bc_module
     use bl_constants_module
-    use geometry, only : spherical
+    use geometry, only : spherical, polar
     use variables, only : rho_comp
 
     integer        , intent(in   ) :: comp_magvel, comp_mom
@@ -2390,8 +2718,17 @@ contains
           call makemagvel_1d(pp(:,1,1,:), comp_magvel, comp_mom, ng_p, &
                              sp(:,1,1,rho_comp),ng_s,up(:,1,1,1),ng_u,w0,lo,hi)
        case (2)
-          call makemagvel_2d(pp(:,:,1,:), comp_magvel, comp_mom, ng_p, &
+          if (polar .eq. 1) then
+             wxp => dataptr(w0mac(1), i)
+             wyp => dataptr(w0mac(2), i)
+             ng_w = nghost(w0mac(1))
+             call makemagvel_2d_polar(pp(:,:,1,:), comp_magvel, comp_mom, ng_p, &
+                                     sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u, &
+                                     wxp(:,:,1,1),wyp(:,:,1,1),ng_w,lo,hi)
+          else
+            call makemagvel_2d(pp(:,:,1,:), comp_magvel, comp_mom, ng_p, &
                              sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u,w0,lo,hi)
+          end if
        case (3)
           if (spherical .eq. 1) then
              wxp => dataptr(w0mac(1), i)
@@ -2455,6 +2792,36 @@ contains
     enddo
 
   end subroutine makemagvel_2d
+
+  subroutine makemagvel_2d_polar(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u, &
+                                w0macx,w0macy,ng_w,lo,hi)
+
+
+    use bl_constants_module
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_w, ng_s
+    integer           , intent(in   ) :: imagvel, imom
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,:)
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:) 
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:) 
+    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w:,lo(2)-ng_w:)
+    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w:,lo(2)-ng_w:)
+    !     Local variables
+    integer :: i, j
+
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+            pdata(i,j,imagvel) = sqrt( (u(i,j,1)+HALF*(w0macx(i,j)+w0macx(i+1,j)))**2 + &
+                                        (u(i,j,2)+HALF*(w0macy(i,j)+w0macy(i,j+1)))**2)
+                                        
+            pdata(i,j,imom) = rho(i,j)*pdata(i,j,imagvel)
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+  end subroutine makemagvel_2d_polar
+
 
   subroutine makemagvel_3d_cart(pdata,imagvel,imom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
@@ -2526,7 +2893,7 @@ contains
 
     use bc_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     integer        , intent(in   ) :: comp_velr, comp_velc
     type(multifab) , intent(inout) :: plotdata
@@ -2549,8 +2916,8 @@ contains
     ng_n = nghost(normal)
     ng_w = nghost(w0r_cart)
 
-    if (spherical .ne. 1) then
-       call bl_error("unable to create radial and circumferential velocity -- not spherical geometry")
+    if (spherical .ne. 1 .and. polar .ne. 1) then
+       call bl_error("unable to create radial and circumferential velocity -- not spherical or polar geometry")
     endif
 
     do i = 1, nfabs(u)
@@ -2561,14 +2928,65 @@ contains
        w0rp => dataptr(w0r_cart, i)
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
-
-       call makevelrc_3d_sphr(pp(:,:,:,:), comp_velr, comp_velc,&
+       
+       select case(dm)
+       case(2)
+            call makevelrc_2d_polar(pp(:,:,1,:), comp_velr, comp_velc,&
+                              ng_p,up(:,:,1,:),ng_u, &
+                              w0rp(:,:,1,1),ng_w,nop(:,:,1,:),ng_n,lo,hi)
+       case(3)
+            call makevelrc_3d_sphr(pp(:,:,:,:), comp_velr, comp_velc,&
                               ng_p,up(:,:,:,:),ng_u, &
                               w0rp(:,:,:,1),ng_w,nop(:,:,:,:),ng_n,lo,hi)
+        end select
     end do
 
   end subroutine make_velrc
 
+  subroutine makevelrc_2d_polar(pdata,ivelr,ivelc,ng_p, &
+                               u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w
+    integer           , intent(in   ) :: ivelr, ivelc
+    real (kind = dp_t), intent(  out) :: pdata(lo(1)-ng_p:,lo(2)-ng_p:,:)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real (kind = dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:)
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,:)  
+
+    !     Local variables
+    integer :: i, j
+
+    ! note, we are assuming here that both ivelr and ivelc are defined
+    ! -- for mini-plotfiles, you can't have one without the other
+
+    !$OMP PARALLEL DO PRIVATE(i,j)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            ! radial tilde velocity (no w0_r)
+            pdata(i,j,ivelr) = u(i,j,1)*normal(i,j,1) + &
+                                u(i,j,2)*normal(i,j,2) 
+
+            !                                 ~     ~   ~   ^
+            ! circumferential tilde velocity, U_c = U - U . e_r
+            pdata(i,j,ivelc) = &
+                (u(i,j,1)-pdata(i,j,ivelr)*normal(i,j,1)) * &
+                (u(i,j,1)-pdata(i,j,ivelr)*normal(i,j,1))
+            pdata(i,j,ivelc) = pdata(i,j,ivelc) + &
+                (u(i,j,2)-pdata(i,j,ivelr)*normal(i,j,2)) * &
+                (u(i,j,2)-pdata(i,j,ivelr)*normal(i,j,2))
+            pdata(i,j,ivelc) = sqrt(pdata(i,j,ivelc))
+
+            ! now add the base state expansion velocity to the 
+            ! radial to get the full U_r
+            pdata(i,j,ivelr) = pdata(i,j,ivelr) + w0r(i,j)
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+  end subroutine makevelrc_2d_polar
+  
+  
   subroutine makevelrc_3d_sphr(pdata,ivelr,ivelc,ng_p, &
                                u,ng_u,w0r,ng_w,normal,ng_n,lo,hi)
 

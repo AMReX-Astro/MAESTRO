@@ -25,7 +25,7 @@ contains
   subroutine firstdt(mla,the_bc_level,u,gpi,s,divU,rho0,p0,grav,gamma1bar, &
                      dx,cflfac,dt)
 
-    use geometry, only: nlevs_radial, spherical, nr_fine
+    use geometry, only: nlevs_radial, spherical, polar, nr_fine
     use variables, only: rel_eps, rho_comp
     use bl_constants_module
     use probin_module, only: init_shrink, verbose, small_dt
@@ -95,7 +95,7 @@ contains
 
     w0_dummy(:,:) = ZERO
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        do n=1,nlevs
           do comp=1,dm
@@ -115,7 +115,7 @@ contains
        call destroy(w0_force_cart_dummy(n))
        do comp=1,dm
           call destroy(umac_dummy(n,comp))
-          if (spherical .eq. 1) then
+          if (spherical .eq. 1 .or. polar .eq. 1) then
              call destroy(w0mac_dummy(n,comp))
           end if
        end do
@@ -147,9 +147,16 @@ contains
                              divup(:,1,1,1), ng_dU, p0(n,:), gamma1bar(n,:), lo, hi, &
                              dx(n,:), dt_grid, umax_grid, cflfac)
           case (2)
-             call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, fp(:,:,1,:), ng_f, &
-                             divup(:,:,1,1), ng_dU, p0(n,:), gamma1bar(n,:), lo, hi, &
-                             dx(n,:), dt_grid, umax_grid, cflfac)
+             if (polar .eq. 1) then
+                call firstdt_2d_polar(uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, fp(:,:,1,:), ng_f, &
+                                divup(:,:,1,1), ng_dU, p0(1,:), gamma1bar(1,:), lo, hi, &
+                                dx(n,:), dt_grid, umax_grid, cflfac)
+             
+             else   
+                call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, fp(:,:,1,:), ng_f, &
+                                divup(:,:,1,1), ng_dU, p0(n,:), gamma1bar(n,:), lo, hi, &
+                                dx(n,:), dt_grid, umax_grid, cflfac)
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call firstdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
@@ -433,6 +440,151 @@ contains
     end if
 
   end subroutine firstdt_2d
+
+  subroutine firstdt_2d_polar(u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,p0,gamma1bar,lo,hi,dx, &
+                             dt,umax,cfl)
+
+    use geometry,  only: dr, nr_fine
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use eos_module, only: eos, eos_input_rt
+    use eos_type_module
+    use network, only: nspec
+    use bl_constants_module
+    use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
+    use fill_3d_module
+
+    integer           , intent(in)  :: lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU
+    real (kind = dp_t), intent(in ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real (kind = dp_t), intent(in ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
+    real (kind = dp_t), intent(in ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
+    real (kind = dp_t), intent(in ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:) 
+    real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in ) :: dx(:)
+    real (kind = dp_t), intent(out) :: dt, umax
+    real (kind = dp_t), intent(in ) :: cfl
+    
+    ! local variables
+    real (kind = dp_t)  :: spdx,spdy,pforcex,pforcey,ux,uy 
+    real (kind = dp_t)  :: gp_dot_u,gamma1bar_p_avg,eps,dt_divu,dt_sound,denom,rho_min
+    integer             :: i,j,r
+
+    real (kind = dp_t), allocatable :: gp0_cart(:,:,:)
+
+    real (kind = dp_t) :: gp0(0:nr_fine)
+
+    integer pt_index(MAX_SPACEDIM)
+    type (eos_t) :: eos_state
+
+    allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),2))
+
+    eps = 1.0d-8
+    
+    rho_min = 1.d-20
+    
+    spdx    = ZERO
+    spdy    = ZERO 
+    pforcex = ZERO 
+    pforcey = ZERO 
+    ux      = ZERO
+    uy      = ZERO
+    
+    dt = 1.d99
+    umax = ZERO
+
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            ! compute the sound speed from rho and temp
+            eos_state%rho   = s(i,j,rho_comp)
+            eos_state%T     = s(i,j,temp_comp)
+            eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            pt_index(:) = (/i, j, -1/)
+            
+            ! dens, temp, and xmass are inputs
+            call eos(eos_input_rt, eos_state, pt_index)
+            
+            spdx    = max(spdx,eos_state%cs)
+            spdy    = max(spdy,eos_state%cs)
+            pforcex = max(pforcex,abs(force(i,j,1)))
+            pforcey = max(pforcey,abs(force(i,j,2)))
+            ux      = max(ux,abs(u(i,j,1)))
+            uy      = max(uy,abs(u(i,j,2)))
+    
+        enddo
+    enddo
+    
+    umax = max(umax,ux,uy)
+
+    ux = ux / dx(1)
+    uy = uy / dx(2)
+    
+    spdx = spdx / dx(1)
+    spdy = spdy / dx(2)
+    
+    ! advective constraint
+    if (ux .ne. ZERO .or. uy .ne. ZERO ) then
+       dt = cfl / max(ux,uy)
+    else if (spdx .ne. ZERO .and. spdy .ne. ZERO) then
+       dt = cfl / max(spdx,spdy)
+    end if
+
+    ! sound speed constraint
+    if (use_soundspeed_firstdt) then
+       if (spdx .eq. ZERO .and. spdy .eq. ZERO ) then
+          dt_sound = 1.d99
+       else
+          dt_sound = cfl / max(spdx,spdy)
+       end if
+       dt = min(dt,dt_sound)
+    end if
+
+    ! force constraints
+    if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+    if (pforcey > eps) dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
+    
+    ! divU constraint
+    if (use_divu_firstdt) then
+
+       dt_divu = 1.d99
+
+       ! spherical divU constraint
+       !$OMP PARALLEL DO PRIVATE(r,gamma1bar_p_avg)
+       do r=1,nr_fine-1
+          gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
+          gp0(r) = ( (p0(r) - p0(r-1))/dr(1) ) / gamma1bar_p_avg
+       end do
+       !$OMP END PARALLEL DO
+       gp0(nr_fine) = gp0(nr_fine-1)
+       gp0(      0) = gp0(        1)
+       
+       call put_1d_array_on_cart_2d_polar(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
+
+       !$OMP PARALLEL DO PRIVATE(i,j,gp_dot_u,denom) REDUCTION(MIN : dt_divu)
+        do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+            
+                gp_dot_u = u(i,j,1) * gp0_cart(i,j,1) + &
+                            u(i,j,2) * gp0_cart(i,j,2) 
+                    
+                denom = divU(i,j) - gp_dot_u 
+                
+                if (denom > ZERO) then
+                    dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
+                endif
+                
+            enddo
+        enddo
+       !$OMP END PARALLEL DO
+
+       dt = min(dt,dt_divu)
+
+    end if
+
+    deallocate(gp0_cart)
+
+  end subroutine firstdt_2d_polar  
+  
   
   subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,p0,gamma1bar,lo,hi,dx,dt, &
                         umax,cfl)

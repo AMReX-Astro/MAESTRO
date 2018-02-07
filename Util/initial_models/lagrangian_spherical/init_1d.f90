@@ -288,7 +288,7 @@ program init_1d
     
     call eos(eos_input_rt, eos_state)
     call calc_brunt(g_zone,delx,dens_zone,temp_zone,xn,prev_p,prev_temp,prev_mu,brunt(i))
-
+    write(*,*) eos_state%dpdr
     prev_p = eos_state%p
     prev_mu = eos_state%abar
     prev_temp = temp_zone

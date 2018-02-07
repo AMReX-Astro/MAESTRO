@@ -27,7 +27,7 @@ contains
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state, &
          init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
-    use geometry, only: spherical, nr_fine, nlevs_radial
+    use geometry, only: spherical, nr_fine, nlevs_radial, polar
     use proj_parameters, only: divu_iters_comp
     use react_state_module
     use make_explicit_thermal_module
@@ -188,7 +188,7 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        if (istep_divu_iter .eq. init_divu_iter) then
           eps_divu = eps_divu_sph
 

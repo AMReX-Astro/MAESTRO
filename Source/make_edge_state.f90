@@ -16,7 +16,7 @@ contains
 
   subroutine make_edge_state_1d(s,sedge,w0,force,dt)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     real(kind=dp_t), intent(in   ) ::     s(:,0:)
     real(kind=dp_t), intent(inout) :: sedge(:,0:)
@@ -24,7 +24,7 @@ contains
     real(kind=dp_t), intent(in   ) :: force(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        call make_edge_state_1d_sphr(s,sedge,w0,force,dt)
     else
        call make_edge_state_1d_planar(s,sedge,w0,force,dt)

@@ -52,7 +52,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use ml_cc_restriction_module, only: ml_edge_restriction_c
     use variables, only: spec_comp
     use network, only: nspec
@@ -132,14 +132,31 @@ contains
              sfyp => dataptr(sflux(n,2),i)
              seyp => dataptr(sedge(n,2),i)
              vmp  => dataptr(umac(n,2),i)
-             call mk_rhoX_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
-                                  efp(:,:,1,1), ng_ef, &
-                                  sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
-                                  ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                                  rho0_old(n,:), rho0_edge_old(n,:), &
-                                  rho0_new(n,:), rho0_edge_new(n,:), &
-                                  rho0_predicted_edge(n,:), &
-                                  w0(n,:),startcomp,endcomp,lo,hi)
+             if (polar .eq. 0) then
+                call mk_rhoX_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
+                                    efp(:,:,1,1), ng_ef, &
+                                    sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
+                                    ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                    rho0_old(n,:), rho0_edge_old(n,:), &
+                                    rho0_new(n,:), rho0_edge_new(n,:), &
+                                    rho0_predicted_edge(n,:), &
+                                    w0(n,:),startcomp,endcomp,lo,hi)
+             else
+                w0xp => dataptr(w0mac(n,1),i)
+                w0yp => dataptr(w0mac(n,2),i)
+                r0xo => dataptr(rho0mac_old(n,1),i)
+                r0yo => dataptr(rho0mac_old(n,2),i)
+                r0xn => dataptr(rho0mac_new(n,1),i)
+                r0yn => dataptr(rho0mac_new(n,2),i)
+                call mk_rhoX_flux_2d_polar(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
+                                          sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
+                                          ump(:,:,1,1), vmp(:,:,1,1),  ng_um, &                                          
+                                          w0xp(:,:,1,1),w0yp(:,:,1,1),ng_w0, &
+                                          r0xo(:,:,1,1),r0yo(:,:,1,1),ng_ro, &
+                                          r0xn(:,:,1,1),r0yn(:,:,1,1),ng_rn, &
+                                          startcomp,endcomp,lo,hi)
+             
+             end if
           case (3)
              sfyp => dataptr(sflux(n,2),i)
              sfzp => dataptr(sflux(n,3),i)
@@ -187,7 +204,7 @@ contains
                                      mla%mba%rr(n-1,:),i,nspec)
        enddo
 
-       if (spherical .eq. 0) then
+       if (spherical .eq. 0 .and. polar .eq. 0) then
           call ml_edge_restriction_c(etarhoflux(n-1),1,etarhoflux(n),1,mla%mba%rr(n-1,:), &
                                      dm,1)
        end if
@@ -364,6 +381,109 @@ contains
 
   end subroutine mk_rhoX_flux_2d
 
+  
+  !----------------------------------------------------------------------------
+  ! mk_rhoX_flux_2d_polar
+  !----------------------------------------------------------------------------
+  subroutine mk_rhoX_flux_2d_polar(sfluxx,sfluxy,ng_sf,&
+                                  sedgex,sedgey,ng_se, &
+                                  umac,vmac,ng_um, &
+                                  w0macx,w0macy,ng_w0, &
+                                  rho0macx_old,rho0macy_old,ng_ro, &
+                                  rho0macx_new,rho0macy_new,ng_rn, &
+                                  startcomp,endcomp,lo,hi)
+
+    use bl_constants_module
+    use network, only: nspec
+    use variables, only: rho_comp
+    use pred_parameters
+    use probin_module, only: species_pred_type
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_ro,ng_rn
+    real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
+    real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
+    real(kind=dp_t), intent(inout) ::        sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) ::        sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_old(lo(1)-ng_ro:,lo(2)-ng_ro:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_old(lo(1)-ng_ro:,lo(2)-ng_ro:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_new(lo(1)-ng_rn:,lo(2)-ng_rn:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_new(lo(1)-ng_rn:,lo(2)-ng_rn:)
+    integer        , intent(in   ) :: startcomp,endcomp
+
+    ! local
+    integer         :: comp
+    integer         :: i,j
+    real(kind=dp_t) :: rho0_edge
+    
+
+    do comp = startcomp, endcomp
+
+       ! loop for x-fluxes
+       !$OMP PARALLEL PRIVATE(i,j,rho0_edge)
+       !$OMP DO
+        do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+
+            if (species_pred_type == predict_rhoprime_and_X) then
+                ! edge states are rho' and X.  To make the (rho X)
+                ! flux, we need the edge state of rho0
+                rho0_edge = HALF*(rho0macx_old(i,j)+rho0macx_new(i,j))
+                sfluxx(i,j,comp) = (umac(i,j) + w0macx(i,j)) * &
+                    (rho0_edge + sedgex(i,j,rho_comp))*sedgex(i,j,comp)
+
+            else if (species_pred_type == predict_rhoX) then
+                ! edge states are (rho X)
+                sfluxx(i,j,comp) = (umac(i,j) + w0macx(i,j)) * sedgex(i,j,comp)
+
+            else if (species_pred_type == predict_rho_and_X) then
+                ! edge states are rho and X
+                sfluxx(i,j,comp) = (umac(i,j) + w0macx(i,j)) * &
+                    sedgex(i,j,rho_comp)*sedgex(i,j,comp)
+
+            endif
+
+            end do
+        end do
+       !$OMP END DO NOWAIT
+
+       ! loop for y-fluxes
+       !$OMP DO
+        do j = lo(2), hi(2)+1
+            do i = lo(1), hi(1)
+
+            if (species_pred_type == predict_rhoprime_and_X) then
+                ! edge states are rho' and X.  To make the (rho X)
+                ! flux, we need the edge state of rho0
+                rho0_edge = HALF*(rho0macy_old(i,j)+rho0macy_new(i,j))
+                sfluxy(i,j,comp) = (vmac(i,j) + w0macy(i,j)) * &
+                    (rho0_edge + sedgey(i,j,rho_comp))*sedgey(i,j,comp)
+
+            else if (species_pred_type == predict_rhoX) then
+                ! edge states are (rho X)
+                sfluxy(i,j,comp) = (vmac(i,j) + w0macy(i,j)) * sedgey(i,j,comp)
+
+            else if (species_pred_type == predict_rho_and_X) then
+                ! edge states are rho and X
+                sfluxy(i,j,comp) = (vmac(i,j) + w0macy(i,j)) * &
+                    sedgey(i,j,rho_comp)*sedgey(i,j,comp)
+
+            endif
+
+            end do
+       end do
+       !$OMP END DO
+       !$OMP END PARALLEL
+
+    end do ! end loop over components
+     
+  end subroutine mk_rhoX_flux_2d_polar
+  
+  
   !----------------------------------------------------------------------------
   ! mk_rhoX_flux_3d_cart
   !----------------------------------------------------------------------------
@@ -658,7 +778,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use ml_cc_restriction_module, only: ml_edge_restriction_c
     use variables, only: rhoh_comp
     use probin_module, only: enthalpy_pred_type, species_pred_type
@@ -756,14 +876,41 @@ contains
              sfyp => dataptr(sflux(n,2),i)
              seyp => dataptr(sedge(n,2),i)
              vmp  => dataptr(umac(n,2),i)
-             call mk_rhoh_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
-                                  sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
-                                  ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
-                                  rho0_old(n,:), rho0_edge_old(n,:), &
-                                  rho0_new(n,:), rho0_edge_new(n,:), &
-                                  rhoh0_old(n,:), rhoh0_edge_old(n,:), &
-                                  rhoh0_new(n,:), rhoh0_edge_new(n,:), &
-                                  w0(n,:),lo,hi)
+             if (polar .eq. 0) then
+                call mk_rhoh_flux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
+                                    sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
+                                    ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                    rho0_old(n,:), rho0_edge_old(n,:), &
+                                    rho0_new(n,:), rho0_edge_new(n,:), &
+                                    rhoh0_old(n,:), rhoh0_edge_old(n,:), &
+                                    rhoh0_new(n,:), rhoh0_edge_new(n,:), &
+                                    w0(n,:),lo,hi)
+            else
+                w0xp => dataptr(w0mac(n,1),i)
+                w0yp => dataptr(w0mac(n,2),i)
+                r0mxop => dataptr(rho0mac_old(n,1),i)
+                r0myop => dataptr(rho0mac_old(n,2),i)
+                rh0mxop => dataptr(rhoh0mac_old(n,1),i)
+                rh0myop => dataptr(rhoh0mac_old(n,2),i)
+                h0mxop => dataptr(h0mac_old(n,1),i)
+                h0myop => dataptr(h0mac_old(n,2),i)
+                r0mxnp => dataptr(rho0mac_new(n,1),i)
+                r0mynp => dataptr(rho0mac_new(n,2),i)
+                rh0mxnp => dataptr(rhoh0mac_new(n,1),i)
+                rh0mynp => dataptr(rhoh0mac_new(n,2),i)
+                h0mxnp => dataptr(h0mac_new(n,1),i)
+                h0mynp => dataptr(h0mac_new(n,2),i)
+                call mk_rhoh_flux_2d_polar(sfxp(:,:,1,:),sfyp(:,:,1,:), ng_sf, &
+                                          sexp(:,:,1,:),seyp(:,:,1,:), ng_se, &
+                                          ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                          w0xp(:,:,1,1),w0yp(:,:,1,1),ng_w0, &
+                                          r0mxop(:,:,1,1),r0myop(:,:,1,1), &
+                                          h0mxop(:,:,1,1),h0myop(:,:,1,1), &
+                                          r0mxnp(:,:,1,1),r0mynp(:,:,1,1), &
+                                          h0mxnp(:,:,1,1),h0mynp(:,:,1,1), &
+                                          ng_0m,lo,hi)
+            
+            endif
           case (3)
              sfyp => dataptr(sflux(n,2),i)
              sfzp => dataptr(sflux(n,3),i)
@@ -1064,6 +1211,301 @@ contains
 
   end subroutine mk_rhoh_flux_2d
 
+  
+ !----------------------------------------------------------------------------
+  ! mk_rhoh_flux_2d_polar
+  !----------------------------------------------------------------------------
+  subroutine mk_rhoh_flux_2d_polar(sfluxx,sfluxy,ng_sf,&
+                                  sedgex,sedgey,ng_se, &
+                                  umac,vmac,ng_um, &
+                                  w0macx,w0macy,ng_w0, &
+                                  rho0macx_old,rho0macy_old, &
+                                  h0macx_old,h0macy_old, &
+                                  rho0macx_new,rho0macy_new, &
+                                  h0macx_new,h0macy_new, &
+                                  ng_0m,lo,hi)
+
+    use bl_constants_module
+    use network, only: nspec
+    use variables, only: rho_comp, rhoh_comp
+    use pred_parameters
+    use probin_module, only: species_pred_type, enthalpy_pred_type
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_w0,ng_0m
+    real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
+    real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
+    real(kind=dp_t), intent(inout) ::        sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) ::        sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macx_old(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macy_old(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::  rho0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macx_new(lo(1)-ng_0m:,lo(2)-ng_0m:)
+    real(kind=dp_t), intent(in   ) ::    h0macy_new(lo(1)-ng_0m:,lo(2)-ng_0m:)
+
+    ! local
+    integer         :: i,j
+    real(kind=dp_t) :: rho0_edge,h0_edge
+!   real(kind=dp_t) :: rhoh0_edge
+    logical         :: have_h, have_hprime, have_rhoh
+    
+    have_h = enthalpy_pred_type.eq.predict_h .or. &
+             enthalpy_pred_type.eq.predict_T_then_h .or. &
+             enthalpy_pred_type.eq.predict_Tprime_then_h
+    
+    have_hprime = enthalpy_pred_type.eq.predict_hprime
+
+    have_rhoh = enthalpy_pred_type.eq.predict_rhoh
+    
+    ! create x-fluxes
+    if (have_h) then
+
+       ! enthalpy edge state is h
+
+       if (species_pred_type == predict_rhoprime_and_X) then
+
+          ! density edge state is rho' 
+
+          !$OMP PARALLEL DO PRIVATE(i,j,rho0_edge)
+            do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+
+                    rho0_edge = HALF*(rho0macx_old(i,j)+rho0macx_new(i,j))
+
+                    sfluxx(i,j,rhoh_comp) = (umac(i,j) + w0macx(i,j)) * &
+                        (rho0_edge + sedgex(i,j,rho_comp))*sedgex(i,j,rhoh_comp)
+
+                end do
+            end do
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
+
+          ! density edge state is rho 
+
+          !$OMP PARALLEL DO PRIVATE(i,j)
+          do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+
+                sfluxx(i,j,rhoh_comp) = (umac(i,j) + w0macx(i,j)) * &
+                    sedgex(i,j,rho_comp)*sedgex(i,j,rhoh_comp)
+
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       endif
+
+
+    else if (have_hprime) then
+
+       ! enthalpy edge state is h'
+
+       if (species_pred_type == predict_rhoprime_and_X) then
+
+          ! density edge state is rho'
+
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
+          ! computed from (rho h)_0 / rho_0 
+          ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
+
+          !$OMP PARALLEL DO PRIVATE(i,j,rho0_edge,h0_edge)
+          do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+                
+                rho0_edge = HALF*(rho0macx_old(i,j)+rho0macx_new(i,j))
+                
+                h0_edge = HALF*(h0macx_old(i,j)+h0macx_new(i,j))
+                
+                sfluxx(i,j,rhoh_comp) = (umac(i,j)+w0macx(i,j)) * &
+                    (sedgex(i,j,rho_comp)+rho0_edge) * (sedgex(i,j,rhoh_comp)+h0_edge)
+                
+            end do
+          end do
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+
+       else if (species_pred_type == predict_rhoX) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rhoX and predict_hprime not supported together")
+
+       endif
+
+    else if (have_rhoh) then
+
+       !$OMP PARALLEL DO PRIVATE(i,j)
+       do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+
+                sfluxx(i,j,rhoh_comp) = (umac(i,j) + w0macx(i,j))*sedgex(i,j,rhoh_comp)
+            
+            end do
+       end do
+       !$OMP END PARALLEL DO
+
+    else
+
+       ! enthalpy edge state is (rho h)'
+
+       !$OMP PARALLEL DO PRIVATE(i,j,rho0_edge,h0_edge)
+       do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+
+                ! Average (rho h) onto edges by averaging rho and h
+                ! separately onto edges.  
+                !  (rho h)_edge = (rho h)' + (rho_0 * h_0) 
+                ! where h_0 is computed from (rho h)_0 / rho_0
+                rho0_edge = HALF*(rho0macx_old(i,j)+rho0macx_new(i,j))
+
+                h0_edge = HALF*(h0macx_old(i,j)+h0macx_new(i,j))
+
+                sfluxx(i,j,rhoh_comp) = &
+                        (umac(i,j)+w0macx(i,j))*(rho0_edge*h0_edge+sedgex(i,j,rhoh_comp))
+
+                ! alternate options that needs further testing
+                ! rhoh0_edge = HALF*(rhoh0macx_old(i,j)+rhoh0macx_new(i,j))
+                ! sfluxx(i,j,rhoh_comp) = &
+                !    (umac(i,j)+w0macx(i,j))*(rhoh0_edge+sedgex(i,j,rhoh_comp))
+
+            end do
+       end do
+       !$OMP END PARALLEL DO
+
+    endif
+
+    ! create y-fluxes
+    if (have_h) then
+
+       ! enthalpy edge state is h
+
+       if (species_pred_type == predict_rhoprime_and_X) then
+
+          ! density edge state is rho'
+
+          !$OMP PARALLEL DO PRIVATE(i,j,rho0_edge)
+            do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+
+                    rho0_edge = HALF*(rho0macy_old(i,j)+rho0macy_new(i,j))
+
+                    sfluxy(i,j,rhoh_comp) = (vmac(i,j) + w0macy(i,j)) * &
+                        (rho0_edge + sedgey(i,j,rho_comp))*sedgey(i,j,rhoh_comp)
+
+                end do
+            end do
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
+
+          ! density edge state is rho
+
+          !$OMP PARALLEL DO PRIVATE(i,j)
+            do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+
+                    sfluxy(i,j,rhoh_comp) = (vmac(i,j) + w0macy(i,j)) * &
+                        sedgey(i,j,rho_comp)*sedgey(i,j,rhoh_comp)
+
+                end do
+            end do
+          !$OMP END PARALLEL DO
+
+       endif
+
+    else if (have_hprime) then
+
+       ! enthalpy edge state is h'
+
+       if (species_pred_type == predict_rhoprime_and_X) then
+
+          ! density edge state is rho'
+
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0) where h0 is
+          ! computed from (rho h)_0 / rho_0 
+          ! sfluxy = (vmac(i,j)+w0macy(i,j)) * (rho h)_edge
+
+          !$OMP PARALLEL DO PRIVATE(i,j,rho0_edge,h0_edge)
+            do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                    
+                    rho0_edge = HALF*(rho0macy_old(i,j)+rho0macy_new(i,j))
+                    
+                    h0_edge = HALF*(h0macy_old(i,j)+h0macy_new(i,j))
+                    
+                    sfluxy(i,j,rhoh_comp) = (vmac(i,j)+w0macy(i,j)) * &
+                        (sedgey(i,j,rho_comp)+rho0_edge) * (sedgey(i,j,rhoh_comp)+h0_edge)
+                    
+                end do
+            end do
+          !$OMP END PARALLEL DO
+
+       else if (species_pred_type == predict_rho_and_X .or. &
+                species_pred_type == predict_rhoX) then
+
+          ! density edge state is rho
+          call bl_error("ERROR: predict_rho_and_X and predict_hprime not supported together")
+          
+       endif
+
+    else if (have_rhoh) then
+
+       !$OMP PARALLEL DO PRIVATE(i,j)
+       do j = lo(2), hi(2)+1
+            do i = lo(1), hi(1)
+                
+                sfluxy(i,j,rhoh_comp) = (vmac(i,j) + w0macy(i,j))*sedgey(i,j,rhoh_comp)
+                
+            end do
+       end do
+       !$OMP END PARALLEL DO
+
+    else
+
+       ! enthalpy edge state is (rho h)'
+
+       !$OMP PARALLEL DO PRIVATE(i,j,rho0_edge,h0_edge)
+        do j = lo(2), hi(2)+1
+            do i = lo(1), hi(1)
+
+                ! Average (rho h) onto edges by averaging rho and h
+                ! separately onto edges.  
+                !  (rho h)_edge = (rho h)' + (rho_0 * h_0) 
+                ! where h_0 is computed from (rho h)_0 / rho_0
+                rho0_edge = HALF*(rho0macy_old(i,j)+rho0macy_new(i,j))
+
+                h0_edge = HALF*(h0macy_old(i,j)+h0macy_new(i,j))
+
+                sfluxy(i,j,rhoh_comp) = &
+                        (vmac(i,j)+w0macy(i,j))*(rho0_edge*h0_edge+sedgey(i,j,rhoh_comp))
+
+                ! alternate options that needs further testing
+                ! rhoh0_edge = HALF*(rhoh0macy_old(i,j)+rhoh0macy_new(i,j))
+                ! sfluxy(i,j,rhoh_comp) = &
+                !   (vmac(i,j)+w0macy(i,j))*(rhoh0_edge+sedgey(i,j,rhoh_comp))
+
+            end do
+        end do
+       !$OMP END PARALLEL DO
+
+    endif
+
+  end subroutine mk_rhoh_flux_2d_polar  
+  
+  
   !----------------------------------------------------------------------------
   ! mk_rhoh_flux_3d_cart
   !----------------------------------------------------------------------------

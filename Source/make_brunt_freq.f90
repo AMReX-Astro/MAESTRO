@@ -19,7 +19,7 @@ module make_brunt_freq_module
     
     use make_grav_module
     use make_scale_module
-    use geometry, only: spherical, nr_fine, nlevs_radial
+    use geometry, only: spherical, polar, nr_fine, nlevs_radial
     use probin_module, only: max_levs
 
     type(multifab), intent(inout) :: brunt(:)
@@ -63,10 +63,19 @@ module make_brunt_freq_module
 				    grav(n,:), hp(n,:), &
 				    lo, hi,dx(n,:))
           case (2)
-	      call make_brunt_2d(cp(:,:,1,1), ng_c, &
+              if (polar .eq. 1) then
+                np => dataptr(normal(n), i)       
+                call make_brunt_2d_polar(cp(:,:,1,1), ng_c, &
+                                        sp(:,:,1,:), ng_s, &
+					grav(1,:), hp(1,:), &
+					np(:,:,1,:), ng_n, lo, hi, dx(n,:))
+	      
+              else
+                call make_brunt_2d(cp(:,:,1,1), ng_c, &
 				    sp(:,:,1,:), ng_s, &
 				    grav(n,:), hp(n,:), &
 				    lo, hi,dx(n,:))
+              end if
 	  case (3)
 	      if (spherical .eq. 1) then
 		np => dataptr(normal(n), i)       
@@ -295,6 +304,164 @@ module make_brunt_freq_module
     
   end subroutine make_brunt_2d
 
+  
+  subroutine make_brunt_2d_polar(brunt, ng_ad, state, ng_s, grav, hp, &
+                                    normal, ng_n, lo, hi, dx)
+
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use geometry, only: nr_fine, nlevs_radial
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
+    use fill_3d_module
+    use network, only: nspec
+    use probin_module, only: base_cutoff_density
+    use bl_constants_module
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng_ad, ng_s, ng_n
+    real(kind=dp_t), intent(  out) :: brunt(lo(1)-ng_ad:,lo(2)-ng_ad:)
+    real(kind=dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,:)  
+    real(kind=dp_t), intent(in   ) ::   hp(0:)
+    real(kind=dp_t), intent(in   ) ::   grav(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    
+    real(kind=dp_t) :: pres(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: abar(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: nabla_ad(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_rho(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_t(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: chi_mu(lo(1):hi(1),lo(2):hi(2))
+    real(kind=dp_t) :: nabla, nabla_mu
+    real(kind=dp_t) :: dp(3), dt(3), dmu(3)
+
+    
+
+    
+
+    real(kind=dp_t), allocatable ::   hp_cart(:,:,:)
+    real(kind=dp_t), allocatable :: grav_cart(:,:,:)
+    
+    integer :: i, j, c
+
+    type (eos_t) :: eos_state
+    integer :: pt_index(MAX_SPACEDIM)
+
+    
+    allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,grav(0:),grav_cart,lo,hi,dx,0)
+    
+    !hp(n,:) where n is the amr level
+    allocate(hp_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,hp(0:),hp_cart,lo,hi,dx,0)
+    
+    
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,eos_state,pt_index)    
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            eos_state%rho   = state(i,j,rho_comp)
+            eos_state%T     = state(i,j,temp_comp)
+            eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            pt_index(:) = (/i, j, -1/)       
+
+            call eos(eos_input_rt, eos_state, pt_index)
+    
+            pres(i,j) = eos_state%p
+            abar(i,j) = eos_state%abar
+
+            chi_rho(i,j) = eos_state%rho * eos_state%dpdr / eos_state%p
+            chi_t(i,j) = eos_state%T * eos_state%dpdt / eos_state%p
+            chi_mu(i,j) = eos_state%abar * eos_state%dpdA / eos_state%p
+            nabla_ad(i,j) = (eos_state%gam1 - chi_rho(i,j)) / (chi_t(i,j) * eos_state%gam1)
+
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+
+    !$OMP PARALLEL DO PRIVATE(i,j,dt,dp,nabla,nabla_mu,dmu)
+    do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+
+            if (state(i,j,rho_comp) <= base_cutoff_density) then
+                nabla = ZERO
+                nabla_mu = ZERO
+            else
+                ! compute gradient
+
+                if (j == lo(2)) then
+                    dt(2) = state(i,j+1,temp_comp) - state(i,j,temp_comp)
+                    dp(2) = pres(i,j+1) - pres(i,j)
+                    dmu(2) = abar(i,j+1) - abar(i,j)
+                    ! backward difference
+                else if (j == hi(2)) then
+                    dt(2) = state(i,j,temp_comp) - state(i,j-1,temp_comp)
+                    dp(2) = pres(i,j) - pres(i,j-1)
+                    dmu(2) = abar(i,j) - abar(i,j-1)
+                    ! centered difference
+                else
+                    dt(2) = state(i,j+1,temp_comp) - state(i,j-1,temp_comp)
+                    dp(2) = pres(i,j+1) - pres(i,j-1)
+                    dmu(2) = abar(i,j+1) - abar(i,j-1)
+                endif
+
+                if (i == lo(1)) then
+                    dt(1) = state(i+1,j,temp_comp) - state(i,j,temp_comp)
+                    dp(1) = pres(i+1,j) - pres(i,j)
+                    dmu(1) = abar(i+1,j) - abar(i,j)
+                    ! backward difference
+                else if (i == hi(1)) then
+                    dt(1) = state(i,j,temp_comp) - state(i-1,j,temp_comp)
+                    dp(1) = pres(i,j) - pres(i-1,j)
+                    dmu(1) = abar(i,j) - abar(i-1,j)
+                    ! centered difference
+                else
+                    dt(1) = state(i+1,j,temp_comp) - state(i-1,j,temp_comp)
+                    dp(1) = pres(i+1,j) - pres(i-1,j)
+                    dmu(1) = abar(i+1,j) - abar(i-1,j)
+                endif
+
+                ! dot into normal to get d/dr
+                dp(3) = 0.d0
+                dt(3) = 0.d0
+                dmu(3) = 0.d0
+                do c = 1,2
+                    dp(3) = dp(3) + dp(c)*normal(i,j,c) 
+                    dt(3) = dt(3) + dt(c)*normal(i,j,c)
+                    dmu(3) = dmu(3) + dmu(c)*normal(i,j,c)
+                enddo
+
+                ! prevent Inf
+                if (dp(3) == ZERO) then
+                    nabla = -huge(ZERO)
+                    nabla_mu = -huge(ZERO)
+                else
+                    nabla = pres(i,j)*dt(3) / (dp(3)*state(i,j,temp_comp))
+                    nabla_mu = pres(i,j)*dmu(3) / (dp(3)*abar(i,j))
+                endif
+            endif
+            if (hp_cart(i,j,1) == ZERO) then
+                brunt(i,j) = -huge(ZERO)
+            else 
+                brunt(i,j) = - grav_cart(i,j,1)*chi_t(i,j) &
+                                / (chi_rho(i,j) * hp_cart(i,j,1)) &
+                                * (nabla_ad(i,j) - nabla &
+                                - nabla_mu * chi_mu(i,j)/chi_t(i,j))
+            endif
+
+        enddo
+    enddo
+    !$OMP END PARALLEL DO
+    
+    deallocate(grav_cart)
+    deallocate(hp_cart)
+
+  end subroutine make_brunt_2d_polar
+
+  
+  
+  
   subroutine make_brunt_3d(brunt, ng_ad, state, ng_s, grav, hp, &
                                     lo, hi, dx)
 

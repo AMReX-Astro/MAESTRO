@@ -159,8 +159,11 @@ zhi_boundary_type                   character          ""
 # Set to 1 if you are doing a spherical problem.
 spherical_in                        integer            0
 
+# Set to 1 if you are doing a polar problem.
+polar_in                        integer            0
+
 # set octant = T if you just want to model an octant of a sphere
-# (note: only takes effect for spherical geometry)
+# (note: only takes effect for spherical or polar geometry)
 octant                              logical            .false.
 
 # dimensionality (valid values are 2 or 3)

@@ -13,7 +13,7 @@ module make_scale_module
   subroutine make_scale(hq,q0)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine,r_cc_loc, dr, dr_fine, &
+    use geometry, only: spherical, polar, nr_fine,r_cc_loc, dr, dr_fine, &
 	  nlevs_radial, nr, numdisjointchunks, & 
 	  r_start_coord, r_end_coord
     use probin_module, only: ref_ratio
@@ -31,7 +31,7 @@ module make_scale_module
     integer                      :: r, n, i
     real(kind=dp_t)              :: dq, ddr
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
 
 	! compute scale height as in the planar case
       n = 1
@@ -103,7 +103,7 @@ module make_scale_module
       call restrict_base(hq,.true.)
       call fill_ghost_base(hq,.true.) 
 
-    else  ! spherical = 1
+    else  ! spherical = 1 or polar =1
 
        ! Computing only the finest level is enough for spherical symmetry,
        ! since we have to map to the 3D grid anyway, which is also possible with a finer hq          

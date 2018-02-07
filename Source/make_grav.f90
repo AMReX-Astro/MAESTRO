@@ -15,7 +15,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc, &
          nlevs_radial, nr, numdisjointchunks, & 
-         r_start_coord, r_end_coord
+         r_start_coord, r_end_coord, polar
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass, do_self_grav, ref_ratio
     use fundamental_constants_module, only: Gconst
@@ -33,7 +33,7 @@ contains
     real(kind=dp_t), allocatable :: m(:,:)
     real(kind=dp_t)              :: term1, term2
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
 
        if (do_planar_invsq_grav)  then
 
@@ -192,7 +192,7 @@ contains
 
        endif
 
-    else  ! spherical = 1
+    else  ! spherical = 1 or polar = 1
 
        allocate(m(1,0:nr_fine-1))
           
@@ -243,7 +243,7 @@ contains
   subroutine make_grav_edge(grav_edge,rho0)
 
     use bl_constants_module
-    use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr, &
+    use geometry, only: spherical, polar, r_edge_loc, nr_fine, nlevs_radial, nr, &
          numdisjointchunks, r_start_coord, r_end_coord
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass, do_self_grav, ref_ratio
@@ -262,7 +262,7 @@ contains
     real(kind=dp_t)              :: mencl
     real(kind=dp_t), allocatable :: m(:,:)
         
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
 
        if (do_planar_invsq_grav)  then       
 
@@ -394,7 +394,7 @@ contains
     ! gravity at the same resolution
 
     use bl_constants_module
-    use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr
+    use geometry, only: spherical, r_edge_loc, nr_fine, nlevs_radial, nr, polar
     use probin_module, only: grav_const, base_cutoff_density, &
          do_planar_invsq_grav, planar_invsq_mass, do_self_grav
     use fundamental_constants_module, only: Gconst
@@ -410,7 +410,7 @@ contains
     integer                      :: r
     real(kind=dp_t)              :: mencl
     
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
 
        if (do_planar_invsq_grav)  then       
 

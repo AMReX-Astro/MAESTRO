@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use variables, only: foextrap_comp
     use ml_restrict_fill_module
 
@@ -86,9 +86,17 @@ contains
                                        base_edge(n,:),w0(n,:),dx(n,:),do_fullform)
           case (2)
              vmp => dataptr(umac(n,2),i)
-             call modify_scal_force_2d(fp(:,:,1,comp),ng_f,sp(:,:,1,comp),ng_s,lo,hi, &
+             if (polar .eq. 1) then
+                bcp => dataptr(base_cart(n), i)
+                call modify_scal_force_2d_polar(fp(:,:,1,comp),ng_f,sp(:,:,1,comp),ng_s,lo,hi, & 
+                                       domlo, domhi, &
+                                       ump(:,:,1,1),vmp(:,:,1,1),ng_um,bcp(:,:,1,1),ng_b, &
+                                       w0(1,:),dx(n,:),do_fullform)
+             else
+                call modify_scal_force_2d(fp(:,:,1,comp),ng_f,sp(:,:,1,comp),ng_s,lo,hi, &
                                        ump(:,:,1,1),vmp(:,:,1,1),ng_um,base(n,:), &
                                        base_edge(n,:),w0(n,:),dx(n,:),do_fullform)
+             endif
           case(3)
              vmp => dataptr(umac(n,2),i)
              wmp  => dataptr(umac(n,3), i)
@@ -202,6 +210,99 @@ contains
     end do
           
   end subroutine modify_scal_force_2d
+
+
+  subroutine modify_scal_force_2d_polar(force,ng_f,s,ng_s,lo,hi,domlo,domhi, &
+                                       umac,vmac,ng_um,base_cart,ng_b,w0,dx,do_fullform)
+
+    use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc
+    use fill_3d_module
+    use bl_constants_module
+    
+    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:),ng_f,ng_s,ng_um,ng_b
+    real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    
+    real(kind=dp_t), intent(in   ) :: base_cart(lo(1)-ng_b:,lo(2)-ng_b:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    logical        , intent(in   ) :: do_fullform
+    
+    ! Local variables
+    integer :: i,j,r
+    real(kind=dp_t) :: divumac,divbaseu
+    real(kind=dp_t) :: base_xlo,base_xhi
+    real(kind=dp_t) :: base_ylo,base_yhi
+    
+    real(kind=dp_t) :: divu(0:nr_fine-1)
+    real(kind=dp_t), allocatable :: divu_cart(:,:,:)
+
+    allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),1))
+
+    !$OMP PARALLEL DO PRIVATE(r)    
+    do r=0,nr_fine-1
+       divu(r) = (r_edge_loc(1,r+1)**2 * w0(r+1) - &
+                  r_edge_loc(1,r  )**2 * w0(r  ) ) / &
+                 (dr(1)*r_cc_loc(1,r)**2)
+    end do
+    !$OMP END PARALLEL DO
+
+    ! compute w0 contribution to divu
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,divu,divu_cart,lo,hi,dx,0)
+    
+    !$OMP PARALLEL DO PRIVATE(i,j,divumac,base_xhi,base_xlo,base_yhi,base_ylo,divbaseu)
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+            
+            ! umac does not contain w0
+            divumac = (umac(i+1,j) - umac(i,j)) / dx(1) &
+                    +(vmac(i,j+1) - vmac(i,j)) / dx(2) 
+
+            if (do_fullform) then
+
+                force(i,j) = force(i,j) - s(i,j)*(divumac+divu_cart(i,j,1))                 
+            else
+                
+                if (i.lt.domhi(1)) then
+                    base_xhi = HALF * (base_cart(i,j) + base_cart(i+1,j))
+                else
+                    base_xhi = base_cart(i,j)
+                end if
+                if (i.gt.domlo(1)) then
+                    base_xlo = HALF * (base_cart(i,j) + base_cart(i-1,j))
+                else
+                    base_xlo = base_cart(i,j)
+                end if
+                
+                if (j.lt.domhi(2)) then
+                    base_yhi = HALF * (base_cart(i,j) + base_cart(i,j+1))
+                else
+                    base_yhi = base_cart(i,j)
+                end if
+                if (j.gt.domlo(2)) then
+                    base_ylo = HALF * (base_cart(i,j) + base_cart(i,j-1))
+                else
+                    base_ylo = base_cart(i,j)
+                end if
+                                
+                divbaseu = (umac(i+1,j)*base_xhi - umac(i,j)*base_xlo)/dx(1) + &
+                            (vmac(i,j+1)*base_yhi - vmac(i,j)*base_ylo)/dx(2)
+                            
+                force(i,j) = force(i,j) - divbaseu &
+                        -(s(i,j)-base_cart(i,j))*(divumac+divu_cart(i,j,1)) 
+
+            endif
+
+        end do
+    end do
+    !$OMP END PARALLEL DO
+    
+    deallocate(divu_cart)
+
+  end subroutine modify_scal_force_2d_polar  
+  
   
   subroutine modify_scal_force_3d_cart(force,ng_f,s,ng_s,lo,hi,umac,vmac,wmac,ng_um, &
                                        base,base_edge,w0,dx,do_fullform)

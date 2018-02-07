@@ -18,7 +18,7 @@ contains
 
     use bl_prof_module
     use create_umac_grown_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use ml_cc_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
 
@@ -73,9 +73,17 @@ contains
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (2)
              vtp => dataptr(utrans(n,2),i)
+             w0xp => dataptr(w0mac(n,1), i)
+             w0yp => dataptr(w0mac(n,2), i)
+             if (polar .eq. 1) then
+                n_1d = 1
+             else
+                n_1d = n
+             end if
              call mkutrans_2d(up(:,:,1,:), ng_u, &
                               ufp(:,:,1,:), ng_uf, &
-                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
+                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n_1d,:), &
+                              w0xp(:,:,1,1), w0yp(:,:,1,1), ng_w0,&
                               lo,hi,dx(n,:),dt,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
@@ -255,20 +263,24 @@ contains
   end subroutine mkutrans_1d
 
   subroutine mkutrans_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
+                         w0macx,w0macy,ng_w0, &
                          lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
+    use geometry, only: polar
     use variables, only: rel_eps
     use probin_module, only: ppm_type
     use ppm_module
 
-    integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
+    integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut,ng_w0
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: w0(0:)    
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -370,16 +382,32 @@ contains
        call bl_error("mkutrans_2d: invalid boundary type phys_bc(1,2)")
     end select
 
-    do j=js,je
-       do i=is,ie+1
-          ! solve Riemann problem using full velocity
-          uavg = HALF*(ulx(i,j)+urx(i,j))
-          test = ((ulx(i,j) .le. ZERO .and. urx(i,j) .ge. ZERO) .or. &
-               (abs(ulx(i,j)+urx(i,j)) .lt. rel_eps))
-          utrans(i,j) = merge(ulx(i,j),urx(i,j),uavg .gt. ZERO)
-          utrans(i,j) = merge(ZERO,utrans(i,j),test)
-       end do
-    end do
+    if (polar .eq. 1) then
+       !$OMP PARALLEL DO PRIVATE(i,j,uavg,test)
+          do j=js,je
+             do i=is,ie+1
+                ! solve Riemann problem using full velocity
+                uavg = HALF*(ulx(i,j)+urx(i,j))
+                test = ((ulx(i,j)+w0macx(i,j) .le. ZERO .and. &
+                     urx(i,j)+w0macx(i,j) .ge. ZERO) .or. &
+                     (abs(ulx(i,j)+urx(i,j)+TWO*w0macx(i,j)) .lt. rel_eps))
+                utrans(i,j) = merge(ulx(i,j),urx(i,j),uavg+w0macx(i,j) .gt. ZERO)
+                utrans(i,j) = merge(ZERO,utrans(i,j),test)
+             enddo
+          enddo
+       !$OMP END PARALLEL DO
+    else
+        do j=js,je
+            do i=is,ie+1
+                ! solve Riemann problem using full velocity
+                uavg = HALF*(ulx(i,j)+urx(i,j))
+                test = ((ulx(i,j) .le. ZERO .and. urx(i,j) .ge. ZERO) .or. &
+                    (abs(ulx(i,j)+urx(i,j)) .lt. rel_eps))
+                utrans(i,j) = merge(ulx(i,j),urx(i,j),uavg .gt. ZERO)
+                utrans(i,j) = merge(ZERO,utrans(i,j),test)
+            end do
+        end do
+    end if
 
     !******************************************************************
     ! create vtrans
@@ -442,16 +470,32 @@ contains
        call bl_error("mkutrans_2d: invalid boundary type phys_bc(2,2)")
     end select
 
-    do j=js,je+1
-       do i=is,ie
-          ! solve Riemann problem using full velocity
-          uavg = HALF*(vly(i,j)+vry(i,j))
-          test = ((vly(i,j)+w0(j) .le. ZERO .and. vry(i,j)+w0(j) .ge. ZERO) .or. &
-               (abs(vly(i,j)+vry(i,j)+TWO*w0(j)) .lt. rel_eps))
-          vtrans(i,j) = merge(vly(i,j),vry(i,j),uavg+w0(j) .gt. ZERO)
-          vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
-       enddo
-    enddo
+    if (polar .eq. 1) then
+       !$OMP PARALLEL DO PRIVATE(i,j,uavg,test)
+          do j=js,je+1
+             do i=is,ie
+                ! solve Riemann problem using full velocity
+                uavg = HALF*(vly(i,j)+vry(i,j))
+                test = ((vly(i,j)+w0macy(i,j) .le. ZERO .and. &
+                     vry(i,j)+w0macy(i,j) .ge. ZERO) .or. &
+                     (abs(vly(i,j)+vry(i,j)+TWO*w0macy(i,j)) .lt. rel_eps))
+                vtrans(i,j) = merge(vly(i,j),vry(i,j),uavg+w0macy(i,j) .gt. ZERO)
+                vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
+             enddo
+          enddo
+       !$OMP END PARALLEL DO
+    else
+        do j=js,je+1
+            do i=is,ie
+                ! solve Riemann problem using full velocity
+                uavg = HALF*(vly(i,j)+vry(i,j))
+                test = ((vly(i,j)+w0(j) .le. ZERO .and. vry(i,j)+w0(j) .ge. ZERO) .or. &
+                    (abs(vly(i,j)+vry(i,j)+TWO*w0(j)) .lt. rel_eps))
+                vtrans(i,j) = merge(vly(i,j),vry(i,j),uavg+w0(j) .gt. ZERO)
+                vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
+            enddo
+        enddo
+    end if
 
     deallocate(ulx,urx,vly,vry)
     deallocate(Ip,Im)

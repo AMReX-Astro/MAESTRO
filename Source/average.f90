@@ -1,6 +1,6 @@
 ! Given a multifab of data (phi), average down to a base state quantity, phibar.
 ! If we are in plane-parallel, the averaging is at constant height.  
-! If we are spherical, then the averaging is done at constant radius.  
+! If we are spherical or polar, then the averaging is done at constant radius.  
 
 module average_module
   
@@ -24,7 +24,7 @@ contains
   subroutine average(mla,phi,phibar,dx,incomp)
 
     use geometry, only: nr_fine, nr_irreg, r_start_coord, r_end_coord, spherical, &
-                        numdisjointchunks, dr
+                        numdisjointchunks, dr, polar
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO, HALF
     use restrict_base_module, only: restrict_base, fill_ghost_base
@@ -72,7 +72,7 @@ contains
     !       it will run much faster for larger problems
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        allocate(ncell_proc ( 0:nr_irreg,nlevs))
        allocate(ncell      (-1:nr_irreg,nlevs))
@@ -86,16 +86,30 @@ contains
        ! radii contains every possible distance that a cell-center at the finest
        ! level can map into
        !
-       !$OMP PARALLEL PRIVATE(r,n)
-       do n=1,nlevs
-          !$OMP DO
-          do r=0,nr_irreg
-             radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
-          end do
-          !$OMP END DO NOWAIT
-       end do
-       !$OMP END PARALLEL
-
+       
+       if (spherical .eq. 1) then
+            !$OMP PARALLEL PRIVATE(r,n)
+            do n=1,nlevs
+                !$OMP DO
+                do r=0,nr_irreg
+                    radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
+                end do
+                !$OMP END DO NOWAIT
+            end do
+            !$OMP END PARALLEL
+       end if
+       
+       if (polar .eq. 1) then
+            !$OMP PARALLEL PRIVATE(r,n)
+            do n=1,nlevs
+                !$OMP DO
+                do r=0,nr_irreg
+                    radii(r,n) = sqrt(0.5d0+2.d0*r)*dx(n,1)
+                end do
+                !$OMP END DO NOWAIT
+            end do
+            !$OMP END PARALLEL
+       end if
        radii(nr_irreg+1,:) = 1.d99
 
     else
@@ -115,7 +129,7 @@ contains
     phisum       = ZERO       
     phisum_proc  = ZERO
 
-    if (spherical .eq. 0) then
+    if (spherical .eq. 0 .and. polar .eq. 0) then
        
        ! The plane-parallel case is straightforward.
        ! Simply average all the cells values at a particular height.
@@ -162,7 +176,7 @@ contains
        call restrict_base(phibar,.true.)
        call fill_ghost_base(phibar,.true.)
 
-    else if(spherical .eq. 1) then
+    else if(spherical .eq. 1 .or. polar .eq. 1) then
 
        ! For spherical, we construct a 1D array at each level, phisum(:,:), that has space
        ! allocated for every possible radius that a cell-center at each
@@ -174,17 +188,32 @@ contains
              pp => dataptr(phi(n), i)
              lo =  lwb(get_box(phi(n), i))
              hi =  upb(get_box(phi(n), i))
-
-             if (n .eq. nlevs) then
-                call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
-                                     lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
-             else
-                ! we include the mask so we don't double count; i.e., we only consider
-                ! cells that are not covered by finer cells when constructing the sum
-                mp => dataptr(mla%mask(n), i)
-                call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
-                                     lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
-                                     mp(:,:,:,1))
+             
+             if (spherical .eq. 1) then
+                if (n .eq. nlevs) then
+                    call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                        lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
+                else
+                    ! we include the mask so we don't double count; i.e., we only consider
+                    ! cells that are not covered by finer cells when constructing the sum
+                    mp => dataptr(mla%mask(n), i)
+                    call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                        lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
+                                        mp(:,:,:,1))
+                end if
+            else if (polar .eq. 1) then
+                if (n .eq. nlevs) then
+                    call sum_phi_2d_polar(radii(0:,n),nr_irreg,pp(:,:,1,:),phisum_proc(:,n), &
+                                        lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
+                else
+                    ! we include the mask so we don't double count; i.e., we only consider
+                    ! cells that are not covered by finer cells when constructing the sum
+                    mp => dataptr(mla%mask(n), i)
+                    call sum_phi_2d_polar(radii(0:,n),nr_irreg,pp(:,:,1,:),phisum_proc(:,n), &
+                                        lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
+                                        mp(:,:,1,1))
+                end if
+            
              end if
           end do
 
@@ -393,7 +422,7 @@ contains
 
   subroutine average_irreg(mla,phi,phibar_irreg,dx,incomp)
 
-    use geometry, only: nr_irreg, spherical
+    use geometry, only: nr_irreg, spherical, polar
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO
     use restrict_base_module, only: restrict_base, fill_ghost_base
@@ -425,8 +454,8 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 0) then
-       call bl_error("average_irreg only written for spherical")
+    if (spherical .eq. 0 .and. polar .eq. 0) then
+       call bl_error("average_irreg only written for spherical or polar")
     end if
     
     allocate(ncell_proc ( 0:nr_irreg  ,nlevs))
@@ -438,15 +467,27 @@ contains
     ! radii contains every possible distance that a cell-center at the finest
     ! level can map into
     !
-    !$OMP PARALLEL PRIVATE(r,n)
-    do n=1,nlevs
-       !$OMP DO
-       do r=0,nr_irreg
-          radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
-       end do
-       !$OMP END DO NOWAIT
-    end do
-    !$OMP END PARALLEL
+    if (spherical .eq. 1) then
+        !$OMP PARALLEL PRIVATE(r,n)
+        do n=1,nlevs
+        !$OMP DO
+        do r=0,nr_irreg
+            radii(r,n) = sqrt(0.75d0+2.d0*r)*dx(n,1)
+        end do
+        !$OMP END DO NOWAIT
+        end do
+        !$OMP END PARALLEL
+    else if (polar .eq. 1) then
+        !$OMP PARALLEL PRIVATE(r,n)
+        do n=1,nlevs
+        !$OMP DO
+        do r=0,nr_irreg
+            radii(r,n) = sqrt(0.5d0+2.d0*r)*dx(n,1)
+        end do
+        !$OMP END DO NOWAIT
+        end do
+        !$OMP END PARALLEL    
+    end if
 
     radii(nr_irreg+1,:) = 1.d99
 
@@ -472,17 +513,31 @@ contains
           pp => dataptr(phi(n), i)
           lo =  lwb(get_box(phi(n), i))
           hi =  upb(get_box(phi(n), i))
-
-          if (n .eq. nlevs) then
-             call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
-                                  lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
-          else
-             ! we include the mask so we don't double count; i.e., we only consider
-             ! cells that we can "see" when constructing the sum
-             mp => dataptr(mla%mask(n), i)
-             call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
-                                  lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
-                                  mp(:,:,:,1))
+          
+          if (spherical .eq. 1) then
+            if (n .eq. nlevs) then
+                call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                    lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
+            else
+                ! we include the mask so we don't double count; i.e., we only consider
+                ! cells that we can "see" when constructing the sum
+                mp => dataptr(mla%mask(n), i)
+                call sum_phi_3d_sphr(radii(0:,n),nr_irreg,pp(:,:,:,:),phisum_proc(:,n), &
+                                    lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
+                                    mp(:,:,:,1))
+            end if
+          else if (polar .eq. 1) then
+            if (n .eq. nlevs) then
+                call sum_phi_2d_polar(radii(0:,n),nr_irreg,pp(:,:,1,:),phisum_proc(:,n), &
+                                    lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp)
+            else
+                ! we include the mask so we don't double count; i.e., we only consider
+                ! cells that we can "see" when constructing the sum
+                mp => dataptr(mla%mask(n), i)
+                call sum_phi_2d_polar(radii(0:,n),nr_irreg,pp(:,:,1,:),phisum_proc(:,n), &
+                                    lo,hi,ng,dx(n,:),ncell_proc(:,n),incomp, &
+                                    mp(:,:,1,1))
+            end if
           end if
        end do
 
@@ -537,6 +592,64 @@ contains
 
   end subroutine sum_phi_2d
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine sum_phi_2d_polar(radii,nr_irreg,phi,phisum,lo,hi,ng,dx,ncell,incomp,mask)
+
+    use geometry, only: center
+    use probin_module, only: prob_lo
+    use bl_constants_module, only: HALF
+
+    integer         , intent(in   )           :: lo(:), hi(:), ng, incomp, nr_irreg
+    real (kind=dp_t), intent(in   )           :: radii(0:)
+    real (kind=dp_t), intent(in   )           :: phi(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind=dp_t), intent(inout)           :: phisum(0:)
+    real (kind=dp_t), intent(in   )           :: dx(:)
+    integer         , intent(inout)           :: ncell(0:)
+    logical         , intent(in   ), optional :: mask(lo(1):,lo(2):)
+
+    ! local
+    real (kind=dp_t) :: x, y, radius
+    integer          :: i, j, index
+    logical          :: cell_valid
+
+    do j=lo(2),hi(2)
+        y = prob_lo(2) + (dble(j) + HALF)*dx(2) - center(2)
+        
+        do i=lo(1),hi(1)
+            x = prob_lo(1) + (dble(i) + HALF)*dx(1) - center(1)
+            
+            ! make sure the cell isn't covered by finer cells
+            cell_valid = .true.
+            if ( present(mask) ) then
+                if ( (.not. mask(i,j)) ) cell_valid = .false.
+            end if
+            
+            if (cell_valid) then
+
+                ! compute distance to center
+                radius = sqrt(x**2 + y**2 )
+                
+                ! figure out which radii index this point maps into
+                index = ((radius / dx(1))**2 - 0.5d0) / 2.d0
+                
+                ! due to roundoff error, need to ensure that we are in the proper radial bin
+                if (index .lt. nr_irreg) then
+                    if (abs(radius-radii(index)) .gt. abs(radius-radii(index+1))) then
+                        index = index+1
+                    end if
+                end if
+                
+                phisum(index) = phisum(index) + phi(i,j,incomp)
+                ncell(index)  = ncell(index) + 1
+
+            end if
+            
+        end do
+    end do
+
+  end subroutine sum_phi_2d_polar  
+  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine sum_phi_3d(phi,phisum,lo,hi,ng,incomp)

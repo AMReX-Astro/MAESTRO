@@ -30,7 +30,7 @@ contains
     ! multifab array, so index_rho may be different.
 
     use bl_prof_module
-    use geometry, only: spherical, nr_fine, dr
+    use geometry, only: spherical, polar, nr_fine, dr
     use bl_constants_module
     use ml_restrict_fill_module
     use probin_module, only: evolve_base_state
@@ -94,7 +94,7 @@ contains
 
 
     ! put w0 and gradw0 on cell centers
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           ! w0_cart will contain the cell-centered Cartesian components of w0, 
           ! for use in computing the Coriolis term in the prediction
@@ -149,12 +149,31 @@ contains
 
           case (2)
              vmp => dataptr(umac(n,2),i)
-             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp, &
-                                  rp(:,:,1,index_rho),ng_s, &
-                                  vmp(:,:,1,1), ng_um, &
-                                  rho0(n,:),grav(n,:),w0(n,:),w0_force(n,:),lo,hi,n, &
-                                  do_add_utilde_force)
+             
+             if (polar .eq. 1) then
+                w0p   => dataptr(w0_force_cart(n), i)
+                np    => dataptr(normal(n),i)
+                gw0p   => dataptr(gradw0_cart(n),i)
 
+                ng_w  = nghost(w0_force_cart(1))
+                ng_gw = nghost(gradw0_cart(1))
+                ng_n  = nghost(normal(1))
+
+                call mk_vel_force_2d_polar(fp(:,:,1,:),ng_f,is_final_update, &
+                                          np(:,:,1,:),ng_n, &
+                                          ump(:,:,1,1),vmp(:,:,1,1),ng_um, &
+                                          gw0p(:,:,1,1),ng_gw, &
+                                          gpp(:,:,1,:),ng_gp,rp(:,:,1,index_rho),ng_s, &
+                                          rho0(1,:),grav(1,:),w0p(:,:,1,:),ng_w,lo,hi,dx(n,:), &
+                                          do_add_utilde_force)
+
+             else
+                call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp, &
+                                    rp(:,:,1,index_rho),ng_s, &
+                                    vmp(:,:,1,1), ng_um, &
+                                    rho0(n,:),grav(n,:),w0(n,:),w0_force(n,:),lo,hi,n, &
+                                    do_add_utilde_force)
+             end if
           case (3)
              uop => dataptr(uold(n),i)
              vmp => dataptr(umac(n,2),i)
@@ -198,7 +217,7 @@ contains
        end do
     enddo
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy(w0_cart(n))
           call destroy(gradw0_cart(n))
@@ -339,6 +358,103 @@ contains
 
   end subroutine mk_vel_force_2d
 
+  
+ subroutine mk_vel_force_2d_polar(vel_force,ng_f,is_final_update, &
+                                  normal,ng_n, &
+                                  umac,vmac,ng_um, &
+                                  gradw0_cart,ng_gw, &
+                                  gpi,ng_gp,rho,ng_s, &
+                                  rho0,grav,w0_force_cart,ng_w,lo,hi,dx, &
+                                  do_add_utilde_force)
+
+    use fill_3d_module
+    use bl_constants_module
+    use geometry,  only: center
+    use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, prob_lo
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_um,ng_w,ng_n,ng_gw
+    real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,:)
+    logical        , intent(in   ) :: is_final_update
+    real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n :,lo(2)-ng_n :,:)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::gradw0_cart(lo(1)-ng_gw:,lo(2)-ng_gw:)
+    real(kind=dp_t), intent(in   ) ::        gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
+    real(kind=dp_t), intent(in   ) ::        rho(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) :: w0_force_cart(lo(1)-ng_w:,lo(2)-ng_w:,:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
+    real(kind=dp_t), intent(in   ) :: grav(0:)
+    real(kind=dp_t), intent(in   ) ::   dx(:)
+    logical        , intent(in   ) :: do_add_utilde_force
+
+    integer         :: i,j
+
+    real(kind=dp_t), allocatable :: rho0_cart(:,:,:)
+    real(kind=dp_t), allocatable :: grav_cart(:,:,:)
+
+    real(kind=dp_t) :: rhopert
+    real(kind=dp_t) :: xx, yy
+    
+    real(kind=dp_t) :: Ut_dot_er
+
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),1))
+    allocate(grav_cart(lo(1):hi(1),lo(2):hi(2),3))
+
+    vel_force = ZERO
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
+    call put_1d_array_on_cart_2d_polar(.false.,.true.,grav,grav_cart,lo,hi,dx,0)
+
+    !$OMP PARALLEL DO PRIVATE(i,j,xx,yy,rhopert)
+       do j = lo(2),hi(2)
+          yy = prob_lo(2) + (dble(j) + HALF)*dx(2) - center(2)
+          do i = lo(1),hi(1)
+             xx = prob_lo(1) + (dble(i) + HALF)*dx(1) - center(1)
+
+             rhopert = rho(i,j) - rho0_cart(i,j,1)
+
+             ! cutoff the buoyancy term if we are outside of the star
+             if (rho(i,j) .lt. buoyancy_cutoff_factor*base_cutoff_density) then
+                rhopert = 0.d0
+             end if
+
+             
+             ! note: if use_alt_energy_fix = T, then gphi is already weighted
+             ! by beta_0
+             vel_force(i,j,1) = ( rhopert * grav_cart(i,j,1) - gpi(i,j,1) ) / rho(i,j) &
+                                    - w0_force_cart(i,j,1)
+
+             vel_force(i,j,2) = ( rhopert * grav_cart(i,j,2) - gpi(i,j,2) ) / rho(i,j) &
+                                    - w0_force_cart(i,j,2)
+
+          end do
+       end do
+    !$OMP END PARALLEL DO
+
+
+    if (do_add_utilde_force) then
+
+       !$OMP PARALLEL DO PRIVATE(i,j,Ut_dot_er)
+        do j=lo(2),hi(2)
+            do i=lo(1),hi(1)
+
+                Ut_dot_er = &
+                        HALF*(umac(i,j)+umac(i+1,j  ))*normal(i,j,1) + &
+                        HALF*(vmac(i,j)+vmac(i  ,j+1))*normal(i,j,2)
+                        
+                vel_force(i,j,1) = vel_force(i,j,1) - Ut_dot_er*gradw0_cart(i,j)*normal(i,j,1)
+                vel_force(i,j,2) = vel_force(i,j,2) - Ut_dot_er*gradw0_cart(i,j)*normal(i,j,2)
+                
+            end do
+        end do
+       !$OMP END PARALLEL DO
+
+    endif
+
+    deallocate(rho0_cart,grav_cart)
+
+  end subroutine mk_vel_force_2d_polar
+  
   subroutine mk_vel_force_3d_cart(vel_force,ng_f,is_final_update, &
                                   uold,ng_uo, &
                                   umac,vmac,wmac,ng_um, &

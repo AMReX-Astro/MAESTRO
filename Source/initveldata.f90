@@ -14,7 +14,7 @@ contains
 
   subroutine initveldata(u,s0_init,p0_init,dx,the_bc_level,mla)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -40,8 +40,13 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+             if (polar .eq. 1) then
+                call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                                 s0_init(1,:,:), p0_init(1,:))
+             else
+                call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
                                  s0_init(n,:,:), p0_init(n,:))
+             end if
           case (3) 
              if (spherical .eq. 1) then
                 call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &

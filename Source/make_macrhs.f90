@@ -27,7 +27,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab) , intent(inout) :: macrhs(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
@@ -79,11 +79,19 @@ contains
                                  pop(:,1,1,1),ng_dp, &
                                  dp(:,1,1,1),ng_d,dt,is_predictor)
           case (2)
-             call make_macrhs_2d(n,lo,hi,mp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
-                                 gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
-                                 gamma1bar(n,:),p0(n,:), &
-                                 pop(:,:,1,1),ng_dp,dp(:,:,1,1),ng_d, &
-                                 dt,is_predictor)
+             if (polar .eq. 1) then
+                call make_macrhs_2d_polar(lo,hi,rho0(1,:),mp(:,:,1,1),ng_rh,sp(:,:,1,1), &
+                                         ng_sr,gp(:,:,1,1),ng_dg,Sbar(1,:),div_coeff(1,:), &
+                                         dx(n,:),gamma1bar(1,:), &
+                                         p0(1,:),pop(:,:,1,1),ng_dp, &
+                                         dp(:,:,1,1),ng_d,dt,is_predictor)
+             else
+                call make_macrhs_2d(n,lo,hi,mp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
+                                    gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
+                                    gamma1bar(n,:),p0(n,:), &
+                                    pop(:,:,1,1),ng_dp,dp(:,:,1,1),ng_d, &
+                                    dt,is_predictor)
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call make_macrhs_3d_sphr(lo,hi,rho0(1,:),mp(:,:,:,1),ng_rh,sp(:,:,:,1), &
@@ -197,6 +205,88 @@ contains
 
   end subroutine make_macrhs_2d
 
+
+  subroutine make_macrhs_2d_polar(lo,hi,rho0,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                                 Sbar,div_coeff,dx,gamma1bar,p0, &
+                                 delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
+
+    use probin_module, only: dpdt_factor, base_cutoff_density
+    use fill_3d_module
+
+    integer         , intent(in   ) :: lo(:),hi(:),ng_rh,ng_sr,ng_dg,ng_dp,ng_d
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
+    real (kind=dp_t), intent(  out) ::            rhs(lo(1)-ng_rh:,lo(2)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
+    real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
+    real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
+    real (kind=dp_t), intent(in   ) :: dx(:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+    real (kind=dp_t), intent(in   ) ::   delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:)
+    real (kind=dp_t), intent(inout) ::      delta_chi(lo(1)-ng_d :,lo(2)-ng_d :)
+    real (kind=dp_t), intent(in   ) :: dt
+    logical         , intent(in   ) :: is_predictor
+
+    !     Local variables
+    integer :: i, j
+    real(kind=dp_t), allocatable ::       div_cart(:,:,:)
+    real(kind=dp_t), allocatable ::      Sbar_cart(:,:,:)
+    real(kind=dp_t), allocatable :: gamma1bar_cart(:,:,:)
+    real(kind=dp_t), allocatable ::        p0_cart(:,:,:)
+    real(kind=dp_t), allocatable ::      rho0_cart(:,:,:)
+
+    allocate(div_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,div_coeff,div_cart,lo,hi,dx,0)
+    
+    allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),1))
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,Sbar,Sbar_cart,lo,hi,dx,0)
+    
+    do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+            rhs(i,j) = div_cart(i,j,1) * (Source(i,j) - Sbar_cart(i,j,1) + &
+                        delta_gamma1_term(i,j))
+        end do
+    end do
+
+    deallocate(Sbar_cart)
+    
+    if (dpdt_factor .ge. 0.0d0) then
+       
+       allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),1))
+       call put_1d_array_on_cart_2d_polar(.false.,.false.,gamma1bar, &
+                                         gamma1bar_cart,lo,hi,dx,0)
+       
+       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),1))
+       call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+       
+       allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),1))
+       call put_1d_array_on_cart_2d_polar(.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
+       
+       if (is_predictor) &
+          delta_chi = 0.d0
+
+       !$OMP PARALLEL DO PRIVATE(i,j)
+        do j = lo(2),hi(2)                
+            do i = lo(1),hi(1)
+                if (rho0_cart(i,j,1) .gt. base_cutoff_density) then
+                    delta_chi(i,j) = delta_chi(i,j) + dpdt_factor * delta_p_term(i,j) / &
+                            (dt*gamma1bar_cart(i,j,1)*p0_cart(i,j,1))
+                    rhs(i,j) = rhs(i,j) + div_cart(i,j,1) * delta_chi(i,j)                           
+                end if
+            end do
+        end do
+       !$OMP END PARALLEL DO
+       
+       deallocate(gamma1bar_cart,p0_cart,rho0_cart)
+       
+    end if
+    
+    deallocate(div_cart)
+    
+  end subroutine make_macrhs_2d_polar  
+  
+  
   subroutine make_macrhs_3d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
                             Sbar,div_coeff,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)

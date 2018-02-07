@@ -29,7 +29,7 @@ contains
          amr_buf_width, &
          max_grid_size_2, max_grid_size_3, ref_ratio, max_levs, &
          ppm_type, bds_type, dump_grid_file
-    use geometry, only: nlevs_radial, spherical
+    use geometry, only: nlevs_radial, spherical, polar
     use variables, only: nscal, rho_comp, rhoh_comp, foextrap_comp
     use network, only: nspec
 
@@ -247,7 +247,7 @@ contains
                                    the_bc_tower,dm,ng_s,mba%rr(nl,:))
 
           nlevs = nl+1
-          nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+          nlevs_radial = merge(1, nlevs, spherical .eq. 1 .or. polar .eq. 1)
           nl = nl+1
 
        endif
@@ -255,7 +255,7 @@ contains
     enddo
 
     nlevs = nl
-    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1 .or. polar .eq. 1)
 
     call ml_layout_build_la_array(mla,la_array,mba,pmask,nlevs)
 
@@ -307,7 +307,7 @@ contains
        call bc_tower_level_build(the_bc_tower,n,mla%la(n))
     end do
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. .1) then
 
        ! convert (rho X) --> X in sold_temp 
        call convert_rhoX_to_X(sold_temp,.true.,mla_temp,the_bc_tower_temp%bc_tower_array)

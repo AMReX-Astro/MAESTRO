@@ -20,7 +20,7 @@ contains
     use ml_layout_module
     use ml_cc_restriction_module, only : ml_cc_restriction
     use variables, only: foextrap_comp
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use bl_constants_module, only: ZERO
     use probin_module, only: drive_initial_convection
     use fill_3d_module, only: put_1d_array_on_cart
@@ -87,7 +87,13 @@ contains
              call get_rho_Hext_3d_sph(tcp(:,:,:,1),ng_tc, &
                                       hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s, &
                                       lo,hi,dx(n,:))
-          else
+          else if (polar == 1) then
+             tcp => dataptr(tempbar_init_cart(n), i)
+             ng_tc = nghost(tempbar_init_cart(1))
+             call get_rho_Hext_2d_polar(tcp(:,:,1,1),ng_tc, &
+                                      hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s, &
+                                      lo,hi,dx(n,:))
+          else 
              call get_rho_Hext_cart(tempbar_init(n,:), &
                                     hp, lbound(hp), ubound(hp), &
                                     sp, lbound(sp), ubound(sp), &
@@ -127,6 +133,23 @@ contains
 
   end subroutine get_rho_Hext_cart
 
+  subroutine get_rho_Hext_2d_polar(tempbar_init_cart,ng_tc, &
+                                 rho_Hext,ng_h,s,ng_s, &
+                                 lo,hi,dx)
+
+    use bl_constants_module
+
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_h, ng_tc
+    real(kind=dp_t), intent(in   ) :: tempbar_init_cart(lo(1)-ng_tc:,lo(2)-ng_tc:)
+    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
+    real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    rho_Hext = 0.0_dp_t
+
+  end subroutine get_rho_Hext_2d_polar
+  
+  
   subroutine get_rho_Hext_3d_sph(tempbar_init_cart,ng_tc, &
                                  rho_Hext,ng_h,s,ng_s, &
                                  lo,hi,dx)

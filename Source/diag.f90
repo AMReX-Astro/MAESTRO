@@ -31,7 +31,7 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module, only: bl_prof_timer, build, destroy
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
     use bl_constants_module, only: ZERO
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
@@ -94,7 +94,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
 
        do n=1,nlevs
           
@@ -128,7 +128,7 @@ contains
     ng_rhn = nghost(rho_Hnuc(1))
     ng_rhe = nghost(rho_Hext(1))
     ng_rw  = nghost(rho_omegadot(1))
-    if (spherical == 1) then
+    if (spherical .eq. 1 .or. polar .eq. 1) then
        ng_n   = nghost(normal(1))
        ng_w   = nghost(w0r_cart(1))
        ng_wm  = nghost(w0mac(1,1))
@@ -212,36 +212,77 @@ contains
              endif
 
           case (2)
-             if (n .eq. nlevs) then
-                call diag_2d(n,newtime,dt,dx(n,:), &
-                             sp(:,:,1,:),ng_s, &
-                             rhnp(:,:,1,1),ng_rhn, &
-                             rhep(:,:,1,1),ng_rhe, &
-                             rwp(:,:,1,:),ng_rw, &
-                             rho0(n,:),rhoh0(n,:), &
-                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                             up(:,:,1,:),ng_u, &
-                             w0(n,:), &
-                             lo,hi, &
-                             Mach_max_local,temp_max_local, &
-                             enuc_max_local,Hext_max_local)
-             else
-                mp => dataptr(mla%mask(n), i)
-                call diag_2d(n,newtime,dt,dx(n,:), &
-                             sp(:,:,1,:),ng_s, &
-                             rhnp(:,:,1,1),ng_rhn, &
-                             rhep(:,:,1,1),ng_rhe, &
-                             rwp(:,:,1,:),ng_rw, &
-                             rho0(n,:),rhoh0(n,:), &
-                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                             up(:,:,1,:),ng_u, &
-                             w0(n,:), &
-                             lo,hi, &
-                             Mach_max_local,temp_max_local, &
-                             enuc_max_local,Hext_max_local, &
-                             mp(:,:,1,1))
+             if (polar .eq. 1) then 
+             
+                nop => dataptr(normal(n) , i)
+                w0rp => dataptr(w0r_cart(n), i)
+                w0xp => dataptr(w0mac(n,1), i)
+                w0yp => dataptr(w0mac(n,2), i)
+             
+                if (n .eq. nlevs) then
+                    call diag_2d_polar(n,newtime,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rwp(:,:,1,:),ng_rw, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0rp(:,:,1,1), ng_w, &
+                                w0xp(:,:,1,1),w0yp(:,:,1,1),ng_wm, &
+                                nop(:,:,1,:),ng_n, &
+                                lo,hi, &
+                                Mach_max_local,temp_max_local, &
+                                enuc_max_local,Hext_max_local)
+                else
+                    mp => dataptr(mla%mask(n), i)
+                    call diag_2d_polar(n,newtime,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rwp(:,:,1,:),ng_rw, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0rp(:,:,1,1), ng_w, &
+                                w0xp(:,:,1,1),w0yp(:,:,1,1),ng_wm, &
+                                nop(:,:,1,:),ng_n, &
+                                lo,hi, &
+                                Mach_max_local,temp_max_local, &
+                                enuc_max_local,Hext_max_local, &
+                                mp(:,:,1,1))
+                endif
+             else 
+                if (n .eq. nlevs) then
+                    call diag_2d(n,newtime,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rwp(:,:,1,:),ng_rw, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                Mach_max_local,temp_max_local, &
+                                enuc_max_local,Hext_max_local)
+                else
+                    mp => dataptr(mla%mask(n), i)
+                    call diag_2d(n,newtime,dt,dx(n,:), &
+                                sp(:,:,1,:),ng_s, &
+                                rhnp(:,:,1,1),ng_rhn, &
+                                rhep(:,:,1,1),ng_rhe, &
+                                rwp(:,:,1,:),ng_rw, &
+                                rho0(n,:),rhoh0(n,:), &
+                                p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                                up(:,:,1,:),ng_u, &
+                                w0(n,:), &
+                                lo,hi, &
+                                Mach_max_local,temp_max_local, &
+                                enuc_max_local,Hext_max_local, &
+                                mp(:,:,1,1))
+                endif
              endif
-
           case (3)
              if (spherical == 1) then
 
@@ -598,7 +639,99 @@ contains
 
   end subroutine diag_2d
 
+!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  subroutine diag_2d_polar(n,newtime,dt,dx, &
+                         s,ng_s, &
+                         rho_Hnuc,ng_rhn, &
+                         rho_Hext,ng_rhe, &
+                         rho_omegadot,ng_rw, &
+                         rho0,rhoh0,p0,tempbar,gamma1bar, &
+                         u,ng_u, &
+                         w0r,ng_w, &
+                         w0macx,w0macy,ng_wm, &
+                         normal,ng_n, &
+                         lo,hi, &                         
+                         Mach_max,temp_max, &
+                         enuc_max,Hext_max, &
+                         mask)
 
+    use variables, only: rho_comp, spec_comp, temp_comp
+    use bl_constants_module
+    use network, only: nspec
+    use probin_module, only: prob_lo
+    use eos_module, only: eos_input_rt, eos
+    use eos_type_module
+
+    integer, intent(in) :: n, lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe, ng_rw, ng_w, ng_wm, ng_n
+    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
+                                         p0(0:),tempbar(0:),gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) ::      w0r(lo(1)-ng_w:  ,lo(2)-ng_w:  )
+    real (kind=dp_t), intent(in   ) ::   w0macx(lo(1)-ng_wm: ,lo(2)-ng_wm: )
+    real (kind=dp_t), intent(in   ) ::   w0macy(lo(1)-ng_wm: ,lo(2)-ng_wm: )
+    real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,:)
+    real (kind=dp_t), intent(in   ) :: newtime, dt, dx(:)
+    real (kind=dp_t), intent(inout) :: Mach_max, temp_max, enuc_max, Hext_max
+    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):)
+
+    !     Local variables
+    integer            :: i, j
+    real (kind=dp_t)   :: weight
+    logical            :: cell_valid
+    real (kind=dp_t)   :: x, y
+    real (kind=dp_t)   :: vel
+
+    type (eos_t) :: eos_state
+
+
+    ! weight is the factor by which the volume of a cell at the current level
+    ! relates to the volume of a cell at the coarsest level of refinement.
+    weight = 1.d0 / 4.d0**(n-1)
+
+    do j = lo(2), hi(2)
+        y = prob_lo(2) + (dble(j) + HALF) * dx(2)
+    
+        do i = lo(1), hi(1)
+            x = prob_lo(1) + (dble(i) + HALF) * dx(1)
+
+            cell_valid = .true.
+            if (present(mask)) then
+            if ( (.not. mask(i,j)) ) cell_valid = .false.
+            endif
+
+            if (cell_valid) then
+
+            ! vel is the magnitude of the velocity, including w0
+            vel = sqrt( (u(i,j,1)+HALF*(w0macx(i,j)+w0macx(i+1,j)))**2 + &
+                        (u(i,j,2)+HALF*(w0macy(i,j)+w0macy(i,j+1)))**2)
+
+            
+            ! call the EOS to get the sound speed and internal energy       
+            eos_state%T     = s(i,j,temp_comp)
+            eos_state%rho   = s(i,j,rho_comp)
+            eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+            call eos(eos_input_rt, eos_state)
+
+            ! max Mach number                                       
+            Mach_max = max(Mach_max,vel/eos_state%cs)
+
+            ! max temp and enuc
+            temp_max = max(temp_max,s(i,j,temp_comp))
+            enuc_max = max(enuc_max,rho_Hnuc(i,j)/s(i,j,rho_comp))
+            Hext_max = max(Hext_max,rho_Hext(i,j)/s(i,j,rho_comp))
+
+            endif  ! cell valid
+
+        enddo
+    enddo
+
+  end subroutine diag_2d_polar
+  
   !xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   subroutine diag_3d(n,newtime,dt,dx, &
                      s,ng_s, &

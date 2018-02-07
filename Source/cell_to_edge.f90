@@ -15,7 +15,7 @@ contains
 
     use bl_constants_module, only: HALF
     use geometry, only: r_start_coord, r_end_coord, nr, &
-                        numdisjointchunks, spherical
+                        numdisjointchunks, spherical, polar
     use restrict_base_module
 
     real(kind=dp_t), intent(in   ) :: s0_cell(:,0:)
@@ -24,10 +24,14 @@ contains
     real(kind=dp_t)                ::  s0min,s0max,tmp
     integer                        ::  n,r,i,nlevs
 
-    if (spherical .eq. 1) then
+    if (spherical .eq. 1 ) then
        call bl_error('calling cell_to_edge with spherical .eq. 1')
     end if
 
+    if (polar .eq. 1 ) then
+       call bl_error('calling cell_to_edge with polar .eq. 1')
+    end if
+    
     nlevs = size(s0_cell,dim=1)
 
     do n=1,nlevs

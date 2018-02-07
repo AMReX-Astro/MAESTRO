@@ -1,20 +1,23 @@
 &params
 
- model_file = "xrb_new.raw"
+ model_file = "input_modn_200_f"
 
- model_prefix = "xrb_new"
+ model_prefix = "main_sequence_3.5_start"
 
- nx = 1536
+ nx = 320
 
- temp_cutoff = 1.d6
+ temp_cutoff = 1.d3
 
- model_shift = 1.e6
+ model_shift = 0.0
 
  xmin = 0.0
- xmax = 9216.0
+ xmax = 8.0e10
 
- g_const = -2.4679d14
+ do_invsq_grav = .true.
 
  low_density_cutoff = 1.d-4
-
+ smooth = .true.
+ xmin_smooth = 0.5e10
+ xmax_smooth = 4.2e10
+ smoothness = 29
 /
