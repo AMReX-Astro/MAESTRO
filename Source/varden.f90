@@ -542,6 +542,11 @@ subroutine varden()
                                  the_bc_tower,dSdt,S_cc_old,S_cc_new,etarho_ec, &
                                  etarho_cc,psi,sponge,nodalrhs,tempbar_init,particles)
 
+           ! copy pi from snew to sold
+           do n=1,nlevs
+              call multifab_copy_c(sold(n),pi_comp,snew(n),pi_comp,1,0)
+           end do
+
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
            if (parallel_IOProcessor()) then
