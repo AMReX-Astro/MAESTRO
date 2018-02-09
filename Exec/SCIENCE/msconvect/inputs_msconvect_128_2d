@@ -8,7 +8,7 @@
  
 !Run parameters
  print_init_hse_diag = T
- max_step = 10
+ max_step = 100
  init_iter = 1
  
  stop_time = 1e9
@@ -37,8 +37,8 @@
  polar_in = 1
  octant = F
 
- n_cellx = 16
- n_celly = 16
+ n_cellx = 32
+ n_celly = 32
  n_cellz = 1
  max_grid_size = 32
  
@@ -64,16 +64,16 @@
  
  
 !Grid (physical)
- prob_hi_x = 0.4e11
- prob_hi_y = 0.4e11
+ prob_hi_x = 0.8e11
+ prob_hi_y = 0.8e11
  prob_hi_z = 0.
  
  
  
 !Boundary conditions 
- bcx_lo = 14
+ bcx_lo = 12
  bcx_hi = 12
- bcy_lo = 14
+ bcy_lo = 12
  bcy_hi = 12
 
 

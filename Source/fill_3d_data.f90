@@ -849,6 +849,7 @@ contains
        do i=1, nfabs(w0mac(n,1))
           w0xp => dataptr(w0mac(n,1), i)
           w0yp => dataptr(w0mac(n,2), i)
+          w0p  => dataptr(w0_cart(n), i)
           lo = lwb(get_box(w0mac(n,1), i))
           hi = upb(get_box(w0mac(n,1), i))
           select case(dm)
@@ -858,7 +859,6 @@ contains
           
           case(3)
             w0zp => dataptr(w0mac(n,3), i)
-            w0p  => dataptr(w0_cart(n), i)
             call make_w0mac_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                                   ng_w0,w0p(:,:,:,:),ng_wc,lo,hi,dx(n,:))
           end select

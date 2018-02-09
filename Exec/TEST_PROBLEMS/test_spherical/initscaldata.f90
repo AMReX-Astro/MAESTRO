@@ -23,7 +23,7 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_init,dx,bc,mla)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -49,7 +49,12 @@ contains
           
           select case (dm)
           case (2)
-             call bl_error('initscalardata_2d not written')
+             if (polar .eq. 1) then
+                call initscalardata_2d_polar(sop(:,:,1,:),lo,hi,ng, dx(n,:), &
+                                             s0_init(1,:,:), p0_init(1,:))
+             else
+                call bl_error('initscalardata_2d not written')
+             end if
           case (3)
              if (spherical .eq. 1) then
                 call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
@@ -92,7 +97,7 @@ contains
 
   subroutine initscalardata_on_level(n,s,s0_init,p0_init,dx,bc)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, polar
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
@@ -116,7 +121,12 @@ contains
        hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
-          call bl_error('initscalardata_2d not written')
+            if (polar .eq. 1) then
+                call initscalardata_2d_polar(sop(:,:,1,:),lo,hi,ng, dx, &
+                                             s0_init, p0_init)
+             else
+                call bl_error('initscalardata_2d not written')
+             end if
        case (3)
           if (spherical .eq. 1) then
              call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_init)
@@ -132,6 +142,51 @@ contains
 
   end subroutine initscalardata_on_level
 
+  subroutine initscalardata_2d_polar(s,lo,hi,ng,dx,s0_init,p0_init)
+
+    use probin_module, only: prob_lo, perturb_model
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t),    intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t),    intent(in   ) :: p0_init(0:)
+
+    !     Local variables
+    integer :: comp
+
+    if (perturb_model) then
+       call bl_error('perturb_model not written for initscalardata_3d_sphr')
+    end if
+
+    ! initial the domain with the base state
+    s = ZERO
+
+    ! initialize the scalars
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,s0_init(:,rho_comp), &
+                                      s(:,:,rho_comp:),lo,hi,dx,ng)
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,s0_init(:,rhoh_comp), &
+                                      s(:,:,rhoh_comp:),lo,hi,dx,ng)
+
+    call put_1d_array_on_cart_2d_polar(.false.,.false.,s0_init(:,temp_comp), &
+                                      s(:,:,temp_comp:),lo,hi,dx,ng)
+
+    ! initialize species
+    do comp = spec_comp, spec_comp+nspec-1
+       call put_1d_array_on_cart_2d_polar(.false.,.false.,s0_init(:,comp), &
+                                         s(:,:,comp:),lo,hi,dx,ng)
+    end do
+
+    ! initialize tracers
+    do comp = trac_comp, trac_comp+ntrac-1
+       call put_1d_array_on_cart_2d_polar(.false.,.false.,s0_init(:,comp), &
+                                         s(:,:,comp:),lo,hi,dx,ng)
+    end do
+
+  end subroutine initscalardata_2d_polar
+
+  
   subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, perturb_model

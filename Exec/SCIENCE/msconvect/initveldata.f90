@@ -36,7 +36,7 @@ contains
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     integer :: lo(mla%dim),hi(mla%dim),ng,dm
-    integer :: i,j,k,n,nlevs
+    integer :: i,j,k,n,nlevs, n_1p
 
     ! random numbers between -1 and 1
     real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
@@ -99,8 +99,13 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
+             if (polar .eq. 1) then
+                n_1p = 1
+             else 
+                n_1p = n
+             end if
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_init(n,:), &
+                                 s0_init(n_1p,:,:), p0_init(n_1p,:), &
                                  alpha(:,:,1),beta(:,:,1),gamma(:,:,1), &
                                  phix(:,:,1),phiy(:,:,1),normk(:,:,1))
           case (3)

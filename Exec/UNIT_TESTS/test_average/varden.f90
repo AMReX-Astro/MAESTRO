@@ -134,6 +134,30 @@ subroutine varden()
         nr_irreg = (3*(domhi(1)-0.5d0)**2-0.75d0)/2.d0
      endif
      
+  else if (polar .eq. 1) then
+  
+     dr_fine = dx(nlevs,1) / dble(drdxfac)
+     
+     if (.not. octant) then
+        lenx = HALF * (prob_hi(1) - prob_lo(1))
+        leny = HALF * (prob_hi(2) - prob_lo(2))
+     else
+        lenx = prob_hi(1) - prob_lo(1)
+        leny = prob_hi(2) - prob_lo(2)
+     end if
+     
+     max_dist = sqrt(lenx**2 + leny**2 )
+     nr_fine = int(max_dist / dr_fine) + 1
+
+     ! compute nr_irreg
+     domain = layout_get_pd(phi(nlevs)%la)
+     domhi  = upb(domain)+1
+     if (.not. octant) then
+        nr_irreg = (2*(domhi(1)/2-0.5d0)**2-0.5d0)/2.d0
+     else
+        nr_irreg = (2*(domhi(1)-0.5d0)**2-0.5d0)/2.d0
+     endif
+     
   else
      
      nr_fine = extent(mla%mba%pd(nlevs),dm)
@@ -170,6 +194,10 @@ subroutine varden()
         hi =  upb(get_box(phi(n),i))
         select case (dm)
         case (2)
+            if (polar .eq. 1) then
+                call initgaussian_2d_polar(phi_exact(1,:),pp(:,:,1,:),phi(n)%ng, &
+                                            lo,hi,dx(n,:))
+            end if
         case (3)
            if (spherical .eq. 1) then
               call initgaussian_3d_sphr(phi_exact(1,:), pp(:,:,:,:), phi(n)%ng, &
@@ -291,4 +319,20 @@ subroutine varden()
 
     end subroutine initgaussian_3d_sphr
 
+    
+    subroutine initgaussian_2d_polar(phi_exact,phi,ng,lo,hi,dx)
+
+      use probin_module, only: prob_lo, perturb_model
+
+      real (kind = dp_t), intent(in   ) :: phi_exact(:)
+      integer           , intent(in   ) :: lo(:),hi(:),ng
+      real (kind = dp_t), intent(inout) :: phi(lo(1)-ng:,lo(2)-ng:,:)
+      real (kind = dp_t), intent(in   ) :: dx(:)
+
+
+      call put_1d_array_on_cart_2d_polar(.false.,.false.,phi_exact(:), &
+                                        phi(:,:,1:),lo,hi,dx,ng)
+
+    end subroutine initgaussian_2d_polar    
+    
 end subroutine varden

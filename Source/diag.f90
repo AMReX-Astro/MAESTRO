@@ -443,7 +443,7 @@ contains
     !=========================================================================
     call destroy(bpt)
 
-    if (spherical.eq.1) then
+    if (spherical .eq.1 .or. polar .eq. 1) then
        do n = 1, nlevs
           call destroy(w0r_cart(n))
           do comp=1,dm

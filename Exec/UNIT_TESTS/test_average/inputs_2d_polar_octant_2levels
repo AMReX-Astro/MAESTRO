@@ -1,0 +1,21 @@
+&PROBIN
+ model_file = "model.hse"
+
+ test_set = "gr0_2d_2levels"
+
+ max_levs = 2
+ 
+ polar_in = 1
+ octant = T
+ 
+ prob_hi_x = 1.0
+ prob_hi_y = 1.0
+
+xlo_boundary_type = "outlet"
+xhi_boundary_type = "outlet"
+ylo_boundary_type = "outlet"
+yhi_boundary_type = "outlet"
+
+
+ use_eos_coulomb = F
+/

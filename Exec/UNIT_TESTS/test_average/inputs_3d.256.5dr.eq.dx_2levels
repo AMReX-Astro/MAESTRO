@@ -3,7 +3,7 @@
  test_set = "gr0_3d.256_2levels"
 
  drdxfac = 5
-
+ max_levs = 2 
  spherical_in = 1
  dm_in = 3
 

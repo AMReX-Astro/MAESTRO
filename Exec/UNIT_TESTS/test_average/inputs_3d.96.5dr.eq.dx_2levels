@@ -3,7 +3,7 @@
  test_set = "gr0_3d_octant_shell"
 
  octant = T
-
+ max_levs = 2
  drdxfac = 5
 
  spherical_in = 1
