@@ -19,7 +19,7 @@
 
  use_particles = T
 
- do_sponge = T
+ do_sponge = F
  sponge_center_density = 3.d6
  sponge_start_factor = 10.d0
  sponge_kappa = 10.d0
