@@ -6,13 +6,13 @@
  ppm_type = 2
 
  max_levs = 1
- n_cellx = 128
- n_celly = 128
+ n_cellx = 48
+ n_celly = 48
  n_cellz = 640
- max_grid_size = 32
+ max_grid_size = 48
 
- prob_hi_x = 7.2e7
- prob_hi_y = 7.2e7
+ prob_hi_x = 2.7e7
+ prob_hi_y = 2.7e7
  prob_hi_z = 3.6e8
 
  anelastic_cutoff = 3.d6
@@ -25,8 +25,8 @@
 
  grav_const = -1.5e10
 
- max_step  = 100000000
- init_iter = 1
+ max_step  = 0
+ init_iter = 0
 
  stop_time = 2.5d0
 
@@ -54,4 +54,5 @@
  init_divu_iter = 1
 
  perturb_model = T
+ evolve_base_state = F
 /
