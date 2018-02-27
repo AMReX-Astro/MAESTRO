@@ -3,7 +3,7 @@ repo.  Nightly regression testing runs on this branch.
 
 On the first workday of each month, we merge Maestro "development" ->
 "master", and tag it as "YY.MM", using the year and month.  This same
-tag is applied across all of the BoxLib astro codes and BoxLib itself,
+tag is applied across all of the AMReX astro codes and AMReX itself,
 allowing one to put each code on the same tag to get a version of the
 ecosystem that was tested together.
 
@@ -23,7 +23,7 @@ The procedure (from Weiqun) for doing the merge is:
 -- In master branch, commit new release notes summarizing changes
    since last major release.
 
--- git tag -m "BoxLib YY.MM" YY.MM
+-- git tag -m "AMReX YY.MM" YY.MM
 
 -- git push
 
