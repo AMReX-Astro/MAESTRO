@@ -13,7 +13,7 @@ module enthalpy_advance_module
 
 contains
 
-  subroutine enthalpy_advance(mla,is_predictor,uold,sold,snew,sedge,sflux,scal_force,&
+  subroutine enthalpy_advance(mla,which_step,uold,sold,snew,sedge,sflux,scal_force,&
                               thermal,umac,w0,w0mac, &
                               rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                               tempbar,psi,dx,dt,the_bc_level)
@@ -40,7 +40,7 @@ contains
     use convert_rhoX_to_X_module
 
     type(ml_layout), intent(inout) :: mla
-    integer        , intent(in   ) :: is_predictor
+    integer        , intent(in   ) :: which_step
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
@@ -182,20 +182,20 @@ contains
 
        ! make force for hprime
        is_prediction = .true.
-       call mkhprimeforce(mla,sold,sold,scal_force,is_prediction,thermal,umac,p0_old, &
-                          p0_old,h0_old,h0_old,psi,dx,.true.,the_bc_level)
+       call mkhprimeforce(mla,sold,scal_force,is_prediction,thermal,umac,p0_old, &
+                          h0_old,psi,dx,.true.,the_bc_level)
 
     else if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
               (enthalpy_pred_type .eq. predict_T_then_h        ) .or. &
               (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
 
        ! make force for temperature
-       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old,psi,dx,the_bc_level)
+       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,psi,dx,the_bc_level)
 
     end if        
       
     !**************************************************************************
-    !     Add w0 to MAC velocities (trans velocities already have w0).
+    !     Add w0 to MAC velocities 
     !**************************************************************************
 
     call addw0(umac,the_bc_level,mla,w0,w0mac,mult=ONE)
@@ -205,7 +205,7 @@ contains
     !**************************************************************************
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
-       ! convert (rho h) -> (rho h)' or
+       ! convert (rho h) -> (rho h)'
        call put_in_pert_form(mla,sold,rhoh0_old,dx,rhoh_comp,foextrap_comp,.true., &
                              the_bc_level)
     end if
@@ -296,9 +296,9 @@ contains
     !     Compute fluxes
     !**************************************************************************
 
-    ! for is_predictor .eq. 1, we pass in only the old base state quantities
-    ! for is_predictor .eq. 2, we pass in the old and new for averaging within mkflux
-    if (is_predictor .eq. 1) then
+    ! for which_step .eq. 1, we pass in only the old base state quantities
+    ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
+    if (which_step .eq. 1) then
 
        if (spherical .eq. 1) then
           do n=1,nlevs
@@ -340,7 +340,7 @@ contains
           end do
        end if
 
-    else if (is_predictor .eq. 2) then
+    else if (which_step .eq. 2) then
 
        if (spherical .eq. 1) then
           do n=1,nlevs
@@ -405,7 +405,7 @@ contains
     !     2) Update (rho h) with conservative differencing.
     !**************************************************************************
        
-    if (is_predictor .eq. 1) then
+    if (which_step .eq. 1) then
       ! Here just send p0_old and p0_old
        is_prediction = .false.
        call mkrhohforce(mla,scal_force,is_prediction, &

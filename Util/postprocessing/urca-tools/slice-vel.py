@@ -84,7 +84,7 @@ if args.octant:
                      center=cpos, width=width, origin="native")
 else:
     s = yt.SlicePlot(ds, args.axis, ('boxlib', 'circum_velocity'),
-                     center='c', width=width, origin="native")
+                     center='c', width=width)
 
 if args.rhocontours:
     for rhoc in args.rhocontours:

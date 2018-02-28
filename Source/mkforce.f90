@@ -20,7 +20,7 @@ module mk_vel_force_module
 contains
 
   subroutine mk_vel_force(vel_force,is_final_update, &
-                          uold,umac,w0,w0mac,gpi,s,index_rho,normal, &
+                          uold,uedge,w0,w0mac,gpi,s,index_rho,normal, &
                           rho0,grav,dx,w0_force,w0_force_cart,the_bc_level,mla, &
                           do_add_utilde_force)
 
@@ -41,7 +41,7 @@ contains
     logical        , intent(in   ) :: is_final_update
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: normal(:)
-    type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(in   ) :: uedge(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(in   ) :: gpi(:)
@@ -58,9 +58,9 @@ contains
 
     ! Local variables
     real(kind=dp_t), pointer ::  uop(:,:,:,:)
-    real(kind=dp_t), pointer ::  ump(:,:,:,:)
-    real(kind=dp_t), pointer ::  vmp(:,:,:,:)
-    real(kind=dp_t), pointer ::  wmp(:,:,:,:)
+    real(kind=dp_t), pointer ::  uep(:,:,:,:)
+    real(kind=dp_t), pointer ::  vep(:,:,:,:)
+    real(kind=dp_t), pointer ::  wep(:,:,:,:)
     real(kind=dp_t), pointer ::   np(:,:,:,:)
     real(kind=dp_t), pointer :: w0cp(:,:,:,:)
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
@@ -76,7 +76,7 @@ contains
     type(multifab)  :: gradw0_cart(mla%nlevel)
 
     integer                  :: i,r,lo(mla%dim),hi(mla%dim),dm,nlevs
-    integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_um, ng_n
+    integer                  :: ng_s,ng_f,ng_gp,n,ng_uo,ng_ue, ng_n
    
     type(multifab) :: w0_cart(mla%nlevel)
     integer :: ng_wc, ng_wm, ng_w, ng_gw
@@ -136,29 +136,29 @@ contains
           lo = lwb(get_box(s(n),i))
           hi = upb(get_box(s(n),i))
 
-          ump => dataptr(umac(n,1),i)
-          ng_um = nghost(umac(1,1))
+          uep => dataptr(uedge(n,1),i)
+          ng_ue = nghost(uedge(1,1))
 
           select case (dm)
           case (1)
              call mk_vel_force_1d(fp(:,1,1,1),ng_f,gpp(:,1,1,1),ng_gp, &
                                   rp(:,1,1,index_rho),ng_s, &
-                                  ump(:,1,1,1), ng_um, &
+                                  uep(:,1,1,1), ng_ue, &
                                   rho0(n,:),grav(n,:),w0(n,:),w0_force(n,:),lo,hi,n, &
                                   do_add_utilde_force)
 
           case (2)
-             vmp => dataptr(umac(n,2),i)
+             vep => dataptr(uedge(n,2),i)
              call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp, &
                                   rp(:,:,1,index_rho),ng_s, &
-                                  vmp(:,:,1,1), ng_um, &
+                                  vep(:,:,1,1), ng_ue, &
                                   rho0(n,:),grav(n,:),w0(n,:),w0_force(n,:),lo,hi,n, &
                                   do_add_utilde_force)
 
           case (3)
              uop => dataptr(uold(n),i)
-             vmp => dataptr(umac(n,2),i)
-             wmp => dataptr(umac(n,3),i)
+             vep => dataptr(uedge(n,2),i)
+             wep => dataptr(uedge(n,3),i)
 
              ng_uo = nghost(uold(1))
 
@@ -178,7 +178,7 @@ contains
 
                 call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo,np(:,:,:,:),ng_n, &
-                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                          uep(:,:,:,1),vep(:,:,:,1),wep(:,:,:,1),ng_ue, &
                                           w0cp(:,:,:,:),ng_wc,gw0p(:,:,:,1),ng_gw, &
                                           w0xp(:,:,:,1),w0yp(:,:,:,1),ng_wm, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
@@ -188,7 +188,7 @@ contains
              else
                 call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,is_final_update, &
                                           uop(:,:,:,:),ng_uo, &
-                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                          uep(:,:,:,1),vep(:,:,:,1),wep(:,:,:,1),ng_ue, &
                                           w0(n,:), &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,index_rho),ng_s, &
                                           rho0(n,:),grav(n,:),w0_force(n,:),lo,hi,n, &
@@ -218,7 +218,7 @@ contains
 
   subroutine mk_vel_force_1d(vel_force,ng_f,gpi,ng_gp, &
                              rho,ng_s, &
-                             umac,ng_um, &
+                             uedge,ng_ue, &
                              rho0,grav,w0,w0_force,lo,hi,n, &
                              do_add_utilde_force)
 
@@ -226,11 +226,11 @@ contains
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s,ng_um
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s,ng_ue
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :)
     real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:)
     real(kind=dp_t), intent(in   ) ::     rho(lo(1)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::    umac(lo(1)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   uedge(lo(1)-ng_ue:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:), w0_force(0:)
@@ -265,7 +265,7 @@ contains
              ! do not modify force since dw0/dr=0                                                                          
           else
              vel_force(i) = vel_force(i) &
-                  - (umac(i+1)+umac(i))*(w0(i+1)-w0(i)) / (TWO*dr(n))
+                  - (uedge(i+1)+uedge(i))*(w0(i+1)-w0(i)) / (TWO*dr(n))
           end if
 
        enddo
@@ -276,7 +276,7 @@ contains
 
   subroutine mk_vel_force_2d(vel_force,ng_f,gpi,ng_gp, &
                              rho,ng_s, &
-                             vmac, ng_um, &
+                             vedge, ng_ue, &
                              rho0,grav,w0,w0_force,lo,hi,n, &
                              do_add_utilde_force)
 
@@ -284,11 +284,11 @@ contains
     use bl_constants_module
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s,ng_um, n
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s,ng_ue, n
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::     rho(lo(1)-ng_s :,lo(2)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   vedge(lo(1)-ng_ue:,lo(2)-ng_ue:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:),w0_force(0:)
@@ -328,7 +328,7 @@ contains
                 ! do not modify force since dw0/dr=0                                                                       
              else
                 vel_force(i,j,2) = vel_force(i,j,2) &
-                     - (vmac(i,j+1)+vmac(i,j))*(w0(j+1)-w0(j)) / (TWO*dr(n))
+                     - (vedge(i,j+1)+vedge(i,j))*(w0(j+1)-w0(j)) / (TWO*dr(n))
              end if
           
           end do
@@ -341,7 +341,7 @@ contains
 
   subroutine mk_vel_force_3d_cart(vel_force,ng_f,is_final_update, &
                                   uold,ng_uo, &
-                                  umac,vmac,wmac,ng_um, &
+                                  uedge,vedge,wedge,ng_ue, &
                                   w0, &
                                   gpi,ng_gp,rho,ng_s, &
                                   rho0,grav,w0_force,lo,hi,n, &
@@ -352,13 +352,13 @@ contains
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, &
                              rotation_radius
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_um, n
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_f,ng_gp,ng_s, ng_uo, ng_ue, n
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
-    real(kind=dp_t), intent(in   ) ::      umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::      vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::      wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::     uedge(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:)
+    real(kind=dp_t), intent(in   ) ::     vedge(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:)
+    real(kind=dp_t), intent(in   ) ::     wedge(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) ::     gpi(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
@@ -374,7 +374,7 @@ contains
 
     vel_force = ZERO
 
-    ! CURRENTLY for rotation in plane-parallel, we make the (bad) assumption 
+    ! CURRENTLY for rotation in plane-parallel, we make the (bad) assueption 
     ! that all points within the patch have the same centrifugal forcing terms.
     !
     ! We assume the centrifugal term applies at a constant radius, 
@@ -418,17 +418,17 @@ contains
 
              if (is_final_update) then
 
-                ! use umac so we are time-centered
+                ! use uedge so we are time-centered
                 coriolis_term(1) = -TWO * omega * &
-                     HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * cos_theta
+                     HALF*(vedge(i,j,k) + vedge(i,j+1,k)) * cos_theta
 
                 coriolis_term(2) =  TWO * omega * &
-                     (HALF*(wmac(i,j,k)   + w0(k) + &
-                            wmac(i,j,k+1) + w0(k+1)) * sin_theta + &
-                      HALF*(umac(i,j,k) + umac(i+1,j,k)) * cos_theta)
+                     (HALF*(wedge(i,j,k)   + w0(k) + &
+                            wedge(i,j,k+1) + w0(k+1)) * sin_theta + &
+                      HALF*(uedge(i,j,k) + uedge(i+1,j,k)) * cos_theta)
 
                 coriolis_term(3) = -TWO * omega * &
-                     HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * sin_theta
+                     HALF*(vedge(i,j,k) + vedge(i,j+1,k)) * sin_theta
 
              else
                 coriolis_term(1) = -TWO * omega * uold(i,j,k,2) * cos_theta
@@ -469,7 +469,7 @@ contains
                    ! do not modify force since dw0/dr=0
                 else
                    vel_force(i,j,k,3) = vel_force(i,j,k,3) &
-                        - (wmac(i,j,k+1)+wmac(i,j,k))*(w0(k+1)-w0(k)) / (TWO*dr(n))
+                        - (wedge(i,j,k+1)+wedge(i,j,k))*(w0(k+1)-w0(k)) / (TWO*dr(n))
                 end if
 
              end do
@@ -483,7 +483,7 @@ contains
 
   subroutine mk_vel_force_3d_sphr(vel_force,ng_f,is_final_update, &
                                   uold,ng_uo,normal,ng_n, &
-                                  umac,vmac,wmac,ng_um, &
+                                  uedge,vedge,wedge,ng_ue, &
                                   w0_cart,ng_wc,gradw0_cart,ng_gw, &
                                   w0macx,w0macy,ng_wm, &
                                   gpi,ng_gp,rho,ng_s, &
@@ -495,14 +495,14 @@ contains
     use geometry,  only: omega, center
     use probin_module, only: base_cutoff_density, buoyancy_cutoff_factor, prob_lo
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_uo,ng_um,ng_wc,ng_wm,ng_w,ng_n,ng_gw
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_uo,ng_ue,ng_wc,ng_wm,ng_w,ng_n,ng_gw
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     logical        , intent(in   ) :: is_final_update
     real(kind=dp_t), intent(in   ) ::       uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
-    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::      uedge(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:)
+    real(kind=dp_t), intent(in   ) ::      vedge(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:)
+    real(kind=dp_t), intent(in   ) ::      wedge(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:)
     real(kind=dp_t), intent(in   ) ::    w0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:,:)
     real(kind=dp_t), intent(in   ) ::gradw0_cart(lo(1)-ng_wc:,lo(2)-ng_wc:,lo(3)-ng_wc:)
     real(kind=dp_t), intent(in   ) ::     w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,lo(3)-ng_wm:)
@@ -570,14 +570,14 @@ contains
              ! (with omega = omega e_z)
              if (is_final_update) then
 
-                ! use umac so we are time-centered
+                ! use uedge so we are time-centered
                 coriolis_term(1) = -TWO * omega * &
-                     HALF*(vmac(i,j,k)   + w0macy(i,j,k) + &
-                           vmac(i,j+1,k) + w0macy(i,j+1,k))
+                     HALF*(vedge(i,j,k)   + w0macy(i,j,k) + &
+                           vedge(i,j+1,k) + w0macy(i,j+1,k))
 
                 coriolis_term(2) =  TWO * omega * &
-                     HALF*(umac(i,j,k)   + w0macx(i,j,k) + &
-                           umac(i+1,j,k) + w0macx(i+1,j,k))
+                     HALF*(uedge(i,j,k)   + w0macx(i,j,k) + &
+                           uedge(i+1,j,k) + w0macx(i+1,j,k))
 
                 coriolis_term(3) = ZERO
 
@@ -622,9 +622,9 @@ contains
              do i=lo(1),hi(1)
 
                 Ut_dot_er = &
-                     HALF*(umac(i,j,k)+umac(i+1,j  ,k  ))*normal(i,j,k,1) + &
-                     HALF*(vmac(i,j,k)+vmac(i  ,j+1,k  ))*normal(i,j,k,2) + &
-                     HALF*(wmac(i,j,k)+wmac(i  ,j,  k+1))*normal(i,j,k,3)
+                     HALF*(uedge(i,j,k)+uedge(i+1,j  ,k  ))*normal(i,j,k,1) + &
+                     HALF*(vedge(i,j,k)+vedge(i  ,j+1,k  ))*normal(i,j,k,2) + &
+                     HALF*(wedge(i,j,k)+wedge(i  ,j,  k+1))*normal(i,j,k,3)
 
                 vel_force(i,j,k,1) = vel_force(i,j,k,1) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
                 vel_force(i,j,k,2) = vel_force(i,j,k,2) - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
