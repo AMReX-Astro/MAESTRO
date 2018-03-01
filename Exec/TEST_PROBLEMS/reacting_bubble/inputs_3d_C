@@ -35,7 +35,7 @@
  stop_time = 2.5d0
 
  plot_base   = T
- plot_int    = 1
+ plot_int    = 10
  plot_deltat = 0.5d0
  plot_processors = T
 
@@ -58,7 +58,7 @@
  cg_verbose = 0
 
  do_initial_projection = T
- init_divu_iter = 0
+ init_divu_iter = 1
 
  perturb_model = T
 
