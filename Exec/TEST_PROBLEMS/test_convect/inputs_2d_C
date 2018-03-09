@@ -16,7 +16,7 @@
  sponge_start_factor = 33.333d0
  sponge_kappa = 100.d0
 
- max_step  = 0
+ max_step  = 100
  do_initial_projection = T
  init_divu_iter = 1
  init_iter = 1
@@ -50,5 +50,7 @@ yhi_boundary_type = "outlet"
  velpert_amplitude = 1.d5
  velpert_height_loc = 1.2e8
  num_vortices = 2
+
+ use_alt_energy_fix = F
 
 /
