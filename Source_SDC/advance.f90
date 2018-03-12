@@ -832,6 +832,13 @@ contains
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
 
+    if (dm .eq. 3) then
+       do n=1,nlevs
+          call multifab_build(w0_force_cart(n), mla%la(n), dm, 1)
+          call setval(w0_force_cart(n),ZERO,all=.true.)
+       end do
+    end if
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Corrector loop
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -934,13 +941,6 @@ contains
                 call destroy(peosbar_cart(n))
              end do
 
-          end if
-
-          if (dm .eq. 3) then
-             do n=1,nlevs
-                call multifab_build(w0_force_cart(n), mla%la(n), dm, 1)
-                call setval(w0_force_cart(n),ZERO,all=.true.)
-             end do
           end if
 
           !    if (evolve_base_state) then
