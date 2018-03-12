@@ -42,6 +42,8 @@ MAESTRO_CORE :=
 # SDC Preprocessor variables
 # Maestro uses SDC_METHOD = 2
 # This is needed as a preprocessor variable by StarKiller Microphysics.
+SDC_METHOD=2
+
 ifdef SDC
   ifeq ($(SDC), t)
     FPP_DEFINES += -DSDC
