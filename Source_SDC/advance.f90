@@ -1433,12 +1433,12 @@ contains
 
     call instantaneous_reaction_rates(mla,snew,rho_omegadot2,rho_Hnuc2)
 
-    call make_S(S_cc_new,delta_gamma1_term,delta_gamma1, &
-                snew,uold, &
-                normal, &
-                rho_omegadot2,rho_Hnuc2,rho_Hext,diff_new, &
-                p0_new,gamma1bar_old,delta_gamma1_termbar,psi, &
-                dx,mla,the_bc_tower%bc_tower_array)
+    call make_S_cc(S_cc_new,delta_gamma1_term,delta_gamma1, &
+                   snew,uold, &
+                   normal, &
+                   rho_omegadot2,rho_Hnuc2,rho_Hext,diff_new, &
+                   p0_new,gamma1bar_old,delta_gamma1_termbar,psi, &
+                   dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        ! we are using rho_omegadot2 and rho_Hnuc2 to store intra for checkpoint
