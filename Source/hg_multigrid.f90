@@ -15,8 +15,8 @@ module hg_multigrid_module
 
 contains 
 
-  subroutine hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
-                          stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
+  subroutine hg_multigrid(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
+                          stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
 
     use bl_prof_module
 
@@ -34,7 +34,7 @@ contains
     type(multifab ), intent(inout) :: rh(:)
     type(multifab ), intent(inout) :: unew(:)
     type(multifab ), intent(in   ) :: rhohalf(:)
-    type(multifab ), intent(in   ) :: div_coeff_cart(:)
+    type(multifab ), intent(in   ) :: beta0_cart(:)
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
@@ -42,7 +42,7 @@ contains
     real(dp_t)     , intent(in   ) :: rel_solver_eps
     real(dp_t)     , intent(in   ) :: abs_solver_eps
 
-    type(multifab ), intent(inout), optional :: divu_rhs(:)
+    type(multifab ), intent(inout), optional :: nodalrhs(:)
 
     ! Local variables
     type(box     )  :: pd
@@ -169,12 +169,12 @@ contains
        ! Build coeffs(i,j,1) = (rho/beta0)
        ! (and) coeffs(i,j,2) =   1./beta0 if coeff_ncomp > 1
        !
-       ! Note: either rhohalf = rho/beta_0 or rho/beta_0^2
+       ! Note: either rhohalf = rho/beta0 or rho/beta0^2
        ! (depending on use_alt_energy_fix).
 
        call multifab_div_div_c(coeffs(mgt(n)%nlevels),1,rhohalf(n),1,1,0)
        if (ncomp(coeffs(mgt(n)%nlevels)) .gt. 1) &
-          call multifab_div_div_c(coeffs(mgt(n)%nlevels),2,div_coeff_cart(n),1,1,0)
+          call multifab_div_div_c(coeffs(mgt(n)%nlevels),2,beta0_cart(n),1,1,0)
 
        call multifab_fill_boundary(coeffs(mgt(n)%nlevels))
 
@@ -208,10 +208,10 @@ contains
     ! Subtract S:  RHS = div(U) - S
     ! ********************************************************************************
 
-    ! Note that we now set divu_rhs at outflow and at the fine nodes
+    ! Note that we now set nodalrhs at outflow and at the fine nodes
     !      on coarse-fine boundaries in a call to enforce_dirichlet_rhs from ml_nd_solve.
-    if (present(divu_rhs)) then
-       call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
+    if (present(nodalrhs)) then
+       call subtract_divu_from_rh(nlevs,mgt,rh,nodalrhs)
     end if
 
     ! ********************************************************************************

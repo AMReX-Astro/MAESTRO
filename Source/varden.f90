@@ -23,7 +23,7 @@ subroutine varden()
   use average_module
   use make_grav_module
   use sponge_module
-  use make_div_coeff_module
+  use make_beta0_module
   use define_bc_module
   use fill_3d_module
   use eos_module
@@ -69,7 +69,7 @@ subroutine varden()
   type(multifab), allocatable :: S_cc_new(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
-  type(multifab), allocatable :: S_nodal(:)
+  type(multifab), allocatable :: nodalrhs(:)
 
   !!!!!!!!!!!!!
   ! these are pointers because they need to be allocated and built within 
@@ -104,10 +104,10 @@ subroutine varden()
 
   logical :: init_mode
 
-  real(dp_t), pointer :: div_coeff_old(:,:)
-  real(dp_t), pointer :: div_coeff_new(:,:)
-  real(dp_t), pointer :: gamma1bar(:,:)
-  real(dp_t), pointer :: gamma1bar_hold(:,:)
+  real(dp_t), pointer :: beta0_old(:,:)
+  real(dp_t), pointer :: beta0_new(:,:)
+  real(dp_t), pointer :: gamma1bar_old(:,:)
+  real(dp_t), pointer :: gamma1bar_new(:,:)
   real(dp_t), pointer :: s0_init(:,:,:)
   real(dp_t), pointer :: rho0_old(:,:)
   real(dp_t), pointer :: rhoh0_old(:,:)
@@ -122,7 +122,8 @@ subroutine varden()
   real(dp_t), pointer :: psi(:,:)
   real(dp_t), pointer :: tempbar(:,:)
   real(dp_t), pointer :: tempbar_init(:,:)
-  real(dp_t), pointer :: grav_cell(:,:)
+  real(dp_t), pointer :: grav_cell_old(:,:)
+  real(dp_t), pointer :: grav_cell_new(:,:)
 
   real(dp_t), allocatable :: psi_temp(:,:)
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
@@ -202,10 +203,10 @@ subroutine varden()
      call initialize_from_restart(mla,restart,dt,pmask,dx,uold,sold,gpi,pi, &
                                   dSdt,S_cc_old, &
                                   rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,the_bc_tower, &
-                                  div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                                  beta0_old,beta0_new,gamma1bar_old,gamma1bar_new, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                   p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
-                                  tempbar,tempbar_init,grav_cell)
+                                  tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
      check_file_name = make_filename(check_base_name, restart)
 
@@ -222,10 +223,11 @@ subroutine varden()
                                       S_cc_old, &
                                       rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                       the_bc_tower, &
-                                      div_coeff_old,div_coeff_new,gamma1bar, &
-                                      gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
+                                      beta0_old,beta0_new,gamma1bar_old, &
+                                      gamma1bar_new,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                      etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
+                                      etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
+                                      grav_cell_old,grav_cell_new)
 
   else
 
@@ -235,10 +237,11 @@ subroutine varden()
                                          S_cc_old, &
                                          rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                                          the_bc_tower, &
-                                         div_coeff_old,div_coeff_new,gamma1bar, &
-                                         gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
+                                         beta0_old,beta0_new,gamma1bar_old, &
+                                         gamma1bar_new,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                         etarho_ec,etarho_cc,psi,tempbar,tempbar_init,grav_cell)
+                                         etarho_ec,etarho_cc,psi,tempbar,tempbar_init, &
+                                         grav_cell_old,grav_cell_new)
 
   end if
 
@@ -337,7 +340,7 @@ subroutine varden()
   end if
 
   allocate(unew(nlevs),snew(nlevs),S_cc_new(nlevs))
-  allocate(normal(nlevs),sponge(nlevs),S_nodal(nlevs))
+  allocate(normal(nlevs),sponge(nlevs),nodalrhs(nlevs))
   allocate(tag_mf(nlevs))
 
   do n = 1,nlevs
@@ -348,14 +351,14 @@ subroutine varden()
         call multifab_build(normal(n), mla%la(n),    dm, 1)
      end if
      call multifab_build(  sponge(n), mla%la(n),     1, 0)
-     call multifab_build( S_nodal(n), mla%la(n),     1, 0, nodal)
+     call multifab_build( nodalrhs(n), mla%la(n),     1, 0, nodal)
      call multifab_build(  tag_mf(n), mla%la(n), 1, 0)
 
      call setval(      unew(n), ZERO, all=.true.)
      call setval(      snew(n), ZERO, all=.true.)
      call setval(  S_cc_new(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
-     call setval(   S_nodal(n), ZERO, all=.true.)
+     call setval(   nodalrhs(n), ZERO, all=.true.)
      call setval(    tag_mf(n), ZERO, all=.true.)
   end do
 
@@ -363,16 +366,10 @@ subroutine varden()
   call make_normal(normal,dx)
 
   if (do_sponge) then
-     if (spherical .eq. 0) then
-        call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
-     else
-        call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
-     end if
+     call init_sponge(rho0_old(1,:))
   end if
 
-  call make_grav_cell(grav_cell,rho0_old)
-
-
+  call make_grav_cell(grav_cell_old,rho0_old)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Print out some diagnostics and warnings about cutoff / sponge parameter
@@ -408,13 +405,13 @@ subroutine varden()
      ! Do an initial projection with omegadot = 0 and rho_Hext = 0
      !----------------------------------------------------------------------
 
-     call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
+     call make_gamma1bar(mla,sold,gamma1bar_old,p0_old,dx)
 
-     call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
+     call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar_old,grav_cell_old)
 
      if(do_initial_projection) then
-        call initial_proj(uold,sold,pi,gpi,S_cc_old,normal,S_nodal,thermal2, &
-                          div_coeff_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
+        call initial_proj(uold,sold,pi,gpi,S_cc_old,normal,nodalrhs,thermal2, &
+                          beta0_old,p0_old,gamma1bar_old,dx,the_bc_tower,mla)
      end if
 
      !----------------------------------------------------------------------
@@ -422,26 +419,7 @@ subroutine varden()
      !----------------------------------------------------------------------
     
      call firstdt(mla,the_bc_tower%bc_tower_array,uold,gpi,sold,S_cc_old, &
-                  rho0_old,p0_old,grav_cell,gamma1bar,dx,cflfac,dt)
-
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*,"Minimum firstdt over all levels =",dt
-        print*,""
-     end if
-
-     if(fixed_dt .ne. -1.0d0) then
-        dt = fixed_dt
-        if (parallel_IOProcessor()) then
-           print*, "Setting fixed dt =",dt
-        end if
-     end if
-
-     if(dt .gt. max_dt) then
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-           print*,'max_dt limits the new dt =',max_dt
-        end if
-        dt = max_dt
-     end if
+                  rho0_old,p0_old,grav_cell_old,gamma1bar_old,dx,cflfac,dt)
 
      !------------------------------------------------------------------------
      ! do the initial iterations to define a velocity field consistent with S
@@ -459,8 +437,8 @@ subroutine varden()
      do istep_divu_iter=1,init_divu_iter
 
         call divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal2, &
-                       S_cc_old,normal,S_nodal,dSdt,div_coeff_old,rho0_old,p0_old, &
-                       gamma1bar,tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
+                       S_cc_old,normal,nodalrhs,dSdt,beta0_old,rho0_old,p0_old, &
+                       gamma1bar_old,tempbar_init,w0,grav_cell_old,dx,dt,the_bc_tower,mla)
 
      end do
 
@@ -486,13 +464,13 @@ subroutine varden()
                               rho_Hnuc2,rho_Hext, &
                               thermal2,S_cc_old,sponge,mla%mba,dx, &
                               the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
-                              tempbar,gamma1bar,etarho_cc, &
+                              tempbar,gamma1bar_old,etarho_cc, &
                               normal,dt,particles,write_pf_time)
 
            call write_base_state(restart, plot_file_name, &
-                                 rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                                 rho0_old, rhoh0_old, p0_old, gamma1bar_old, &
                                  w0, etarho_ec, etarho_cc, &
-                                 div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                                 beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
            
            call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
         enddo
@@ -507,8 +485,11 @@ subroutine varden()
      istep = restart
   end if
 
-  if (stop_time >= 0.d0) then
-     if (time+dt > stop_time) dt = min(dt, stop_time - time)
+  if (stop_time >= 0.d0 .and. time+dt > stop_time) then
+     dt = stop_time - time 
+     if (parallel_IOProcessor()) then
+        print*, "Stop time limits dt =",dt
+     end if
   end if
 
   dtold = dt
@@ -550,17 +531,21 @@ subroutine varden()
            ! Advance a single timestep at all levels.
            init_mode = .true.
 
-           gamma1bar_hold = gamma1bar
-
            runtime1 = parallel_wtime()
 
            call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpi,pi,normal, &
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
-                                 tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2, &
+                                 tempbar,gamma1bar_old,gamma1bar_new,w0,rho_omegadot2,rho_Hnuc2, &
                                  rho_Hext,thermal2, &
-                                 div_coeff_old,div_coeff_new,grav_cell,dx,dt,dtold, &
+                                 beta0_old,beta0_new,grav_cell_old,grav_cell_new, &
+                                 dx,dt,dtold, &
                                  the_bc_tower,dSdt,S_cc_old,S_cc_new,etarho_ec, &
-                                 etarho_cc,psi,sponge,S_nodal,tempbar_init,particles)
+                                 etarho_cc,psi,sponge,nodalrhs,tempbar_init,particles)
+
+           ! copy pi from snew to sold
+           do n=1,nlevs
+              call multifab_copy_c(sold(n),pi_comp,snew(n),pi_comp,1,0)
+           end do
 
            runtime2 = parallel_wtime() - runtime1
            call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
@@ -570,8 +555,6 @@ subroutine varden()
            
            call print_and_reset_fab_byte_spread()
            
-           gamma1bar = gamma1bar_hold
-
         end do ! end do istep_init_iter = 1,init_iter
 
      end if ! end if (init_iter > 0)
@@ -614,9 +597,9 @@ subroutine varden()
                               mla%mba%rr, dt)
 
         call write_base_state(istep, check_file_name, &
-                              rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                              rho0_old, rhoh0_old, p0_old, gamma1bar_old, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                              beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         call write_aux_data(istep, check_file_name)
 
@@ -647,13 +630,13 @@ subroutine varden()
                               rho_Hnuc2,rho_Hext, &
                               thermal2,S_cc_old,sponge,mla%mba,dx, &
                               the_bc_tower,w0,rho0_old,rhoh0_old,p0_old, &
-                              tempbar,gamma1bar,etarho_cc, &
+                              tempbar,gamma1bar_old,etarho_cc, &
                               normal,dt,particles,write_pf_time)
 
            call write_base_state(istep, plot_file_name, &
-                                 rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                                 rho0_old, rhoh0_old, p0_old, gamma1bar_old, &
                                  w0, etarho_ec, etarho_cc, &
-                                 div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                                 beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
            call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
            last_plt_written = istep
@@ -945,7 +928,7 @@ subroutine varden()
                  call multifab_destroy(normal(n))
               end if
               call multifab_destroy(sponge(n))
-              call multifab_destroy(S_nodal(n))
+              call multifab_destroy(nodalrhs(n))
 
               call multifab_destroy(pi(n))
               call multifab_destroy(rho_omegadot2(n))
@@ -977,7 +960,7 @@ subroutine varden()
                  call multifab_build(normal(n), mla%la(n),    dm, 1)
               end if
               call multifab_build(       sponge(n), mla%la(n),     1, 0)
-              call multifab_build(      S_nodal(n), mla%la(n),     1, 0, nodal)
+              call multifab_build(      nodalrhs(n), mla%la(n),     1, 0, nodal)
 
               call multifab_build(           pi(n), mla%la(n),     1, 0, nodal)
               call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
@@ -989,7 +972,7 @@ subroutine varden()
               call setval(      snew(n), ZERO, all=.true.)
               call setval(  S_cc_new(n), ZERO, all=.true.)
               call setval(    sponge(n), ONE,  all=.true.)
-              call setval(   S_nodal(n), ZERO, all=.true.)
+              call setval(   nodalrhs(n), ZERO, all=.true.)
            end do
 
            ! Create normal now that we have defined center and dx
@@ -1032,10 +1015,10 @@ subroutine varden()
            ! recompute p0 based on the new rho0 
            call compute_cutoff_coords(rho0_old)
            
-           call make_grav_cell(grav_cell,rho0_old)
+           call make_grav_cell(grav_cell_old,rho0_old)
 
            ! enforce HSE
-           call enforce_HSE(rho0_old,p0_old,grav_cell)
+           call enforce_HSE(rho0_old,p0_old,grav_cell_old)
 
            if (use_tfromp) then
               ! compute full state T = T(rho,p0,X)
@@ -1049,10 +1032,10 @@ subroutine varden()
            call average(mla,sold,tempbar,dx,temp_comp)
 
            ! gamma1bar needs to be recomputed
-           call make_gamma1bar(mla,sold,gamma1bar,p0_old,dx)
+           call make_gamma1bar(mla,sold,gamma1bar_old,p0_old,dx)
 
-           ! div_coeff_old needs to be recomputed
-           call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
+           ! beta0_old needs to be recomputed
+           call make_beta0(beta0_old,rho0_old,p0_old,gamma1bar_old,grav_cell_old)
 
            ! redistribute the particles to their new processor locations
            if (use_particles) call redistribute(particles,mla,dx,prob_lo)
@@ -1066,10 +1049,8 @@ subroutine varden()
 
         if (istep > 1) then
 
-           dt = 1.d20
-
            call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc_old,dSdt, &
-                      w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
+                      w0,rho0_old,p0_old,gamma1bar_old,grav_cell_old,dx,cflfac,dt)
 
            if (parallel_IOProcessor() .and. verbose .ge. 1) then
               print*,''
@@ -1125,21 +1106,18 @@ subroutine varden()
         !---------------------------------------------------------------------
         init_mode = .false.
         if (do_sponge) then
-           if (spherical .eq. 0) then
-              call init_sponge(rho0_old(1,:),dx(nlevs,:),prob_lo(dm))
-           else
-              call init_sponge(rho0_old(1,:),dx(nlevs,:),ZERO)
-           end if
+           call init_sponge(rho0_old(1,:))
            call make_sponge(sponge,dx,dt,mla)
         end if
         runtime1 = parallel_wtime()
 
         call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpi,pi,normal,rho0_old, &
-                              rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
-                              w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
-                              div_coeff_old,div_coeff_new, &
-                              grav_cell,dx,dt,dtold,the_bc_tower,dSdt,S_cc_old, &
-                              S_cc_new,etarho_ec,etarho_cc,psi,sponge,S_nodal,tempbar_init, &
+                              rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar_old, &
+                              gamma1bar_new,w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                              beta0_old,beta0_new, &
+                              grav_cell_old,grav_cell_new, &
+                              dx,dt,dtold,the_bc_tower,dSdt,S_cc_old, &
+                              S_cc_new,etarho_ec,etarho_cc,psi,sponge,nodalrhs,tempbar_init, &
                               particles)
 
 
@@ -1246,13 +1224,16 @@ subroutine varden()
            call multifab_copy_c(S_cc_old(n),1,S_cc_new(n),1,    1)
         end do
 
-        ! Set div_coeff_old equal to div_coeff_new from the last time step
-        div_coeff_old = div_coeff_new
+        ! update beta0, grav_cell, gamma1bar
+        beta0_old = beta0_new
+        grav_cell_old = grav_cell_new
+        gamma1bar_old = gamma1bar_new
 
         ! Copy the base state
         rho0_old = rho0_new
         rhoh0_old = rhoh0_new
         p0_old = p0_new
+        
 
         !---------------------------------------------------------------------
         ! output
@@ -1297,9 +1278,9 @@ subroutine varden()
                                     dt)
 
               call write_base_state(istep, check_file_name, &
-                                    rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
+                                    rho0_new, rhoh0_new, p0_new, gamma1bar_new, &
                                     w0, etarho_ec, etarho_cc, &
-                                    div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                                    beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
               call write_aux_data(istep, check_file_name)
 
@@ -1336,13 +1317,13 @@ subroutine varden()
                                     rho_Hnuc2,rho_Hext, &
                                     thermal2,S_cc_new,sponge,mla%mba,dx, &
                                     the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
-                                    tempbar,gamma1bar,etarho_cc, &
+                                    tempbar,gamma1bar_new,etarho_cc, &
                                     normal,dt,particles,write_pf_time)
                  
                  call write_base_state(istep, plot_file_name, &
-                                       rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
+                                       rho0_new, rhoh0_new, p0_new, gamma1bar_new, &
                                        w0, etarho_ec, etarho_cc, &
-                                       div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                                       beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
                  
                  call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
                  last_plt_written = istep
@@ -1396,9 +1377,9 @@ subroutine varden()
                               mla%mba%rr, dt)
 
         call write_base_state(istep, check_file_name, &
-                              rho0_new, rhoh0_new, p0_new, gamma1bar, &
+                              rho0_new, rhoh0_new, p0_new, gamma1bar_new, &
                               w0, etarho_ec, etarho_cc, &
-                              div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                              beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
         call write_aux_data(istep, check_file_name)
 
@@ -1427,13 +1408,13 @@ subroutine varden()
                               rho_Hnuc2,rho_Hext, &
                               thermal2,S_cc_new,sponge,mla%mba,dx, &
                               the_bc_tower,w0,rho0_new,rhoh0_new,p0_new, &
-                              tempbar,gamma1bar,etarho_cc, &
+                              tempbar,gamma1bar_new,etarho_cc, &
                               normal,dt,particles,write_pf_time)
         
            call write_base_state(istep, plot_file_name, &
-                                 rho0_new, rhoh0_new, p0_new, gamma1bar, &
+                                 rho0_new, rhoh0_new, p0_new, gamma1bar_new, &
                                  w0, etarho_ec, etarho_cc, &
-                                 div_coeff_old, psi, tempbar, tempbar_init, prob_lo(dm))
+                                 beta0_old, psi, tempbar, tempbar_init, prob_lo(dm))
 
            call write_job_info(plot_file_name, mla%mba, the_bc_tower, write_pf_time)
         end if
@@ -1452,7 +1433,7 @@ subroutine varden()
         call destroy(normal(n))
      end if
      call destroy(sponge(n))
-     call destroy(S_nodal(n))
+     call destroy(nodalrhs(n))
 
      call destroy(uold(n))
      call destroy(sold(n))
@@ -1489,8 +1470,8 @@ subroutine varden()
 
   deallocate(uold,sold,pi,gpi,dSdt,S_cc_old,S_cc_new,rho_omegadot2)
   deallocate(rho_Hnuc2,rho_Hext,thermal2,tag_mf)
-  deallocate(dx,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
+  deallocate(dx,beta0_old,beta0_new,gamma1bar_old,gamma1bar_new,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
-  deallocate(psi,tempbar,tempbar_init,grav_cell)
+  deallocate(psi,tempbar,tempbar_init,grav_cell_old,grav_cell_new)
 
 end subroutine varden

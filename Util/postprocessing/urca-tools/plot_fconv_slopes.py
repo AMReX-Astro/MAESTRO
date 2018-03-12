@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Given the output of fconv_slopes, plot the thermodynamic
 gradients corresponding to an initial model.

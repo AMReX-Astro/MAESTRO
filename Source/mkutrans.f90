@@ -14,7 +14,7 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(u,ufull,utrans,w0,w0mac,dx,dt,the_bc_level,mla)
+  subroutine mkutrans(utilde,ufull,utrans,w0,w0mac,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use create_umac_grown_module
@@ -22,7 +22,7 @@ contains
     use ml_cc_restriction_module, only: ml_edge_restriction
     use multifab_physbc_edgevel_module, only: multifab_physbc_edgevel
 
-    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(in   ) :: utilde(:)
     type(multifab) , intent(in   ) :: ufull(:)
     type(multifab) , intent(inout) :: utrans(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -50,19 +50,19 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    ng_u  = nghost(u(1))
+    ng_u  = nghost(utilde(1))
     ng_uf = nghost(ufull(1))
     ng_ut = nghost(utrans(1,1))
     ng_w0 = nghost(w0mac(1,1))
 
     do n=1,nlevs
 
-       do i=1, nfabs(u(n))
-          up  => dataptr(u(n),i)
+       do i=1, nfabs(utilde(n))
+          up  => dataptr(utilde(n),i)
           ufp => dataptr(ufull(n),i)
           utp => dataptr(utrans(n,1),i)
-          lo  =  lwb(get_box(u(n),i))
-          hi  =  upb(get_box(u(n),i))
+          lo  =  lwb(get_box(utilde(n),i))
+          hi  =  upb(get_box(utilde(n),i))
           select case (dm)
           case (1)
              call mkutrans_1d(up(:,1,1,:), ng_u, &
@@ -140,7 +140,7 @@ contains
 
   end subroutine mkutrans
 
-  subroutine mkutrans_1d(u,ng_u,ufull,ng_uf,utrans,ng_ut,w0, &
+  subroutine mkutrans_1d(utilde,ng_u,ufull,ng_uf,utrans,ng_ut,w0, &
                          lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
@@ -150,7 +150,7 @@ contains
     use ppm_module
 
     integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) :: utilde(lo(1)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: w0(0:)    
@@ -185,9 +185,9 @@ contains
     hx = dx(1)
     
     if (ppm_type .eq. 0) then
-       call slopex_1d(u(:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
+       call slopex_1d(utilde(:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
+       call ppm_1d(utilde(:,1),ng_u,ufull(:,1),ng_uf,Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
     end if
 
     !******************************************************************
@@ -197,8 +197,8 @@ contains
     if (ppm_type .eq. 0) then
        do i=is,ie+1
           ! extrapolate to edges
-          ulx(i) = u(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1)
-          urx(i) = u(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1)
+          ulx(i) = utilde(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1)
+          urx(i) = utilde(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1)
        end do
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
        do i=is,ie+1
@@ -211,8 +211,8 @@ contains
     ! impose lo i side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       ulx(is) = u(is-1,1)
-       urx(is) = u(is-1,1)
+       ulx(is) = utilde(is-1,1)
+       urx(is) = utilde(is-1,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        ulx(is) = ZERO
        urx(is) = ZERO
@@ -227,8 +227,8 @@ contains
     ! impose hi i side bc's    
     select case(phys_bc(1,2))
     case (INLET)
-       ulx(ie+1) = u(ie+1,1)
-       urx(ie+1) = u(ie+1,1)
+       ulx(ie+1) = utilde(ie+1,1)
+       urx(ie+1) = utilde(ie+1,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        ulx(ie+1) = ZERO
        urx(ie+1) = ZERO
@@ -254,7 +254,7 @@ contains
 
   end subroutine mkutrans_1d
 
-  subroutine mkutrans_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
+  subroutine mkutrans_2d(utilde,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,w0, &
                          lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
@@ -264,7 +264,7 @@ contains
     use ppm_module
 
     integer,         intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_ut
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) :: utilde(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -308,10 +308,10 @@ contains
     hy = dx(2)
     
     if (ppm_type .eq. 0) then
-       call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
-       call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
+       call slopex_2d(utilde(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
+       call slopey_2d(utilde(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(u(:,:,1),ng_u, &
+       call ppm_2d(utilde(:,:,1),ng_u, &
                    ufull(:,:,1),ufull(:,:,2),ng_uf, &
                    Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
     end if
@@ -324,8 +324,8 @@ contains
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
-             ulx(i,j) = u(i-1,j,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,j,1)))*slopex(i-1,j,1)
-             urx(i,j) = u(i  ,j,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,j,1)))*slopex(i  ,j,1)
+             ulx(i,j) = utilde(i-1,j,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,j,1)))*slopex(i-1,j,1)
+             urx(i,j) = utilde(i  ,j,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,j,1)))*slopex(i  ,j,1)
           end do
        end do
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
@@ -341,8 +341,8 @@ contains
     ! impose lo i side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       ulx(is,js:je) = u(is-1,js:je,1)
-       urx(is,js:je) = u(is-1,js:je,1)
+       ulx(is,js:je) = utilde(is-1,js:je,1)
+       urx(is,js:je) = utilde(is-1,js:je,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        ulx(is,js:je) = ZERO
        urx(is,js:je) = ZERO
@@ -357,8 +357,8 @@ contains
     ! impose hi i side bc's    
     select case(phys_bc(1,2))
     case (INLET)
-       ulx(ie+1,js:je) = u(ie+1,js:je,1)
-       urx(ie+1,js:je) = u(ie+1,js:je,1)
+       ulx(ie+1,js:je) = utilde(ie+1,js:je,1)
+       urx(ie+1,js:je) = utilde(ie+1,js:je,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        ulx(ie+1,js:je) = ZERO
        urx(ie+1,js:je) = ZERO
@@ -386,7 +386,7 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(u(:,:,2),ng_u, &
+       call ppm_2d(utilde(:,:,2),ng_u, &
                    ufull(:,:,1),ufull(:,:,2),ng_uf, &
                    Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
     end if
@@ -395,8 +395,8 @@ contains
        do j=js,je+1
           do i=is,ie
              ! extrapolate to edges
-             vly(i,j) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,ufull(i,j-1,2)))*slopey(i,j-1,1)
-             vry(i,j) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,ufull(i,j  ,2)))*slopey(i,j  ,1)
+             vly(i,j) = utilde(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,ufull(i,j-1,2)))*slopey(i,j-1,1)
+             vry(i,j) = utilde(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,ufull(i,j  ,2)))*slopey(i,j  ,1)
           end do
        end do
 
@@ -413,8 +413,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       vly(is:ie,js) = u(is:ie,js-1,2)
-       vry(is:ie,js) = u(is:ie,js-1,2)
+       vly(is:ie,js) = utilde(is:ie,js-1,2)
+       vry(is:ie,js) = utilde(is:ie,js-1,2)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        vly(is:ie,js) = ZERO
        vry(is:ie,js) = ZERO
@@ -429,8 +429,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       vly(is:ie,je+1) = u(is:ie,je+1,2)
-       vry(is:ie,je+1) = u(is:ie,je+1,2)
+       vly(is:ie,je+1) = utilde(is:ie,je+1,2)
+       vry(is:ie,je+1) = utilde(is:ie,je+1,2)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        vly(is:ie,je+1) = ZERO
        vry(is:ie,je+1) = ZERO
@@ -458,7 +458,7 @@ contains
 
   end subroutine mkutrans_2d
   
-  subroutine mkutrans_3d(u,ng_u,ufull,ng_uf,utrans,vtrans,wtrans,ng_ut, &
+  subroutine mkutrans_3d(utilde,ng_u,ufull,ng_uf,utrans,vtrans,wtrans,ng_ut, &
                          w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
@@ -469,7 +469,7 @@ contains
     use ppm_module
     
     integer,         intent(in)    :: lo(:),hi(:),ng_u,ng_uf,ng_ut,ng_w0    
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) :: utilde(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,lo(3)-ng_uf:,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
@@ -521,12 +521,12 @@ contains
     
     if (ppm_type .eq. 0) then
        do k = lo(3)-1,hi(3)+1
-          call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
-          call slopey_2d(u(:,:,k,2:),slopey(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,2:))
+          call slopex_2d(utilde(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
+          call slopey_2d(utilde(:,:,k,2:),slopey(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,2:))
        end do
-       call slopez_3d(u(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
+       call slopez_3d(utilde(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,1),ng_u, &
+       call ppm_3d(utilde(:,:,:,1),ng_u, &
                    ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
                    Ip,Im,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
     end if
@@ -544,9 +544,9 @@ contains
           do j=js,je
              do i=is,ie+1
                 ! extrapolate to edges
-                ulx(i,j,k) = u(i-1,j,k,1) &
+                ulx(i,j,k) = utilde(i-1,j,k,1) &
                      + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,j,k,1)))*slopex(i-1,j,k,1)
-                urx(i,j,k) = u(i  ,j,k,1) &
+                urx(i,j,k) = utilde(i  ,j,k,1) &
                      - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,j,k,1)))*slopex(i  ,j,k,1)
              end do
           end do
@@ -569,8 +569,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       ulx(is,js:je,ks:ke) = u(is-1,js:je,ks:ke,1)
-       urx(is,js:je,ks:ke) = u(is-1,js:je,ks:ke,1)
+       ulx(is,js:je,ks:ke) = utilde(is-1,js:je,ks:ke,1)
+       urx(is,js:je,ks:ke) = utilde(is-1,js:je,ks:ke,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        ulx(is,js:je,ks:ke) = ZERO
        urx(is,js:je,ks:ke) = ZERO
@@ -585,8 +585,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       ulx(ie+1,js:je,ks:ke) = u(ie+1,js:je,ks:ke,1)
-       urx(ie+1,js:je,ks:ke) = u(ie+1,js:je,ks:ke,1)
+       ulx(ie+1,js:je,ks:ke) = utilde(ie+1,js:je,ks:ke,1)
+       urx(ie+1,js:je,ks:ke) = utilde(ie+1,js:je,ks:ke,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        ulx(ie+1,js:je,ks:ke) = ZERO
        urx(ie+1,js:je,ks:ke) = ZERO
@@ -638,7 +638,7 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,2),ng_u, &
+       call ppm_3d(utilde(:,:,:,2),ng_u, &
                    ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
                    Ip,Im,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
     end if
@@ -652,9 +652,9 @@ contains
           do j=js,je+1
              do i=is,ie
                 ! extrapolate to edges
-                vly(i,j,k) = u(i,j-1,k,2) &
+                vly(i,j,k) = utilde(i,j-1,k,2) &
                      + (HALF-(dt2/hy)*max(ZERO,ufull(i,j-1,k,2)))*slopey(i,j-1,k,1)
-                vry(i,j,k) = u(i,j  ,k,2) &
+                vry(i,j,k) = utilde(i,j  ,k,2) &
                      - (HALF+(dt2/hy)*min(ZERO,ufull(i,j  ,k,2)))*slopey(i,j  ,k,1)
              enddo
           enddo
@@ -677,8 +677,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       vly(is:ie,js,ks:ke) = u(is:ie,js-1,ks:ke,2)
-       vry(is:ie,js,ks:ke) = u(is:ie,js-1,ks:ke,2)
+       vly(is:ie,js,ks:ke) = utilde(is:ie,js-1,ks:ke,2)
+       vry(is:ie,js,ks:ke) = utilde(is:ie,js-1,ks:ke,2)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        vly(is:ie,js,ks:ke) = ZERO
        vry(is:ie,js,ks:ke) = ZERO
@@ -693,8 +693,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       vly(is:ie,je+1,ks:ke) = u(is:ie,je+1,ks:ke,2)
-       vry(is:ie,je+1,ks:ke) = u(is:ie,je+1,ks:ke,2)
+       vly(is:ie,je+1,ks:ke) = utilde(is:ie,je+1,ks:ke,2)
+       vry(is:ie,je+1,ks:ke) = utilde(is:ie,je+1,ks:ke,2)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        vly(is:ie,je+1,ks:ke) = ZERO
        vry(is:ie,je+1,ks:ke) = ZERO
@@ -746,7 +746,7 @@ contains
     !******************************************************************
 
     if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,3),ng_u, &
+       call ppm_3d(utilde(:,:,:,3),ng_u, &
                    ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
                    Ip,Im,lo,hi,adv_bc(:,:,3),dx,dt,.false.)
     end if
@@ -760,9 +760,9 @@ contains
           do j=js,je
              do i=is,ie
                 ! extrapolate to edges
-                wlz(i,j,k) = u(i,j,k-1,3) &
+                wlz(i,j,k) = utilde(i,j,k-1,3) &
                      + (HALF-(dt2/hz)*max(ZERO,ufull(i,j,k-1,3)))*slopez(i,j,k-1,1)
-                wrz(i,j,k) = u(i,j,k  ,3) &
+                wrz(i,j,k) = utilde(i,j,k  ,3) &
                      - (HALF+(dt2/hz)*min(ZERO,ufull(i,j,k  ,3)))*slopez(i,j,k  ,1)
              end do
           end do
@@ -785,8 +785,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(3,1))
     case (INLET)
-       wlz(is:ie,js:je,ks) = u(is:ie,js:je,ks-1,3)
-       wrz(is:ie,js:je,ks) = u(is:ie,js:je,ks-1,3)
+       wlz(is:ie,js:je,ks) = utilde(is:ie,js:je,ks-1,3)
+       wrz(is:ie,js:je,ks) = utilde(is:ie,js:je,ks-1,3)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        wlz(is:ie,js:je,ks) = ZERO
        wrz(is:ie,js:je,ks) = ZERO
@@ -801,8 +801,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(3,2))
     case (INLET)
-       wlz(is:ie,js:je,ke+1) = u(is:ie,js:je,ke+1,3)
-       wrz(is:ie,js:je,ke+1) = u(is:ie,js:je,ke+1,3)
+       wlz(is:ie,js:je,ke+1) = utilde(is:ie,js:je,ke+1,3)
+       wrz(is:ie,js:je,ke+1) = utilde(is:ie,js:je,ke+1,3)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        wlz(is:ie,js:je,ke+1) = ZERO
        wrz(is:ie,js:je,ke+1) = ZERO

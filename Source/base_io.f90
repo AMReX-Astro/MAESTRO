@@ -16,7 +16,7 @@ contains
 
   subroutine write_base_state(istep,chk_name, &
                               rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_coeff,psi,tempbar,tempbar_init,problo)
+                              beta0,psi,tempbar,tempbar_init,problo)
     
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
@@ -30,7 +30,7 @@ contains
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
-    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(in) :: beta0(:,0:), psi(:,0:)
     real(kind=dp_t)  , intent(in) :: tempbar(:,0:), tempbar_init(:,0:)
     real(kind=dp_t)  , intent(in) :: w0(:,0:)
     real(kind=dp_t)  , intent(in) :: problo
@@ -81,7 +81,7 @@ contains
                              p0(n,r), &          ! column 4
                              gamma1bar(n,r), &   ! column 5
                              rhoh0(n,r), &       ! column 6
-                             div_coeff(n,r), &   ! column 7
+                             beta0(n,r), &   ! column 7
                              psi(n,r), &         ! column 8
                              tempbar(n,r), &     ! column 9
                              etarho_cc(n,r), &   ! column 10
@@ -119,7 +119,7 @@ contains
 
   subroutine read_base_state(restart,chk_name, &
                              rho0,rhoh0,p0,gamma1bar,w0, &
-                             etarho_ec,etarho_cc,div_coeff,psi,tempbar,tempbar_init)
+                             etarho_ec,etarho_cc,beta0,psi,tempbar,tempbar_init)
 
     use parallel, only: parallel_IOProcessor
     use bl_prof_module, only: bl_prof_timer, build, destroy
@@ -132,7 +132,7 @@ contains
     character(len=*) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
-    real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(inout) :: beta0(:,0:), psi(:,0:)
     real(kind=dp_t)  , intent(inout) :: tempbar(:,0:), tempbar_init(:,0:)
     real(kind=dp_t)  , intent(inout) :: w0(:,0:)
     real(kind=dp_t)  , intent(inout) :: etarho_ec(:,0:),etarho_cc(:,0:)
@@ -170,7 +170,7 @@ contains
        do r=0,nr(n)-1
           read(99,*) r_dummy_int, r_dummy, &
                      rho0(n,r), p0(n,r), gamma1bar(n,r), rhoh0(n,r), &
-                     div_coeff(n,r), psi(n,r), &
+                     beta0(n,r), psi(n,r), &
                      tempbar(n,r), etarho_cc(n,r), tempbar_init(n,r)
        end do
     end do

@@ -49,7 +49,7 @@ contains
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
-    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel,mla%dim)
+    type(multifab) :: phi(mla%nlevel),solver_alpha(mla%nlevel),solver_beta(mla%nlevel,mla%dim)
     type(multifab) :: resid(mla%nlevel)
 
     integer :: comp,i,n,stencil_order,dm,nlevs
@@ -71,7 +71,7 @@ contains
     ! construct the form of the conduction term.  cc_applyop forms
     ! the generic quantity:
     !
-    !   (alpha MINUS del dot beta grad) phi = RHS
+    !   (solver_alpha MINUS del dot solver_beta grad) phi = RHS
 
     if (temp_diffusion_formulation .eq. 1) then
 
@@ -80,7 +80,7 @@ contains
        do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
           do i = 1,dm
-             call multifab_build_edge(beta(n,i),mla%la(n),1,1,i)
+             call multifab_build_edge(solver_beta(n,i),mla%la(n),1,1,i)
           end do
        end do
 
@@ -89,23 +89,23 @@ contains
           call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
        end do
 
-       call put_data_on_faces(mla,Tcoeff,1,beta,.true.)
+       call put_data_on_faces(mla,Tcoeff,1,solver_beta,.true.)
 
        do n=1,nlevs
-          call multifab_build(alpha(n), mla%la(n), 1, 1)
+          call multifab_build(solver_alpha(n), mla%la(n), 1, 1)
           call multifab_build(resid(n), mla%la(n), 1, 0)
-          call setval(alpha(n), ZERO, all=.true.)
+          call setval(solver_alpha(n), ZERO, all=.true.)
        end do
 
        ! applyop to compute resid = del dot Tcoeff grad T
-       call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
+       call cc_applyop(mla,resid,phi,solver_alpha,solver_beta,dx,the_bc_tower,dm+rhoh_comp, &
                        stencil_order)
      
        do n=1,nlevs
           call destroy(phi(n))
-          call destroy(alpha(n))
+          call destroy(solver_alpha(n))
           do i = 1,dm
-             call destroy(beta(n,i))
+             call destroy(solver_beta(n,i))
           end do
        end do
 
@@ -129,7 +129,7 @@ contains
        do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
           do i = 1,dm
-             call multifab_build_edge(beta(n,i), mla%la(n), 1, 1, i)
+             call multifab_build_edge(solver_beta(n,i), mla%la(n), 1, 1, i)
           end do
        end do
 
@@ -139,16 +139,16 @@ contains
           call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
        end do
 
-       call put_data_on_faces(mla,hcoeff,1,beta,.true.)
+       call put_data_on_faces(mla,hcoeff,1,solver_beta,.true.)
 
        do n=1,nlevs
-          call multifab_build(alpha(n), mla%la(n), 1, 1)
+          call multifab_build(solver_alpha(n), mla%la(n), 1, 1)
           call multifab_build(resid(n), mla%la(n), 1, 0)
-          call setval(alpha(n), ZERO, all=.true.)
+          call setval(solver_alpha(n), ZERO, all=.true.)
        end do
        
        ! applyop to compute resid = del dot hcoeff grad h
-       call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
+       call cc_applyop(mla,resid,phi,solver_alpha,solver_beta,dx,the_bc_tower,dm+rhoh_comp, &
                        stencil_order)
        
        ! add residual to thermal
@@ -164,10 +164,10 @@ contains
              call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
           end do
 
-          call put_data_on_faces(mla,Xkcoeff,comp,beta,.true.)
+          call put_data_on_faces(mla,Xkcoeff,comp,solver_beta,.true.)
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
-          call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
+          call cc_applyop(mla,resid,phi,solver_alpha,solver_beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
                           stencil_order)
           
           ! add residual to thermal
@@ -179,17 +179,17 @@ contains
        call put_1d_array_on_cart(p0,phi,foextrap_comp,.false.,.false., &
                                  dx,the_bc_tower%bc_tower_array,mla)
 
-       call put_data_on_faces(mla,pcoeff,1,beta,.true.)
+       call put_data_on_faces(mla,pcoeff,1,solver_beta,.true.)
 
        ! applyop to compute resid = del dot pcoeff grad p0
-       call cc_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
+       call cc_applyop(mla,resid,phi,solver_alpha,solver_beta,dx,the_bc_tower,foextrap_comp, &
                        stencil_order)
        
        do n=1,nlevs
           call destroy(phi(n))
-          call destroy(alpha(n))
+          call destroy(solver_alpha(n))
           do i = 1,dm 
-             call destroy(beta(n,i))
+             call destroy(solver_beta(n,i))
           end do
        end do
 

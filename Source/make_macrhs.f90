@@ -1,5 +1,5 @@
 ! Create the righthand side to the elliptic equation that is solved in 
-! the MAC project step, \beta * (S - \bar{S}).  For the MAC projection, 
+! the MAC project step, \beta0 * (S - \bar{S}).  For the MAC projection, 
 ! this quantity is cell-centered.
 !
 ! Note, we include the delta_gamma1_term here, to (possibly) account for
@@ -22,7 +22,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_macrhs(macrhs,rho0,S_cc,delta_gamma1_term,Sbar,div_coeff,dx, &
+  subroutine make_macrhs(macrhs,rho0,S_cc,delta_gamma1_term,Sbar,beta0,dx, &
                          gamma1bar,p0,delta_p_term,dt,delta_chi,is_predictor)
 
     use bl_prof_module
@@ -34,7 +34,7 @@ contains
     type(multifab) , intent(in   ) :: S_cc(:)
     type(multifab) , intent(in   ) :: delta_gamma1_term(:)
     real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:), dt
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
@@ -74,26 +74,26 @@ contains
           select case (dm)
           case (1)
              call make_macrhs_1d(n,lo,hi,mp(:,1,1,1),ng_rh,sp(:,1,1,1),ng_sr, &
-                                 gp(:,1,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
+                                 gp(:,1,1,1),ng_dg,Sbar(n,:),beta0(n,:), &
                                  gamma1bar(n,:),p0(n,:), &
                                  pop(:,1,1,1),ng_dp, &
                                  dp(:,1,1,1),ng_d,dt,is_predictor)
           case (2)
              call make_macrhs_2d(n,lo,hi,mp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
-                                 gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
+                                 gp(:,:,1,1),ng_dg,Sbar(n,:),beta0(n,:), &
                                  gamma1bar(n,:),p0(n,:), &
                                  pop(:,:,1,1),ng_dp,dp(:,:,1,1),ng_d, &
                                  dt,is_predictor)
           case (3)
              if (spherical .eq. 1) then
                 call make_macrhs_3d_sphr(lo,hi,rho0(1,:),mp(:,:,:,1),ng_rh,sp(:,:,:,1), &
-                                         ng_sr,gp(:,:,:,1),ng_dg,Sbar(1,:),div_coeff(1,:), &
+                                         ng_sr,gp(:,:,:,1),ng_dg,Sbar(1,:),beta0(1,:), &
                                          dx(n,:),gamma1bar(1,:), &
                                          p0(1,:),pop(:,:,:,1),ng_dp, &
                                          dp(:,:,:,1),ng_d,dt,is_predictor)
              else
                 call make_macrhs_3d(n,lo,hi,mp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
-                                    gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
+                                    gp(:,:,:,1),ng_dg,Sbar(n,:),beta0(n,:), &
                                     gamma1bar(n,:), &
                                     p0(n,:),pop(:,:,:,1),ng_dp, &
                                     dp(:,:,:,1),ng_d,dt,is_predictor)
@@ -108,7 +108,7 @@ contains
   end subroutine make_macrhs
 
   subroutine make_macrhs_1d(n,lo,hi,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
-                            Sbar,div_coeff,gamma1bar,p0, &
+                            Sbar,beta0,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
     use probin_module, only: dpdt_factor
@@ -119,7 +119,7 @@ contains
     real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:)
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:)
     real (kind=dp_t), intent(in   ) :: Sbar(0:)  
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) ::      delta_p_term(lo(1)-ng_dp:)
@@ -131,7 +131,7 @@ contains
     integer :: i
 
     do i = lo(1),hi(1)
-       rhs(i) = div_coeff(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
+       rhs(i) = beta0(i) * (S_cc(i) - Sbar(i) + delta_gamma1_term(i))
     end do
 
     if (dpdt_factor .gt. 0.0d0) then
@@ -142,7 +142,7 @@ contains
        do i = lo(1),hi(1)
           if (i .lt. base_cutoff_density_coord(n)) then
              delta_chi(i) = delta_chi(i) + dpdt_factor * delta_p_term(i) / (dt*gamma1bar(i)*p0(i))
-             rhs(i) = rhs(i) + div_coeff(i) * delta_chi(i)
+             rhs(i) = rhs(i) + beta0(i) * delta_chi(i)
           end if
        end do
 
@@ -151,7 +151,7 @@ contains
   end subroutine make_macrhs_1d
 
   subroutine make_macrhs_2d(n,lo,hi,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
-                            Sbar,div_coeff,gamma1bar,p0, &
+                            Sbar,beta0,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
     use probin_module, only: dpdt_factor
@@ -162,7 +162,7 @@ contains
     real (kind=dp_t), intent(in   ) ::              S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:)  
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) :: Sbar(0:)  
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+    real (kind=dp_t), intent(in   ) :: beta0(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) ::      delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:)
@@ -175,7 +175,7 @@ contains
 
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          rhs(i,j) = div_coeff(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
+          rhs(i,j) = beta0(j) * (S_cc(i,j) - Sbar(j) + delta_gamma1_term(i,j))
        end do
     end do
 
@@ -188,7 +188,7 @@ contains
           if (j .lt. base_cutoff_density_coord(n)) then
              do i = lo(1),hi(1)
                 delta_chi(i,j) = delta_chi(i,j) + dpdt_factor * delta_p_term(i,j) / (dt*gamma1bar(j)*p0(j))
-                rhs(i,j) = rhs(i,j) + div_coeff(j) * delta_chi(i,j)
+                rhs(i,j) = rhs(i,j) + beta0(j) * delta_chi(i,j)
              end do
           end if
        end do
@@ -198,7 +198,7 @@ contains
   end subroutine make_macrhs_2d
 
   subroutine make_macrhs_3d(n,lo,hi,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
-                            Sbar,div_coeff,gamma1bar,p0, &
+                            Sbar,beta0,gamma1bar,p0, &
                             delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
     use geometry, only: base_cutoff_density_coord
@@ -210,7 +210,7 @@ contains
     real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
+    real (kind=dp_t), intent(in   ) :: beta0(0:)  
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) ::   delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:,lo(3)-ng_dp:)
@@ -225,7 +225,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs(i,j,k) = div_coeff(k) * &
+             rhs(i,j,k) = beta0(k) * &
                   (S_cc(i,j,k) - Sbar(k) + delta_gamma1_term(i,j,k))
           end do
        end do
@@ -244,7 +244,7 @@ contains
                 do i = lo(1),hi(1)
                    delta_chi(i,j,k) = delta_chi(i,j,k) + dpdt_factor * delta_p_term(i,j,k) / &
                            (dt*gamma1bar(k)*p0(k))
-                   rhs(i,j,k) = rhs(i,j,k) + div_coeff(k) * delta_chi(i,j,k)
+                   rhs(i,j,k) = rhs(i,j,k) + beta0(k) * delta_chi(i,j,k)
                 end do
              end do
           end if
@@ -256,7 +256,7 @@ contains
   end subroutine make_macrhs_3d
 
   subroutine make_macrhs_3d_sphr(lo,hi,rho0,rhs,ng_rh,S_cc,ng_sr,delta_gamma1_term,ng_dg, &
-                                 Sbar,div_coeff,dx,gamma1bar,p0, &
+                                 Sbar,beta0,dx,gamma1bar,p0, &
                                  delta_p_term,ng_dp,delta_chi,ng_d,dt,is_predictor)
 
     use probin_module, only: dpdt_factor, base_cutoff_density
@@ -268,7 +268,7 @@ contains
     real (kind=dp_t), intent(in   ) ::           S_cc(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
-    real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
+    real (kind=dp_t), intent(in   ) :: beta0(0:)  
     real (kind=dp_t), intent(in   ) :: dx(:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -286,7 +286,7 @@ contains
     real(kind=dp_t), allocatable ::      rho0_cart(:,:,:,:)
 
     allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,div_coeff,div_cart,lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,beta0,div_cart,lo,hi,dx,0)
     
     allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,Sbar,Sbar_cart,lo,hi,dx,0)

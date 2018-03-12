@@ -1353,13 +1353,13 @@ contains
 
   end subroutine make_normal_3d_sphr
 
-  subroutine put_data_on_faces(mla,ccfab,comp,beta,harmonic_avg)
+  subroutine put_data_on_faces(mla,ccmf,comp,facemf,harmonic_avg)
 
     use ml_cc_restriction_module, only: ml_edge_restriction
 
     type(ml_layout), intent(in   ) :: mla
-    type(multifab) , intent(in   ) :: ccfab(:)
-    type(multifab) , intent(inout) :: beta(:,:)
+    type(multifab) , intent(in   ) :: ccmf(:)
+    type(multifab) , intent(inout) :: facemf(:,:)
     integer        , intent(in   ) :: comp
     logical        , intent(in   ) :: harmonic_avg
 
@@ -1367,7 +1367,7 @@ contains
     integer :: n,i,ng_c,ng_b,dm,nlevs
     integer :: lo(mla%dim),hi(mla%dim)
 
-    real(kind=dp_t), pointer :: ccfabp(:,:,:,:)
+    real(kind=dp_t), pointer :: ccmfp(:,:,:,:)
     real(kind=dp_t), pointer :: bxp(:,:,:,:)
     real(kind=dp_t), pointer :: byp(:,:,:,:)
     real(kind=dp_t), pointer :: bzp(:,:,:,:)
@@ -1379,30 +1379,30 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    ng_c = nghost(ccfab(1))
-    ng_b = nghost(beta(1,1))
+    ng_c = nghost(ccmf(1))
+    ng_b = nghost(facemf(1,1))
 
-    ! setup beta = ccfab on faces
+    ! setup facemf = ccmf on faces
     do n=1,nlevs
-       do i=1, nfabs(ccfab(n))
-          ccfabp => dataptr(ccfab(n),i)
-          bxp   => dataptr(beta(n,1),i)
-          lo = lwb(get_box(ccfab(n),i))
-          hi = upb(get_box(ccfab(n),i))
+       do i=1, nfabs(ccmf(n))
+          ccmfp => dataptr(ccmf(n),i)
+          bxp   => dataptr(facemf(n,1),i)
+          lo = lwb(get_box(ccmf(n),i))
+          hi = upb(get_box(ccmf(n),i))
           select case (dm)
           case (1)
-             call put_data_on_faces_1d(lo,hi,ccfabp(:,1,1,comp),ng_c, &
+             call put_data_on_faces_1d(lo,hi,ccmfp(:,1,1,comp),ng_c, &
                                        bxp(:,1,1,1),ng_b, &
                                        harmonic_avg)
           case (2)
-             byp   => dataptr(beta(n,2),i)
-             call put_data_on_faces_2d(lo,hi,ccfabp(:,:,1,comp),ng_c, &
+             byp   => dataptr(facemf(n,2),i)
+             call put_data_on_faces_2d(lo,hi,ccmfp(:,:,1,comp),ng_c, &
                                        bxp(:,:,1,1),byp(:,:,1,1),ng_b, &
                                        harmonic_avg)
           case (3)
-             byp   => dataptr(beta(n,2),i)
-             bzp   => dataptr(beta(n,3),i)
-             call put_data_on_faces_3d(lo,hi,ccfabp(:,:,:,comp),ng_c, &
+             byp   => dataptr(facemf(n,2),i)
+             bzp   => dataptr(facemf(n,3),i)
+             call put_data_on_faces_3d(lo,hi,ccmfp(:,:,:,comp),ng_c, &
                                        bxp(:,:,:,1),byp(:,:,:,1),bzp(:,:,:,1),ng_b, &
                                        harmonic_avg)
           end select
@@ -1412,7 +1412,7 @@ contains
     ! Make sure that the fine edges average down onto the coarse edges.
     do n = nlevs,2,-1
        do i = 1,dm
-          call ml_edge_restriction(beta(n-1,i),beta(n,i),mla%mba%rr(n-1,:),i)
+          call ml_edge_restriction(facemf(n-1,i),facemf(n,i),mla%mba%rr(n-1,:),i)
        end do
     end do
 
@@ -1421,13 +1421,13 @@ contains
   end subroutine put_data_on_faces
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! put beta on faces
+  ! put data on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_1d(lo,hi,ccbeta,ng_c,betax,ng_b,harmonic_avg)
+  subroutine put_data_on_faces_1d(lo,hi,cc,ng_c,facex,ng_b,harmonic_avg)
 
     integer        , intent(in   ) :: lo(:), hi(:), ng_c, ng_b
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_c:)
-    real(kind=dp_t), intent(inout) ::  betax(lo(1)-ng_b:)
+    real(kind=dp_t), intent(in   ) :: cc(lo(1)-ng_c:)
+    real(kind=dp_t), intent(inout) ::  facex(lo(1)-ng_b:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
@@ -1437,18 +1437,18 @@ contains
     if (harmonic_avg) then
 
        do i = lo(1),hi(1)+1
-          denom = (ccbeta(i) + ccbeta(i-1))
+          denom = (cc(i) + cc(i-1))
           if (denom .ne. 0.d0) then
-             betax(i) = TWO*(ccbeta(i)*ccbeta(i-1)) / denom
+             facex(i) = TWO*(cc(i)*cc(i-1)) / denom
           else
-             betax(i) = HALF*(ccbeta(i)+ccbeta(i-1))
+             facex(i) = HALF*(cc(i)+cc(i-1))
           end if
        end do
 
     else
 
        do i = lo(1),hi(1)+1
-          betax(i) = HALF*(ccbeta(i)+ccbeta(i-1))
+          facex(i) = HALF*(cc(i)+cc(i-1))
        end do
 
     end if
@@ -1456,14 +1456,14 @@ contains
   end subroutine put_data_on_faces_1d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! put beta on faces
+  ! put face on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_2d(lo,hi,ccbeta,ng_c,betax,betay,ng_b,harmonic_avg)
+  subroutine put_data_on_faces_2d(lo,hi,cc,ng_c,facex,facey,ng_b,harmonic_avg)
 
     integer        , intent(in   ) :: lo(:), hi(:), ng_c, ng_b
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_c:,lo(2)-ng_c:)
-    real(kind=dp_t), intent(inout) ::  betax(lo(1)-ng_b:,lo(2)-ng_b:)
-    real(kind=dp_t), intent(inout) ::  betay(lo(1)-ng_b:,lo(2)-ng_b:)
+    real(kind=dp_t), intent(in   ) :: cc(lo(1)-ng_c:,lo(2)-ng_c:)
+    real(kind=dp_t), intent(inout) ::  facex(lo(1)-ng_b:,lo(2)-ng_b:)
+    real(kind=dp_t), intent(inout) ::  facey(lo(1)-ng_b:,lo(2)-ng_b:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
@@ -1474,22 +1474,22 @@ contains
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
-             denom = (ccbeta(i,j) + ccbeta(i-1,j))
+             denom = (cc(i,j) + cc(i-1,j))
              if (denom .ne. 0.d0) then
-                betax(i,j) = TWO*(ccbeta(i,j)*ccbeta(i-1,j)) / denom
+                facex(i,j) = TWO*(cc(i,j)*cc(i-1,j)) / denom
              else
-                betax(i,j) = HALF*(ccbeta(i,j)+ccbeta(i-1,j))
+                facex(i,j) = HALF*(cc(i,j)+cc(i-1,j))
              end if
           end do
        end do
 
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
-             denom = (ccbeta(i,j) + ccbeta(i,j-1))
+             denom = (cc(i,j) + cc(i,j-1))
              if (denom .ne. 0.d0) then
-                betay(i,j) = TWO*(ccbeta(i,j)*ccbeta(i,j-1)) / denom
+                facey(i,j) = TWO*(cc(i,j)*cc(i,j-1)) / denom
              else
-                betay(i,j) = HALF*(ccbeta(i,j)+ccbeta(i,j-1))
+                facey(i,j) = HALF*(cc(i,j)+cc(i,j-1))
              end if
           end do
        end do
@@ -1498,13 +1498,13 @@ contains
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
-             betax(i,j) = HALF*(ccbeta(i,j)+ccbeta(i-1,j))
+             facex(i,j) = HALF*(cc(i,j)+cc(i-1,j))
           end do
        end do
 
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
-             betay(i,j) = HALF*(ccbeta(i,j)+ccbeta(i,j-1))
+             facey(i,j) = HALF*(cc(i,j)+cc(i,j-1))
           end do
        end do
 
@@ -1514,15 +1514,15 @@ contains
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! put beta on faces
+  ! put face on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_data_on_faces_3d(lo,hi,ccbeta,ng_c,betax,betay,betaz,ng_b,harmonic_avg)
+  subroutine put_data_on_faces_3d(lo,hi,cc,ng_c,facex,facey,facez,ng_b,harmonic_avg)
 
     integer        , intent(in   ) :: lo(:), hi(:), ng_c, ng_b
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:)
-    real(kind=dp_t), intent(inout) ::  betax(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
-    real(kind=dp_t), intent(inout) ::  betay(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
-    real(kind=dp_t), intent(inout) ::  betaz(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+    real(kind=dp_t), intent(in   ) :: cc(lo(1)-ng_c:,lo(2)-ng_c:,lo(3)-ng_c:)
+    real(kind=dp_t), intent(inout) ::  facex(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+    real(kind=dp_t), intent(inout) ::  facey(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
+    real(kind=dp_t), intent(inout) ::  facez(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
     logical        , intent(in   ) :: harmonic_avg
 
     ! Local
@@ -1537,11 +1537,11 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
-                denom = (ccbeta(i,j,k) + ccbeta(i-1,j,k))
+                denom = (cc(i,j,k) + cc(i-1,j,k))
                 if (denom .ne. 0.d0) then
-                   betax(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i-1,j,k)) / denom
+                   facex(i,j,k) = TWO*(cc(i,j,k) * cc(i-1,j,k)) / denom
                 else
-                   betax(i,j,k) = HALF*denom
+                   facex(i,j,k) = HALF*denom
                 end if
              end do
           end do
@@ -1552,11 +1552,11 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
-                denom = (ccbeta(i,j,k) + ccbeta(i,j-1,k))
+                denom = (cc(i,j,k) + cc(i,j-1,k))
                 if (denom .ne. 0.d0) then
-                   betay(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j-1,k)) / denom
+                   facey(i,j,k) = TWO*(cc(i,j,k) * cc(i,j-1,k)) / denom
                 else
-                   betay(i,j,k) = HALF*denom
+                   facey(i,j,k) = HALF*denom
                 end if
              end do
           end do
@@ -1567,11 +1567,11 @@ contains
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                denom = (ccbeta(i,j,k) + ccbeta(i,j,k-1))
+                denom = (cc(i,j,k) + cc(i,j,k-1))
                 if (denom .ne. 0.d0) then
-                   betaz(i,j,k) = TWO*(ccbeta(i,j,k) * ccbeta(i,j,k-1)) / denom
+                   facez(i,j,k) = TWO*(cc(i,j,k) * cc(i,j,k-1)) / denom
                 else
-                   betaz(i,j,k) = HALF*denom
+                   facez(i,j,k) = HALF*denom
                 end if
              end do
           end do
@@ -1588,7 +1588,7 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)+1
-                betax(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i-1,j,k))
+                facex(i,j,k) = HALF*(cc(i,j,k)+cc(i-1,j,k))
              end do
           end do
        end do
@@ -1598,7 +1598,7 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)+1
              do i = lo(1),hi(1)
-                betay(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j-1,k))
+                facey(i,j,k) = HALF*(cc(i,j,k)+cc(i,j-1,k))
              end do
           end do
        end do
@@ -1608,7 +1608,7 @@ contains
        do k = lo(3),hi(3)+1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                betaz(i,j,k) = HALF*(ccbeta(i,j,k)+ccbeta(i,j,k-1))
+                facez(i,j,k) = HALF*(cc(i,j,k)+cc(i,j,k-1))
              end do
           end do
        end do

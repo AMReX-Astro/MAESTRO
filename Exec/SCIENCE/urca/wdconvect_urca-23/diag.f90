@@ -57,7 +57,7 @@ contains
 
   subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext,thermal,rho_omegadot, &
                   rho0,rhoh0,p0,tempbar, &
-                  gamma1bar,div_coeff, &
+                  gamma1bar,beta0, &
                   u,w0,normal, &
                   mla,the_bc_tower)
 
@@ -96,7 +96,7 @@ contains
     real(kind=dp_t), intent(in   ) ::        p0(:,0:)
     real(kind=dp_t), intent(in   ) ::   tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0(:,0:)
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     type(ml_layout), intent(in   ) :: mla
     type(bc_tower) , intent(in   ) :: the_bc_tower
@@ -838,8 +838,8 @@ contains
     ! IMPORTANT: make sure that there are enough entries in the format
     ! statement to write out all of the data in each file.
 999 format("# job name: ",a)
-1000 format(1x,16(g20.10,1x))
-1001 format("#",16(a20,1x))
+1000 format(1x,16(g20.10,2x))
+1001 format("#",16(a20,2x))
 800 format("# ",a,i4.4,'-',i2.2,'-',i2.2)
 801 format("# ",a,i2.2,':',i2.2,':',i2.2)
 802 format("# ",a,a)

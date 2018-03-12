@@ -198,7 +198,7 @@ contains
     use time_module, only: time
     use particle_module, only: particle_container, make_particle_count
     use make_grav_module
-    use make_div_coeff_module
+    use make_beta0_module
     use make_pi_cc_module
 
     type(plot_t)     , intent(in   ) :: p
@@ -234,7 +234,7 @@ contains
     type(multifab) :: w0r_cart(mla%nlevel)
     type(multifab) ::    pi_cc(mla%nlevel)
 
-    real(dp_t)  :: div_coeff(nlevs_radial,0:nr_fine-1)
+    real(dp_t)  :: beta0(nlevs_radial,0:nr_fine-1)
     real(dp_t)  :: grav_cell(nlevs_radial,0:nr_fine-1)
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
@@ -649,18 +649,18 @@ contains
 
 
     if (use_alt_energy_fix) then
-       ! make beta_0 on a multifab
+       ! make beta0 on a multifab
        call make_grav_cell(grav_cell,rho0)
-       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
+       call make_beta0(beta0,rho0,p0,gamma1bar,grav_cell)
        
-       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
+       call put_1d_array_on_cart(beta0,tempfab,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
     endif
 
     ! new function that average the nodal pi to cell-centers, then
     ! normalized the entire signal to sum to 0.  If we are doing
     ! use_alt_energy_fix = T, then we first want to convert
-    ! (pi/beta_0) to pi.
+    ! (pi/beta0) to pi.
     call make_pi_cc(mla,pi,pi_cc,1,the_bc_tower%bc_tower_array,tempfab)
 
     do n=1,nlevs

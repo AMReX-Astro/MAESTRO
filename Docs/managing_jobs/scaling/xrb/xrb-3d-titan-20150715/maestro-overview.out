@@ -286,8 +286,8 @@ index                 name           short name        A        Z
                               ppm_type =          1
                               bds_type =          0
                       ppm_trace_forces =          0
-                             beta_type =          1
-               use_linear_grav_in_beta =  F
+                            beta0_type =          1
+              use_linear_grav_in_beta0 =  F
                   rotational_frequency =      0.000000000    
                            co_latitude =      0.000000000    
                        rotation_radius =      1000000.000    

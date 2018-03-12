@@ -1,0 +1,56 @@
+&PROBIN
+ model_file = "model.hse"
+
+ ppm_type = 0
+
+ max_levs = 1
+ n_cellx = 320
+ n_celly = 512
+ max_grid_size = 64
+
+ prob_hi_x = 2.5d8
+ prob_hi_y = 4.0d8
+
+ do_sponge = T
+ sponge_center_density = 3.d6
+ sponge_start_factor = 33.333d0
+ sponge_kappa = 100.d0
+
+ max_step  = 100
+ do_initial_projection = T
+ init_divu_iter = 1
+ init_iter = 1
+
+ stop_time = 100.d0
+
+ plot_base = T
+ plot_int  = 1
+ chk_int   = 4000
+
+ cflfac = 0.7d0
+ init_shrink = 0.1d0
+
+xlo_boundary_type = "periodic"
+xhi_boundary_type = "periodic"
+ylo_boundary_type = "slip wall"
+yhi_boundary_type = "outlet"
+
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ use_eos_coulomb = F
+
+ do_heating = T
+
+ apply_vel_field = T
+
+ velpert_scale = 5.d6
+ velpert_amplitude = 1.d5
+ velpert_height_loc = 1.2e8
+ num_vortices = 2
+
+ use_alt_energy_fix = F
+
+/

@@ -2,16 +2,16 @@
 !
 ! Here, U is cell-centered.  phi is on the nodes, and we solve:
 !
-!  D [ (beta_0/rho) G phi ] = D ( beta_0 U ) - beta_0 S
+!  D [ (beta0/rho) G phi ] = D ( beta0 U ) - beta0 S
 !
 ! If use_alt_energy_fix = T, then we solve:
 !
-!  D [ (beta_0**2/rho) G (phi/beta_0) ] = D ( beta_0 U ) - beta_0 S
+!  D [ (beta0**2/rho) G (phi/beta0) ] = D ( beta0 U ) - beta0 S
 !
 !
 ! Note: if use_alt_energy_fix = T, then we come out of here with
-! (beta_0 grad pi) instead of just grad pi (and also, pi in this
-! case is pi/beta_0).  This beta_0 weighting makes the use of gpi in
+! (beta0 grad pi) instead of just grad pi (and also, pi in this
+! case is pi/beta0).  This beta0 weighting makes the use of gpi in
 ! mkforce.f90 correct.
 
 module hgproject_module
@@ -30,7 +30,7 @@ module hgproject_module
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower, &
-                       div_coeff_cart,divu_rhs,eps_in)
+                       beta0_cart,nodalrhs,eps_in)
 
     use bc_module
     use bl_constants_module
@@ -53,9 +53,9 @@ contains
     type(multifab ), intent(inout) :: gpi(:)
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    type(multifab ), intent(in   ) :: div_coeff_cart(:)
+    type(multifab ), intent(in   ) :: beta0_cart(:)
 
-    type(multifab ), intent(inout), optional :: divu_rhs(:)
+    type(multifab ), intent(inout), optional :: nodalrhs(:)
     real(dp_t)     , intent(in   ), optional :: eps_in
 
     ! Local  
@@ -139,17 +139,17 @@ contains
 
     do n=1,nlevs
        do d=1,dm
-          call multifab_mult_mult_c(unew(n),d,div_coeff_cart(n),1,1,nghost(div_coeff_cart(n)))
+          call multifab_mult_mult_c(unew(n),d,beta0_cart(n),1,1,nghost(beta0_cart(n)))
        end do
 
-       ! rhohalf = rho/beta_0
-       call multifab_div_div_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
-                               nghost(div_coeff_cart(n)))
+       ! rhohalf = rho/beta0
+       call multifab_div_div_c(rhohalf(n),1,beta0_cart(n),1,1, &
+                               nghost(beta0_cart(n)))
 
-       ! rhohalf = rho/beta_0^2
+       ! rhohalf = rho/beta0^2
        if (using_alt_energy_fix) then
-          call multifab_div_div_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
-                                  nghost(div_coeff_cart(n)))
+          call multifab_div_div_c(rhohalf(n),1,beta0_cart(n),1,1, &
+                                  nghost(beta0_cart(n)))
        endif
     end do
 
@@ -161,7 +161,7 @@ contains
     end do
 
 !   if (dm .eq. 1) then
-!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs)
+!      call hg_1d_solver(mla,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,nodalrhs)
 !   else 
 
     if (present(eps_in)) then
@@ -173,19 +173,19 @@ contains
     abs_solver_eps = -1.d0
 
     if (use_hypre) then 
-       if (present(divu_rhs)) then
-          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
-                        stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
+       if (present(nodalrhs)) then
+          call hg_hypre(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
+                        stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
        else
-          call hg_hypre(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
+          call hg_hypre(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
                         stencil_type,rel_solver_eps,abs_solver_eps)
        end if
     else
-       if (present(divu_rhs)) then
-          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
-                            stencil_type,rel_solver_eps,abs_solver_eps, divu_rhs)
+       if (present(nodalrhs)) then
+          call hg_multigrid(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
+                            stencil_type,rel_solver_eps,abs_solver_eps, nodalrhs)
        else
-          call hg_multigrid(mla,rh,unew,rhohalf,div_coeff_cart,phi,dx,the_bc_tower, &
+          call hg_multigrid(mla,rh,unew,rhohalf,beta0_cart,phi,dx,the_bc_tower, &
                             stencil_type,rel_solver_eps,abs_solver_eps)
                             
        end if
@@ -197,20 +197,20 @@ contains
 
     do n=1,nlevs
 
-       ! Convert (beta_0 U) back to U
+       ! Convert (beta0 U) back to U
        do d=1,dm
-          call multifab_div_div_c(unew(n),d,div_coeff_cart(n),1,1,nghost(div_coeff_cart(n)))
+          call multifab_div_div_c(unew(n),d,beta0_cart(n),1,1,nghost(beta0_cart(n)))
        end do
 
-       ! Convert (rhohalf/beta_0)   back to rhohalf
-       !  OR     (rhohalf/beta_0^2) back to (rhohalf/beta_0^2)
-       call multifab_mult_mult_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
-                                 nghost(div_coeff_cart(n)))
+       ! Convert (rhohalf/beta0)   back to rhohalf
+       !  OR     (rhohalf/beta0^2) back to (rhohalf/beta0)
+       call multifab_mult_mult_c(rhohalf(n),1,beta0_cart(n),1,1, &
+                                 nghost(beta0_cart(n)))
 
-       ! Convert (rhohalf/beta_0)   back to rhohalf
+       ! Convert (rhohalf/beta0)   back to rhohalf
        if (using_alt_energy_fix) then
-          call multifab_mult_mult_c(rhohalf(n),1,div_coeff_cart(n),1,1, &
-                                    nghost(div_coeff_cart(n)))
+          call multifab_mult_mult_c(rhohalf(n),1,beta0_cart(n),1,1, &
+                                    nghost(beta0_cart(n)))
        endif
     end do
 
@@ -218,10 +218,10 @@ contains
        call multifab_build(gphi(n), mla%la(n), dm, 0)
     end do
 
-    call mkgphi(gphi,phi,div_coeff_cart,dx)
+    call mkgphi(gphi,phi,dx)
 
     call hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,  &
-                   pi,phi,dt,mla,the_bc_tower%bc_tower_array,div_coeff_cart, &
+                   pi,phi,dt,mla,the_bc_tower%bc_tower_array,beta0_cart, &
                    using_alt_energy_fix)
 
     do n = 1,nlevs
@@ -397,7 +397,7 @@ contains
       ! quantity projected is U
       else if (proj_type .eq. divu_iters_comp) then
 
-      ! quantity projected is (Ustar - Un)
+      ! quantity projected is (Ustar - Un) / dt
       else if (proj_type .eq. pressure_iters_comp) then
 
          unew(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1) = ( &
@@ -457,7 +457,7 @@ contains
       ! quantity projected is U
       else if (proj_type .eq. divu_iters_comp) then
 
-      ! quantity projected is (Ustar - Un)
+      ! quantity projected is (Ustar - Un) / dt
       else if (proj_type .eq. pressure_iters_comp) then
 
          !$OMP PARALLEL PRIVATE(i,j,k,m)
@@ -514,11 +514,10 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine mkgphi(gphi,phi,div_coeff_cart,dx)
+    subroutine mkgphi(gphi,phi,dx)
 
       type(multifab), intent(inout) :: gphi(:)
       type(multifab), intent(in   ) :: phi(:)
-      type(multifab), intent(in   ) :: div_coeff_cart(:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
 
       integer :: lo(phi(1)%dim),hi(phi(1)%dim)
@@ -526,7 +525,6 @@ contains
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
-      real(kind=dp_t), pointer :: bp(:,:,:,:) 
 
       type(bl_prof_timer), save :: bpt
 
@@ -542,7 +540,6 @@ contains
             hi = upb(get_box(gphi(n),i))
             gph => dataptr(gphi(n),i)
             pp  => dataptr(phi(n),i)
-            bp  => dataptr(div_coeff_cart(n),i)
             select case (dm)
             case (1)
                call mkgphi_1d(gph(:,1,1,1), ng_gp, pp(:,1,1,1), ng_p, &
@@ -641,7 +638,7 @@ contains
     ! ******************************************************************************* !
 
     subroutine hg_update(proj_type,unew,uold,gpi,gphi,rhohalf,pi,phi,dt, &
-                         mla,the_bc_level,div_coeff_cart,using_alt_energy_fix)
+                         mla,the_bc_level,beta0_cart,using_alt_energy_fix)
 
       use variables, only: foextrap_comp
       use ml_restrict_fill_module
@@ -657,7 +654,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       type(ml_layout), intent(in   ) :: mla
       type(bc_level) , intent(in   ) :: the_bc_level(:)
-      type(multifab) , intent(in   ) :: div_coeff_cart(:)
+      type(multifab) , intent(in   ) :: beta0_cart(:)
       logical        , intent(in   ) :: using_alt_energy_fix
 
       ! local
@@ -685,7 +682,7 @@ contains
       ng_rh = nghost(rhohalf(1))
       ng_p  = nghost(pi(1))
       ng_h  = nghost(phi(1))
-      ng_d  = nghost(div_coeff_cart(1))
+      ng_d  = nghost(beta0_cart(1))
 
       do n = 1, nlevs
 
@@ -699,7 +696,7 @@ contains
             rp  => dataptr(rhohalf(n),i)
             pp  => dataptr(pi(n),i)
             ph  => dataptr(phi(n),i)
-            dp  => dataptr(div_coeff_cart(n),i)
+            dp  => dataptr(beta0_cart(n),i)
             select case (dm)
             case (1)
                call hg_update_1d(proj_type, upn(:,1,1,1), ng_un, uon(:,1,1,1), ng_uo, &
@@ -770,8 +767,10 @@ contains
          unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
       endif
 
-      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
+      if (proj_type .eq. pressure_iters_comp) then
+         ! unew held the projection of (ustar-uold) / dt
            unew(lo(1):hi(1)) = uold(lo(1):hi(1)) + dt * unew(lo(1):hi(1))
+        end if
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -825,8 +824,6 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       logical        , intent(in   ) :: using_alt_energy_fix
 
-      integer                        :: i,j
-
       !     Subtract off the density-weighted gradient.
       if (using_alt_energy_fix) then
          unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
@@ -844,9 +841,11 @@ contains
               gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
       endif
 
-      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
-           unew(lo(1):hi(1),lo(2):hi(2),:) = uold(lo(1):hi(1),lo(2):hi(2),:) + &
-               dt * unew(lo(1):hi(1),lo(2):hi(2),:)
+      if (proj_type .eq. pressure_iters_comp) then
+         ! unew held the projection of (ustar-uold) / dt
+         unew(lo(1):hi(1),lo(2):hi(2),:) = uold(lo(1):hi(1),lo(2):hi(2),:) + &
+              dt * unew(lo(1):hi(1),lo(2):hi(2),:)
+      end if
 
       if ( (proj_type .eq. initial_projection_comp) .or. &
            (proj_type .eq. divu_iters_comp) ) then
@@ -958,7 +957,7 @@ contains
 
       if (proj_type .eq. pressure_iters_comp) then
          !
-         ! unew held the projection of (ustar-uold)
+         ! unew held the projection of (ustar-uold) / dt
          !
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
@@ -1080,7 +1079,7 @@ contains
 
   ! ******************************************************************************** !
 
-  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,divu_rhs)
+  subroutine hg_1d_solver(mla,rh,unew,rhohalf,phi,dx,the_bc_tower,stencil_type,nodalrhs)
 
     use bl_prof_module
     use bl_constants_module
@@ -1098,7 +1097,7 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in)    :: stencil_type
 
-    type(multifab ), intent(in   ), optional :: divu_rhs(:)
+    type(multifab ), intent(in   ), optional :: nodalrhs(:)
 
     ! Local variables
     type(box     ) :: pd
@@ -1157,10 +1156,10 @@ contains
 
     call divu(nlevs,mgt,unew,rh,mla%mba%rr,nodal,lo_inflow,hi_inflow)
 
-    ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
+    ! Do rh = rh - nodalrhs (this routine preserves rh=0 on
     !  nodes which have bc_dirichlet = true.
-    if (present(divu_rhs)) &
-       call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
+    if (present(nodalrhs)) &
+       call subtract_divu_from_rh(nlevs,mgt,rh,nodalrhs)
 
 !   call solve_1d(mla,mgt,rh,phi,mla%mba%rr)
 

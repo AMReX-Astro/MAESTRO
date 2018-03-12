@@ -11,6 +11,7 @@ program init_1d
   use eos_type_module, only: eos_t
   use extern_probin_module, only: use_eos_coulomb
   use network
+  use actual_burner_module, only: actual_burner_init
   use fundamental_constants_module, only: Gconst
   use urca_composition_module
 
@@ -55,7 +56,7 @@ program init_1d
 
   real (kind=dp_t) :: TOL = 1.e-11
 
-  integer :: MAX_ITER = 1000
+  integer :: MAX_ITER = 1000000
 
   integer :: iter
 
@@ -78,19 +79,21 @@ program init_1d
 
   real (kind=dp_t) :: max_hse_error, dpdr, rhog
 
+  real (kind=dp_t) :: dtol_fac = 0.000001_dp_t
+
   integer :: i_conv, i_fluff
 
   type (eos_t) :: eos_state
 
   namelist /params/ nx, dens_base, temp_base, &
        low_density_cutoff, dens_conv_zone, M_conv_zone, temp_fluff, &
-       test_hse_convergence, TOL, MAX_ITER, &
+       test_hse_convergence, TOL, MAX_ITER, dtol_fac, &
        xmin, xmax, &
        fluff_type, &
        c12_in, c12_out, o16_in, o16_out, &
        ne23_in, ne23_out, na23_in, na23_out, &
        urca_23_dens, urca_shell_type, shell_atan_kappa, &
-       prefix
+       na_ne_23, prefix
 
 
   ! determine if we specified a runtime parameters file or use the default
@@ -149,6 +152,7 @@ program init_1d
   use_eos_coulomb = .true.
   call eos_init()
   call network_init()
+  call actual_burner_init()
 
   ! Initialize the composition module
   call init_urca_composition()
@@ -181,7 +185,7 @@ program init_1d
   ! call the EOS one more time for this zone and then go on to the next
   eos_state%T     = temp_base
   eos_state%rho   = dens_base
-  call set_urca_composition(dens_base, xn_base)
+  call set_urca_composition(eos_state, xn_base)
   eos_state%xn(:) = xn_base(:)
 
   ! (t, rho) -> (p, s)
@@ -217,7 +221,9 @@ program init_1d
      ! zone
      dens_zone = model_hse(i-1,idens)
      temp_zone = model_hse(i-1,itemp)
-     call set_urca_composition(dens_zone, xn)
+     eos_state % rho = dens_zone
+     eos_state % T = temp_zone
+     call set_urca_composition(eos_state, xn)
 
      g_zone = -Gconst*M_enclosed(i-1)/(xznl(i)*xznl(i))
 
@@ -228,6 +234,7 @@ program init_1d
 
      ! start off the Newton loop by saying that the zone has not converged
      converged_hse = .FALSE.
+
 
      if (.not. fluff) then
 
@@ -246,7 +253,7 @@ program init_1d
 
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
-              call set_urca_composition(dens_zone, xn)
+              call set_urca_composition(eos_state, xn)
               eos_state%xn(:) = xn(:)
 
               ! (t, rho) -> (p, s)
@@ -273,11 +280,11 @@ program init_1d
 
               drho = -(A + dAdT*dtemp)/dAdrho
 
-              dens_zone = max(0.9_dp_t*dens_zone, &
-                              min(dens_zone + drho, 1.1_dp_t*dens_zone))
+              dens_zone = max((ONE-dtol_fac)*dens_zone, &
+                              min(dens_zone + drho, (ONE+dtol_fac)*dens_zone))
 
-              temp_zone = max(0.9_dp_t*temp_zone, &
-                              min(temp_zone + dtemp, 1.1_dp_t*temp_zone))
+              temp_zone = max((ONE-dtol_fac)*temp_zone, &
+                              min(temp_zone + dtemp, (ONE+dtol_fac)*temp_zone))
 
 
               ! check if the density falls below our minimum cut-off --
@@ -313,7 +320,7 @@ program init_1d
                  ! to get pres_zone ...
                  eos_state%T     = temp_zone
                  eos_state%rho   = dens_zone
-                 call set_urca_composition(dens_zone, xn)
+                 call set_urca_composition(eos_state, xn)
                  eos_state%xn(:) = xn(:)
 
                  ! (t, rho) -> (p, s)
@@ -353,7 +360,7 @@ program init_1d
 
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
-              call set_urca_composition(dens_zone, xn)
+              call set_urca_composition(eos_state, xn)
               eos_state%xn(:) = xn(:)
 
               ! (t, rho) -> (p, s)
@@ -393,7 +400,7 @@ program init_1d
                  ! to get pres_zone ...
                  eos_state%T     = temp_zone
                  eos_state%rho   = dens_zone
-                 call set_urca_composition(dens_zone, xn)
+                 call set_urca_composition(eos_state, xn)
                  eos_state%xn(:) = xn(:)
 
                  ! (t, rho) -> (p, s)
@@ -430,10 +437,17 @@ program init_1d
 
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
-           print *, 'density (dens_zone): ', dens_zone
-           print *, 'temperature (temp_zone): ', temp_zone
+           print *, 'trial density (dens_zone): ', dens_zone
+           print *, 'trial temperature (temp_zone): ', temp_zone
+           print *, 'current pressure (pres_zone): ', pres_zone
            print *, 'desired pressure (p_want): ', p_want
+           print *, 'desired pressure rel tolerance: ', abs(pres_zone-p_want)/pres_zone
            print *, 'delta density (drho): ', drho
+           print *, 'delta temperature (dtemp): ', dtemp
+           print *, 'pressure gradient (dpdr): ', dpdr
+           print *, 'density * gravitational accel. (rhog): ', rhog
+           print *, 'difference... abs(dpdr-rhog): ', abs(dpdr-rhog)
+           print *, 'target... TOL*abs(dpdr): ', TOL*abs(dpdr)
            call bl_error('Error: HSE non-convergence')
 
         endif
@@ -454,7 +468,7 @@ program init_1d
      ! call the EOS one more time for this zone and then go on to the next
      eos_state%T     = temp_zone
      eos_state%rho   = dens_zone
-     call set_urca_composition(dens_zone, xn)
+     call set_urca_composition(eos_state, xn)
      eos_state%xn(:) = xn(:)
 
      ! (t, rho) -> (p, s)
