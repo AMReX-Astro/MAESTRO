@@ -767,9 +767,9 @@ contains
     use eos_module, only: eos
 
     integer,         intent(in   ) :: ng_s(:),ng_w(:),ng_h(:),lo(:),hi(:)
-    real(kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s(1):,lo(2)-ng_s(2):,lo(3)-ng_s(3):,:)
+    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_s(1):,lo(2)-ng_s(2):,lo(3)-ng_s(3):,:)
     real(kind=dp_t), intent(inout) :: rho_omegadot(lo(1)-ng_w(1):,lo(2)-ng_w(2):,lo(3)-ng_w(3):,:)
-    real(kind=dp_t), intent(inout) ::     rho_Hnuc(lo(1)-ng_h(1):,lo(2)-ng_h(2):,lo(3)-ng_h(3):)
+    real(kind=dp_t), intent(inout) :: rho_Hnuc(lo(1)-ng_h(1):,lo(2)-ng_h(2):,lo(3)-ng_h(3):)
 
     ! local
     integer :: i,j,k
