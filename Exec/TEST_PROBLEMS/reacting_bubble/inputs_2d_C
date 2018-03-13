@@ -15,8 +15,6 @@
  anelastic_cutoff = 3.d6
  base_cutoff_density = 3.d6
  
- evolve_base_state = T
-
  use_particles = T
 
  do_sponge = T
@@ -55,6 +53,4 @@
  init_divu_iter = 1
 
  perturb_model = T
-
- use_alt_energy_fix = F
 /
