@@ -4,6 +4,8 @@ OMP    :=
 MKVERBOSE :=t 
 COMP := gfortran
 
+BOXLIB_HOME := $(AMREX_HOME)
+
 # some routines need an eos/network (i.e. to compute thermodynamic 
 # quantities.  If that is the case, set NEED_EOS_NETWORK := t
 NEED_EOS_NETWORK := t
@@ -103,9 +105,9 @@ VPATH_LOCATIONS += $(Fmlocs)
 # list of directories to put in the Fortran include path
 FINCLUDE_LOCATIONS += $(Fmincs)
 
-programs := fad_excess
+#programs := fad_excess
 #programs := fconv_slopes
-#programs := fconv_radial
+programs := fconv_radial
 
 f90sources += probin.f90
 
