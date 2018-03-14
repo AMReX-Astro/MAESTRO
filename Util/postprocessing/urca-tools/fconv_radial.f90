@@ -214,6 +214,8 @@ program fconv_radial
 
         ! do a first 3D loop through the data to initialize pressure array
         ! for finite differencing in the next 3D loop
+        !$OMP PARALLEL DO PRIVATE(kk, jj, ii, eos_state) &
+        !$OMP SCHEDULE(DYNAMIC,1)
         do kk = lo(3), hi(3)
            do jj = lo(2), hi(2)
               do ii = lo(1), hi(1)
@@ -229,7 +231,12 @@ program fconv_radial
               enddo
            enddo
         enddo
+        !$OMP END PARALLEL DO
         
+        !$OMP PARALLEL DO PRIVATE(kk, dzz, zz, jj, dyy, yy, ii, dxx, xx, eos_state) &
+        !$OMP PRIVATE(chi_rho, chi_t, dtdxx, dpdxx, dxdxx, dtdyy, dpdyy, dxdyy, dtdzz, dpdzz, dxdzz) &
+        !$OMP PRIVATE(xpos, ypos, zpos, rpos, drr, dtdrr, dpdrr, dxdrr, nabla, dXdP, chi_X) &
+        !$OMP SCHEDULE(DYNAMIC,1)
         do kk = lo(3), hi(3)
            dzz = dx(3)/rr
            zz = (kk + HALF)*dzz
@@ -384,6 +391,7 @@ program fconv_radial
               enddo
            enddo
         enddo
+        !$OMP END PARALLEL DO
 
         call fab_unbind(pf, i,j)
 
