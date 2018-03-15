@@ -71,6 +71,8 @@ program fconv_radial
 
   real(kind=dp_t), parameter :: small = 1.e-14
 
+  uin = unit_new()
+
   ! defaults
   pltfile = ''
   outputfile = 'conv_radial'
@@ -123,7 +125,6 @@ program fconv_radial
   call eos_init()
 
   ! build the input plotfile
-  uin = unit_new()  
   call build(pf, pltfile, uin)
 
   nlevs = pf%flevel
