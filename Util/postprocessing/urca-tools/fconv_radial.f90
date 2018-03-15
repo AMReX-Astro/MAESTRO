@@ -71,6 +71,10 @@ program fconv_radial
 
   real(kind=dp_t), parameter :: small = 1.e-14
 
+  ! For AMReX, disable nested parallel regions
+  if (omp_get_max_threads() > 1) call omp_set_nested(.false.)
+
+  ! Set unit for input plotfile
   uin = unit_new()
 
   ! defaults
@@ -376,8 +380,10 @@ program fconv_radial
                  
                  ! initialize ledoux nabla to adiabatic nabla
                  nabla = ap(ii,jj,kk,adic_comp)
-                 ! add species contributions                 
+
+                 ! add species contributions
                  chi_X(:) = eos_state % xn(:) * eos_state % dPdX(:) / (eos_state % p * chi_t)
+
                  do n = 1, nspec
                     if (p(ii,jj,kk,spec_comp+n-1) > ZERO) then
                        nabla = nabla - &
