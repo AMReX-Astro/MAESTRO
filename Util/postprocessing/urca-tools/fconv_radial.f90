@@ -5,7 +5,7 @@
 ! The actual thermodynamic gradient is computed along the
 ! radial direction, constructed from gradients along
 ! the cartesian coordinate directions.
-! 
+!
 ! See MAESTRO/docs/thermo_notes for details.
 !
 
@@ -21,6 +21,7 @@ program fconv_radial
   use network
   use eos_module
   use eos_type_module
+  use omp_module
 
   implicit none
 
@@ -33,20 +34,18 @@ program fconv_radial
   character(len=256) :: fname
 
   ! local variables
-  integer :: chk_int, ipos
   type(plotfile) :: pf
-  type(fab) :: fb
   type(layout) :: la
   type(boxarray) :: ba
   type(list_box) :: bl
-  type(box) :: bx,pd
+  type(box) :: pd
   integer :: rr
   integer, allocatable :: ref_ratio(:)
   real(kind=dp_t),dimension(MAX_SPACEDIM) :: prob_lo, prob_hi
   real(kind=dp_t) :: time
   type(multifab), allocatable :: conv_grad(:)
 
-  integer :: uin, uout
+  integer :: uin
   integer :: dim, nlevs
   integer :: i, j, n, ii, jj, kk
   real(kind=dp_t) :: xctr, yctr, zctr ! center coordinates
@@ -57,11 +56,11 @@ program fconv_radial
   integer, dimension(MAX_SPACEDIM) :: flo, fhi, lo, hi
   real(kind=dp_t), pointer :: p(:,:,:,:), ap(:,:,:,:)
   real(kind=dp_t), allocatable :: pres(:,:,:)
-  real(kind=dp_t) :: chi_rho, chi_t, dp, dt, nabla
+  real(kind=dp_t) :: chi_rho, chi_t, nabla
   real(kind=dp_t) :: chi_X(nspec), dXdP(nspec)
   real(kind=dp_t) :: dtdxx, dtdyy, dtdzz, dtdrr
   real(kind=dp_t) :: dpdxx, dpdyy, dpdzz, dpdrr
-  real(kind=dp_t), dimension(nspec) :: dxdxx, dxdyy, dxdzz, dxdrr
+  real(kind=dp_t) :: dxdxx(nspec), dxdyy(nspec), dxdzz(nspec), dxdrr(nspec)
 
   type(eos_t) :: eos_state
 
@@ -70,12 +69,7 @@ program fconv_radial
 
   character(len=20) :: component_names(3)
 
-  logical :: do_diag = .true.
-  
   real(kind=dp_t), parameter :: small = 1.e-14
-
-
-  uin = unit_new()
 
   ! defaults
   pltfile = ''
@@ -129,6 +123,7 @@ program fconv_radial
   call eos_init()
 
   ! build the input plotfile
+  uin = unit_new()  
   call build(pf, pltfile, uin)
 
   nlevs = pf%flevel
@@ -233,9 +228,13 @@ program fconv_radial
         enddo
         !$OMP END PARALLEL DO
         
-        !$OMP PARALLEL DO PRIVATE(kk, dzz, zz, jj, dyy, yy, ii, dxx, xx, eos_state) &
-        !$OMP PRIVATE(chi_rho, chi_t, dtdxx, dpdxx, dxdxx, dtdyy, dpdyy, dxdyy, dtdzz, dpdzz, dxdzz) &
-        !$OMP PRIVATE(xpos, ypos, zpos, rpos, drr, dtdrr, dpdrr, dxdrr, nabla, dXdP, chi_X) &
+        !$OMP PARALLEL DO PRIVATE(kk, dzz, zz, jj, dyy, yy, ii, dxx, xx) &
+        !$OMP PRIVATE(eos_state, chi_rho, chi_t, chi_X, dXdP, n, nabla) &
+        !$OMP PRIVATE(dtdxx, dpdxx, dxdxx) &
+        !$OMP PRIVATE(dtdyy, dpdyy, dxdyy) &
+        !$OMP PRIVATE(dtdzz, dpdzz, dxdzz) &
+        !$OMP PRIVATE(dtdrr, dpdrr, dxdrr) &
+        !$OMP PRIVATE(xpos, ypos, zpos, rpos, drr) &
         !$OMP SCHEDULE(DYNAMIC,1)
         do kk = lo(3), hi(3)
            dzz = dx(3)/rr
