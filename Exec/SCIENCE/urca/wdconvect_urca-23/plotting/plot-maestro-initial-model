@@ -28,6 +28,9 @@ def plotvsk(data, key, xlab):
         plt.plot(m,d,'bo')
         plt.xlabel(xlab)
         plt.ylim(np.amin(d), np.amax(d))
+        if c=='density':
+            ax = plt.gca()
+            ax.set_yscale('log')
         plt.ylabel(c)
         plt.tight_layout()
         plt.savefig(c.replace(' ','_')+'_{}.eps'.format(key))
