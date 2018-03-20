@@ -64,7 +64,7 @@ ifdef NEED_EOS_NETWORK
 endif
 
 # Add EXTRA_THERMO to FPP_DEFINES to calculate dpdA, etc.
-EXTRA_THERMO := 1
+EXTRA_THERMO := t
 FPP_DEFINES += -DEXTRA_THERMO=$(EXTRA_THERMO)
 
 # the helmeos has a table
