@@ -759,13 +759,12 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       logical        , intent(in   ) :: using_alt_energy_fix
 
-      !     Subtract off the density-weighted gradient.
       if (using_alt_energy_fix) then
-         unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - &
-              divcoeff(lo(1):hi(1))*gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
-      else
-         unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
-      endif
+         gphi(lo(1):hi(1)) = gphi(lo(1):hi(1)) * divcoeff(lo(1):hi(1))
+      end if
+
+      !     Subtract off the density-weighted gradient.
+      unew(lo(1):hi(1)) = unew(lo(1):hi(1)) - gphi(lo(1):hi(1))/rhohalf(lo(1):hi(1)) 
 
       if (proj_type .eq. pressure_iters_comp) then
          ! unew held the projection of (ustar-uold) / dt
@@ -782,9 +781,6 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-         if (using_alt_energy_fix) &
-            gphi(lo(1):hi(1)) = gphi(lo(1):hi(1)) * divcoeff(lo(1):hi(1))
-
          gpi(lo(1):hi(1)  ) = gpi(lo(1):hi(1)  ) + gphi(lo(1):hi(1))
           pi(lo(1):hi(1)+1) =  pi(lo(1):hi(1)+1)  + phi(lo(1):hi(1)+1)
 
@@ -792,9 +788,6 @@ contains
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-         if (using_alt_energy_fix) &
-            gphi(lo(1):hi(1)) = gphi(lo(1):hi(1)) * divcoeff(lo(1):hi(1))
-
          gpi(lo(1):hi(1)  ) = (ONE/dt) * gphi(lo(1):hi(1))
           pi(lo(1):hi(1)+1) = (ONE/dt) *  phi(lo(1):hi(1)+1)
 
@@ -824,22 +817,18 @@ contains
       real(kind=dp_t), intent(in   ) :: dt
       logical        , intent(in   ) :: using_alt_energy_fix
 
-      !     Subtract off the density-weighted gradient.
       if (using_alt_energy_fix) then
-         unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
-              gphi(lo(1):hi(1),lo(2):hi(2),1)*divcoeff(lo(1):hi(1),lo(2):hi(2))/ &
-              rhohalf(lo(1):hi(1),lo(2):hi(2)) 
-
-         unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
-              gphi(lo(1):hi(1),lo(2):hi(2),2)*divcoeff(lo(1):hi(1),lo(2):hi(2))/ &
-              rhohalf(lo(1):hi(1),lo(2):hi(2))          
-      else
-         unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
-              gphi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
-
-         unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
-              gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
+         gphi(lo(1):hi(1),lo(2):hi(2),1) = gphi(lo(1):hi(1),lo(2):hi(2),1) * &
+                                       divcoeff(lo(1):hi(1),lo(2):hi(2))
+         gphi(lo(1):hi(1),lo(2):hi(2),2) = gphi(lo(1):hi(1),lo(2):hi(2),2) * &
+                                       divcoeff(lo(1):hi(1),lo(2):hi(2))
       endif
+
+      !     Subtract off the density-weighted gradient.
+      unew(lo(1):hi(1),lo(2):hi(2),1) = unew(lo(1):hi(1),lo(2):hi(2),1) - &
+           gphi(lo(1):hi(1),lo(2):hi(2),1)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
+      unew(lo(1):hi(1),lo(2):hi(2),2) = unew(lo(1):hi(1),lo(2):hi(2),2) - &
+           gphi(lo(1):hi(1),lo(2):hi(2),2)/rhohalf(lo(1):hi(1),lo(2):hi(2)) 
 
       if (proj_type .eq. pressure_iters_comp) then
          ! unew held the projection of (ustar-uold) / dt
@@ -857,18 +846,8 @@ contains
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
-
-         if (using_alt_energy_fix) then
-            gphi(lo(1):hi(1),lo(2):hi(2),1) = gphi(lo(1):hi(1),lo(2):hi(2),1) * &
-                                          divcoeff(lo(1):hi(1),lo(2):hi(2))
-
-            gphi(lo(1):hi(1),lo(2):hi(2),2) = gphi(lo(1):hi(1),lo(2):hi(2),2) * &
-                                          divcoeff(lo(1):hi(1),lo(2):hi(2))
-         endif
-         
          gpi(lo(1):hi(1),lo(2):hi(2),:) = gpi(lo(1):hi(1),lo(2):hi(2),:) + &
                                          gphi(lo(1):hi(1),lo(2):hi(2),:)
-
          pi(lo(1):hi(1)+1,lo(2):hi(2)+1) = pi(lo(1):hi(1)+1,lo(2):hi(2)+1) + &
                                           phi(lo(1):hi(1)+1,lo(2):hi(2)+1)
 
@@ -876,17 +855,7 @@ contains
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
-
-         if (using_alt_energy_fix) then
-            gphi(lo(1):hi(1),lo(2):hi(2),1) = gphi(lo(1):hi(1),lo(2):hi(2),1) * &
-                                          divcoeff(lo(1):hi(1),lo(2):hi(2))
-
-            gphi(lo(1):hi(1),lo(2):hi(2),2) = gphi(lo(1):hi(1),lo(2):hi(2),2) * &
-                                          divcoeff(lo(1):hi(1),lo(2):hi(2))
-         endif
-
          gpi(lo(1):hi(1),lo(2):hi(2),:) = (ONE/dt) * gphi(lo(1):hi(1),lo(2):hi(2),:)
-
          pi(lo(1):hi(1)+1,lo(2):hi(2)+1)   = (ONE/dt) * phi(lo(1):hi(1)+1,lo(2):hi(2)+1)
 
       end if
@@ -916,44 +885,40 @@ contains
       logical        , intent(in   ) :: using_alt_energy_fix
 
       integer         :: i,j,k,m
+
+      if (using_alt_energy_fix) then
+         !$OMP PARALLEL PRIVATE(i,j,k,m)
+         do m=1,3
+            !$OMP DO
+            do k=lo(3),hi(3)
+            do j=lo(2),hi(2)
+            do i=lo(1),hi(1)
+               gphi(i,j,k,m) = gphi(i,j,k,m)*divcoeff(i,j,k)
+            end do
+            end do
+            end do
+            !$OMP END DO NOWAIT
+         end do
+         !$OMP END PARALLEL
+      endif
+
       !
       ! Subtract off the density-weighted gradient
       !
 
-      if (using_alt_energy_fix) then
-
-         !$OMP PARALLEL PRIVATE(i,j,k,m)
-         do m=1,3
-            !$OMP DO
-            do k=lo(3),hi(3)
-               do j=lo(2),hi(2)
-                  do i=lo(1),hi(1)
-                     unew(i,j,k,m) = unew(i,j,k,m) - &
-                          divcoeff(i,j,k)*gphi(i,j,k,m)/rhohalf(i,j,k)
-                  end do
-               end do
-            end do
-            !$OMP END DO NOWAIT
+      !$OMP PARALLEL PRIVATE(i,j,k,m)
+      do m=1,3
+         !$OMP DO
+         do k=lo(3),hi(3)
+         do j=lo(2),hi(2)
+         do i=lo(1),hi(1)
+            unew(i,j,k,m) = unew(i,j,k,m) - gphi(i,j,k,m)/rhohalf(i,j,k)
          end do
-         !$OMP END PARALLEL
-
-      else
-
-         !$OMP PARALLEL PRIVATE(i,j,k,m)
-         do m=1,3
-            !$OMP DO
-            do k=lo(3),hi(3)
-               do j=lo(2),hi(2)
-                  do i=lo(1),hi(1)
-                     unew(i,j,k,m) = unew(i,j,k,m) - gphi(i,j,k,m)/rhohalf(i,j,k)
-                  end do
-               end do
-            end do
-            !$OMP END DO NOWAIT
          end do
-         !$OMP END PARALLEL
-
-      endif
+         end do
+         !$OMP END DO NOWAIT
+      end do
+      !$OMP END PARALLEL
 
       if (proj_type .eq. pressure_iters_comp) then
          !
@@ -963,11 +928,11 @@ contains
          do m=1,3
             !$OMP DO
             do k=lo(3),hi(3)
-               do j=lo(2),hi(2)
-                  do i=lo(1),hi(1)
-                     unew(i,j,k,m) = uold(i,j,k,m) + dt*unew(i,j,k,m)
-                  end do
-               end do
+            do j=lo(2),hi(2)
+            do i=lo(1),hi(1)
+               unew(i,j,k,m) = uold(i,j,k,m) + dt*unew(i,j,k,m)
+            end do
+            end do
             end do
             !$OMP END DO NOWAIT
          end do
@@ -985,44 +950,27 @@ contains
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
          !
-
-         if (using_alt_energy_fix) then
-            !$OMP PARALLEL PRIVATE(i,j,k,m)
-            do m=1,3
-               !$OMP DO
-               do k=lo(3),hi(3)
-                  do j=lo(2),hi(2)
-                     do i=lo(1),hi(1)
-                        gphi(i,j,k,m) = gphi(i,j,k,m)*divcoeff(i,j,k)
-                     end do
-                  end do
-               end do
-               !$OMP END DO NOWAIT
-            end do
-            !$OMP END PARALLEL
-         endif
-
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
             do k=lo(3),hi(3)
-               do j=lo(2),hi(2)
-                  do i=lo(1),hi(1)
-                     gpi(i,j,k,m) = gpi(i,j,k,m) + gphi(i,j,k,m)
-                  end do
-               end do
+            do j=lo(2),hi(2)
+            do i=lo(1),hi(1)
+               gpi(i,j,k,m) = gpi(i,j,k,m) + gphi(i,j,k,m)
+            end do
+            end do
             end do
             !$OMP END DO NOWAIT
          end do
          !$OMP END PARALLEL
 
          !$OMP PARALLEL DO PRIVATE(i,j,k)
-            do k=lo(3),hi(3)+1
-               do j=lo(2),hi(2)+1
-                  do i=lo(1),hi(1)+1
-                  pi(i,j,k) = pi(i,j,k) + phi(i,j,k)
-               end do
-            end do
+         do k=lo(3),hi(3)+1
+         do j=lo(2),hi(2)+1
+         do i=lo(1),hi(1)+1
+            pi(i,j,k) = pi(i,j,k) + phi(i,j,k)
+         end do
+         end do
          end do
          !$OMP END PARALLEL DO
 
@@ -1031,31 +979,16 @@ contains
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
          !
-         if (using_alt_energy_fix) then
-            !$OMP PARALLEL PRIVATE(i,j,k,m)
-            do m=1,3
-               !$OMP DO
-               do k=lo(3),hi(3)
-                  do j=lo(2),hi(2)
-                     do i=lo(1),hi(1)
-                        gphi(i,j,k,m) = gphi(i,j,k,m)*divcoeff(i,j,k)
-                     end do
-                  end do
-               end do
-               !$OMP END DO NOWAIT
-            end do
-            !$OMP END PARALLEL
-         endif
 
          !$OMP PARALLEL PRIVATE(i,j,k,m)
          do m=1,3
             !$OMP DO
             do k=lo(3),hi(3)
-               do j=lo(2),hi(2)
-                  do i=lo(1),hi(1)
-                     gpi(i,j,k,m) = gphi(i,j,k,m) / dt
-                  end do
-               end do
+            do j=lo(2),hi(2)
+            do i=lo(1),hi(1)
+               gpi(i,j,k,m) = gphi(i,j,k,m) / dt
+            end do
+            end do
             end do
             !$OMP END DO
          end do
@@ -1063,11 +996,11 @@ contains
 
          !$OMP PARALLEL DO PRIVATE(i,j,k)
          do k=lo(3),hi(3)+1
-            do j=lo(2),hi(2)+1
-               do i=lo(1),hi(1)+1
-                  pi(i,j,k) = phi(i,j,k) / dt
-               end do
-            end do
+         do j=lo(2),hi(2)+1
+         do i=lo(1),hi(1)+1
+            pi(i,j,k) = phi(i,j,k) / dt
+         end do
+         end do
          end do
          !$OMP END PARALLEL DO
 

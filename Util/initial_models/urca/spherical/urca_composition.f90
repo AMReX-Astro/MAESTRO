@@ -89,7 +89,7 @@ contains
   end subroutine init_urca_composition
 
 
-  subroutine set_urca_composition(eos_state, xn)
+  subroutine set_urca_composition(eos_state)
 
     ! Construct composition profiles given a choice of
     ! the type of profile denoted by urca_shell_type.
@@ -101,80 +101,77 @@ contains
     use eos_type_module, only: eos_t
 
     type (eos_t), intent(inout) :: eos_state
-    real (kind=dp_t), intent(out), DIMENSION(nspec) :: xn
 
     if (urca_shell_type .eq. "jump") then
-       call composition_jump(eos_state, urca_23_dens, xn, xn_in, xn_out)
+       call composition_jump(eos_state, urca_23_dens, xn_in, xn_out)
     else if (urca_shell_type .eq. "atan") then
-       call composition_atan(eos_state, urca_23_dens, xn, xn_in, xn_out, shell_atan_kappa)
+       call composition_atan(eos_state, urca_23_dens, xn_in, xn_out, shell_atan_kappa)
     else if (urca_shell_type .eq. "equilibrium") then
-       call composition_equilibrium(eos_state, xn)
+       call composition_equilibrium(eos_state)
     else
        call bl_error("ERROR: invalid urca_shell_type")
     end if
 
     ! Renormalize species
-    call renormalize_species(xn)
+    call renormalize_species(eos_state)
 
   end subroutine set_urca_composition
 
 
-  subroutine renormalize_species(xn)
+  subroutine renormalize_species(eos_state)
 
     ! Renormalize the mass fractions so they sum to 1
     use bl_types, only: dp_t
 
-    real (kind=dp_t) :: xn(nspec)
+    type (eos_t), intent(inout) :: eos_state
     real (kind=dp_t) :: sumx
 
-    sumx = sum(xn)
-    xn(:) = xn(:)/sumx
+    sumx = sum(eos_state % xn)
+    eos_state % xn(:) = eos_state % xn(:)/sumx
 
   end subroutine renormalize_species
 
 
-  subroutine composition_jump(eos_state, shell_rho, xn, xn_left, xn_right)
+  subroutine composition_jump(eos_state, shell_rho, xn_left, xn_right)
     use bl_types
     use bl_constants_module, only: HALF
     use network
     use eos_type_module, only: eos_t
 
-    type (eos_t), intent(in) :: eos_state
+    type (eos_t), intent(inout) :: eos_state
     real (kind=dp_t), intent( in) :: shell_rho
-    real (kind=dp_t), intent(out), dimension(nspec) :: xn
     real (kind=dp_t), intent( in), dimension(nspec) :: xn_left, xn_right
 
     if (eos_state % rho < shell_rho) then
-       xn = xn_right
+       eos_state % xn = xn_right
     else if (eos_state % rho > shell_rho) then
-       xn = xn_left
+       eos_state % xn = xn_left
     else
-       xn = HALF*(xn_right + xn_left)
+       eos_state % xn = HALF*(xn_right + xn_left)
     end if
   end subroutine composition_jump
 
 
-  subroutine composition_atan(eos_state, shell_rho, xn, xn_left, xn_right, &
+  subroutine composition_atan(eos_state, shell_rho, xn_left, xn_right, &
                               shell_atan_kappa)
     use bl_types
     use bl_constants_module, only: TWO, HALF, M_PI
     use network
     use eos_type_module, only: eos_t
 
-    type (eos_t), intent(in) :: eos_state
+    type (eos_t), intent(inout) :: eos_state
     real (kind=dp_t), intent(in) :: shell_rho, shell_atan_kappa
-    real (kind=dp_t), intent(out), dimension(nspec) :: xn
     real (kind=dp_t), intent(in),  dimension(nspec) :: xn_left, xn_right
     real (kind=dp_t), dimension(nspec) :: A, B
 
     B = HALF * (xn_left + xn_right)
     A = xn_right - B
 
-    xn = (TWO/M_PI) * A * atan(shell_atan_kappa * (shell_rho - eos_state % rho)) + B
+    eos_state % xn = (TWO/M_PI) * A * atan(shell_atan_kappa * (shell_rho - eos_state % rho)) + B
   end subroutine composition_atan
 
 
-  subroutine composition_equilibrium(eos_state, xn)
+  subroutine composition_equilibrium(eos_state)
 
     use bl_types
     use bl_constants_module, only: ZERO, HALF, ONE
@@ -188,7 +185,6 @@ contains
     implicit none
 
     type (eos_t), intent(inout) :: eos_state
-    real (kind=dp_t), intent(out), dimension(nspec) :: xn
     type (burn_t) :: burn_state
     double precision :: fopt, r_ecap, r_beta, dx
     double precision, parameter :: rate_equilibrium_tol = 1.0e-10
@@ -205,13 +201,11 @@ contains
     ina23 = network_species_index("sodium-23")
     
     ! Initialize mass fractions given "in" values
-    xn(:)    = 0.0d0
-    xn(ic12) = c12_in
-    xn(io16) = o16_in
-    xn(ine23) = HALF * na_ne_23
-    xn(ina23) = HALF * na_ne_23
-
-    eos_state % xn(:) = xn(:)
+    eos_state % xn(:)    = 0.0d0
+    eos_state % xn(ic12) = c12_in
+    eos_state % xn(io16) = o16_in
+    eos_state % xn(ine23) = HALF * na_ne_23
+    eos_state % xn(ina23) = HALF * na_ne_23
 
     ! Estimate the mass fractions approximating the rates as
     ! independent of ye.
@@ -249,8 +243,6 @@ contains
 
     if (j == max_equilibrium_iters) then
        call bl_error("species iteration did not converge!")
-    else
-       xn(:) = eos_state % xn(:)
     end if
 
   end subroutine composition_equilibrium

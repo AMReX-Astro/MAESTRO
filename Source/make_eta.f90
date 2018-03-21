@@ -47,7 +47,8 @@ contains
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
     
-    real(kind=dp_t) ::          ncell(0:nr_fine,mla%nlevel)
+    real(kind=dp_t) :: ncell(mla%nlevel)
+
     real(kind=dp_t) :: etarhosum_proc(0:nr_fine,mla%nlevel)
     real(kind=dp_t) ::      etarhosum(0:nr_fine,mla%nlevel)
 
@@ -65,7 +66,6 @@ contains
 
     ng_e = nghost(etarhoflux(1))
 
-    ncell           = ZERO
     etarhosum_proc  = ZERO
     etarhosum       = ZERO
     etarho_ec       = ZERO
@@ -80,10 +80,12 @@ contains
        domlo  = lwb(domain)
        domhi  = upb(domain)
 
-       if (dm .eq. 2) then
-          ncell(:,n) = domhi(1)-domlo(1)+1
-       else if(dm .eq. 3) then
-          ncell(:,n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+       if (dm .eq. 1) then
+          ncell(n) = 1
+       else if (dm .eq. 2) then
+          ncell(n) = domhi(1)-domlo(1)+1
+       else if (dm .eq. 3) then
+          ncell(n) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
        do i=1,nfabs(etarhoflux(n))
@@ -104,7 +106,7 @@ contains
 
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)+1
-             etarho_ec(n,r) = etarhosum(r,n) / dble(ncell(r,n))
+             etarho_ec(n,r) = etarhosum(r,n) / dble(ncell(n))
           end do
        end do
 

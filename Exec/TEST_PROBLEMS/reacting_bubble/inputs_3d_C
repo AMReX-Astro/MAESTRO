@@ -1,16 +1,19 @@
 &PROBIN
  model_file = "model.hse.cool.coulomb"
  spherical_in = 0
+ dm_in = 3
 
  ppm_type = 1
 
  max_levs = 1
- n_cellx = 384
- n_celly = 640
- max_grid_size = 64
+ n_cellx = 48
+ n_celly = 48
+ n_cellz = 576
+ max_grid_size = 48
 
- prob_hi_x = 2.16e8
- prob_hi_y = 3.6e8
+ prob_hi_x = 2.7e7
+ prob_hi_y = 2.7e7
+ prob_hi_z = 3.24e8
 
  anelastic_cutoff = 3.d6
  base_cutoff_density = 3.d6
@@ -28,7 +31,7 @@
  stop_time = 2.5d0
 
  plot_base   = T
- plot_int = 10
+ plot_int = 1
  plot_deltat = 0.5d0
  plot_processors = T
 
@@ -40,8 +43,11 @@
  xlo_boundary_type = "periodic"
  xhi_boundary_type = "periodic"
 
- ylo_boundary_type = "slip wall"
- yhi_boundary_type = "outlet"
+ ylo_boundary_type = "periodic"
+ yhi_boundary_type = "periodic"
+
+ zlo_boundary_type = "slip wall"
+ zhi_boundary_type = "outlet"
 
     verbose = 1
  mg_verbose = 1
