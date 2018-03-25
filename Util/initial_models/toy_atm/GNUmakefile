@@ -14,10 +14,10 @@ MAESTRO_TOP_DIR = ../../..
 
 
 # EOS and network
-EOS_DIR := gamma_law_general
+EOS_DIR := helmeos
 
 NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/powerlaw.net
+GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/triple_alpha_plus_o.net
 
 
 
