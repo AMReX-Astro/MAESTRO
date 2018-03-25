@@ -1,0 +1,44 @@
+&PROBIN
+
+ use_eos_coulomb = T
+ 
+/
+
+
+&params 
+
+ nx = 10240
+ dens_base = 3.5d9
+ temp_base = 3.0d8
+
+ dens_conv_zone = -1.0
+ M_conv_zone = 0.79d0
+
+ low_density_cutoff = 5.d-2
+ temp_fluff = 1.8d7
+
+ fluff_type = "continuous"
+
+ test_hse_convergence = T
+ TOL = 1.d-10
+ MAX_ITER = 10000000
+ dtol_fac = 1.0d-6
+
+ xmin = 0.0
+ xmax = 5.12d8
+
+! Set mass fractions according to Stein & Wheeler (2006),
+! corresponding to their S-4-2E4 model.
+
+ c12_in   = 0.4998d0
+ o16_in   = 0.4998d0
+
+! Parameters controlling the species gradients near the urca shell
+ urca_shell_type  = "equilibrium"
+ na_ne_23 = 4.00000d-4
+
+ prefix = "WD_urca_nuc_M-0.79_rc3.5e9_Tc3.0e8_speceq"
+
+/
+
+  
