@@ -117,17 +117,16 @@
 
 
  ! Initial Velocity Perturbation
- !... Set amplitude to an order of magnitude lower
- !... than the expected convective velocity in the core.
- velpert_amplitude = 1.d5
+ !... Set amplitude to the expected convective velocity in the core.
+ velpert_amplitude = 1.d6
 
  !... Set the spatial scale of fourier modes to roughly
  !... the expected size of central convective zone.
  velpert_scale     = 6.6575d7
 
  !... Set the radius of the perturbation to roughly
- !... the expected size of central convective zone.
- velpert_radius    = 6.6575d7
+ !... the expected size of the central C burning region
+ velpert_radius    = 2.0d7
 
  !... Set the steepness distance to the grid width
  !... on the finest zone. It will take roughly 5 zones
