@@ -119,15 +119,15 @@
  ! Initial Velocity Perturbation
  !... Set amplitude to an order of magnitude lower
  !... than the expected convective velocity in the core.
- velpert_amplitude = 1.d2
+ velpert_amplitude = 1.d5
 
  !... Set the spatial scale of fourier modes to roughly
  !... the expected size of central convective zone.
- velpert_scale     = 2.5d7
+ velpert_scale     = 6.6575d7
 
  !... Set the radius of the perturbation to roughly
  !... the expected size of central convective zone.
- velpert_radius    = 2.5d7
+ velpert_radius    = 6.6575d7
 
  !... Set the steepness distance to the grid width
  !... on the finest zone. It will take roughly 5 zones
@@ -140,7 +140,7 @@
  !... at which beta decays are significant
  tag_density_1 = 1.d8
 
- !... On level 2, tag within the Urca shell
+ !... On level 2, tag within about 10^8 g/cm^3
  tag_rhoye_lo_2    =  5.0d7 
 
  !... On level 3, tag around the Urca shell
@@ -149,10 +149,11 @@
  !... and temperature above the tag values.
  !... For the Urca shell, require rho*ye to
  !... be between the hi and lo values.
+ ! The following will tag inside 10^8 g/cm^3
  tag_density_3     = 1.d8
- tag_temperature_3 = 2.25d8
- tag_rhoye_lo_3    =  2.000d8 ! 2*10**(8)
- tag_rhoye_hi_3    = 15.849d8 ! 10**(9.2)
+ tag_temperature_3 = 1.0d7
+ tag_rhoye_lo_3    =  5.0d7
+ tag_rhoye_hi_3    = 30.0d8
 
 
  ! VODE Reactions ODE settings

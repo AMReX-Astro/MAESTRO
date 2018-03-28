@@ -14031,5 +14031,8 @@
         3789   5.00000007E-02   18000000.0      -1.02980146E+13  -256000528.      0.99997514078807792     
  maximum HSE error =    9.9981922461476811E-011
   
- total mass =    1.3834700892173546     
- convective zone mass =   0.79045635550915117     
+ total mass (Msun) =    1.3834700892173546     
+ convective zone mass (Msun) =   0.79045635550915117     
+ convective zone boundary density (g/cm^3) =    600927851.75270855     
+ convective zone boundary radius (cm) =    66575000.000000000     
+ convective zone boundary index =         1332
