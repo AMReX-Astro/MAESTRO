@@ -22,7 +22,6 @@ program init_1d
   integer :: nx
 
   real (kind=dp_t) :: temp_base, dens_base
-  real (kind=dp_t), DIMENSION(nspec) :: xn_base
 
   real (kind=dp_t), allocatable :: xzn_hse(:), xznl(:), xznr(:)
   real (kind=dp_t), allocatable :: model_hse(:,:), M_enclosed(:)
@@ -61,8 +60,6 @@ program init_1d
   integer :: iter
 
   logical :: converged_hse, fluff
-
-  real (kind=dp_t), dimension(nspec) :: xn
 
   real (kind=dp_t), save :: low_density_cutoff, smallx, dens_conv_zone, M_conv_zone
 
@@ -185,8 +182,7 @@ program init_1d
   ! call the EOS one more time for this zone and then go on to the next
   eos_state%T     = temp_base
   eos_state%rho   = dens_base
-  call set_urca_composition(eos_state, xn_base)
-  eos_state%xn(:) = xn_base(:)
+  call set_urca_composition(eos_state)
 
   ! (t, rho) -> (p, s)
   call eos(eos_input_rt, eos_state)
@@ -223,7 +219,7 @@ program init_1d
      temp_zone = model_hse(i-1,itemp)
      eos_state % rho = dens_zone
      eos_state % T = temp_zone
-     call set_urca_composition(eos_state, xn)
+     call set_urca_composition(eos_state)
 
      g_zone = -Gconst*M_enclosed(i-1)/(xznl(i)*xznl(i))
 
@@ -253,8 +249,7 @@ program init_1d
 
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
-              call set_urca_composition(eos_state, xn)
-              eos_state%xn(:) = xn(:)
+              call set_urca_composition(eos_state)
 
               ! (t, rho) -> (p, s)
               call eos(eos_input_rt, eos_state)
@@ -320,8 +315,7 @@ program init_1d
                  ! to get pres_zone ...
                  eos_state%T     = temp_zone
                  eos_state%rho   = dens_zone
-                 call set_urca_composition(eos_state, xn)
-                 eos_state%xn(:) = xn(:)
+                 call set_urca_composition(eos_state)
 
                  ! (t, rho) -> (p, s)
                  call eos(eos_input_rt, eos_state)
@@ -360,8 +354,7 @@ program init_1d
 
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
-              call set_urca_composition(eos_state, xn)
-              eos_state%xn(:) = xn(:)
+              call set_urca_composition(eos_state)
 
               ! (t, rho) -> (p, s)
               call eos(eos_input_rt, eos_state)
@@ -400,8 +393,7 @@ program init_1d
                  ! to get pres_zone ...
                  eos_state%T     = temp_zone
                  eos_state%rho   = dens_zone
-                 call set_urca_composition(eos_state, xn)
-                 eos_state%xn(:) = xn(:)
+                 call set_urca_composition(eos_state)
 
                  ! (t, rho) -> (p, s)
                  call eos(eos_input_rt, eos_state)
@@ -468,8 +460,7 @@ program init_1d
      ! call the EOS one more time for this zone and then go on to the next
      eos_state%T     = temp_zone
      eos_state%rho   = dens_zone
-     call set_urca_composition(eos_state, xn)
-     eos_state%xn(:) = xn(:)
+     call set_urca_composition(eos_state)
 
      ! (t, rho) -> (p, s)
      call eos(eos_input_rt, eos_state)

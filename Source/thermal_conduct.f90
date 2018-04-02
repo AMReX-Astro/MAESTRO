@@ -76,15 +76,18 @@ contains
     end do
 
 
-    ! here we will solve:
+    ! Here we will solve equations (A2) and (A3) in 
+    ! Malone et al. ApJ 728:118, 2011
+    ! for thermal diffusion.  The general form looks something like:
     !
-    ! (rho^2 - dt/2 div . hcoeff2 grad ) h^2 = (rho h)^1  + 
-    !           dt/2 div . ( hcoeff1 grad h^1) -
-    !           dt/2 sum_k div . (Xkcoeff2 grad X_k^2 + Xkcoeff1 grad X_k^1) -
-    !           dt/2 div . ( pcoeff2 grad p_0^new + pcoeff1 grad p_0^old)
+    ! (rho - dt/2 div . hcoeff grad ) h = (rho h)  + 
+    !        dt/2 div .       ( hcoeff grad h^1) -
+    !        dt/2 sum_k div . (Xkcoeff grad X_k + Xkcoeff grad X_k) -
+    !        dt/2 div .       ( pcoeff grad p_0 +  pcoeff grad p_0)
     !
     ! or 
-    ! (lhs_solver_alpha - div . lhs_solver_beta grad) h^2 = RHS
+    !
+    ! (lhs_solver_alpha - div . lhs_solver_beta grad) h = RHS
     !
     ! First we will construct the RHS by adding each of the terms in
     ! turn.  

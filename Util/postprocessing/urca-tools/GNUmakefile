@@ -4,6 +4,8 @@ OMP    :=
 MKVERBOSE :=t 
 COMP := gfortran
 
+BOXLIB_HOME := $(AMREX_HOME)
+
 # some routines need an eos/network (i.e. to compute thermodynamic 
 # quantities.  If that is the case, set NEED_EOS_NETWORK := t
 NEED_EOS_NETWORK := t
@@ -61,6 +63,10 @@ ifdef NEED_EOS_NETWORK
 
 endif
 
+# Add EXTRA_THERMO to FPP_DEFINES to calculate dpdA, etc.
+EXTRA_THERMO := t
+FPP_DEFINES += -DEXTRA_THERMO=$(EXTRA_THERMO)
+
 # the helmeos has a table
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
@@ -103,9 +109,9 @@ VPATH_LOCATIONS += $(Fmlocs)
 # list of directories to put in the Fortran include path
 FINCLUDE_LOCATIONS += $(Fmincs)
 
-programs := fad_excess
+#programs := fad_excess
 #programs := fconv_slopes
-#programs := fconv_radial
+programs := fconv_radial
 
 f90sources += probin.f90
 

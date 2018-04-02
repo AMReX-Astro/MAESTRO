@@ -67,7 +67,7 @@ def doit(field):
         cpos    = ds.arr([dcenter, dcenter, dcenter], 'cm')
         s = yt.SlicePlot(ds, 'x', field, center=cpos, width=width, origin="native")
     else:
-        s = yt.SlicePlot(ds, 'x', field, center='c', width=width, origin="native")
+        s = yt.SlicePlot(ds, 'x', field, center='c', width=width)
 
     s.annotate_scale()
 

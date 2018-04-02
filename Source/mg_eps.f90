@@ -12,7 +12,7 @@ module mg_eps_module
 
 
   ! tolerances for the divu iterations
-  real (kind=dp_t) :: eps_divu_cart = 1.d-8
+  real (kind=dp_t) :: eps_divu_cart = 1.d-12
   real (kind=dp_t) :: eps_divu_sph  = 1.d-10
 
   real (kind=dp_t) :: divu_iter_factor = 100.d0
