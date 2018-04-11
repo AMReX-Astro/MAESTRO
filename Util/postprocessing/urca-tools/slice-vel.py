@@ -15,6 +15,8 @@ parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice
 parser.add_argument('-rho', '--rhocontours', type=float, nargs='+', help='Draws contours for the densities provided (g/cm^3).')
 parser.add_argument('-res', '--resolution', type=int, default=2048, help='Resolution for output plot.')
 parser.add_argument('-vel', '--velocityarrows', action='store_true', help='If supplied, annotate velocity arrows.')
+parser.add_argument('-ezc', '--enuc_zero_contour', action='store_true',
+                    help='If supplied, draw a contour for enucdot=0.')
 args = parser.parse_args()
 
 @derived_field(name='pos_radial_velocity', units='cm/s')
@@ -64,7 +66,11 @@ s.set_log(('boxlib', 'radial_velocity'), True, linthresh=1.0e3)
 s.set_zlim(('boxlib', 'radial_velocity'), -10.0**maxv, 10.0**maxv)
 
 if args.velocityarrows:
-    s.annotate_velocity(normalize=True)
+    s.annotate_velocity(normalize=False)
+
+if args.enuc_zero_contour:
+    s.annotate_contour(('boxlib', 'enucdot'), ncont=1, factor=1, take_log=False,
+                       clim=(0.0,0.0), label='enucdot = 0')
 
 s.annotate_scale()
 
@@ -92,7 +98,11 @@ if args.rhocontours:
         s.annotate_contour('density', ncont=1, clim=(rhounit, rhounit))
 
 if args.velocityarrows:
-    s.annotate_velocity(normalize=True)
+    s.annotate_velocity(normalize=False)
+
+if args.enuc_zero_contour:
+    s.annotate_contour(('boxlib', 'enucdot'), ncont=1, factor=1, take_log=False,
+                       clim=(0.0,0.0), label='enucdot = 0')
 
 s.annotate_scale()
 
