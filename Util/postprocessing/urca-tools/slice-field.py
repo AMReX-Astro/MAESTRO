@@ -18,7 +18,7 @@ parser.add_argument('-axis', '--axis', type=str, default='x',
 parser.add_argument('-w', '--width', type=float,
                     help='Width of slice (cm). Default is domain width.')
 parser.add_argument('-log', '--logscale', action='store_true', help='If supplied, use a log scale for the field.')
-parser.add_argument('-symlog', '--symlog', action='store_true', help='If supplied, use symlog scaling, which is linear near zero, to accomodate positive and negative values of the field.')
+parser.add_argument('-symlog', '--symlog', type=float, help='If supplied, use symlog scaling, which is linear near zero, to accomodate positive and negative values of the field. Pass the value of the field at which to linearize the colorbar.')
 parser.add_argument('-ctr', '--center', type=float, nargs='+', help='Centers the plot on the coordinates provided (x, y, z).')
 parser.add_argument('-min', '--field_min', type=float, help='Minimim field value for colormap.')
 parser.add_argument('-max', '--field_max', type=float, help='Maximum field value for colormap.')
@@ -30,6 +30,7 @@ parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice view appropriately for octant dataset.')
 parser.add_argument('-natorg', '--native_origin', action='store_true', help='Use the native origin location for the axes.')
+parser.add_argument('-ls', '--list_fields', action='store_true', help='If supplied, do nothing except list the available fields.')
 args = parser.parse_args()
 
 def slicefield(ds, field, field_short_name):
@@ -70,7 +71,10 @@ def slicefield(ds, field, field_short_name):
         linmaxv = max(maxv, -minv)
         s.set_cmap(field, 'PiYG')
         if args.logscale:
-            s.set_log(field, args.logscale, linthresh=1.0e3)
+            if args.symlog:
+                s.set_log(field, args.logscale, linthresh=args.symlog)
+            else:
+                s.set_log(field, args.logscale, linthresh=1.0e3)
         else:
             s.set_log(field, args.logscale)
         if dlog >= 2.0:
@@ -102,6 +106,17 @@ def slicefield(ds, field, field_short_name):
     s.save('{}.slice.{}.{}.png'.format(args.infile, args.axis, field_short_name))
 
 if __name__=="__main__":
+    ds = yt.load(args.infile)
+
+    if args.list_fields:
+        print('Native fields in dataset:')
+        for f in ds.field_list:
+            print(f)
+        print('Derived fields from dataset:')
+        for f in ds.derived_field_list:
+            print(f)
+        exit()
+    
     # Check axis input
     axes_list = ['x', 'y', 'z']
     if (args.axis != 'x' and
@@ -110,17 +125,17 @@ if __name__=="__main__":
         print('Improper axis argument.')
         exit()
 
-    ds = yt.load(args.infile)
     if args.field:
-        if len(args.field.split(',')) > 1:
-            fs = args.field.strip('()').split(',')
-            fs[0] = fs[0].strip()
-            fs[1] = fs[1].strip()
-            field = (fs[0], fs[1])
-            field_short_name = fs[1]
-        else:
-            field = args.field
-            field_short_name = field
+        field = None
+        field_short_name = None
+        for f in ds.field_list + ds.derived_field_list:
+            if f[1] == args.field:
+                field_short_name = f[1]
+                field = f
+                break
+        if not field:
+            print('Field {} not present.'.format(args.field))
+            exit()
         slicefield(ds, field, field_short_name)
     else:
         for f in ds.field_list:
