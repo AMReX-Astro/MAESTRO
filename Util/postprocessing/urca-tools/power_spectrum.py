@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import yt
+import os
 import argparse
-from __future__ import print_function
 
 """
 Make a turbulent KE power spectrum.  Since we are stratified, we use
@@ -27,7 +28,8 @@ energy density spectrum).
 
 parser = argparse.ArgumentParser()
 parser.add_argument('plotfile', type=str, help='Path to plotfile for which to compute the power spectrum.')
-parser.add_argument('-l', '--level', type=int, help='Level of refinement at which to compute the spectrum (starts at 0). Defaults to maximum level.')
+parser.add_argument('-l', '--level', type=int, default=-1, help='Level of refinement at which to compute the spectrum (starts at 0). Defaults to maximum level.')
+parser.add_argument('-r', '--radius', type=float, help='Radius of the sphere inscribing the power spectrum domain in cm. Width of the power spectrum domain is 2*radius.')
 args = parser.parse_args()
 
 def doit(ds):
@@ -35,23 +37,33 @@ def doit(ds):
     # a FFT operates on uniformly gridded data.  We'll use the yt
     # covering grid for this.
 
-    if args.level:
-        assert(args.level >= 0 and args.level <= ds.index.max_level)
+    if args.level >= 0 and args.level <= ds.index.max_level:
         max_level = args.level
     else:
         max_level = ds.index.max_level
     print('using covering grid at level {}'.format(max_level))
 
-    ref = int(np.product(ds.ref_factors[0:max_level]))
+    if max_level == 0:
+        ref = 1
+    else:
+        ref = int(np.product(ds.ref_factors[0:max_level]))
 
-    low = ds.domain_left_edge
-    dims = ds.domain_dimensions*ref
+    if args.radius:
+        L = yt.YTArray([2.0*args.radius, 2.0*args.radius, 2.0*args.radius], 'cm')
+        low = ds.domain_center - 0.5*L
+        L_domain = ds.domain_right_edge - ds.domain_left_edge
+        dims_domain = ds.domain_dimensions*ref
+        dims = np.ceil((dims_domain * L/L_domain).d)
+    else:
+        low = ds.domain_left_edge
+        dims = ds.domain_dimensions*ref
+        L = (ds.domain_right_edge - ds.domain_left_edge).d
 
     nx, ny, nz = dims
 
     nindex_rho = 1./3.
 
-    Kk = np.zeros( (int(np.floor(nx/2))+1, int(np.floor(ny/2))+1, int(np.floor(nz/2))+1))
+    Kk = np.zeros((int(np.floor(nx/2))+1, int(np.floor(ny/2))+1, int(np.floor(nz/2))+1))
 
     for vel in [("gas", "velocity_x"), ("gas", "velocity_y"), 
                 ("gas", "velocity_z")]:
@@ -60,8 +72,6 @@ def doit(ds):
                            nindex_rho, max_level, low, dims)
 
     # wavenumbers
-    L = (ds.domain_right_edge - ds.domain_left_edge).d
-
     kx = np.fft.rfftfreq(nx)*nx/L[0]
     ky = np.fft.rfftfreq(ny)*ny/L[1]
     kz = np.fft.rfftfreq(nz)*nz/L[2]
@@ -88,7 +98,9 @@ def doit(ds):
     k = 0.5*(kbins[0:N-1] + kbins[1:N])
     E_spectrum = E_spectrum[1:N]
 
-    index = np.argmax(E_spectrum)
+    # Sometimes there will be a spike at the largest wavenumber
+    # Omit such a spike from this index calculation
+    index = np.argmax(E_spectrum[:-5])
     kmax = k[index]
     Emax = E_spectrum[index]
 
@@ -100,11 +112,11 @@ def doit(ds):
     plt.savefig("{}_spectrum.png".format(os.path.basename(args.plotfile)), dpi=600)
 
 
-def fft_comp(ds, irho, iu, nindex_rho, level, low, delta ):
+def fft_comp(ds, irho, iu, nindex_rho, level, low, dimensions):
 
     print('calculating covering grid')
     cube = ds.covering_grid(level, left_edge=low,
-                            dims=delta,
+                            dims=dimensions,
                             fields=[irho, iu])
 
     print('got covering grid')
