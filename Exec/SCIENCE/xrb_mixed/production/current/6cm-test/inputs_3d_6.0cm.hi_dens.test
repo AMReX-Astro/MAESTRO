@@ -124,7 +124,16 @@ zhi_boundary_type = "outlet"
  ! microphysics
  !----------------------------------------------------------------------------
  burner_threshold_species = "H1"
+
+ atol_spec = 1.e-9
+ rtol_spec = 1.e-9
+
+ atol_temp = 1.e-6
+ rtol_temp = 1.e-6
  
+ atol_enuc = 1.e-6
+ rtol_enuc = 1.e-6
+
  use_eos_coulomb = T
 
 
