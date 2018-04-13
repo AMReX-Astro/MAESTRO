@@ -8,6 +8,7 @@ import yt
 from yt import derived_field
 import numpy as np
 import argparse
+from yt_urca_fields import UrcaShellFields
 
 parser = argparse.ArgumentParser()
 parser.add_argument('infile', type=str, help='Name of input plotfile.')
@@ -31,6 +32,7 @@ parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied
 parser.add_argument('-octant', '--octant', action='store_true', help='Sets slice view appropriately for octant dataset.')
 parser.add_argument('-natorg', '--native_origin', action='store_true', help='Use the native origin location for the axes.')
 parser.add_argument('-ls', '--list_fields', action='store_true', help='If supplied, do nothing except list the available fields.')
+parser.add_argument('-extrema', '--print_extrema', action='store_true', help='If supplied, list the max and min of the field(s).')
 args = parser.parse_args()
 
 def slicefield(ds, field, field_short_name):
@@ -74,7 +76,7 @@ def slicefield(ds, field, field_short_name):
             if args.symlog:
                 s.set_log(field, args.logscale, linthresh=args.symlog)
             else:
-                s.set_log(field, args.logscale, linthresh=1.0e3)
+                s.set_log(field, args.logscale, linthresh=10.0**(logmaxv-5))
         else:
             s.set_log(field, args.logscale)
         if dlog >= 2.0:
@@ -105,18 +107,44 @@ def slicefield(ds, field, field_short_name):
     s.set_buff_size(args.resolution)
     s.save('{}.slice.{}.{}.png'.format(args.infile, args.axis, field_short_name))
 
+def print_field_stats(ds, field):
+    print('------------')
+    print(field)
+    if args.print_extrema:
+        fval, floc = ds.find_max(field)
+        print('max value of {} is {} at {}'.format(field, fval, floc))
+        fval, floc = ds.find_min(field)
+        print('min value of {} is {} at {}'.format(field, fval, floc))
+
+def get_field(ds):
+    field = None
+    field_short_name = None
+    for f in ds.field_list + ds.derived_field_list:
+        if f[1] == args.field:
+            field_short_name = f[1]
+            field = f
+            return field, field_short_name
+    if not field:
+        print('Field {} not present.'.format(args.field))
+        return None, None
+
 if __name__=="__main__":
     ds = yt.load(args.infile)
 
+    # Add Urca fields
+    ushell_fields = UrcaShellFields()
+    ushell_fields.setup(ds)
+
     if args.list_fields:
-        print('Native fields in dataset:')
-        for f in ds.field_list:
-            print(f)
-        print('Derived fields from dataset:')
-        for f in ds.derived_field_list:
-            print(f)
+        if args.field:
+            field, field_short_name = get_field(ds)
+            assert(field)
+            print_field_stats(ds, field)
+        else:
+            for f in ds.field_list + ds.derived_field_list:
+                print_field_stats(ds, f)
         exit()
-    
+
     # Check axis input
     axes_list = ['x', 'y', 'z']
     if (args.axis != 'x' and
@@ -126,16 +154,8 @@ if __name__=="__main__":
         exit()
 
     if args.field:
-        field = None
-        field_short_name = None
-        for f in ds.field_list + ds.derived_field_list:
-            if f[1] == args.field:
-                field_short_name = f[1]
-                field = f
-                break
-        if not field:
-            print('Field {} not present.'.format(args.field))
-            exit()
+        field, field_short_name = get_field(ds)
+        assert(field)
         slicefield(ds, field, field_short_name)
     else:
         for f in ds.field_list:
