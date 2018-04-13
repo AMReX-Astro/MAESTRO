@@ -44,7 +44,7 @@ program furcashell
   type (eos_t)  :: eos_state
   type (rate_eval_t) :: rate_state
 
-  integer, parameter :: size_rate_eval = 6
+  integer, parameter :: size_rate_eval = 7
 
   character(len=20) :: plot_names(size_rate_eval)
 
@@ -109,6 +109,7 @@ program furcashell
   plot_names(4) = "epart_beta23"
   plot_names(5) = "X(na23)"
   plot_names(6) = "X(ne23)"
+  plot_names(7) = "density"
 
   dens_comp = plotfile_var_index(pf,"density")
   if (use_tfromp) then
@@ -182,6 +183,9 @@ program furcashell
 
                  ! Mass fraction of Ne-23
                  r(ii,jj,kk,6) = burn_state % xn(jne23)
+
+                 ! Density
+                 r(ii,jj,kk,7) = burn_state % rho
 
               end do
            end do
