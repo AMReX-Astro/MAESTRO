@@ -50,7 +50,7 @@ zhi_boundary_type = "outlet"
  !----------------------------------------------------------------------------
  ! timestepping
  !----------------------------------------------------------------------------
- max_step  = 8
+ max_step  = 4
 
  stop_time = 2.5
 
@@ -86,8 +86,8 @@ zhi_boundary_type = "outlet"
 
  ! initial projections
  do_initial_projection = T
- init_divu_iter = 3
- init_iter = 3
+ init_divu_iter = 2
+ init_iter = 2
 
  use_tfromp = F
  dpdt_factor = 0.0d0
@@ -124,7 +124,16 @@ zhi_boundary_type = "outlet"
  ! microphysics
  !----------------------------------------------------------------------------
  burner_threshold_species = "H1"
+
+ atol_spec = 1.e-9
+ rtol_spec = 1.e-9
+
+ atol_temp = 1.e-6
+ rtol_temp = 1.e-6
  
+ atol_enuc = 1.e-6
+ rtol_enuc = 1.e-6
+
  use_eos_coulomb = T
 
 
