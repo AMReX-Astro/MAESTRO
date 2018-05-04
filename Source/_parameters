@@ -584,8 +584,8 @@ do_burning                          logical            .true.
 
 # Burning cutoff density (do not burn if density is below this threshold)
 # Initialized to zero, runtime\_init() in probin.f90 will check to see
-# if burning_cutoff_density < 0 and if so will set
-# burning_cutoff_density = base_cutoff_density
+# if burning\_cutoff\_density < 0 and if so will set
+# burning\_cutoff\_density = base\_cutoff\_density
 burning_cutoff_density              real               -1.0d0
 
 # Name of the species to be used in burner threshold
