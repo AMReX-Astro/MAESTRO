@@ -111,21 +111,24 @@ def print_field_stats(ds, field):
     print('------------')
     print(field)
     if args.print_extrema:
-        fval, floc = ds.find_max(field)
-        print('max value of {} is {} at {}'.format(field, fval, floc))
-        fval, floc = ds.find_min(field)
-        print('min value of {} is {} at {}'.format(field, fval, floc))
+        if args.width:
+            region = ds.sphere('c', (0.5*args.width, 'cm'))
+        else:
+            region = ds.all_data()
+        fmin, fmax = region.quantities.extrema(field)
+        print('min value of {} is {}'.format(field, fmin))
+        print('max value of {} is {}'.format(field, fmax))
 
-def get_field(ds):
+def get_field(ds, search_field):
     field = None
     field_short_name = None
     for f in ds.field_list + ds.derived_field_list:
-        if f[1] == args.field:
+        if f[1] == search_field:
             field_short_name = f[1]
             field = f
             return field, field_short_name
     if not field:
-        print('Field {} not present.'.format(args.field))
+        print('Field {} not present.'.format(search_field))
         return None, None
 
 if __name__=="__main__":
@@ -137,7 +140,7 @@ if __name__=="__main__":
 
     if args.list_fields:
         if args.field:
-            field, field_short_name = get_field(ds)
+            field, field_short_name = get_field(ds, args.field)
             assert(field)
             print_field_stats(ds, field)
         else:
@@ -154,7 +157,7 @@ if __name__=="__main__":
         exit()
 
     if args.field:
-        field, field_short_name = get_field(ds)
+        field, field_short_name = get_field(ds, args.field)
         assert(field)
         slicefield(ds, field, field_short_name)
     else:
