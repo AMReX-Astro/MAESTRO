@@ -36,6 +36,12 @@ parser.add_argument('-extrema', '--print_extrema', action='store_true', help='If
 args = parser.parse_args()
 
 def slicefield(ds, field, field_short_name):
+    slice_function = None
+    if ds.dimensionality == 3:
+        slice_function = yt.SlicePlot
+    elif ds.dimensionality == 2:
+        slice_function = yt.plot_2d
+
     if not args.width:
         width = max(ds.domain_width)
     else:
@@ -46,19 +52,21 @@ def slicefield(ds, field, field_short_name):
     if args.octant:
         if args.center and len(args.center) == 3:
             center_loc = ds.arr(args.center, 'cm')
-        else:
+        elif ds.dimensionality == 3:
             dcenter = width.in_units('cm').v/2.0
-            center_loc = ds.arr([dcenter, dcenter, dcenter], 'cm')
-        s = yt.SlicePlot(ds, args.axis, field, center=center_loc, width=width, origin="native")
+            center_vector = [dcenter, dcenter, dcenter]
+            center_loc = ds.arr(center_vector, 'cm')
+        s = slice_function(ds, args.axis, field, center=center_loc, width=width, origin="native")
     else:
         if args.center and len(args.center) == 3:
             center_loc = ds.arr(args.center, 'cm')
-        else:
+        elif ds.dimensionality == 3:
             center_loc = 'c'
         if args.native_origin:
-            s = yt.SlicePlot(ds, args.axis, field, center=center_loc, width=width, origin="native")
+            s = slice_function(ds, args.axis, field, center=center_loc, width=width, origin="native")
         else:
-            s = yt.SlicePlot(ds, args.axis, field, center=center_loc, width=width)
+#            s = slice_function(ds, args.axis, field, center=center_loc, width=width)
+            s = slice_function(ds, field, width=width)
 
     # Colormaps and Scaling
     maxv = ds.all_data().max(field)
@@ -149,11 +157,9 @@ if __name__=="__main__":
         exit()
 
     # Check axis input
-    axes_list = ['x', 'y', 'z']
-    if (args.axis != 'x' and
-        args.axis != 'y' and
-        args.axis != 'z'):
-        print('Improper axis argument.')
+    axes_list = ['x', 'y', 'z', 'r']
+    if not args.axis.lower() in axes_list:
+        print('Improper axis argument -- axis should be one of {}'.format(axes_list))
         exit()
 
     if args.field:
