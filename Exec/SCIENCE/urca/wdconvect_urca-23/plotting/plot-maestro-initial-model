@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 
@@ -12,7 +14,14 @@ Msun = 1.988435e33 # grams
 def getlinedata(f):
     l = f.readline()
     ls = l.strip().split()
-    a = [float(x) for x in ls]
+    a = []
+    for x in ls:
+        try:
+            xf = float(x)
+        except:
+            xf = 0.0
+        a.append(xf)
+#    a = [float(x) for x in ls]
     na = len(a)
     return na, a
 
