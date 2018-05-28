@@ -65,8 +65,7 @@ def slicefield(ds, field, field_short_name):
         if args.native_origin:
             s = slice_function(ds, args.axis, field, center=center_loc, width=width, origin="native")
         else:
-#            s = slice_function(ds, args.axis, field, center=center_loc, width=width)
-            s = slice_function(ds, field, width=width)
+            s = slice_function(ds, args.axis, field, center=center_loc, width=width)
 
     # Colormaps and Scaling
     maxv = ds.all_data().max(field)
