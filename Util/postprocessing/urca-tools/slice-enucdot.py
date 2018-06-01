@@ -12,6 +12,7 @@ parser.add_argument('-axis', '--axis', type=str, default='x', help='Axis along w
 parser.add_argument('-symlog', '--symlog', action='store_true', help='If supplied, use symlog scaling, which is linear near zero, to accomodate positive and negative values of enucdot.')
 parser.add_argument('-logmax', '--logmax', type=float,
                     help='Log of the +/- maximum enucdot value.')
+parser.add_argument('-rho', '--rhocontours', type=float, nargs='+', help='Draws contours for the densities provided (g/cm^3).')
 parser.add_argument('-dc', '--drawcells', action='store_true', help='If supplied, draw the cell edges.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-lic', '--lic_velocity', action='store_true', help='If supplied, draw line-integral convolution for in-plane velocity field.')
@@ -60,6 +61,11 @@ if args.octant:
 else:
     s = yt.SlicePlot(ds, args.axis, ('boxlib', 'enucdot'),
                      center='c', width=width)
+
+if args.rhocontours:
+    for rhoc in args.rhocontours:
+        rhounit = yt.YTQuantity(rhoc, 'g/(cm**3)')
+        s.annotate_contour('density', ncont=1, clim=(rhounit, rhounit))
 
 if args.logmax:
     log_max_val = args.logmax

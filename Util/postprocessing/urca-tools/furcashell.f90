@@ -2,9 +2,11 @@ program furcashell
 
   use network
   use table_rates, only: j_na23_ne23, j_ne23_na23
-  use actual_rhs_module, only: rate_eval_t, evaluate_rates
+  use actual_rhs_module, only: rate_eval_t, evaluate_rates, rhs_nuc, actual_rhs
+  use physical_constants, only: N_AVO
+  use sneut_module, only: sneut5
   use burner_module, only: burner_init
-  use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn
+  use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn, net_ienuc
   use eos_module, only: eos, eos_init
   use eos_type_module, only: eos_t, eos_input_rt
   use rpar_indices
@@ -43,8 +45,12 @@ program furcashell
   type (burn_t) :: burn_state
   type (eos_t)  :: eos_state
   type (rate_eval_t) :: rate_state
+  double precision :: y_nuc(nspec), ydot_nuc(nspec), enuc, enucion, enucdiff
 
-  integer, parameter :: size_rate_eval = 7
+  integer, parameter :: size_rate_eval = 12
+
+  ! For sneut5
+  double precision :: sneut, dsneutdt, dsneutdd, snuda, snudz
 
   character(len=20) :: plot_names(size_rate_eval)
 
@@ -107,9 +113,14 @@ program furcashell
   plot_names(2) = "beta23"
   plot_names(3) = "epart_ecap23"
   plot_names(4) = "epart_beta23"
-  plot_names(5) = "X(na23)"
-  plot_names(6) = "X(ne23)"
-  plot_names(7) = "density"
+  plot_names(5) = "dqweak_ecap23"
+  plot_names(6) = "dqweak_beta23"
+  plot_names(7) = "X(na23)"
+  plot_names(8) = "X(ne23)"
+  plot_names(9) = "density"
+  plot_names(10) = "ionenuc"
+  plot_names(11) = "sneut"
+  plot_names(12) = "enucrdiff"
 
   dens_comp = plotfile_var_index(pf,"density")
   if (use_tfromp) then
@@ -152,6 +163,8 @@ program furcashell
         r => dataptr(rates(i),j)
 
         !$OMP PARALLEL DO PRIVATE(kk, jj, ii, eos_state, burn_state, rate_state) &
+        !$OMP PRIVATE(enucion, enuc, enucdiff, y_nuc, ydot_nuc) &
+        !$OMP PRIVATE(sneut, dsneutdt, dsneutdd, snuda, snudz) &
         !$OMP SCHEDULE(DYNAMIC,1)
         do kk = lo(3), hi(3)
            do jj = lo(2), hi(2)
@@ -166,26 +179,57 @@ program furcashell
 
                  call evaluate_rates(burn_state, rate_state)
 
+                 y_nuc(:) = burn_state % xn(:) * aion_inv(:)
+                 call rhs_nuc(ydot_nuc, y_nuc, rate_state % screened_rates, burn_state % rho)
+                 burn_state % ydot(1:nspec) = ydot_nuc
+                 call ener_gener_rate(ydot_nuc, enucion)
+                 enuc = enucion
+                 
                  ! Electron capture rate (A=23)
                  r(ii,jj,kk,1) = rate_state % screened_rates(k_na23_ne23)
 
                  ! Beta decay rate (A=23)
                  r(ii,jj,kk,2) = rate_state % screened_rates(k_ne23_na23)
 
-                 ! Particle energy from electron capture (A=23)
-                 r(ii,jj,kk,3) = rate_state % epart(j_na23_ne23)
+                 ! Particle energy from electron capture (A=23) (erg/g/s)
+                 r(ii,jj,kk,3) = rate_state % epart(j_na23_ne23) * y_nuc(jna23) * N_AVO
+                 enuc = enuc + r(ii,jj,kk,3)
 
-                 ! Particle energy from beta decay (A=23)
-                 r(ii,jj,kk,4) = rate_state % epart(j_ne23_na23)
-
+                 ! Particle energy from beta decay (A=23) (erg/g/s)
+                 r(ii,jj,kk,4) = rate_state % epart(j_ne23_na23) * y_nuc(jne23) * N_AVO
+                 enuc = enuc + r(ii,jj,kk,4)
+                 
+                 ! dQ energy correction from electron capture (A=23) (erg/g/s)
+                 r(ii,jj,kk,5) = rate_state % dqweak(j_na23_ne23) * ydot_nuc(jna23) * N_AVO
+                 enuc = enuc + r(ii,jj,kk,5)
+                 
+                 ! dQ energy correction from beta decay (A=23) (erg/g/s)
+                 r(ii,jj,kk,6) = rate_state % dqweak(j_ne23_na23) * ydot_nuc(jne23) * N_AVO
+                 enuc = enuc + r(ii,jj,kk,6)
+                 
                  ! Mass fraction of Na-23
-                 r(ii,jj,kk,5) = burn_state % xn(jna23)
+                 r(ii,jj,kk,7) = burn_state % xn(jna23)
 
                  ! Mass fraction of Ne-23
-                 r(ii,jj,kk,6) = burn_state % xn(jne23)
+                 r(ii,jj,kk,8) = burn_state % xn(jne23)
 
                  ! Density
-                 r(ii,jj,kk,7) = burn_state % rho
+                 r(ii,jj,kk,9) = burn_state % rho
+
+                 ! Raw Ion binding energy enucdot (erg/g/s) (without dQ energy corrections)
+                 r(ii,jj,kk,10) = enucion
+
+                 ! non-Urca neutrino losses: sneut
+                 call sneut5(burn_state % T, burn_state % rho, &
+                             burn_state % abar, burn_state % zbar, &
+                             sneut, dsneutdt, dsneutdd, snuda, snudz)
+                 r(ii,jj,kk,11) = sneut
+                 enuc = enuc - sneut
+
+                 call actual_rhs(burn_state)
+
+                 enucdiff = burn_state % ydot(net_ienuc) - enuc
+                 r(ii,jj,kk,12) = abs(enucdiff/burn_state % ydot(net_ienuc))
 
               end do
            end do
@@ -212,7 +256,8 @@ contains
     
     print *,""
     print *, "This program takes a 3D plotfile and extracts the electron capture, "
-    print *, " beta decay rate, mass fractions, and particle energy -- "
+    print *, " beta decay rate, mass fractions, ... "
+    print *, " particle energy, and other neutrino losses -- "
     print *, " then dumps a new plotfile containing these quantities."
     print *, ""
     print *, "This is set up for the URCA-simple network in StarKiller Microphysics."
