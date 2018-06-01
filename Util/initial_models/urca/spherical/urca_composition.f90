@@ -112,16 +112,44 @@ contains
        call bl_error("ERROR: invalid urca_shell_type")
     end if
 
+    ! Floor species so abundances below 1E-30 are 0.0d0
+    call floor_species(eos_state)
+    
     ! Renormalize species
     call renormalize_species(eos_state)
 
   end subroutine set_urca_composition
 
 
+  subroutine floor_species(eos_state)
+
+    ! Species mass fractions below 1E-30 should just be 0.0
+    ! This prevents getting abundances of ~1E-100. Note that
+    ! the initial model writing omits the "E" in the exponent
+    ! if the exponent requires 3 digits.
+    use bl_constants_module, only: ZERO
+    use bl_types, only: dp_t
+    use eos_type_module, only: eos_t
+    use network, only: nspec
+
+    type (eos_t), intent(inout) :: eos_state
+    real (kind=dp_t), parameter :: mass_fraction_floor = 1.0d-30
+    integer :: i
+
+    do i = 1, nspec
+       if (eos_state % xn(i) < mass_fraction_floor) then
+          eos_state % xn(i) = ZERO
+       end if
+    end do
+
+  end subroutine floor_species
+
+
   subroutine renormalize_species(eos_state)
 
     ! Renormalize the mass fractions so they sum to 1
     use bl_types, only: dp_t
+    use eos_type_module, only: eos_t
 
     type (eos_t), intent(inout) :: eos_state
     real (kind=dp_t) :: sumx
