@@ -3,7 +3,7 @@
 
 module probin_module
 
-  use bl_types
+  use amrex_fort_module, only : rt => amrex_real
   use bl_space
   use bl_constants_module
   use pred_parameters
@@ -25,15 +25,15 @@ module probin_module
   ! These will be allocated and defined below
   logical,    allocatable, save, public :: nodal(:)
   logical,    allocatable, save, public :: pmask(:)
-  real(dp_t), allocatable, save, public :: prob_lo(:)
-  real(dp_t), allocatable, save, public :: prob_hi(:)
+  real(rt), allocatable, save, public :: prob_lo(:)
+  real(rt), allocatable, save, public :: prob_hi(:)
 
 end module probin_module
 
 
 module extern_probin_module
 
-  use bl_types
+  use amrex_fort_module, only : rt => amrex_real
   use bl_space
 
   implicit none
@@ -47,7 +47,7 @@ end module extern_probin_module
 
 module runtime_init_module
 
-  use bl_types
+  use amrex_fort_module, only : rt => amrex_real
   use probin_module
   use extern_probin_module
 
@@ -85,8 +85,8 @@ contains
     logical    :: lexist
     integer    :: natonce, myproc, nprocs, nsets, myset, iset, ibuff(1)
     integer    :: wakeuppid, waitforpid, tag, un, ierr
-    real(dp_t) :: pistart, piend, pitotal, pistartall, piendall, pitotalall
-    real(dp_t) :: pitotal_max, pitotalall_max
+    real(rt) :: pistart, piend, pitotal, pistartall, piendall, pitotalall
+    real(rt) :: pitotal_max, pitotalall_max
 
     type(bl_prof_timer), save :: bpt
 

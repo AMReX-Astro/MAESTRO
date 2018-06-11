@@ -89,6 +89,9 @@ endif
 # we need all the thermodynamics
 FPP_DEFINES += -DEXTRA_THERMO
 
+# we are not using the CUDA stguff
+FPP_DEFINES += -DAMREX_DEVICE=""
+
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
