@@ -1,8 +1,8 @@
 &PROBIN
 
 !Input
- model_file = "octant_fine_small.bin"
- use_binary_input = T
+ model_file = "octant_fine_small.text"
+ use_binary_input = F
 
  
  
@@ -13,7 +13,7 @@
  
  stop_time = 1e9
 
- plot_int  = 1000
+ plot_int  = 10
  plot_deltat = -1.
  mini_plot_int = -1
  mini_plot_deltat = 1e5
@@ -84,9 +84,10 @@
  buoyancy_cutoff_factor = 1.14
  !standard implementiation: sponge starts at sponge_center_density * sponge_start_factor
  do_sponge = T
+ sponge_mode = 3 
  sponge_center_density = 15
  sponge_start_factor = 1.2d0
- sponge_kappa = 2e-3
+ sponge_kappa = 2.0d-2
  
  
 !Initialization 
@@ -102,7 +103,7 @@
  stop_initial_convection = 2
  
  velpert_amplitude = 2.d2               
- velpert_radius = 1.0d10              
+ velpert_radius = 2.0d10              
  velpert_scale = 1.1d10               
  velpert_steep = 1.d0
  
