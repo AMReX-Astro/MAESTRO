@@ -261,7 +261,7 @@ contains
                         endif
 
                         ! Outer sponge: damps velocities in the corners of the domain
-                        if (x >= r_sp_outer) then
+                        if (x >= r_sp_outer .and. x>y) then
                             if (x < r_tp_outer) then
                                 smdamp = HALF * &
                                     (ONE - cos(M_PI*(x - r_sp_outer)/(r_tp_outer - r_sp_outer)))

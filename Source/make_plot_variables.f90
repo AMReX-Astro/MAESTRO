@@ -1172,7 +1172,7 @@ contains
                     pdata(i,j,1,p%icomp_machno) = pdata(i,j,1,p%icomp_magvel) / eos_state%cs
                 endif
 
-                if (p%icomp_dg > 0) pdata(i,j,k,p%icomp_dg) = eos_state%gam1 - gamma1bar_cart(i,j,1,1)
+                if (p%icomp_dg > 0) pdata(i,j,1,p%icomp_dg) = eos_state%gam1 - gamma1bar_cart(i,j,1,1)
 
                 if (p%icomp_entropy > 0) pdata(i,j,1,p%icomp_entropy) = eos_state%s
             enddo
