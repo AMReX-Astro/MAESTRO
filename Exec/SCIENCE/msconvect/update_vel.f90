@@ -311,6 +311,31 @@ contains
                         unew(i,j,1) = unew(i,j,1) - dvx
                         unew(i,j,2) = unew(i,j,2) - dvy
                         
+                    else if (sponge_mode .eq. 4) then
+                        x = prob_lo(1) + (dble(i)+HALF)*dx(1) - center(1)
+                        y = prob_lo(2) + (dble(j)+HALF)*dx(2) - center(2)
+                        
+                        r = sqrt(x**2 + y**2)
+                        
+                        !sin(phi) and cos(phi)
+                        cphi = x/r
+                        sphi = y/r
+                        
+                        !calculate phi velocity and the cartesian components
+                        vr = - sphi * unew(i,j,1) + cphi * unew(i,j,2)
+                        dvx = - vr * sphi
+                        dvy = vr * cphi
+                        
+                        !apply sponge on phi velocity 
+                        !and calculate difference in cartesian components
+                        vr = vr * sponge(i,j)
+                        dvx = dvx + vr * sphi
+                        dvy = dvy - vr * cphi
+                        
+                        !substract the difference
+                        unew(i,j,1) = unew(i,j,1) - dvx
+                        unew(i,j,2) = unew(i,j,2) - dvy
+                        
                     endif
                 endif
 

@@ -196,7 +196,7 @@ contains
         end do
     
     else
-        if (sponge_mode .eq. 1 .or. sponge_mode .eq. 3) then
+        if (sponge_mode .ne. 2) then
         ! the classical sponge, damping at a certain radial density
             !$OMP PARALLEL DO PRIVATE(i,j,x,y,r,smdamp)
                 do j = lo(2),hi(2)
