@@ -19,8 +19,8 @@ program init_1d
   use bl_types
   use bl_constants_module
   use bl_error_module
-  use eos_module, only: eos_input_rt, eos, eos_init
-  use eos_type_module
+  use eos_module, only: eos, eos_init
+  use eos_type_module, only : eos_t, eos_input_rt
   use network
   use fundamental_constants_module
   use extern_probin_module, only: use_eos_coulomb
@@ -28,7 +28,7 @@ program init_1d
   implicit none
 
   integer :: i, j, n
-      
+
   real (kind=dp_t), allocatable :: xzn_hse(:), xznl(:), xznr(:)
   real (kind=dp_t), allocatable :: M_enclosed(:)
   real (kind=dp_t), allocatable :: model_kepler_hse(:,:)
@@ -59,7 +59,7 @@ program init_1d
   real (kind=dp_t) :: p_want, drho, dtemp
 
   real (kind=dp_t) :: g_zone
-  
+
   real (kind=dp_t) :: max_hse_error, dpdr, rhog
 
   real (kind=dp_t), parameter :: TOL = 1.e-10
@@ -114,10 +114,10 @@ program init_1d
 
   xmin = 0_dp_t
   xmax = 5.d8
-     
+
   low_density_cutoff =1.d-4
 
-  ! temp_fluff_cutoff is the density below which we hold the temperature 
+  ! temp_fluff_cutoff is the density below which we hold the temperature
   ! constant for the kepler model
 
   ! MAESTRO
@@ -128,7 +128,7 @@ program init_1d
 
   temp_fluff = 5.d6
 
-  ! this comes in via extern_probin_module -- override the default 
+  ! this comes in via extern_probin_module -- override the default
   ! here if we want
   use_eos_coulomb = .true.
 
@@ -219,7 +219,7 @@ program init_1d
   ! allocate storage for the model data
   allocate (base_state(npts_model, nvar))
   allocate (base_r(npts_model))
-  
+
   do i = 1, npts_model
      read(99,*) base_r(i), (vars_stored(j), j = 1, nvars_model_file)
 
@@ -251,13 +251,13 @@ program init_1d
               base_state(i,ispec-1+n) = vars_stored(j)
               found = .true.
            endif
-           
+
         end select
 
         if (.NOT. found) then
            print *, 'ERROR: variable not found: ', varnames_stored(j)
         endif
-        
+
      enddo
 
   enddo
@@ -289,7 +289,7 @@ program init_1d
 
            model_kepler_hse(i,n) = interpolate(xzn_hse(i), npts_model, &
                                         base_r, base_state(:,n))
-           
+
            igood = i
         else
 
@@ -298,10 +298,10 @@ program init_1d
               ! linearly interpolate the last good Kepler zones
            !   slope = (model_kepler_hse(igood,itemp) - model_kepler_hse(igood-1,itemp))/ &
            !        (xzn_hse(igood) - xzn_hse(igood-1))
-           !   
+           !
            !   model_kepler_hse(i,n) = max(temp_fluff, &
            !                               model_kepler_hse(igood,itemp) + slope*(xzn_hse(i) - xzn_hse(igood)))
-                   
+
            !else
               ! use a zero-gradient at the top of the initial model if our domain is
               ! larger than the model's domain.
@@ -348,16 +348,16 @@ program init_1d
   !===========================================================================
 
   ! because the Kepler model likely begins at a larger radius than our first
-  ! HSE model zone, simple interpolation will not do a good job.  We want to 
+  ! HSE model zone, simple interpolation will not do a good job.  We want to
   ! integrate in from the zone that best matches the first Kepler model zone,
   ! assuming HSE and constant entropy.
 
 
-  ! find the zone in the uniformly gridded model that corresponds to the 
+  ! find the zone in the uniformly gridded model that corresponds to the
   ! first zone of the original model
   ibegin = -1
   do i = 1, nx
-     if (xzn_hse(i) >= base_r(1)) then 
+     if (xzn_hse(i) >= base_r(1)) then
         ibegin = i
         exit
      endif
@@ -387,8 +387,8 @@ program init_1d
      eos_state%T     = model_kepler_hse(ibegin,itemp)
      eos_state%rho   = model_kepler_hse(ibegin,idens)
      eos_state%xn(:) = model_kepler_hse(ibegin,ispec:nvar)
-     
-     call eos(eos_input_rt, eos_state, .false.)
+
+     call eos(eos_input_rt, eos_state)
 
      model_kepler_hse(ibegin,ipres) = eos_state%p
      model_kepler_hse(ibegin,ientr) = eos_state%s
@@ -415,51 +415,51 @@ program init_1d
         !-----------------------------------------------------------------------
         ! iteration loop
         !-----------------------------------------------------------------------
-        
+
         ! start off the Newton loop by saying that the zone has not converged
         converged_hse = .FALSE.
-        
+
         do iter = 1, MAX_ITER
 
            p_want = model_kepler_hse(i+1,ipres) - &
                 delx*0.5_dp_t*(dens_zone + model_kepler_hse(i+1,idens))*g_zone
-         
-           
+
+
            ! now we have two functions to zero:
            !   A = p_want - p(rho,T)
            !   B = entropy_want - s(rho,T)
            ! We use a two dimensional Taylor expansion and find the deltas
            ! for both density and temperature
-           
-           ! (t, rho) -> (p, s)    
+
+           ! (t, rho) -> (p, s)
 
            eos_state%T     = temp_zone
            eos_state%rho   = dens_zone
            eos_state%xn(:) = xn(:)
-              
-           call eos(eos_input_rt, eos_state, .false.)
-           
+
+           call eos(eos_input_rt, eos_state)
+
            entropy = eos_state%s
            pres_zone = eos_state%p
-              
+
            dpt = eos_state%dpdt
            dpd = eos_state%dpdr
            dst = eos_state%dsdt
            dsd = eos_state%dsdr
-              
+
            A = p_want - pres_zone
            B = entropy_want(i) - entropy
-              
+
            dAdT = -dpt
            dAdrho = -0.5d0*delx*g_zone - dpd
            dBdT = -dst
            dBdrho = -dsd
-              
+
            dtemp = (B - (dBdrho/dAdrho)*A)/ &
                 ((dBdrho/dAdrho)*dAdT - dBdT)
-        
+
            drho = -(A + dAdT*dtemp)/dAdrho
-        
+
            dens_zone = max(0.9_dp_t*dens_zone, &
                 min(dens_zone + drho, 1.1_dp_t*dens_zone))
 
@@ -472,33 +472,33 @@ program init_1d
               converged_hse = .TRUE.
               exit
            endif
-       
+
         enddo
 
         if (.NOT. converged_hse) then
-           
+
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
            print *, dens_zone, temp_zone
            print *, p_want
            print *, drho
            call bl_error('Error: HSE non-convergence')
-           
+
         endif
 
         ! call the EOS one more time for this zone and then go on to the next
-        ! (t, rho) -> (p, s)    
+        ! (t, rho) -> (p, s)
 
         eos_state%T     = temp_zone
         eos_state%rho   = dens_zone
         eos_state%xn(:) = xn(:)
 
-        call eos(eos_input_rt, eos_state, .false.)
-        
+        call eos(eos_input_rt, eos_state)
+
         pres_zone = eos_state%p
-     
+
         dpd = eos_state%dpdr
-     
+
         ! update the thermodynamics in this zone
         model_kepler_hse(i,idens) = dens_zone
         model_kepler_hse(i,itemp) = temp_zone
@@ -506,7 +506,7 @@ program init_1d
         model_kepler_hse(i,ientr) = eos_state%s
         model_kepler_hse(i,isndspd) = &
              sqrt(eos_state%gam1*eos_state%p/eos_state%rho)
-        
+
      enddo
 
      if (abs(model_kepler_hse(1,idens) - central_density) < TOL*central_density) then
@@ -530,7 +530,7 @@ program init_1d
   !===========================================================================
   ! compute the full HSE model using our new central density and temperature,
   ! and the temperature structure as dictated by the Kepler model.
-  !===========================================================================  
+  !===========================================================================
 
   print *, 'putting Kepler model into HSE on our grid...'
 
@@ -562,23 +562,23 @@ program init_1d
 
         do iter = 1, MAX_ITER
 
-           
-           ! HSE differencing 
+
+           ! HSE differencing
            p_want = model_kepler_hse(i-1,ipres) + &
                 delx*0.5_dp_t*(dens_zone + model_kepler_hse(i-1,idens))*g_zone
-         
+
            temp_zone = model_kepler_hse(i,itemp)
-              
+
            if (model_kepler_hse(i-1,idens) .lt. temp_fluff_cutoff) then
               temp_zone = temp_fluff
            end if
 
-           ! (t, rho) -> (p)    
+           ! (t, rho) -> (p)
            eos_state%T     = temp_zone
            eos_state%rho   = dens_zone
            eos_state%xn(:) = xn(:)
-              
-           call eos(eos_input_rt, eos_state, .false.)
+
+           call eos(eos_input_rt, eos_state)
 
            pres_zone = eos_state%p
 
@@ -587,33 +587,33 @@ program init_1d
 
            dens_zone = max(0.9_dp_t*dens_zone, &
                            min(dens_zone + drho, 1.1_dp_t*dens_zone))
-       
+
            if (abs(drho) < TOL*dens_zone) then
               converged_hse = .TRUE.
               exit
            endif
 
-           if (dens_zone < low_density_cutoff) then              
+           if (dens_zone < low_density_cutoff) then
               dens_zone = low_density_cutoff
               temp_zone = temp_fluff
               converged_hse = .TRUE.
               fluff = .TRUE.
               index_hse_fluff = i
               exit
-              
+
            endif
 
         enddo
-        
+
         if (.NOT. converged_hse) then
-           
+
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
            print *, dens_zone, temp_zone
            print *, p_want
            print *, drho
            call bl_error('Error: HSE non-convergence')
-           
+
         endif
 
         if (temp_zone < temp_fluff) then
@@ -628,17 +628,17 @@ program init_1d
 
 
      ! call the EOS one more time for this zone and then go on to the next
-     ! (t, rho) -> (p)    
+     ! (t, rho) -> (p)
 
      eos_state%T     = temp_zone
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 
-     
+
      ! update the thermodynamics in this zone
      model_kepler_hse(i,idens) = dens_zone
      model_kepler_hse(i,itemp) = temp_zone
@@ -655,20 +655,20 @@ program init_1d
 
 
   !===========================================================================
-  ! compute the alternate model using the same central density and 
+  ! compute the alternate model using the same central density and
   ! temperature, but assuming that we are isentropic (and in HSE).
-  !===========================================================================  
+  !===========================================================================
 
   print *, 'creating isentropic model...'
-  
+
   ! as an initial guess, use the Kepler HSE model
   model_isentropic_hse(:,:) = model_kepler_hse(:,:)
-  
+
   entropy_want(:) = model_isentropic_hse(1,ientr)
 
   fluff = .false.
   isentropic = .true.
-  
+
   ! keep track of the mass enclosed below the current zone
   M_enclosed(1) = FOUR3RD*M_PI*delx**3*model_isentropic_hse(1,idens)
 
@@ -698,43 +698,43 @@ program init_1d
 
               p_want = model_isentropic_hse(i-1,ipres) + &
                    delx*0.5_dp_t*(dens_zone + model_isentropic_hse(i-1,idens))*g_zone
-         
-           
+
+
               ! now we have two functions to zero:
               !   A = p_want - p(rho,T)
               !   B = entropy_want - s(rho,T)
               ! We use a two dimensional Taylor expansion and find the deltas
               ! for both density and temperature
-              
-              ! (t, rho) -> (p, s)    
+
+              ! (t, rho) -> (p, s)
 
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
               eos_state%xn(:) = xn(:)
-              
-              call eos(eos_input_rt, eos_state, .false.)
+
+              call eos(eos_input_rt, eos_state)
 
               entropy = eos_state%s
               pres_zone = eos_state%p
-              
+
               dpt = eos_state%dpdt
               dpd = eos_state%dpdr
               dst = eos_state%dsdt
               dsd = eos_state%dsdr
-              
+
               A = p_want - pres_zone
               B = entropy_want(i) - entropy
-              
+
               dAdT = -dpt
               dAdrho = 0.5d0*delx*g_zone - dpd
               dBdT = -dst
               dBdrho = -dsd
-              
+
               dtemp = (B - (dBdrho/dAdrho)*A)/ &
                    ((dBdrho/dAdrho)*dAdT - dBdT)
-              
+
               drho = -(A + dAdT*dtemp)/dAdrho
-              
+
               dens_zone = max(0.9_dp_t*dens_zone, &
                               min(dens_zone + drho, 1.1_dp_t*dens_zone))
 
@@ -743,7 +743,7 @@ program init_1d
 
 
               if (dens_zone < low_density_cutoff) then
-                 
+
                  dens_zone = low_density_cutoff
                  temp_zone = temp_fluff
                  converged_hse = .TRUE.
@@ -757,7 +757,7 @@ program init_1d
                  converged_hse = .TRUE.
                  exit
               endif
-       
+
            else
 
               ! do isothermal
@@ -771,32 +771,32 @@ program init_1d
               eos_state%T     = temp_zone
               eos_state%rho   = dens_zone
               eos_state%xn(:) = xn(:)
-        
-              call eos(eos_input_rt, eos_state, .false.)
-        
+
+              call eos(eos_input_rt, eos_state)
+
               entropy = eos_state%s
               pres_zone = eos_state%p
-              
+
               dpd = eos_state%dpdr
-              
+
               drho = (p_want - pres_zone)/(dpd - 0.5*delx*g_zone)
-              
+
               dens_zone = max(0.9*dens_zone, &
                    min(dens_zone + drho, 1.1*dens_zone))
-              
+
               if (abs(drho) < TOL*dens_zone) then
                  converged_hse = .TRUE.
                  exit
               endif
-              
+
               if (dens_zone < low_density_cutoff) then
-                 
+
                  dens_zone = low_density_cutoff
                  temp_zone = temp_fluff
                  converged_hse = .TRUE.
                  fluff = .TRUE.
                  exit
-                 
+
               endif
 
            endif
@@ -804,14 +804,14 @@ program init_1d
         enddo
 
         if (.NOT. converged_hse) then
-           
+
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
            print *, dens_zone, temp_zone
            print *, p_want
            print *, drho
            call bl_error('Error: HSE non-convergence')
-           
+
         endif
 
         if (temp_zone < temp_fluff) then
@@ -826,18 +826,18 @@ program init_1d
 
 
      ! call the EOS one more time for this zone and then go on to the next
-     ! (t, rho) -> (p, s)    
+     ! (t, rho) -> (p, s)
 
      eos_state%T     = temp_zone
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 
      dpd = eos_state%dpdr
-     
+
      ! update the thermodynamics in this zone
      model_isentropic_hse(i,idens) = dens_zone
      model_isentropic_hse(i,itemp) = temp_zone
@@ -856,7 +856,7 @@ program init_1d
   !===========================================================================
   ! compute a hybrid model -- isentropic in the interior, Kepler's temperature
   ! structure outside.
-  !===========================================================================  
+  !===========================================================================
 
   print *, 'creating hybrid model...'
   print *, ' '
@@ -890,7 +890,7 @@ program init_1d
   ! fluff region earlier or later than the kepler model, reset the
   ! temperatures in the fluff region to the last valid kepler zone.
   model_hybrid_hse(index_hse_fluff:,itemp) = model_kepler_hse(index_hse_fluff-1,itemp)
-  
+
 
   ! compute the enclosed mass
   M_enclosed(1) = FOUR3RD*M_PI*delx**3*model_hybrid_hse(1,idens)
@@ -920,19 +920,19 @@ program init_1d
 
         do iter = 1, MAX_ITER
 
-           
-           ! HSE differencing 
+
+           ! HSE differencing
            p_want = model_hybrid_hse(i-1,ipres) + &
                 delx*0.5_dp_t*(dens_zone + model_hybrid_hse(i-1,idens))*g_zone
-         
+
            temp_zone = model_hybrid_hse(i,itemp)
-              
-           ! (t, rho) -> (p)    
+
+           ! (t, rho) -> (p)
            eos_state%T     = temp_zone
            eos_state%rho   = dens_zone
            eos_state%xn(:) = xn(:)
-              
-           call eos(eos_input_rt, eos_state, .false.)
+
+           call eos(eos_input_rt, eos_state)
 
            pres_zone = eos_state%p
 
@@ -941,32 +941,32 @@ program init_1d
 
            dens_zone = max(0.9_dp_t*dens_zone, &
                            min(dens_zone + drho, 1.1_dp_t*dens_zone))
-       
+
            if (abs(drho) < TOL*dens_zone) then
               converged_hse = .TRUE.
               exit
            endif
 
-           if (dens_zone <= low_density_cutoff) then              
+           if (dens_zone <= low_density_cutoff) then
               dens_zone = low_density_cutoff
               temp_zone = temp_fluff
               converged_hse = .TRUE.
               fluff = .TRUE.
               exit
-              
+
            endif
 
         enddo
-        
+
         if (.NOT. converged_hse) then
-           
+
            print *, 'Error zone', i, ' did not converge in init_1d'
            print *, 'integrate up'
            print *, dens_zone, temp_zone
            print *, p_want
            print *, drho
            call bl_error('Error: HSE non-convergence')
-           
+
         endif
 
         if (temp_zone < temp_fluff) then
@@ -981,17 +981,17 @@ program init_1d
 
 
      ! call the EOS one more time for this zone and then go on to the next
-     ! (t, rho) -> (p)    
+     ! (t, rho) -> (p)
 
      eos_state%T     = temp_zone
      eos_state%rho   = dens_zone
      eos_state%xn(:) = xn(:)
 
-     call eos(eos_input_rt, eos_state, .false.)
+     call eos(eos_input_rt, eos_state)
 
      pres_zone = eos_state%p
 
-     
+
      ! update the thermodynamics in this zone
      model_hybrid_hse(i,idens) = dens_zone
      model_hybrid_hse(i,itemp) = temp_zone
@@ -1023,8 +1023,8 @@ program init_1d
   ! kepler model
   !---------------------------------------------------------------------------
 
-  ipos = index(model_file, '.raw') 
-  outfile = model_file(1:ipos-1) // '.hse' 
+  ipos = index(model_file, '.raw')
+  outfile = model_file(1:ipos-1) // '.hse'
 
   write(num,'(i8)') nx
 
@@ -1090,8 +1090,8 @@ program init_1d
   ! isentropic model
   !---------------------------------------------------------------------------
 
-  ipos = index(model_file, '.raw') 
-  outfile = model_file(1:ipos-1) // '.isentropic.hse' 
+  ipos = index(model_file, '.raw')
+  outfile = model_file(1:ipos-1) // '.isentropic.hse'
 
   write(num,'(i8)') nx
 
@@ -1154,8 +1154,8 @@ program init_1d
   ! hybrid model
   !---------------------------------------------------------------------------
 
-  ipos = index(model_file, '.raw') 
-  outfile = model_file(1:ipos-1) // '.hybrid.hse' 
+  ipos = index(model_file, '.raw')
+  outfile = model_file(1:ipos-1) // '.hybrid.hse'
 
   write(num,'(i8)') nx
 
@@ -1218,7 +1218,7 @@ program init_1d
 
   ! output the entropy
 
-  outfile = model_file(1:ipos-1) // '.entropy' 
+  outfile = model_file(1:ipos-1) // '.entropy'
   outfile = trim(outfile) // '.' // trim(adjustl(num))
 
   open (unit=60, file=outfile, status="unknown")
@@ -1254,7 +1254,7 @@ program init_1d
   ! compute the gravitational potential energy
   M_center = FOUR3RD*M_PI*xzn_hse(1)**3*model_hybrid_hse(1,idens)
 
-  ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr                                         
+  ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
   grav_ener = -FOUR*M_PI*Gconst*M_center*xzn_hse(1)*model_hybrid_hse(1,idens)*(xznr(1) - xznl(1))
 
 
@@ -1264,9 +1264,9 @@ program init_1d
              FOUR3RD*M_PI*(xzn_hse(i) - xznl(i)) * &
              (xzn_hse(i)**2 +xznl(i)*xzn_hse(i) + xznl(i)**2)*model_hybrid_hse(i,idens) + &
              FOUR3RD*M_PI*(xznr(i-1) - xzn_hse(i-1)) * &
-             (xznr(i-1)**2 +xzn_hse(i-1)*xznr(i-1) + xzn_hse(i-1)**2)*model_hybrid_hse(i-1,idens)      
+             (xznr(i-1)**2 +xzn_hse(i-1)*xznr(i-1) + xzn_hse(i-1)**2)*model_hybrid_hse(i-1,idens)
 
-        ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr 
+        ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
         grav_ener = grav_ener - &
              FOUR*M_PI*Gconst*M_center*xzn_hse(i)*model_hybrid_hse(i,idens)*(xznr(i) - xznl(i))
      else
@@ -1322,7 +1322,7 @@ end program init_1d
        !interpolate = max(interpolate,minvar)
        !interpolate = min(interpolate,maxvar)
 
-    else 
+    else
 
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
        interpolate = slope*(r - model_r(id)) + model_var(id)
@@ -1338,4 +1338,3 @@ end program init_1d
     return
 
   end function interpolate
-
