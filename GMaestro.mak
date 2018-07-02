@@ -11,17 +11,17 @@ ifndef OK
    $(error your version of GNU make is too old.  You need atleast version $(NEED))
 endif
 
-# Make sure we have AMReX and that the build system will find it
-ifdef AMREX_HOME
-   ifeq ($(findstring ~, $(AMREX_HOME)), ~)
-      $(error you cannot include the ~ character in your AMREX_HOME variable)
+# Make sure we have FBoxLib and that the build system will find it
+ifdef FBOXLIB_HOME
+   ifeq ($(findstring ~, $(FBOXLIB_HOME)), ~)
+      $(error you cannot include the ~ character in your FBOXLIB_HOME variable)
    endif
 else
-   $(error Maestro requires AMReX. Please ensure that you have downloaded it and set $$AMREX_HOME appropriately)
+   $(error Maestro requires FBoxLib. Please ensure that you have downloaded it and set $$FBOXLIB_HOME appropriately)
 endif
 
 # include the main Makefile stuff
-include $(AMREX_HOME)/Tools/F_mk/GMakedefs.mak
+include $(FBOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
 # default target (make just takes the one that appears first)
 ALL: main.$(suf).exe
@@ -29,8 +29,8 @@ ALL: main.$(suf).exe
 
 #-----------------------------------------------------------------------------
 # core AMREX directories
-AMREX_CORE := Src/F_BaseLib \
-              Src/LinearSolvers/F_MG
+FBOXLIB_CORE := Src/BaseLib \
+                Src/MultiGrid
 
 # include the random number generator stuff
 RANDOM := t
@@ -54,11 +54,11 @@ endif
 #   tests, we leave it off the list of core directories, but do
 #   include it in the VPATH
 #
-#   Setting AMREX_ONLY := t means that we don't even want the
+#   Setting FBOXLIB_ONLY := t means that we don't even want the
 #   MAESTRO/Source directory in our VPATH
 
 ifndef UNIT_TEST
-  ifndef AMREX_ONLY
+  ifndef FBOXLIB_ONLY
     MAESTRO_CORE += Source
   endif
 endif
@@ -68,7 +68,7 @@ endif
 # core extern directories needed by every MAESTRO build
 UTIL_CORE :=
 
-ifndef AMREX_ONLY
+ifndef FBOXLIB_ONLY
   UTIL_CORE := Util/model_parser
 endif
 
@@ -88,6 +88,9 @@ endif
 
 # we need all the thermodynamics
 FPP_DEFINES += -DEXTRA_THERMO
+
+# we are not using the CUDA stguff
+FPP_DEFINES += -DAMREX_DEVICE=""
 
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
@@ -207,17 +210,14 @@ Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
 Fmpack += $(foreach dir, $(EXTRAS), $(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(EXTRAS), $(dir))
 
-# AMReX
-Fmpack += $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir)/GPackage.mak)
-Fmlocs += $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir))
+# FBoxLib
+Fmpack += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir))
 
 
 # any include directories
 Fmincs :=
 
-
-# include the necessary GPackage.mak files that define this setup
-include $(Fmpack)
 
 # vpath defines the directories to search for the source files
 
@@ -230,6 +230,10 @@ endif
 #  Note: GMakerules.mak will include '.' at the start of the
 #  VPATH_LOCATIONS to first search in the problem directory
 VPATH_LOCATIONS += $(Fmlocs)  $(EXTRA_LOCATIONS)
+
+# include the necessary GPackage.mak files that define this setup
+# but do this after VPATH_LOCATIONS
+include $(Fmpack)
 
 
 # list of directories to put in the Fortran include path
@@ -247,7 +251,7 @@ main.$(suf).exe: $(objects)
 # runtime parameter stuff (probin.f90)
 
 # template used by write_probin.py to build probin.f90
-ifndef AMREX_ONLY
+ifndef FBOXLIB_ONLY
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Source/probin.template
 else
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
@@ -256,21 +260,21 @@ endif
 # list of the directories to search for _parameters files
 PROBIN_PARAMETER_DIRS = ./
 
-ifndef AMREX_ONLY
+ifndef FBOXLIB_ONLY
   PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)/Source
 endif
 
 # list of all valid _parameters files for probin
-PROBIN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
+PROBIN_PARAMETERS := $(shell $(FBOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
 EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
-EXTERN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
+EXTERN_PARAMETERS := $(shell $(FBOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 	@echo " "
 	@echo "${bold}WRITING probin.f90${normal}"
-	$(AMREX_HOME)/Tools/F_scripts/write_probin.py \
+	$(FBOXLIB_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
 	@echo " "
@@ -283,7 +287,7 @@ deppairs: build_info.f90
 build_info.f90:
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
-	$(AMREX_HOME)/Tools/F_scripts/makebuildinfo.py \
+	$(FBOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
            --modules "$(Fmdirs) $(MICROPHYS_CORE)" \
            --FCOMP "$(COMP)" \
            --FCOMP_version "$(FCOMP_VERSION)" \
@@ -291,7 +295,7 @@ build_info.f90:
            --f_compile_line "$(COMPILE.f)" \
            --C_compile_line "$(COMPILE.c)" \
            --link_line "$(LINK.f90)" \
-           --amrex_home "$(AMREX_HOME)" \
+           --fboxlib_home "$(FBOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
            --extra_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
@@ -305,8 +309,8 @@ $(odir)/build_info.o: build_info.f90
 
 
 #-----------------------------------------------------------------------------
-# include the AMReX Fortran Makefile rules
-include $(AMREX_HOME)/Tools/F_mk/GMakerules.mak
+# include the FBoxLib Makefile rules
+include $(FBOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 
 #-----------------------------------------------------------------------------
