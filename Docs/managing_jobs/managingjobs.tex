@@ -11,7 +11,7 @@ host of parameters about the simulation, including:
 \item The total amount of CPU-hours used up to this point
 \item The data and time of the plotfile creation and the directory it was written to.
 \item The build date, machine, and directory
-\item The \maestro, \amrex, and other relevant git hashes for the source
+\item The \maestro, \fboxlib, and other relevant git hashes for the source
 \item The directories used in the build
 \item The compilers used and compilation flags
 \item The number of levels and boxes for the grid
@@ -66,7 +66,7 @@ gfortran 4.8.5 appears to work without issues
 
 \subsection{PGI compilers}
 
-The \amrex\ floating point exception trapping is disabled with PGI
+The \fboxlib\ floating point exception trapping is disabled with PGI
 compilers earlier than version 16, due to problems with PGI using the
 system header files.  From version 16 onward, things should work.
 
@@ -199,7 +199,7 @@ $ scorep --cuda --openacc -v ftn gpuprogram.f90
 \end{lstlisting}
 
 One way to achieve this in \maestro\ is to modify the appropriate make file.  For
-PGI, this would be {\tt \$AMREX\_HOME/Tools/F\_mk/comps/Linux\_pgi.mak}.  If
+PGI, this would be {\tt \$FBOXLIB\_HOME/Tools/F\_mk/comps/Linux\_pgi.mak}.  If
 this proves useful, it may be worth it to build {\tt Score-P} into the build
 infrastructure.
 
