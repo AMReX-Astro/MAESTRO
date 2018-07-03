@@ -51,45 +51,45 @@ git pull
   \end{verbatim}
   in the {\tt Microphysics/} directory
 .
-\item {\em Get a copy of \amrex}.
+\item {\em Get a copy of \fboxlib}.
 
-  \maestro\ requires the \amrex\ library to manage the grids and
-  parallelization.  We also rely on the build system in \amrex\ to
-  build a \maestro\ executable.  \amrex\ is also available on github
+  \maestro\ requires the \fboxlib\ library to manage the grids and
+  parallelization.  We also rely on the build system in \fboxlib\ to
+  build a \maestro\ executable.  \fboxlib\ is also available on github
   and can be obtained via:
   \begin{verbatim}
-git clone https://github.com/AMReX-Codes/amrex.git
+git clone https://github.com/AMReX-Codes/FBoxLib.git
   \end{verbatim}
 
-  You will periodic want to update \amrex\ by doing
+  You will periodic want to update \fboxlib\ by doing
   \begin{verbatim}
 git pull
   \end{verbatim}
-  in the {\tt amrex/} directory.
+  in the {\tt fboxlib/} directory.
 
 
 \item {\em Setup your shell environment}.
 
-  \maestro\ needs to know where to find \amrex, by specifying the
-  {\tt AMREX\_HOME} environment variable, and where
+  \maestro\ needs to know where to find \fboxlib, by specifying the
+  {\tt FBOXLIB\_HOME} environment variable, and where
   to find \microphysics, bt specifying the {\tt
   MICROPHYSICS\_HOME} environment variable.
 
   If your shell is {\tt Bash}, add
   \begin{verbatim}
-export AMREX_HOME="/path/to/amrex/"
+export FBOXLIB_HOME="/path/to/FBoxLib/"
 export MICROPHYSICS_HOME="/path/to/Microphysics/"
   \end{verbatim}
   to your {\tt .bashrc}. 
 
   If your shell is {\tt Csh/Tcsh}, add
   \begin{verbatim}
-setenv AMREX_HOME /path/to/amrex/
+setenv FBOXLIB_HOME /path/to/FBoxLib/
 setenv MICROPHYSICS_HOME /path/to/Microphysics/
   \end{verbatim}
   to your {\tt .cshrc}.  
 
-  Note: you must specify the full path to the {\tt AMReX/} and {\tt
+  Note: you must specify the full path to the {\tt FBoxLib/} and {\tt
     Microphysics/} directory.  Do not use ``$\sim$'' to refer to your
   home directory---the scripts used by the build system will not be
   able to process this.
@@ -144,7 +144,7 @@ setenv MICROPHYSICS_HOME /path/to/Microphysics/
     This option specifies the Fortran compiler.  We will use {\tt
       gfortran}, which is the preferred compiler for \maestro.
     Specifying this compiler will automatically pull in the compiler
-    settings as specified in {\tt AMREX\_HOME/Tools/F\_mk/}.
+    settings as specified in {\tt FBoxLib\_HOME/Tools/F\_mk/}.
     (Alternate compiler choices include {\tt Intel}, {\tt PGI}, {\tt
       PathScale}, {\tt Cray}.)
 
@@ -204,7 +204,7 @@ setenv MICROPHYSICS_HOME /path/to/Microphysics/
   By default, the plotfiles will be named {\tt plt}{\em nnnnn}, where
   the number {\em nnnnn} is the timestep number when the file was
   outputted.  Similarly, the checkpoints are named {\tt chk}{\em
-    nnnnn}.  \amrex\ plotfiles and checkpoints are actually
+    nnnnn}.  \fboxlib\ plotfiles and checkpoints are actually
   directories, with the data stored in sub-directories grouped by
   refinement level.  Details of the simulation (build information,
   number of processors used, output date, output directory, runtime
@@ -223,7 +223,7 @@ setenv MICROPHYSICS_HOME /path/to/Microphysics/
 \section{Working with the Output}
 
 Visualization and analysis are done on the plotfiles.  A number of
-in-house and externally developed tools can work with \amrex-formatted
+in-house and externally developed tools can work with \fboxlib-formatted
 plotfiles\footnote{The plotfiles are in the same format as those made
   by the \boxlib\ library upon which \maestro\ was previously based.}.
 An example plot of the {\tt reacting\_bubble} problem run above is
@@ -248,9 +248,9 @@ as volume-renderings.  It can also very easily extract 1D lines
 through the dataset along any coordinate direction.  It is distributed
 separately from the \maestro\ distribution.
 
-\amrvis\ can be obtained via git as:
+\amrvis\ can be obtained via git from github as:
 \begin{verbatim}
-git clone https://ccse.lbl.gov/pub/Downloads/Amrvis.git
+git clone https://github.com/AMReX-Codes/Amrvis.git
 \end{verbatim}
 \amrvis\ is built in the C++ \amrex\ framework (instead of the Fortran 
 \amrex\ framework that \maestro\ uses).  The build systems are similar,
@@ -404,7 +404,7 @@ anticipated that more will be made available with time.
 \item {\tt flame\_1d} \\[-3mm]
 
    A 1-d version of the {\tt flame} problem above.  This uses a special
-   elliptic solver in \amrex\ that only works for a single grid, so
+   elliptic solver in \fboxlib\ that only works for a single grid, so
    no parallel runs are allowed for this problem.
    
 \item {\tt toy\_convect} \\[-3mm]
@@ -566,7 +566,7 @@ the types of boundaries, and the number of computational cells include:
   The string-based parameters are a newer option for specifying
   boundary conditions, and are preferred due to clarity.  The
   conversion between the string names and integer flags is done
-  by \amrex\ in the \code{bc\_module} at the time of initializing
+  by \fboxlib\ in the \code{bc\_module} at the time of initializing
   the runtime parameters.
 
 \end{itemize}
@@ -588,7 +588,7 @@ our answers don't change.  Around the first work day of each month, we
 merge from {\tt development} $\rightarrow$ {\tt master} (assuming
 tests pass) and tag the state of the code with a date-based tag {\tt
   YY-MM}.  We do this on all the other repos in the \amrex-ecosystem,
-including {\tt amrex/}, {\tt Microphysics/}, and {\tt Castro/}.  
+including {\tt FBoxLib/}, {\tt Microphysics/}, and {\tt Castro/}.  
 
 If you want to contribute to \maestro's development, issue a pull-request
 through github onto the {\tt development} branch.
@@ -606,7 +606,7 @@ More generally, the build system needs to know about your MPI
 installation.  For popular national computing facilities, this is
 already setup, and the build system looks at the machine hostname to
 set the proper libraries.  For other machines, you may need to edit
-the {\tt GMake.MPI} file in the \amrex\ build files.  See
+the {\tt GMake.MPI} file in the \fboxlib\ build files.  See
 \S~\ref{ch:make} for more details.
 
 OpenMP can be used to parallelize on shared-memory machines (i.e.\
