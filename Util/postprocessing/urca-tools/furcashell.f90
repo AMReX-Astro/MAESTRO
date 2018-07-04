@@ -98,8 +98,8 @@ program furcashell
   print *, 'working on pltfile: ', trim(pltfile)
   print *, 'saving to pltfile: ', trim(outputfile)
 
-  call burner_init()
   call network_init()
+  call burner_init()
   call eos_init()
   
   ! build the input plotfile
