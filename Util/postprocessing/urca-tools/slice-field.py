@@ -20,6 +20,8 @@ parser.add_argument('-w', '--width', type=float,
                     help='Width of slice (cm). Default is domain width.')
 parser.add_argument('-log', '--logscale', action='store_true', help='If supplied, use a log scale for the field.')
 parser.add_argument('-symlog', '--symlog', type=float, help='If supplied, use symlog scaling, which is linear near zero, to accomodate positive and negative values of the field. Pass the value of the field at which to linearize the colorbar.')
+parser.add_argument('-rho', '--rhocontours', type=float, nargs='+', help='Draws contours for the densities provided (g/cm^3).')
+parser.add_argument('-rhocolors', '--rhocolors', type=str, nargs='+', default='cyan', help='Color(s) of density contours.')
 parser.add_argument('-ctr', '--center', type=float, nargs='+', help='Centers the plot on the coordinates provided (x, y, z).')
 parser.add_argument('-min', '--field_min', type=float, help='Minimim field value for colormap.')
 parser.add_argument('-max', '--field_max', type=float, help='Maximum field value for colormap.')
@@ -67,6 +69,11 @@ def slicefield(ds, field, field_short_name):
         else:
             s = slice_function(ds, args.axis, field, center=center_loc, width=width)
 
+    if args.rhocontours:
+        for rhoc in args.rhocontours:
+            rhounit = yt.YTQuantity(rhoc, 'g/(cm**3)')
+            s.annotate_contour('density', ncont=1, clim=(rhounit, rhounit), plot_args={'colors':args.rhocolors})
+
     # Colormaps and Scaling
     maxv = ds.all_data().max(field)
     minv = ds.all_data().min(field)
@@ -79,11 +86,11 @@ def slicefield(ds, field, field_short_name):
         logmaxv = max(pos_maxv, neg_maxv)
         linmaxv = max(maxv, -minv)
         s.set_cmap(field, 'PiYG')
-        if args.logscale:
+        if args.logscale or 'omegadot' in field_short_name:
             if args.symlog:
                 s.set_log(field, args.logscale, linthresh=args.symlog)
             else:
-                s.set_log(field, args.logscale, linthresh=10.0**(logmaxv-5))
+                s.set_log(field, args.logscale, linthresh=10.0**(logmaxv-6))
         else:
             s.set_log(field, args.logscale)
         if dlog >= 2.0:
@@ -114,15 +121,19 @@ def slicefield(ds, field, field_short_name):
     s.set_buff_size(args.resolution)
     s.save('{}.slice.{}.{}.png'.format(args.infile, args.axis, field_short_name))
 
+def calculate_field_extrema(ds, field):
+    if args.width:
+        region = ds.sphere('c', (0.5*args.width, 'cm'))
+    else:
+        region = ds.all_data()
+    fmin, fmax = region.quantities.extrema(field)
+    return fmin, fmax
+    
 def print_field_stats(ds, field):
     print('------------')
     print(field)
     if args.print_extrema:
-        if args.width:
-            region = ds.sphere('c', (0.5*args.width, 'cm'))
-        else:
-            region = ds.all_data()
-        fmin, fmax = region.quantities.extrema(field)
+        fmin, fmax = calculate_field_extrema(ds, field)
         print('min value of {} is {}'.format(field, fmin))
         print('max value of {} is {}'.format(field, fmax))
 
