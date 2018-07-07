@@ -10,6 +10,9 @@ program furcashell
   use burn_type_module, only: burn_t, burn_to_eos, eos_to_burn, net_ienuc
   use eos_module, only: eos, eos_init
   use eos_type_module, only: eos_t, eos_input_rt
+
+  use extern_probin_module, only: table_interpolation_scheme
+  
   use rpar_indices
   use bl_space, only: MAX_SPACEDIM
   use bl_error_module
@@ -83,6 +86,8 @@ program furcashell
         call get_command_argument(farg,value=outputfile)
      case ('--tfromp')
         use_tfromp = .true.
+     case ('--bicubic')
+        table_interpolation_scheme = 3
      case default
         exit
      end select
