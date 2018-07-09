@@ -206,13 +206,17 @@ program fneutrinos
 
                     ! Update the ecap23 weights
                     ibin = floor((enu_ecap23 - energy_minimum)/energy_delta) + 1
-                    lambda = ecap23 * yna23 * N_avo * density * dvol
-                    ecap23_weights(ibin) = ecap23_weights(ibin) + max(lambda, ZERO)
+                    if (ibin .le. nbins) then
+                       lambda = ecap23 * yna23 * N_avo * density * dvol
+                       ecap23_weights(ibin) = ecap23_weights(ibin) + max(lambda, ZERO)
+                    end if
 
                     ! Update the beta23 weights
                     ibin = floor((enu_beta23 - energy_minimum)/energy_delta) + 1
-                    lambda = beta23 * yne23 * N_avo * density * dvol
-                    beta23_weights(ibin) = beta23_weights(ibin) + max(lambda, ZERO)
+                    if (ibin .le. nbins) then
+                       lambda = beta23 * yne23 * N_avo * density * dvol
+                       beta23_weights(ibin) = beta23_weights(ibin) + max(lambda, ZERO)
+                    end if
 
                     ! mark this range of the domain as used in the mask
                     imask(ii*rr_rel_fine:(ii+1)*rr_rel_fine-1, &
