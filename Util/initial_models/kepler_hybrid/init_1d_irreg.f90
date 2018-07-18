@@ -97,6 +97,7 @@ program init_1d_irreg
 
   real(kind=dp_t) :: interpolate
   real(kind=dp_t) :: sum
+  real(kind=dp_t) :: rfrac
 
   integer :: ibegin
   integer :: i_isentropic
@@ -160,14 +161,14 @@ program init_1d_irreg
 
   do i = 1, nr
      if (i .eq. 1) then
-        ! set the first edge node to zero
-        xznl(i) = 0.0_dp_t
+        ! set the first edge node to xmin
+        xznl(i) = xmin
      else
-        xznl(i) = sqrt(0.75_dp_t + 2.0_dp_t*(i - 1.5_dp_t))*delx
+        xznl(i) = xmin + sqrt(0.75_dp_t + 2.0_dp_t*(i - 1.5_dp_t))*delx
      end if
 
-     xznr(i) = sqrt(0.75_dp_t + 2.0_dp_t*(i - 0.5_dp_t))*delx
-     xzn_hse(i) =  sqrt( 0.75_dp_t + 2.0_dp_t*(i - 1.0_dp_t) )*delx  ! cell center
+     xznr(i) = xmin + sqrt(0.75_dp_t + 2.0_dp_t*(i - 0.5_dp_t))*delx
+     xzn_hse(i) =  xmin + sqrt( 0.75_dp_t + 2.0_dp_t*(i - 1.0_dp_t) )*delx  ! cell center
      delr(i) = xznr(i) - xznl(i)
   enddo
 
@@ -339,11 +340,11 @@ program init_1d_irreg
 
 
 
-  open (unit=30, file="model.uniform", status="unknown")
+  open (unit=30, file="model.nonuniform", status="unknown")
 
 1000 format (1x, 12(g26.16, 1x))
 
-  write (30,*) "# initial model just after putting onto a uniform grid"
+  write (30,*) "# initial model just after putting onto a non-uniform grid"
 
   do i = 1, nr
 
@@ -364,7 +365,7 @@ program init_1d_irreg
   ! assuming HSE and constant entropy.
 
 
-  ! find the zone in the uniformly gridded model that corresponds to the
+  ! find the zone in the nonconstant gridded model that corresponds to the
   ! first zone of the original model
   ibegin = -1
   do i = 1, nr
@@ -430,10 +431,12 @@ program init_1d_irreg
         ! start off the Newton loop by saying that the zone has not converged
         converged_hse = .FALSE.
 
+        rfrac = delr(i+1)/(delr(i)+delr(i+1))
+        
         do iter = 1, MAX_ITER
 
            p_want = model_kepler_hse(i+1,ipres) - &
-                delr(i+1)*0.5_dp_t*(dens_zone + model_kepler_hse(i+1,idens))*g_zone
+                delr(i)*((ONE-rfrac)*dens_zone + rfrac*model_kepler_hse(i+1,idens))*g_zone
 
 
            ! now we have two functions to zero:
@@ -462,7 +465,7 @@ program init_1d_irreg
            B = entropy_want(i) - entropy
 
            dAdT = -dpt
-           dAdrho = -0.5d0*delr(i+1)*g_zone - dpd
+           dAdrho = -(ONE-rfrac)*delr(i)*g_zone - dpd
            dBdT = -dst
            dBdrho = -dsd
 
@@ -571,12 +574,14 @@ program init_1d_irreg
 
      if (.not. fluff) then
 
+        rfrac = delr(i-1)/(delr(i)+delr(i-1))
+        
         do iter = 1, MAX_ITER
 
 
            ! HSE differencing
            p_want = model_kepler_hse(i-1,ipres) + &
-                delr(i-1)*0.5_dp_t*(dens_zone + model_kepler_hse(i-1,idens))*g_zone
+                delr(i)*((ONE-rfrac)*dens_zone + rfrac*model_kepler_hse(i-1,idens))*g_zone
 
            temp_zone = model_kepler_hse(i,itemp)
 
@@ -594,7 +599,7 @@ program init_1d_irreg
            pres_zone = eos_state%p
 
            dpd = eos_state%dpdr
-           drho = (p_want - pres_zone)/(dpd - 0.5_dp_t*delr(i-1)*g_zone)
+           drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*delr(i)*g_zone)
 
            dens_zone = max(0.9_dp_t*dens_zone, &
                            min(dens_zone + drho, 1.1_dp_t*dens_zone))
@@ -703,12 +708,14 @@ program init_1d_irreg
 
      if (.not. fluff) then
 
+        rfrac = delr(i-1)/(delr(i)+delr(i-1))
+        
         do iter = 1, MAX_ITER
 
            if (isentropic) then
 
               p_want = model_isentropic_hse(i-1,ipres) + &
-                   delr(i-1)*0.5_dp_t*(dens_zone + model_isentropic_hse(i-1,idens))*g_zone
+                   delr(i)*((ONE-rfrac)*dens_zone + rfrac*model_isentropic_hse(i-1,idens))*g_zone
 
 
               ! now we have two functions to zero:
@@ -737,7 +744,7 @@ program init_1d_irreg
               B = entropy_want(i) - entropy
 
               dAdT = -dpt
-              dAdrho = 0.5d0*delr(i-1)*g_zone - dpd
+              dAdrho = (ONE-rfrac)*delr(i)*g_zone - dpd
               dBdT = -dst
               dBdrho = -dsd
 
@@ -773,7 +780,7 @@ program init_1d_irreg
 
               ! do isothermal
               p_want = model_isentropic_hse(i-1,ipres) + &
-                   delr(i-1)*0.5*(dens_zone + model_isentropic_hse(i-1,idens))*g_zone
+                   delr(i)*((ONE-rfrac)*dens_zone + rfrac*model_isentropic_hse(i-1,idens))*g_zone
 
               temp_zone = temp_fluff
 
@@ -790,7 +797,7 @@ program init_1d_irreg
 
               dpd = eos_state%dpdr
 
-              drho = (p_want - pres_zone)/(dpd - 0.5*delr(i-1)*g_zone)
+              drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*delr(i)*g_zone)
 
               dens_zone = max(0.9*dens_zone, &
                    min(dens_zone + drho, 1.1*dens_zone))
@@ -929,12 +936,14 @@ program init_1d_irreg
 
      if (.not. fluff) then
 
+        rfrac = delr(i-1)/(delr(i)+delr(i-1))
+        
         do iter = 1, MAX_ITER
 
 
            ! HSE differencing
            p_want = model_hybrid_hse(i-1,ipres) + &
-                delr(i-1)*0.5_dp_t*(dens_zone + model_hybrid_hse(i-1,idens))*g_zone
+                delr(i)*((ONE-rfrac)*dens_zone + rfrac*model_hybrid_hse(i-1,idens))*g_zone
 
            temp_zone = model_hybrid_hse(i,itemp)
 
@@ -948,7 +957,7 @@ program init_1d_irreg
            pres_zone = eos_state%p
 
            dpd = eos_state%dpdr
-           drho = (p_want - pres_zone)/(dpd - 0.5_dp_t*delr(i-1)*g_zone)
+           drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*delr(i)*g_zone)
 
            dens_zone = max(0.9_dp_t*dens_zone, &
                            min(dens_zone + drho, 1.1_dp_t*dens_zone))
@@ -1086,8 +1095,9 @@ program init_1d_irreg
 
   do i = 2, nr-1
      g_zone = -Gconst*M_enclosed(i-1)/xznr(i-1)**2
-     dpdr = (model_kepler_hse(i,ipres) - model_kepler_hse(i-1,ipres))/delr(i-1)
-     rhog = HALF*(model_kepler_hse(i,idens) + model_kepler_hse(i-1,idens))*g_zone
+     dpdr = (model_kepler_hse(i,ipres) - model_kepler_hse(i-1,ipres))/(HALF*(delr(i)+delr(i-1)))
+     rfrac = delr(i-1)/(delr(i)+delr(i-1))
+     rhog = ((1.0_dp_t-rfrac)*model_kepler_hse(i,idens) + rfrac*model_kepler_hse(i-1,idens))*g_zone
 
      if (dpdr /= ZERO .and. model_kepler_hse(i+1,idens) > low_density_cutoff) then
         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
@@ -1149,8 +1159,9 @@ program init_1d_irreg
 
   do i = 2, nr-1
      g_zone = -Gconst*M_enclosed(i-1)/xznr(i-1)**2
-     dpdr = (model_isentropic_hse(i,ipres) - model_isentropic_hse(i-1,ipres))/delr(i-1)
-     rhog = HALF*(model_isentropic_hse(i,idens) + model_isentropic_hse(i-1,idens))*g_zone
+     dpdr = (model_isentropic_hse(i,ipres) - model_isentropic_hse(i-1,ipres))/(HALF*(delr(i)+delr(i-1)))
+     rfrac = delr(i-1)/(delr(i)+delr(i-1))
+     rhog = ((1.0_dp_t-rfrac)*model_isentropic_hse(i,idens) + rfrac*model_isentropic_hse(i-1,idens))*g_zone
 
      if (dpdr /= ZERO .and. model_isentropic_hse(i+1,idens) > low_density_cutoff) then
         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
@@ -1215,8 +1226,9 @@ program init_1d_irreg
 
   do i = 2, nr-1
      g_zone = -Gconst*M_enclosed(i-1)/xznr(i-1)**2
-     dpdr = (model_hybrid_hse(i,ipres) - model_hybrid_hse(i-1,ipres))/delr(i-1)
-     rhog = HALF*(model_hybrid_hse(i,idens) + model_hybrid_hse(i-1,idens))*g_zone
+     dpdr = (model_hybrid_hse(i,ipres) - model_hybrid_hse(i-1,ipres))/(HALF*(delr(i)+delr(i-1)))
+     rfrac = delr(i-1)/(delr(i)+delr(i-1))
+     rhog = ((1.0_dp_t-rfrac)*model_hybrid_hse(i,idens) + rfrac*model_hybrid_hse(i-1,idens))*g_zone
 
      if (dpdr /= ZERO .and. model_hybrid_hse(i+1,idens) > low_density_cutoff) then
         max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
