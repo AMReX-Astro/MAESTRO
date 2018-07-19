@@ -185,4 +185,4 @@ class UrcaShellFields(object):
 
     @staticmethod
     def _xc12_complement(field, data):
-        return 1.0 - data['boxlib', 'X(c12)']
+        return 0.5 - data['boxlib', 'X(c12)']
