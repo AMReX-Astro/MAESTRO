@@ -48,8 +48,8 @@ program init_1d_irreg
                         isndspd = 5, &
                         ispec = 6
 
-  real (kind=dp_t), save :: xmin, xmax, delx
-  real (kind=dp_t), allocatable :: delr(:)
+  real (kind=dp_t), save :: xmin, xmax, delx, delr
+  real (kind=dp_t), allocatable :: delrl(:), delrr(:)
 
   real (kind=dp_t) :: dens_zone, temp_zone, pres_zone, entropy
 
@@ -154,7 +154,8 @@ program init_1d_irreg
   allocate(model_hybrid_hse(nr,nvar))
   allocate(M_enclosed(nr))
   allocate(entropy_want(nr))
-  allocate(delr(nr))
+  allocate(delrl(nr))
+  allocate(delrr(nr))
 
   ! compute the coordinates of the new gridded function
   delx = (xmax - xmin) / dble(nx/5)
@@ -169,7 +170,8 @@ program init_1d_irreg
 
      xznr(i) = xmin + sqrt(0.75_dp_t + 2.0_dp_t*(i - 0.5_dp_t))*delx
      xzn_hse(i) =  xmin + sqrt( 0.75_dp_t + 2.0_dp_t*(i - 1.0_dp_t) )*delx  ! cell center
-     delr(i) = xznr(i) - xznl(i)
+     delrl(i) = xzn_hse(i) - xznl(i) 
+     delrr(i) = xznr(i) - xzn_hse(i)
   enddo
 
 
@@ -383,10 +385,12 @@ program init_1d_irreg
   central_density = model_kepler_hse(1,idens)
   print *, 'interpolated central density = ', central_density
 
+  delr = delrl(1) + delrr(1)
+  
   do iter_dens = 1, max_iter
 
      ! compute the enclosed mass
-     M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_kepler_hse(1,idens)
+     M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_kepler_hse(1,idens)
 
      do i = 2, ibegin
         M_enclosed(i) = M_enclosed(i-1) + &
@@ -431,12 +435,13 @@ program init_1d_irreg
         ! start off the Newton loop by saying that the zone has not converged
         converged_hse = .FALSE.
 
-        rfrac = delr(i+1)/(delr(i)+delr(i+1))
+        delr = delrr(i) + delrl(i+1)
+        rfrac = delrl(i+1)/delr
         
         do iter = 1, MAX_ITER
 
            p_want = model_kepler_hse(i+1,ipres) - &
-                HALF*(delr(i)+delr(i+1))*((ONE-rfrac)*dens_zone + rfrac*model_kepler_hse(i+1,idens))*g_zone
+                delr*((ONE-rfrac)*dens_zone + rfrac*model_kepler_hse(i+1,idens))*g_zone
 
 
            ! now we have two functions to zero:
@@ -465,7 +470,7 @@ program init_1d_irreg
            B = entropy_want(i) - entropy
 
            dAdT = -dpt
-           dAdrho = -(ONE-rfrac)*HALF*(delr(i)+delr(i+1))*g_zone - dpd
+           dAdrho = -(ONE-rfrac)*delr*g_zone - dpd
            dBdT = -dst
            dBdrho = -dsd
 
@@ -549,7 +554,8 @@ program init_1d_irreg
   print *, 'putting Kepler model into HSE on our grid...'
 
   ! compute the enclosed mass
-  M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_kepler_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_kepler_hse(1,idens)
 
   fluff = .FALSE.
 
@@ -574,14 +580,15 @@ program init_1d_irreg
 
      if (.not. fluff) then
 
-        rfrac = delr(i-1)/(delr(i)+delr(i-1))
+        delr = delrl(i) + delrr(i-1)
+        rfrac = delrr(i-1)/delr
         
         do iter = 1, MAX_ITER
 
 
            ! HSE differencing
            p_want = model_kepler_hse(i-1,ipres) + &
-                HALF*(delr(i)+delr(i-1))*((ONE-rfrac)*dens_zone + rfrac*model_kepler_hse(i-1,idens))*g_zone
+                delr*((ONE-rfrac)*dens_zone + rfrac*model_kepler_hse(i-1,idens))*g_zone
 
            temp_zone = model_kepler_hse(i,itemp)
 
@@ -599,7 +606,7 @@ program init_1d_irreg
            pres_zone = eos_state%p
 
            dpd = eos_state%dpdr
-           drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*HALF*(delr(i)+delr(i-1))*g_zone)
+           drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*delr*g_zone)
 
            dens_zone = max(0.9_dp_t*dens_zone, &
                            min(dens_zone + drho, 1.1_dp_t*dens_zone))
@@ -686,7 +693,8 @@ program init_1d_irreg
   isentropic = .true.
 
   ! keep track of the mass enclosed below the current zone
-  M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_isentropic_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_isentropic_hse(1,idens)
 
   do i = 2, nr
 
@@ -708,14 +716,15 @@ program init_1d_irreg
 
      if (.not. fluff) then
 
-        rfrac = delr(i-1)/(delr(i)+delr(i-1))
+        delr = delrl(i) + delrr(i-1)
+        rfrac = delrr(i-1)/delr
         
         do iter = 1, MAX_ITER
 
            if (isentropic) then
 
               p_want = model_isentropic_hse(i-1,ipres) + &
-                   HALF*(delr(i)+delr(i-1))*((ONE-rfrac)*dens_zone + rfrac*model_isentropic_hse(i-1,idens))*g_zone
+                   delr*((ONE-rfrac)*dens_zone + rfrac*model_isentropic_hse(i-1,idens))*g_zone
 
 
               ! now we have two functions to zero:
@@ -744,7 +753,7 @@ program init_1d_irreg
               B = entropy_want(i) - entropy
 
               dAdT = -dpt
-              dAdrho = (ONE-rfrac)*HALF*(delr(i)+delr(i-1))*g_zone - dpd
+              dAdrho = (ONE-rfrac)*delr*g_zone - dpd
               dBdT = -dst
               dBdrho = -dsd
 
@@ -780,7 +789,7 @@ program init_1d_irreg
 
               ! do isothermal
               p_want = model_isentropic_hse(i-1,ipres) + &
-                   HALF*(delr(i)+delr(i-1))*((ONE-rfrac)*dens_zone + rfrac*model_isentropic_hse(i-1,idens))*g_zone
+                   delr*((ONE-rfrac)*dens_zone + rfrac*model_isentropic_hse(i-1,idens))*g_zone
 
               temp_zone = temp_fluff
 
@@ -797,7 +806,7 @@ program init_1d_irreg
 
               dpd = eos_state%dpdr
 
-              drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*HALF*(delr(i)+delr(i-1))*g_zone)
+              drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*delr*g_zone)
 
               dens_zone = max(0.9*dens_zone, &
                    min(dens_zone + drho, 1.1*dens_zone))
@@ -911,7 +920,8 @@ program init_1d_irreg
 
 
   ! compute the enclosed mass
-  M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_hybrid_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_hybrid_hse(1,idens)
 
   fluff = .FALSE.
 
@@ -936,14 +946,15 @@ program init_1d_irreg
 
      if (.not. fluff) then
 
-        rfrac = delr(i-1)/(delr(i)+delr(i-1))
+        delr = delrl(i) + delrr(i-1)
+        rfrac = delrr(i-1)/delr
         
         do iter = 1, MAX_ITER
 
 
            ! HSE differencing
            p_want = model_hybrid_hse(i-1,ipres) + &
-                HALF*(delr(i)+delr(i-1))*((ONE-rfrac)*dens_zone + rfrac*model_hybrid_hse(i-1,idens))*g_zone
+                delr*((ONE-rfrac)*dens_zone + rfrac*model_hybrid_hse(i-1,idens))*g_zone
 
            temp_zone = model_hybrid_hse(i,itemp)
 
@@ -957,7 +968,7 @@ program init_1d_irreg
            pres_zone = eos_state%p
 
            dpd = eos_state%dpdr
-           drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*HALF*(delr(i)+delr(i-1))*g_zone)
+           drho = (p_want - pres_zone)/(dpd - (ONE-rfrac)*delr*g_zone)
 
            dens_zone = max(0.9_dp_t*dens_zone, &
                            min(dens_zone + drho, 1.1_dp_t*dens_zone))
@@ -1079,7 +1090,8 @@ program init_1d_irreg
 
 
   ! compute the enclosed mass
-  M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_kepler_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_kepler_hse(1,idens)
 
   do i = 2, nr
      M_enclosed(i) = M_enclosed(i-1) + &
@@ -1095,8 +1107,11 @@ program init_1d_irreg
 
   do i = 2, nr-1
      g_zone = -Gconst*M_enclosed(i-1)/xznr(i-1)**2
-     dpdr = (model_kepler_hse(i,ipres) - model_kepler_hse(i-1,ipres))/(HALF*(delr(i)+delr(i-1)))
-     rfrac = delr(i-1)/(delr(i)+delr(i-1))
+     
+     delr = delrl(i) + delrr(i-1)
+     dpdr = (model_kepler_hse(i,ipres) - model_kepler_hse(i-1,ipres))/delr
+     
+     rfrac = delrr(i-1)/delr
      rhog = ((1.0_dp_t-rfrac)*model_kepler_hse(i,idens) + rfrac*model_kepler_hse(i-1,idens))*g_zone
 
      if (dpdr /= ZERO .and. model_kepler_hse(i+1,idens) > low_density_cutoff) then
@@ -1143,7 +1158,8 @@ program init_1d_irreg
 
 
   ! compute the enclosed mass
-  M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_isentropic_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_isentropic_hse(1,idens)
 
   do i = 2, nr
      M_enclosed(i) = M_enclosed(i-1) + &
@@ -1159,8 +1175,11 @@ program init_1d_irreg
 
   do i = 2, nr-1
      g_zone = -Gconst*M_enclosed(i-1)/xznr(i-1)**2
-     dpdr = (model_isentropic_hse(i,ipres) - model_isentropic_hse(i-1,ipres))/(HALF*(delr(i)+delr(i-1)))
-     rfrac = delr(i-1)/(delr(i)+delr(i-1))
+     
+     delr = delrl(i) + delrr(i-1)
+     dpdr = (model_isentropic_hse(i,ipres) - model_isentropic_hse(i-1,ipres))/delr
+     
+     rfrac = delrr(i-1)/delr
      rhog = ((1.0_dp_t-rfrac)*model_isentropic_hse(i,idens) + rfrac*model_isentropic_hse(i-1,idens))*g_zone
 
      if (dpdr /= ZERO .and. model_isentropic_hse(i+1,idens) > low_density_cutoff) then
@@ -1208,7 +1227,8 @@ program init_1d_irreg
 
 
   ! compute the enclosed mass
-  M_enclosed(1) = FOUR3RD*M_PI*delr(1)**3*model_hybrid_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed(1) = FOUR3RD*M_PI*delr**3*model_hybrid_hse(1,idens)
 
   do i = 2, nr
      M_enclosed(i) = M_enclosed(i-1) + &
@@ -1226,8 +1246,11 @@ program init_1d_irreg
 
   do i = 2, nr-1
      g_zone = -Gconst*M_enclosed(i-1)/xznr(i-1)**2
-     dpdr = (model_hybrid_hse(i,ipres) - model_hybrid_hse(i-1,ipres))/(HALF*(delr(i)+delr(i-1)))
-     rfrac = delr(i-1)/(delr(i)+delr(i-1))
+     
+     delr = delrl(i) + delrr(i-1)
+     dpdr = (model_hybrid_hse(i,ipres) - model_hybrid_hse(i-1,ipres))/delr
+     
+     rfrac = delrr(i-1)/delr
      rhog = ((1.0_dp_t-rfrac)*model_hybrid_hse(i,idens) + rfrac*model_hybrid_hse(i-1,idens))*g_zone
 
      if (dpdr /= ZERO .and. model_hybrid_hse(i+1,idens) > low_density_cutoff) then
@@ -1254,7 +1277,8 @@ program init_1d_irreg
 
 
   ! compute the mass enclosed inside the anelastic_cutoff
-  M_enclosed_anel = FOUR3RD*M_PI*delr(1)**3*model_hybrid_hse(1,idens)
+  delr = delrl(1) + delrr(1)
+  M_enclosed_anel = FOUR3RD*M_PI*delr**3*model_hybrid_hse(1,idens)
   do i = 2, nr
      if (model_hybrid_hse(i,idens) >= anelastic_cutoff) then
         M_enclosed_anel = M_enclosed_anel + &
