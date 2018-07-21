@@ -246,12 +246,20 @@ program furcashell
                                   burn_state % rho * burn_state % y_e, &
                                   burn_state % T, table_entries)
                  r(ii,jj,kk,13) = table_entries(jtab_nuloss)/table_entries(jtab_rate)
+                 if (isnan(r(ii,jj,kk,13))) then
+                    print *, "got NaN in enu_ecap23 with energy ", table_entries(jtab_nuloss), &
+                             " and rate ", table_entries(jtab_rate)
+                 end if
                  
                  ! Average neutrino energy for beta decay (A=23)
                  call get_entries(table_meta(j_ne23_na23), &
                                   burn_state % rho * burn_state % y_e, &
                                   burn_state % T, table_entries)
                  r(ii,jj,kk,14) = table_entries(jtab_nuloss)/table_entries(jtab_rate)
+                 if (isnan(r(ii,jj,kk,14))) then
+                    print *, "got NaN in enu_beta23 with energy ", table_entries(jtab_nuloss), &
+                             " and rate ", table_entries(jtab_rate)
+                 end if
 
               end do
            end do
@@ -295,6 +303,9 @@ contains
     print *, "        Toggles the use of 'temperature' to be tfromp instead", &
          " of tfromh."
     print *, "        (Default: use tfromh)"
+    print *, "    --bicubic:"
+    print *, "        Toggles the use of bicubic interpolation in weak rate tables. "
+    print *, "        (Default: bilinear interpolation)"
     print *, ""
 
   end subroutine print_usage
