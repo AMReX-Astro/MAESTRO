@@ -178,6 +178,8 @@ program fneutrinos
         !$OMP PARALLEL DO PRIVATE(kk, jj, ii, ibin) &
         !$OMP PRIVATE(ecap23, beta23, yna23, yne23, enu_ecap23, enu_beta23) &
         !$OMP PRIVATE(density, lambda) &
+        !$OMP REDUCTION(+:ecap23_weights) &
+        !$OMP REDUCTION(+:beta23_weights) &
         !$OMP SCHEDULE(DYNAMIC,1)
         do kk = lo(3), hi(3)
            do jj = lo(2), hi(2)
