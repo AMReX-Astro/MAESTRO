@@ -61,11 +61,17 @@ subroutine varden()
   real(dp_t)  , pointer     :: dx(:,:)
 
   type(multifab), allocatable :: unew(:)
+  type(multifab), allocatable :: utemp(:)
+  type(multifab), allocatable :: uzero(:)
   type(multifab), allocatable :: snew(:)
+  type(multifab), allocatable :: stemp(:)
+  type(multifab), allocatable :: szero(:)
   type(multifab), allocatable :: normal(:)
   type(multifab), allocatable :: sponge(:)
   type(multifab), allocatable :: hgrhs(:)
   type(multifab), allocatable :: gamma1(:)
+  type(multifab), allocatable :: Source_temp(:)
+  type(multifab), allocatable :: Source_zero(:)
 
   type(multifab), pointer :: tag_mf(:)
   
@@ -332,12 +338,20 @@ subroutine varden()
   end if
 
   allocate(unew(nlevs),snew(nlevs),sponge(nlevs),hgrhs(nlevs))
+  allocate(utemp(nlevs),uzero(nlevs),stemp(nlevs),szero(nlevs))
+  allocate(Source_temp(nlevs),Source_zero(nlevs))
   allocate(normal(nlevs))
   allocate(tag_mf(nlevs))
 
   do n = 1,nlevs
      call multifab_build(      unew(n), mla%la(n),    dm, nghost(uold(n)))
+     call multifab_build(      utemp(n), mla%la(n),    dm, nghost(uold(n)))
+     call multifab_build(      uzero(n), mla%la(n),    dm, nghost(uold(n)))
      call multifab_build(      snew(n), mla%la(n), nscal, nghost(sold(n)))
+     call multifab_build(     stemp(n), mla%la(n), nscal, nghost(sold(n)))
+     call multifab_build(     szero(n), mla%la(n), nscal, nghost(sold(n)))
+     call multifab_build(   Source_temp(n), mla%la(n),     1, 0)
+     call multifab_build(   Source_zero(n), mla%la(n),     1, 0)
      call multifab_build(    sponge(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
      if (dm .ge. 2) then
@@ -346,7 +360,11 @@ subroutine varden()
      call multifab_build(    tag_mf(n), mla%la(n), 1, 0)
 
      call setval(      unew(n), ZERO, all=.true.)
+     call setval(      utemp(n), ZERO, all=.true.)
+     call setval(      uzero(n), ZERO, all=.true.)
      call setval(      snew(n), ZERO, all=.true.)
+     call setval(     stemp(n), ZERO, all=.true.)
+     call setval(     szero(n), ZERO, all=.true.)
      call setval(    sponge(n), ONE,  all=.true.)
      call setval(     hgrhs(n), ZERO, all=.true.)
      call setval(    tag_mf(n), ZERO, all=.true.)
@@ -555,12 +573,14 @@ subroutine varden()
 
            runtime1 = parallel_wtime()
 
-           call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpi,pi,normal, &
+           call advance_timestep(init_mode,mla,uold,sold,unew,snew,&
+                                 utemp,stemp,uzero,szero,gpi,pi,normal, &
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                                  tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2, &
                                  rho_Hext,thermal2, &
                                  div_coeff_old,div_coeff_new,grav_cell,dx,dt,dtold, &
-                                 the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
+                                 the_bc_tower,dSdt,Source_old,Source_new, &
+                                 Source_temp,Source_zero,etarho_ec, &
                                  etarho_cc,psi,sponge,hgrhs,tempbar_init,particles)
 
            runtime2 = parallel_wtime() - runtime1
@@ -1145,12 +1165,14 @@ subroutine varden()
         end if
         runtime1 = parallel_wtime()
 
-        call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpi,pi,normal,rho0_old, &
+        call advance_timestep(init_mode,mla,uold,sold,unew,snew,utemp,stemp,uzero,szero,&
+                              gpi,pi,normal,rho0_old, &
                               rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
                               w0,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
                               div_coeff_old,div_coeff_new, &
                               grav_cell,dx,dt,dtold,the_bc_tower,dSdt,Source_old, &
-                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
+                              Source_new,Source_temp,Source_zero, &
+                              etarho_ec,etarho_cc,psi,sponge,hgrhs,tempbar_init, &
                               particles)
 
 
@@ -1458,13 +1480,19 @@ subroutine varden()
   do n=1,nlevs
      call destroy(uold(n))
      call destroy(unew(n))
+     call destroy(utemp(n))
+     call destroy(uzero(n))
      call destroy(sold(n))
      call destroy(snew(n))
+     call destroy(stemp(n))
+     call destroy(szero(n))
      call destroy(pi(n))
      call destroy(gpi(n))
      call destroy(dSdt(n))
      call destroy(Source_old(n))
      call destroy(Source_new(n))
+     call destroy(Source_temp(n))
+     call destroy(Source_zero(n))
      call destroy(hgrhs(n))
      call destroy(rho_omegadot2(n))
      call destroy(rho_Hnuc2(n))

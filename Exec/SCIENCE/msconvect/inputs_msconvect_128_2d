@@ -1,6 +1,7 @@
 &PROBIN
 
 !Input
+ !model_file = "3.5msolar_full_hydrogen.dat"
  model_file = "octant_fine_small.text"
  use_binary_input = F
 
@@ -8,12 +9,13 @@
  
 !Run parameters
  print_init_hse_diag = T
- max_step = 100
+ restart = 2000
+ max_step = 4000
  init_iter = 1
  
  stop_time = 1e9
 
- plot_int  = 10
+ plot_int  = 100
  plot_deltat = -1.
  mini_plot_int = -1
  mini_plot_deltat = 1e5
@@ -36,15 +38,18 @@
  spherical_in = 0
  polar_in = 1
  octant = F
+! do_planar_invsq_grav = F
+! do_self_grav = T
 
- n_cellx = 32
- n_celly = 32
+ n_cellx = 128
+ n_celly = 128
  n_cellz = 1
  max_grid_size = 32
- 
+  
  evolve_base_state = F
 
- 
+ ppm_type = 1
+ species_pred_type = 1
  
 !AMR 
  max_levs = 1
@@ -62,10 +67,12 @@
  hg_bottom_solver = 4
  
  
+
+ 
  
 !Grid (physical)
- prob_hi_x = 0.8e11
- prob_hi_y = 0.8e11
+ prob_hi_x = 1.2e11
+ prob_hi_y = 1.2e11
  prob_hi_z = 0.
  
  
@@ -79,15 +86,15 @@
 
 !Cutoff densities + sponge 
  !effectively no anelastic cutoff
- anelastic_cutoff = 8.5
- base_cutoff_density = 8.5
+ anelastic_cutoff = 1.12
+ base_cutoff_density = 1.12
  buoyancy_cutoff_factor = 1.14
  !standard implementiation: sponge starts at sponge_center_density * sponge_start_factor
  do_sponge = T
- sponge_mode = 3 
- sponge_center_density = 15
+ sponge_mode = 1 
+ sponge_center_density = 2
  sponge_start_factor = 1.2d0
- sponge_kappa = 2.0d-2
+ sponge_kappa = 2.0d-3
  
  
 !Initialization 
@@ -102,21 +109,22 @@
  drive_initial_convection = F
  stop_initial_convection = 2
  
- velpert_amplitude = 2.d2               
- velpert_radius = 2.0d10              
+ velpert_amplitude = 2.d2              
+ velpert_radius = 1.0d10              
  velpert_scale = 1.1d10               
  velpert_steep = 1.d0
  
   
 !Timestepping
+!fixed_dt = 500
  cflfac = 0.3d0
- init_shrink = 0.1d0
+ init_shrink = 100d0
  max_dt_growth = 1.01d0
  use_grav_dt = F
 
  
 !Verbosity
-    verbose = 1
+    verbose = 0
  mg_verbose = 0
  cg_verbose = 0
 
@@ -144,6 +152,7 @@
  plot_eta = F
  plot_pidivu = T
  plot_base = T
+ plot_grav = T
  
 !miniplot variables
  mini_plot_var1 = 'density'

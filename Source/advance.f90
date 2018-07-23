@@ -27,12 +27,14 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
+                              utemp,stemp,uzero,szero, &
                               gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
                               div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
+                              dSdt,Source_old,Source_new,Source_temp,Source_zero, &
+                              etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs,tempbar_init,particles)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
@@ -80,13 +82,18 @@ contains
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use make_pi_cc_module           , only : make_pi_cc
+    use rk_module                   , only : update_rk
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
-    type(multifab),  intent(in   ) ::   uold(:)
-    type(multifab),  intent(in   ) ::   sold(:)
+    type(multifab),  intent(inout) ::   uold(:)
+    type(multifab),  intent(inout) ::   sold(:)
     type(multifab),  intent(inout) ::   unew(:)
     type(multifab),  intent(inout) ::   snew(:)
+    type(multifab),  intent(inout) ::   utemp(:)
+    type(multifab),  intent(inout) ::   stemp(:)
+    type(multifab),  intent(inout) ::   uzero(:)
+    type(multifab),  intent(inout) ::   szero(:)
     type(multifab),  intent(inout) ::  gpi(:)
     type(multifab),  intent(inout) ::   pi(:)
     type(multifab),  intent(in   ) :: normal(:)
@@ -112,6 +119,8 @@ contains
     type(multifab),  intent(inout) ::       dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
+    type(multifab),  intent(inout) :: Source_temp(:)
+    type(multifab),  intent(inout) :: Source_zero(:)
     real(dp_t)    ,  intent(inout) ::  etarho_ec(:,0:)
     real(dp_t)    ,  intent(inout) ::  etarho_cc(:,0:)
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
@@ -176,7 +185,7 @@ contains
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
     real(kind=dp_t), allocatable ::         delta_chi_w0(:,:)
 
-    integer    :: i,n,comp,proj_type,nlevs,dm
+    integer    :: i,n,comp,proj_type,nlevs,dm,rkstep
     real(dp_t) :: halfdt
 
     ! need long int to store numbers greater than 2^31
@@ -250,6 +259,25 @@ contains
           print*,''
        end if
     end if
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Fill Runge Kutta Arrays
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+do n=1,nlevs
+     call multifab_copy_c(utemp(n),     1,uold(n),      1,dm,   nghost(uold(n)))
+     call multifab_copy_c(stemp(n),      1,sold(n),      1,nscal,nghost(uold(n)))
+     call multifab_copy_c(Source_temp(n),1,Source_old(n),1,1)
+
+     call multifab_copy_c(uzero(n),     1,uold(n),      1,dm,   nghost(uold(n)))
+     call multifab_copy_c(szero(n),      1,sold(n),      1,nscal,nghost(uold(n)))
+     call multifab_copy_c(Source_zero(n),1,Source_old(n),1,1)
+enddo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! START THE RUNGE KUTTA LOOP
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+do rkstep=1,4
 
     ! Initialize these to previous values
     w0_old        = w0
@@ -1476,6 +1504,23 @@ contains
        end do
     end if
 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Update for next runge kutta step
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    call update_rk(snew,sold,stemp,szero,rkstep,mla)
+    call update_rk(unew,uold,utemp,uzero,rkstep,mla)
+    call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,mla)
+    
+enddo !!END OF RUNGE KUTTA 
+
+    !copy the runge kutta result into right multifab
+    do n=1,nlevs
+         call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))
+         call multifab_copy_c(snew(n),      1,stemp(n),      1,nscal,nghost(uold(n)))
+         call multifab_copy_c(Source_new(n),1,Source_temp(n),1,1)
+    enddo
 
     if (barrier_timers) call parallel_barrier()
     ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
