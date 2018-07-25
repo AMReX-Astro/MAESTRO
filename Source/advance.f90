@@ -83,6 +83,7 @@ contains
     use addw0_module                , only : addw0
     use make_pi_cc_module           , only : make_pi_cc
     use rk_module                   , only : update_rk
+    use make_gpi_module             , only : make_gpi
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -114,7 +115,7 @@ contains
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
-    real(dp_t)    ,  intent(in   ) :: dx(:,:),dt,dtold
+    real(dp_t)    ,  intent(inout) :: dx(:,:),dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(multifab),  intent(inout) ::       dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
@@ -1504,7 +1505,6 @@ do rkstep=1,4
        end do
     end if
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Update for next runge kutta step
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1512,9 +1512,12 @@ do rkstep=1,4
     call update_rk(snew,sold,stemp,szero,rkstep,mla)
     call update_rk(unew,uold,utemp,uzero,rkstep,mla)
     call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,mla)
-    
+    if (rkstep .EQ. 4) then
+        call make_gpi(gpi,stemp,dx,mla)
+    else
+        call make_gpi(gpi,sold,dx,mla)
+    endif
 enddo !!END OF RUNGE KUTTA 
-
     !copy the runge kutta result into right multifab
     do n=1,nlevs
          call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))

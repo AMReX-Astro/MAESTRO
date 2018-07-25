@@ -40,7 +40,7 @@ contains
     
     select case(step)
         case(1)
-                fac = SIXTH
+                fac = SIXTH 
                 dtfac = HALF
         case(2)
                 fac = THIRD

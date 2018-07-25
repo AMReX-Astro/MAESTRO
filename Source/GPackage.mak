@@ -44,6 +44,7 @@ f90sources += make_eta.f90
 f90sources += make_explicit_thermal.f90
 f90sources += make_gamma.f90
 f90sources += make_grav.f90
+f90sources += make_gpi.f90
 f90sources += make_heating.f90
 f90sources += make_hgrhs.f90
 f90sources += make_macrhs.f90
