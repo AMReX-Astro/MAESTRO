@@ -84,6 +84,7 @@ contains
     use make_pi_cc_module           , only : make_pi_cc
     use rk_module                   , only : update_rk
     use make_gpi_module             , only : make_gpi
+    use ml_restrict_fill_module    
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -1492,6 +1493,12 @@ do rkstep=1,4
        call destroy(pi_cc(n))
     enddo
 
+    call ml_restrict_and_fill(nlevs,snew,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                                icomp=pi_comp, &
+                                bcomp=foextrap_comp, &
+                                nc=1, &
+                                ng=snew(1)%ng, &
+                                same_boundary=.false.)
     do n=1,nlevs
        call destroy(div_coeff_3d(n))
        call destroy(rhohalf(n))
@@ -1508,23 +1515,38 @@ do rkstep=1,4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Update for next runge kutta step
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    if (init_mode) exit
     call update_rk(snew,sold,stemp,szero,rkstep,mla)
     call update_rk(unew,uold,utemp,uzero,rkstep,mla)
     call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,mla)
-    if (rkstep .EQ. 4) then
-        call make_gpi(gpi,stemp,dx,mla)
-    else
-        call make_gpi(gpi,sold,dx,mla)
+
+    if (.not. init_mode) then
+            if (rkstep .EQ. 4) then
+                call make_gpi(gpi,stemp,dx,mla,the_bc_tower%bc_tower_array)
+            else
+                call make_gpi(gpi,sold,dx,mla,the_bc_tower%bc_tower_array)
+            endif
     endif
 enddo !!END OF RUNGE KUTTA 
-    !copy the runge kutta result into right multifab
+    if (.not. init_mode) then
+            !copy the runge kutta result into right multifab
+            do n=1,nlevs
+                 call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))
+                 call multifab_copy_c(snew(n),      1,stemp(n),      1,nscal,nghost(uold(n)))
+                 call multifab_copy_c(Source_new(n),1,Source_temp(n),1,1)
+            enddo
+            
+    endif
+    
+    
+   
+    ! define dSdt = (Source_new - Source_old) / dt
     do n=1,nlevs
-         call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))
-         call multifab_copy_c(snew(n),      1,stemp(n),      1,nscal,nghost(uold(n)))
-         call multifab_copy_c(Source_new(n),1,Source_temp(n),1,1)
-    enddo
-
+       call multifab_copy(dSdt(n),Source_new(n))
+       call multifab_sub_sub(dSdt(n),Source_old(n))
+       call multifab_div_div_s(dSdt(n),dt)
+    end do
+            
     if (barrier_timers) call parallel_barrier()
     ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
 

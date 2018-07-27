@@ -13,13 +13,15 @@ module make_gpi_module
 
 contains 
 
-    subroutine make_gpi(gpi,s,dx,mla)
-      use variables                   , only : pi_comp
-      
+    subroutine make_gpi(gpi,s,dx,mla,the_bc_level)
+      use variables                   , only : pi_comp, foextrap_comp
+      use ml_restrict_fill_module    
+     
       type(multifab), intent(inout) :: gpi(:)
       type(multifab), intent(in   ) :: s(:)
       real(dp_t)    , intent(in   ) :: dx(:,:)
       type(ml_layout), intent(in   ) :: mla
+      type(bc_level) , intent(in   ) :: the_bc_level(:)
 
       integer :: lo(gpi(1)%dim),hi(gpi(1)%dim)
       integer :: i,n,ng_s,ng_gp,dm,nlevs
@@ -57,7 +59,13 @@ contains
          end do
 
       end do
-
+      ! restrict data and fill all ghost cells
+      call ml_restrict_and_fill(nlevs,gpi,mla%mba%rr,the_bc_level, &
+                                icomp=1, &
+                                bcomp=foextrap_comp, &
+                                nc=dm, &
+                                ng=gpi(1)%ng, &
+                                same_boundary=.false.)
       call destroy(bpt)
 
     end subroutine make_gpi

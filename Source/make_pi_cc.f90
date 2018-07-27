@@ -18,6 +18,8 @@ contains
     use define_bc_module
     use ml_layout_module
     use bc_module
+    use ml_restrict_fill_module
+    use variables , only: foextrap_comp
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: pi(:)
@@ -109,6 +111,14 @@ contains
           call multifab_sub_sub_s(pi_cc(n),avg,ng_pc)
        end do
     end if
+
+    ! restrict data and fill all ghost cells
+    call ml_restrict_and_fill(nlevs,pi_cc,mla%mba%rr,the_bc_level, &
+                                icomp=1, &
+                                bcomp=foextrap_comp, &
+                                nc=1, &
+                                ng=pi_cc(1)%ng, &
+                                same_boundary=.false.)
 
   end subroutine make_pi_cc
 
