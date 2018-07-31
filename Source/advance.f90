@@ -1391,6 +1391,43 @@ do rkstep=1,4
        end do
     end if
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Update for next runge kutta step
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (init_mode) exit
+    call update_rk(snew,sold,stemp,szero,rkstep,mla)
+    call update_rk(unew,uold,utemp,uzero,rkstep,mla)
+    call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,mla)
+
+    if (.not. init_mode .and. rkstep .ne. 4) then
+        !cleanup to prevent memory pile up during runge kutta integration
+        do n=1,nlevs
+                call destroy(delta_gamma1_term(n))
+                call destroy(rhohalf(n))
+        end do         
+    endif
+enddo !!END OF RUNGE KUTTA 
+    if (.not. init_mode) then
+            !copy the runge kutta result into right multifab
+            do n=1,nlevs
+                 call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))
+                 call multifab_copy_c(snew(n),      1,stemp(n),      1,nscal,nghost(uold(n)))
+                 call multifab_copy_c(Source_new(n),1,Source_temp(n),1,1)
+            enddo
+            
+    endif
+    
+    
+   
+    ! define dSdt = (Source_new - Source_old) / dt
+    do n=1,nlevs
+       call multifab_copy(dSdt(n),Source_new(n))
+       call multifab_sub_sub(dSdt(n),Source_old(n))
+       call multifab_div_div_s(dSdt(n),dt)
+    end do
+
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
+
     if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
        
@@ -1511,41 +1548,6 @@ do rkstep=1,4
           call destroy(hgrhs_old(n))
        end do
     end if
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Update for next runge kutta step
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if (init_mode) exit
-    call update_rk(snew,sold,stemp,szero,rkstep,mla)
-    call update_rk(unew,uold,utemp,uzero,rkstep,mla)
-    call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,mla)
-
-    if (.not. init_mode) then
-            if (rkstep .EQ. 4) then
-                call make_gpi(gpi,stemp,dx,mla,the_bc_tower%bc_tower_array)
-            else
-                call make_gpi(gpi,sold,dx,mla,the_bc_tower%bc_tower_array)
-            endif
-    endif
-enddo !!END OF RUNGE KUTTA 
-    if (.not. init_mode) then
-            !copy the runge kutta result into right multifab
-            do n=1,nlevs
-                 call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))
-                 call multifab_copy_c(snew(n),      1,stemp(n),      1,nscal,nghost(uold(n)))
-                 call multifab_copy_c(Source_new(n),1,Source_temp(n),1,1)
-            enddo
-            
-    endif
-    
-    
-   
-    ! define dSdt = (Source_new - Source_old) / dt
-    do n=1,nlevs
-       call multifab_copy(dSdt(n),Source_new(n))
-       call multifab_sub_sub(dSdt(n),Source_old(n))
-       call multifab_div_div_s(dSdt(n),dt)
-    end do
             
     if (barrier_timers) call parallel_barrier()
     ndproj_time = ndproj_time + (parallel_wtime() - ndproj_time_start)
