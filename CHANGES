@@ -1,3 +1,10 @@
+18.08
+
+  * Major changes
+
+   -- We fixed a corner coupling bug when advecting conservative
+      scalars (predicting rho, rhoh, or rhoX)
+
 18.07
 
   * Major changes
