@@ -142,7 +142,7 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -164,91 +164,123 @@ contains
     integer :: pt_index(MAX_SPACEDIM)
     
     type(eos_t) :: eos_state
-
-    do comp = nstart, nstop
-
-       do i=lo(1),hi(1)
-             
-          divterm = (sfluxx(i+1,comp) - sfluxx(i,comp))/dx(1)
-
-          snew(i,comp) = sold(i,comp) + dt*(-divterm + force(i,comp))
-          
-       end do
-
-    enddo
-
-    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
-       
-       do i = lo(1), hi(1)
-             
-          if (snew(i,rho_comp) .le. base_cutoff_density) then
-
-             eos_state%rho = snew(i,rho_comp)
-             eos_state%T   = sold(i,temp_comp)
-             eos_state%p   = p0_new(i)
-             eos_state%xn  =snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
-             
-             pt_index(:) = (/i, -1, -1/)
-             
-             ! (rho,P) --> T,h
-             call eos(eos_input_rp, eos_state, pt_index)
-             
-             snew(i,rhoh_comp) = snew(i,rho_comp) * eos_state%h
-             
-          end if
-          
-       enddo
-       
-    end if
     
-    ! update density
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       
-       snew(:,rho_comp) = sold(:,rho_comp)
-       
-       do i = lo(1), hi(1)
+    if (derivative_mode) then
 
-          has_negative_species = .false.
+            do comp = nstart, nstop
 
-          ! define the update to rho as the sum of the updates to (rho X)_i
-          do comp = nstart, nstop
-             snew(i,rho_comp) = snew(i,rho_comp) + (snew(i,comp)-sold(i,comp))
-             if (snew(i,comp) .lt. ZERO) has_negative_species = .true.
-          enddo
+               do i=lo(1),hi(1)
+                     
+                  divterm = (sfluxx(i+1,comp) - sfluxx(i,comp))/dx(1)
 
-          ! enforce a density floor
-          if (snew(i,rho_comp) .lt. 0.5d0*base_cutoff_density) then
-             do comp = nstart, nstop
-                snew(i,comp) = snew(i,comp) * 0.5d0*base_cutoff_density/snew(i,rho_comp)
-             end do
-             snew(i,rho_comp) = 0.5d0*base_cutoff_density
-          end if
+                  snew(i,comp) = (-divterm + force(i,comp))
+                  
+               end do
 
-          ! do not allow the species to leave here negative.
-          if (has_negative_species) then
-             do comp = nstart, nstop
-                if (snew(i,comp) .lt. ZERO) then
-                   delta = -snew(i,comp)
-                   sumX = ZERO 
-                   do comp2 = nstart, nstop
-                      if (comp2 .ne. comp .and. snew(i,comp2) .ge. ZERO) then
-                         sumX = sumX + snew(i,comp2)
-                      end if
-                   enddo
-                   do comp2 = nstart, nstop
-                      if (comp2 .ne. comp .and. snew(i,comp2) .ge. ZERO) then
-                         frac = snew(i,comp2) / sumX
-                         snew(i,comp2) = snew(i,comp2) - frac * delta
-                      end if
-                   enddo
-                   snew(i,comp) = ZERO
-                end if
-             end do
-          end if
+            enddo
 
-       enddo
-       
-    end if
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,rho_comp) = ZERO
+               
+               do i = lo(1), hi(1)
+
+                  ! define the update to rho as the sum of the updates to (rho X)_i
+                  do comp = nstart, nstop
+                     snew(i,rho_comp) = snew(i,rho_comp) + snew(i,comp)
+                  enddo
+                  
+               enddo
+               
+            end if
+
+    else
+            do comp = nstart, nstop
+
+               do i=lo(1),hi(1)
+                     
+                  divterm = (sfluxx(i+1,comp) - sfluxx(i,comp))/dx(1)
+
+                  snew(i,comp) = sold(i,comp) + dt*(-divterm + force(i,comp))
+                  
+               end do
+
+            enddo
+            if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
+               
+               do i = lo(1), hi(1)
+                     
+                  if (snew(i,rho_comp) .le. base_cutoff_density) then
+
+                     eos_state%rho = snew(i,rho_comp)
+                     eos_state%T   = sold(i,temp_comp)
+                     eos_state%p   = p0_new(i)
+                     eos_state%xn  =snew(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+                     
+                     pt_index(:) = (/i, -1, -1/)
+                     
+                     ! (rho,P) --> T,h
+                     call eos(eos_input_rp, eos_state, pt_index)
+                     
+                     snew(i,rhoh_comp) = snew(i,rho_comp) * eos_state%h
+                     
+                  end if
+                  
+               enddo
+               
+            end if
+            
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,rho_comp) = sold(:,rho_comp)
+               
+               do i = lo(1), hi(1)
+
+                  has_negative_species = .false.
+
+                  ! define the update to rho as the sum of the updates to (rho X)_i
+                  do comp = nstart, nstop
+                     snew(i,rho_comp) = snew(i,rho_comp) + (snew(i,comp)-sold(i,comp))
+                     if (snew(i,comp) .lt. ZERO) has_negative_species = .true.
+                  enddo
+
+                  ! enforce a density floor
+                  if (snew(i,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                     do comp = nstart, nstop
+                        snew(i,comp) = snew(i,comp) * 0.5d0*base_cutoff_density/snew(i,rho_comp)
+                     end do
+                     snew(i,rho_comp) = 0.5d0*base_cutoff_density
+                  end if
+
+                  ! do not allow the species to leave here negative.
+                  if (has_negative_species) then
+                     do comp = nstart, nstop
+                        if (snew(i,comp) .lt. ZERO) then
+                           delta = -snew(i,comp)
+                           sumX = ZERO 
+                           do comp2 = nstart, nstop
+                              if (comp2 .ne. comp .and. snew(i,comp2) .ge. ZERO) then
+                                 sumX = sumX + snew(i,comp2)
+                              end if
+                           enddo
+                           do comp2 = nstart, nstop
+                              if (comp2 .ne. comp .and. snew(i,comp2) .ge. ZERO) then
+                                 frac = snew(i,comp2) / sumX
+                                 snew(i,comp2) = snew(i,comp2) - frac * delta
+                              end if
+                           enddo
+                           snew(i,comp) = ZERO
+                        end if
+                     end do
+                  end if
+
+               enddo
+               
+            end if
+    endif
+
 
   end subroutine update_scal_1d
 
@@ -258,7 +290,7 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -282,98 +314,136 @@ contains
 
     type(eos_t) :: eos_state
 
-    do comp = nstart, nstop
 
-       do j=lo(2),hi(2)
-          do i=lo(1),hi(1)
-             
-             divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
-                     + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
+    if (derivative_mode) then
 
-             snew(i,j,comp) = sold(i,j,comp) + dt*(-divterm + force(i,j,comp))
-             
-          end do
-       end do
+            do comp = nstart, nstop
 
-    enddo
+               do j = lo(2), hi(2)
+                  do i = lo(1), hi(1)
+                       
+                     divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                             + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
-       
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             
-             if (snew(i,j,rho_comp) .le. base_cutoff_density) then
-                eos_state%rho = snew(i,j,rho_comp)
-                eos_state%T   = sold(i,j,temp_comp)
-                eos_state%p   = p0_new(j)
-                eos_state%xn  = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-                pt_index(:) = (/i, j, -1/)
+                      snew(i,j,comp) = (-divterm + force(i,j,comp))
+                   
+                   end do              
+               end do
                 
-                ! (rho,P) --> T,h
-                call eos(eos_input_rp, eos_state, pt_index)
-                
-                snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
-                
-             end if
-             
-          enddo
-       enddo
-       
-    end if
-    
-    ! update density
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       
-       snew(:,:,rho_comp) = sold(:,:,rho_comp)
-           
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+            enddo
 
-             has_negative_species = .false.
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,rho_comp) = ZERO
+               
+               do j = lo(2), hi(2)
+                  do i = lo(1), hi(1)
+                          ! define the update to rho as the sum of the updates to (rho X)_i
+                          do comp = nstart, nstop
+                             snew(i,j,rho_comp) = snew(i,j,rho_comp) + snew(i,j,comp)
+                          enddo
+                  enddo                  
+               enddo
+               
+            end if
 
-             ! define the update to rho as the sum of the updates to (rho X)_i  
-             do comp = nstart, nstop
-                snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,comp)-sold(i,j,comp))
-                if (snew(i,j,comp) .lt. ZERO) has_negative_species = .true.
-             enddo
+    else
 
-             ! enforce a density floor
-             if (snew(i,j,rho_comp) .lt. 0.5d0*base_cutoff_density) then
-                do comp = nstart, nstop
-                   snew(i,j,comp) = snew(i,j,comp) * &
-                        0.5d0*base_cutoff_density/snew(i,j,rho_comp)
-                end do
-                snew(i,j,rho_comp) = 0.5d0*base_cutoff_density
-             end if
 
-             ! do not allow the species to leave here negative.
-             if (has_negative_species) then
-                do comp = nstart, nstop
-                   if (snew(i,j,comp) .lt. ZERO) then
-                      delta = -snew(i,j,comp)
-                      sumX = ZERO 
-                      do comp2 = nstart, nstop
-                         if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
-                            sumX = sumX + snew(i,j,comp2)
-                         end if
-                      enddo
-                      do comp2 = nstart, nstop
-                         if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
-                            frac = snew(i,j,comp2) / sumX
-                            snew(i,j,comp2) = snew(i,j,comp2) - frac * delta
-                         end if
-                      enddo
-                      snew(i,j,comp) = ZERO
-                   end if
-                end do
-             end if
+            do comp = nstart, nstop
 
-          enddo
-       enddo
+               do j=lo(2),hi(2)
+                  do i=lo(1),hi(1)
+                     
+                     divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                             + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-    end if
+                     snew(i,j,comp) = sold(i,j,comp) + dt*(-divterm + force(i,j,comp))
+                     
+                  end do
+               end do
 
+            enddo
+
+            if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
+               
+               do j = lo(2), hi(2)
+                  do i = lo(1), hi(1)
+                     
+                     if (snew(i,j,rho_comp) .le. base_cutoff_density) then
+                        eos_state%rho = snew(i,j,rho_comp)
+                        eos_state%T   = sold(i,j,temp_comp)
+                        eos_state%p   = p0_new(j)
+                        eos_state%xn  = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                        pt_index(:) = (/i, j, -1/)
+                        
+                        ! (rho,P) --> T,h
+                        call eos(eos_input_rp, eos_state, pt_index)
+                        
+                        snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
+                        
+                     end if
+                     
+                  enddo
+               enddo
+               
+            end if
+            
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,:,rho_comp) = sold(:,:,rho_comp)
+                   
+               do j = lo(2), hi(2)
+                  do i = lo(1), hi(1)
+
+                     has_negative_species = .false.
+
+                     ! define the update to rho as the sum of the updates to (rho X)_i  
+                     do comp = nstart, nstop
+                        snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,comp)-sold(i,j,comp))
+                        if (snew(i,j,comp) .lt. ZERO) has_negative_species = .true.
+                     enddo
+
+                     ! enforce a density floor
+                     if (snew(i,j,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                        do comp = nstart, nstop
+                           snew(i,j,comp) = snew(i,j,comp) * &
+                                0.5d0*base_cutoff_density/snew(i,j,rho_comp)
+                        end do
+                        snew(i,j,rho_comp) = 0.5d0*base_cutoff_density
+                     end if
+
+                     ! do not allow the species to leave here negative.
+                     if (has_negative_species) then
+                        do comp = nstart, nstop
+                           if (snew(i,j,comp) .lt. ZERO) then
+                              delta = -snew(i,j,comp)
+                              sumX = ZERO 
+                              do comp2 = nstart, nstop
+                                 if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
+                                    sumX = sumX + snew(i,j,comp2)
+                                 end if
+                              enddo
+                              do comp2 = nstart, nstop
+                                 if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
+                                    frac = snew(i,j,comp2) / sumX
+                                    snew(i,j,comp2) = snew(i,j,comp2) - frac * delta
+                                 end if
+                              enddo
+                              snew(i,j,comp) = ZERO
+                           end if
+                        end do
+                     end if
+
+                  enddo
+               enddo
+
+            end if
+    endif
+     
   end subroutine update_scal_2d
 
   subroutine update_scal_2d_polar(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy, &
@@ -382,7 +452,7 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -405,106 +475,149 @@ contains
     integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
-    !
-    ! is spherical
-    !
-    !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
-    do comp = nstart, nstop
-       !$OMP DO
-        do j = lo(2), hi(2)
-            do i = lo(1), hi(1)
 
-                divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
-                        + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
-                        
-                snew(i,j,comp) = sold(i,j,comp) + dt * (-divterm + force(i,j,comp))
 
-            enddo
-        enddo
-       !$OMP END DO NOWAIT
-    end do
-    !$OMP END PARALLEL
+    if (derivative_mode) then
 
-    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
-
-       !$OMP PARALLEL DO PRIVATE(i,j,eos_state,pt_index)
-        do j = lo(2), hi(2)
-            do i = lo(1), hi(1)
-
-                if (snew(i,j,rho_comp) .le. base_cutoff_density) then
-                    eos_state%rho   = snew(i,j,rho_comp)
-                    eos_state%T     = sold(i,j,temp_comp)
-                    eos_state%p     = p0_new_cart(i,j)
-                    eos_state%xn(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-
-                    pt_index(:) = (/i, j, -1/)
-
-                    ! (rho,P) --> T,h
-                    call eos(eos_input_rp, eos_state, pt_index)
-
-                    snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
-
-                end if
-
-            enddo
-        enddo
-       !$OMP END PARALLEL DO
-
-    end if
-
-    ! update density
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-
-       snew(:,:,rho_comp) = sold(:,:,rho_comp)
-
-       !$OMP PARALLEL DO PRIVATE(i,j,has_negative_species,comp,delta,sumX,comp2,frac)
-       do j = lo(2), hi(2)
-         do i = lo(1), hi(1)
-
-            has_negative_species = .false.
-
-            ! define the update to rho as the sum of the updates to (rho X)_i
+            !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
             do comp = nstart, nstop
-                snew(i,j,rho_comp) = snew(i,j,rho_comp) &
-                    + (snew(i,j,comp)-sold(i,j,comp))
-                if (snew(i,j,comp) .lt. ZERO) has_negative_species = .true.
+               !$OMP DO
+               do j = lo(2), hi(2)
+                  do i = lo(1), hi(1)
+                       
+                     divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                             + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
+
+                      snew(i,j,comp) = (-divterm + force(i,j,comp))
+                   
+                   end do              
+               end do
+               !$OMP END DO NOWAIT    
             enddo
+            !$OMP END PARALLEL
 
-            ! enforce a density floor
-            if (snew(i,j,rho_comp) .lt. 0.5d0*base_cutoff_density) then
-                do comp = nstart, nstop
-                    snew(i,j,comp) = snew(i,j,comp) * &
-                        0.5d0*base_cutoff_density/snew(i,j,rho_comp)
-                end do
-                snew(i,j,rho_comp) = 0.5d0*base_cutoff_density
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,rho_comp) = ZERO
+               !$OMP PARALLEL DO PRIVATE(i,j,comp)             
+               do j = lo(2), hi(2)
+                  do i = lo(1), hi(1)
+                          !$OMP DO
+                          ! define the update to rho as the sum of the updates to (rho X)_i
+                          do comp = nstart, nstop
+                             snew(i,j,rho_comp) = snew(i,j,rho_comp) + snew(i,j,comp)
+                          enddo
+                          !$OMP END DO NOWAIT
+                  enddo                  
+               enddo
+               !$OMP END PARALLEL DO
             end if
 
-            ! do not allow the species to leave here negative.
-            if (has_negative_species) then
-                do comp = nstart, nstop
-                    if (snew(i,j,comp) .lt. ZERO) then
-                        delta = -snew(i,j,comp)
-                        sumX = ZERO 
-                        do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
-                                sumX = sumX + snew(i,j,comp2)
-                            end if
-                        enddo
-                        do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
-                                frac = snew(i,j,comp2) / sumX
-                                snew(i,j,comp2) = snew(i,j,comp2) - frac * delta
-                            end if
-                        enddo
-                        snew(i,j,comp) = ZERO
+    else
+
+
+            !
+            ! is spherical
+            !
+            !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
+            do comp = nstart, nstop
+               !$OMP DO
+                do j = lo(2), hi(2)
+                    do i = lo(1), hi(1)
+
+                        divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                                + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
+                                
+                        snew(i,j,comp) = sold(i,j,comp) + dt * (-divterm + force(i,j,comp))
+
+                    enddo
+                enddo
+               !$OMP END DO NOWAIT
+            end do
+            !$OMP END PARALLEL
+
+            if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
+
+               !$OMP PARALLEL DO PRIVATE(i,j,eos_state,pt_index)
+                do j = lo(2), hi(2)
+                    do i = lo(1), hi(1)
+
+                        if (snew(i,j,rho_comp) .le. base_cutoff_density) then
+                            eos_state%rho   = snew(i,j,rho_comp)
+                            eos_state%T     = sold(i,j,temp_comp)
+                            eos_state%p     = p0_new_cart(i,j)
+                            eos_state%xn(:) = snew(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                            pt_index(:) = (/i, j, -1/)
+
+                            ! (rho,P) --> T,h
+                            call eos(eos_input_rp, eos_state, pt_index)
+
+                            snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * eos_state%h
+
+                        end if
+
+                    enddo
+                enddo
+               !$OMP END PARALLEL DO
+
+            end if
+
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+
+               snew(:,:,rho_comp) = sold(:,:,rho_comp)
+
+               !$OMP PARALLEL DO PRIVATE(i,j,has_negative_species,comp,delta,sumX,comp2,frac)
+               do j = lo(2), hi(2)
+                 do i = lo(1), hi(1)
+
+                    has_negative_species = .false.
+
+                    ! define the update to rho as the sum of the updates to (rho X)_i
+                    do comp = nstart, nstop
+                        snew(i,j,rho_comp) = snew(i,j,rho_comp) &
+                            + (snew(i,j,comp)-sold(i,j,comp))
+                        if (snew(i,j,comp) .lt. ZERO) has_negative_species = .true.
+                    enddo
+
+                    ! enforce a density floor
+                    if (snew(i,j,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                        do comp = nstart, nstop
+                            snew(i,j,comp) = snew(i,j,comp) * &
+                                0.5d0*base_cutoff_density/snew(i,j,rho_comp)
+                        end do
+                        snew(i,j,rho_comp) = 0.5d0*base_cutoff_density
                     end if
-                end do
-            end if
 
-         enddo
-       enddo
-       !$OMP END PARALLEL DO
-    end if
+                    ! do not allow the species to leave here negative.
+                    if (has_negative_species) then
+                        do comp = nstart, nstop
+                            if (snew(i,j,comp) .lt. ZERO) then
+                                delta = -snew(i,j,comp)
+                                sumX = ZERO 
+                                do comp2 = nstart, nstop
+                                    if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
+                                        sumX = sumX + snew(i,j,comp2)
+                                    end if
+                                enddo
+                                do comp2 = nstart, nstop
+                                    if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
+                                        frac = snew(i,j,comp2) / sumX
+                                        snew(i,j,comp2) = snew(i,j,comp2) - frac * delta
+                                    end if
+                                enddo
+                                snew(i,j,comp) = ZERO
+                            end if
+                        end do
+                    end if
+
+                 enddo
+               enddo
+               !$OMP END PARALLEL DO
+            end if
+      endif
 
   end subroutine update_scal_2d_polar  
   
@@ -516,7 +629,7 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -541,114 +654,156 @@ contains
 
     type(eos_t) :: eos_state
 
-    !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
-    do comp = nstart, nstop
-       !$OMP DO
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                
-                divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
-   
-                snew(i,j,k,comp) = sold(i,j,k,comp) + dt * (-divterm + force(i,j,k,comp))
-                
-             enddo
-          enddo
-       enddo
-       !$OMP END DO NOWAIT
-    end do
-    !$OMP END PARALLEL
-    
-    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
+    if (derivative_mode) then
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+            !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
+            do comp = nstart, nstop
+               !$OMP DO
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
+                        
+                        divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                                + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                                + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+           
+                        snew(i,j,k,comp) = (-divterm + force(i,j,k,comp))
+                   
+                   end do              
+               end do
+               !$OMP END DO NOWAIT    
+            enddo
+            !$OMP END PARALLEL
 
-                if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,rho_comp) = ZERO
+               !$OMP PARALLEL DO PRIVATE(i,j,comp)             
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
+                        
+                          !$OMP DO
+                          ! define the update to rho as the sum of the updates to (rho X)_i
+                          do comp = nstart, nstop
+                             snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + snew(i,j,k,comp)
+                          enddo
+                          !$OMP END DO NOWAIT
+                  enddo                  
+               enddo
+               !$OMP END PARALLEL DO
+            end if
 
-                   eos_state%rho = snew(i,j,k,rho_comp)
-                   eos_state%T   = sold(i,j,k,temp_comp)
-                   eos_state%p   = p0_new(k)
-                   eos_state%xn  = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+    else
+            !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
+            do comp = nstart, nstop
+               !$OMP DO
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
+                        
+                        divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                                + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                                + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+           
+                        snew(i,j,k,comp) = sold(i,j,k,comp) + dt * (-divterm + force(i,j,k,comp))
+                        
+                     enddo
+                  enddo
+               enddo
+               !$OMP END DO NOWAIT
+            end do
+            !$OMP END PARALLEL
+            
+            if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-                   pt_index(:) = (/i, j, k/)
+               !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
 
-                   ! (rho,P) --> T,h
-                   call eos(eos_input_rp, eos_state, pt_index)
+                        if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
 
-                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
+                           eos_state%rho = snew(i,j,k,rho_comp)
+                           eos_state%T   = sold(i,j,k,temp_comp)
+                           eos_state%p   = p0_new(k)
+                           eos_state%xn  = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-                end if
+                           pt_index(:) = (/i, j, k/)
 
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
+                           ! (rho,P) --> T,h
+                           call eos(eos_input_rp, eos_state, pt_index)
 
-    end if
+                           snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
+
+                        end if
+
+                     enddo
+                  enddo
+               enddo
+               !$OMP END PARALLEL DO
+
+            end if
 
 
-    ! update density
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-       snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
+               snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,has_negative_species,comp,delta,sumX,comp2,frac)       
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+               !$OMP PARALLEL DO PRIVATE(i,j,k,has_negative_species,comp,delta,sumX,comp2,frac)       
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
 
-                has_negative_species = .false.
+                        has_negative_species = .false.
 
-                ! define the update to rho as the sum of the updates to (rho X)_i
-                do comp = nstart, nstop
-                   snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
-                        + (snew(i,j,k,comp)-sold(i,j,k,comp))
-                   if (snew(i,j,k,comp) .lt. ZERO) has_negative_species = .true.
-                enddo
+                        ! define the update to rho as the sum of the updates to (rho X)_i
+                        do comp = nstart, nstop
+                           snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
+                                + (snew(i,j,k,comp)-sold(i,j,k,comp))
+                           if (snew(i,j,k,comp) .lt. ZERO) has_negative_species = .true.
+                        enddo
 
-                ! enforce a density floor
-                if (snew(i,j,k,rho_comp) .lt. 0.5d0*base_cutoff_density) then
-                   do comp = nstart, nstop
-                      snew(i,j,k,comp) = snew(i,j,k,comp) * &
-                           0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
-                   end do
-                   snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
-                end if
+                        ! enforce a density floor
+                        if (snew(i,j,k,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                           do comp = nstart, nstop
+                              snew(i,j,k,comp) = snew(i,j,k,comp) * &
+                                   0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
+                           end do
+                           snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
+                        end if
 
-                ! do not allow the species to leave here negative.
-                if (has_negative_species) then
-                   do comp = nstart, nstop
-                      if (snew(i,j,k,comp) .lt. ZERO) then
-                         delta = -snew(i,j,k,comp)
-                         sumX = ZERO 
-                         do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
-                               sumX = sumX + snew(i,j,k,comp2)
-                            end if
-                         enddo
-                         do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
-                               frac = snew(i,j,k,comp2) / sumX
-                               snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
-                            end if
-                         enddo
-                         snew(i,j,k,comp) = ZERO
-                      end if
-                   end do
-                end if
+                        ! do not allow the species to leave here negative.
+                        if (has_negative_species) then
+                           do comp = nstart, nstop
+                              if (snew(i,j,k,comp) .lt. ZERO) then
+                                 delta = -snew(i,j,k,comp)
+                                 sumX = ZERO 
+                                 do comp2 = nstart, nstop
+                                    if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                                       sumX = sumX + snew(i,j,k,comp2)
+                                    end if
+                                 enddo
+                                 do comp2 = nstart, nstop
+                                    if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                                       frac = snew(i,j,k,comp2) / sumX
+                                       snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
+                                    end if
+                                 enddo
+                                 snew(i,j,k,comp) = ZERO
+                              end if
+                           end do
+                        end if
 
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
+                     enddo
+                  enddo
+               enddo
+               !$OMP END PARALLEL DO
 
-    end if
-
+            end if
+      endif
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
@@ -657,7 +812,7 @@ contains
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -681,114 +836,159 @@ contains
     integer :: pt_index(MAX_SPACEDIM)
     type(eos_t) :: eos_state
 
-    !
-    ! is spherical
-    !
-    !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
-    do comp = nstart, nstop
-       !$OMP DO
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
 
-                divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
-                snew(i,j,k,comp) = sold(i,j,k,comp) + dt * (-divterm + force(i,j,k,comp))
+    if (derivative_mode) then
 
-             enddo
-          enddo
-       enddo
-       !$OMP END DO NOWAIT
-    end do
-    !$OMP END PARALLEL
+            !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
+            do comp = nstart, nstop
+               !$OMP DO
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
+                        
+                        divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                                + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                                + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+           
+                        snew(i,j,k,comp) = (-divterm + force(i,j,k,comp))
+                   
+                   end do              
+               end do
+               !$OMP END DO NOWAIT    
+            enddo
+            !$OMP END PARALLEL
 
-    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+               
+               snew(:,rho_comp) = ZERO
+               !$OMP PARALLEL DO PRIVATE(i,j,comp)             
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
+                        
+                          !$OMP DO
+                          ! define the update to rho as the sum of the updates to (rho X)_i
+                          do comp = nstart, nstop
+                             snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + snew(i,j,k,comp)
+                          enddo
+                          !$OMP END DO NOWAIT
+                  enddo                  
+               enddo
+               !$OMP END PARALLEL DO
+            end if
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
-       do k = lo(3), hi(3) 
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+    else
 
-                if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
-                   eos_state%rho   = snew(i,j,k,rho_comp)
-                   eos_state%T     = sold(i,j,k,temp_comp)
-                   eos_state%p     = p0_new_cart(i,j,k)
-                   eos_state%xn(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+            !
+            ! is spherical
+            !
+            !$OMP PARALLEL PRIVATE(i,j,k,divterm,comp) 
+            do comp = nstart, nstop
+               !$OMP DO
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
 
-                   pt_index(:) = (/i, j, k/)
+                        divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                                + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                                + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
-                   ! (rho,P) --> T,h
-                   call eos(eos_input_rp, eos_state, pt_index)
+                        snew(i,j,k,comp) = sold(i,j,k,comp) + dt * (-divterm + force(i,j,k,comp))
 
-                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
+                     enddo
+                  enddo
+               enddo
+               !$OMP END DO NOWAIT
+            end do
+            !$OMP END PARALLEL
 
-                end if
+            if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
+               !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,pt_index)
+               do k = lo(3), hi(3) 
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
 
-    end if
+                        if (snew(i,j,k,rho_comp) .le. base_cutoff_density) then
+                           eos_state%rho   = snew(i,j,k,rho_comp)
+                           eos_state%T     = sold(i,j,k,temp_comp)
+                           eos_state%p     = p0_new_cart(i,j,k)
+                           eos_state%xn(:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
-    ! update density
-    if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+                           pt_index(:) = (/i, j, k/)
 
-       snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
+                           ! (rho,P) --> T,h
+                           call eos(eos_input_rp, eos_state, pt_index)
 
-       !$OMP PARALLEL DO PRIVATE(i,j,k,has_negative_species,comp,delta,sumX,comp2,frac)
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+                           snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * eos_state%h
 
-                has_negative_species = .false.
+                        end if
 
-                ! define the update to rho as the sum of the updates to (rho X)_i
-                do comp = nstart, nstop
-                   snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
-                        + (snew(i,j,k,comp)-sold(i,j,k,comp))
-                   if (snew(i,j,k,comp) .lt. ZERO) has_negative_species = .true.
-                enddo
+                     enddo
+                  enddo
+               enddo
+               !$OMP END PARALLEL DO
 
-                ! enforce a density floor
-                if (snew(i,j,k,rho_comp) .lt. 0.5d0*base_cutoff_density) then
-                   do comp = nstart, nstop
-                      snew(i,j,k,comp) = snew(i,j,k,comp) * &
-                           0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
-                   end do
-                   snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
-                end if
+            end if
 
-                ! do not allow the species to leave here negative.
-                if (has_negative_species) then
-                   do comp = nstart, nstop
-                      if (snew(i,j,k,comp) .lt. ZERO) then
-                         delta = -snew(i,j,k,comp)
-                         sumX = ZERO 
-                         do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
-                               sumX = sumX + snew(i,j,k,comp2)
-                            end if
-                         enddo
-                         do comp2 = nstart, nstop
-                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
-                               frac = snew(i,j,k,comp2) / sumX
-                               snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
-                            end if
-                         enddo
-                         snew(i,j,k,comp) = ZERO
-                      end if
-                   end do
-                end if
+            ! update density
+            if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-             enddo
-          enddo
-       enddo
-       !$OMP END PARALLEL DO
-    end if
+               snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
+               !$OMP PARALLEL DO PRIVATE(i,j,k,has_negative_species,comp,delta,sumX,comp2,frac)
+               do k = lo(3), hi(3)
+                  do j = lo(2), hi(2)
+                     do i = lo(1), hi(1)
+
+                        has_negative_species = .false.
+
+                        ! define the update to rho as the sum of the updates to (rho X)_i
+                        do comp = nstart, nstop
+                           snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) &
+                                + (snew(i,j,k,comp)-sold(i,j,k,comp))
+                           if (snew(i,j,k,comp) .lt. ZERO) has_negative_species = .true.
+                        enddo
+
+                        ! enforce a density floor
+                        if (snew(i,j,k,rho_comp) .lt. 0.5d0*base_cutoff_density) then
+                           do comp = nstart, nstop
+                              snew(i,j,k,comp) = snew(i,j,k,comp) * &
+                                   0.5d0*base_cutoff_density/snew(i,j,k,rho_comp)
+                           end do
+                           snew(i,j,k,rho_comp) = 0.5d0*base_cutoff_density
+                        end if
+
+                        ! do not allow the species to leave here negative.
+                        if (has_negative_species) then
+                           do comp = nstart, nstop
+                              if (snew(i,j,k,comp) .lt. ZERO) then
+                                 delta = -snew(i,j,k,comp)
+                                 sumX = ZERO 
+                                 do comp2 = nstart, nstop
+                                    if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                                       sumX = sumX + snew(i,j,k,comp2)
+                                    end if
+                                 enddo
+                                 do comp2 = nstart, nstop
+                                    if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                                       frac = snew(i,j,k,comp2) / sumX
+                                       snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
+                                    end if
+                                 enddo
+                                 snew(i,j,k,comp) = ZERO
+                              end if
+                           end do
+                        end if
+
+                     enddo
+                  enddo
+               enddo
+               !$OMP END PARALLEL DO
+            end if
+      endif
   end subroutine update_scal_3d_sphr
 
 end module update_scal_module

@@ -61,7 +61,7 @@ contains
   subroutine react_state(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
                          dt,dx,the_bc_level)
 
-    use probin_module, only: use_tfromp, do_heating, do_burning
+    use probin_module, only: use_tfromp, do_heating, do_burning, derivative_mode
     use variables, only: temp_comp, rhoh_comp, rho_comp,nscal
     use ml_cc_restriction_module , only : ml_cc_restriction
     use heating_module        , only : get_rho_Hext 
@@ -97,14 +97,22 @@ contains
        ! if we aren't burning, then we should just copy the old state to the
        ! new and only update the rhoh component with the heating term
        if (.not. do_burning) then
-          do n = 1, nlevs
-             call multifab_copy(snew(n),sold(n), nghost(sold(n)))
-             
-             ! add in the heating term*dt
-             call multifab_mult_mult_s(rho_Hext(n),dt)
-             call multifab_plus_plus_c(snew(n),rhoh_comp,rho_Hext(n),1,1)
-             call multifab_div_div_s(rho_Hext(n),dt)
-          enddo
+          if derivative_mode then
+                  do n = 1, nlevs
+                     ! add in the heating term
+                     call multifab_plus_plus_c(snew(n),rhoh_comp,rho_Hext(n),1,1)
+                  enddo
+         
+          else
+                  do n = 1, nlevs
+                     call multifab_copy(snew(n),sold(n), nghost(sold(n)))
+                     
+                     ! add in the heating term*dt
+                     call multifab_mult_mult_s(rho_Hext(n),dt)
+                     call multifab_plus_plus_c(snew(n),rhoh_comp,rho_Hext(n),1,1)
+                     call multifab_div_div_s(rho_Hext(n),dt)
+                  enddo
+          endif
        endif
 
     else ! not burning, so we ZERO rho_Hext
@@ -115,7 +123,7 @@ contains
     endif
 
     ! apply burning term
-    if (do_burning) then
+    if (do_burning .and. .not. derivative_mode) then
        ! we pass in rho_Hext so that we can add it to rhoh incase we 
        ! applied heating
        call burner_loop(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc, &
@@ -136,7 +144,7 @@ contains
     endif
 
     ! if we aren't doing any heating/burning, then just copy the old to the new
-    if (.not. (do_heating .or. do_burning)) then
+    if (.not. (do_heating .or. do_burning .or. derivative_mode)) then
        do n = 1, nlevs
           call multifab_copy(snew(n),sold(n),nghost(sold(n)))
        enddo

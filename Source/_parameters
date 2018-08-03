@@ -694,6 +694,11 @@ sdc_iters                           integer            1
 sdc_couple_mac_velocity             logical            .false.
 
 
+#-----------------------------------------------------------------------------
+# category: runge-kutta-integrator
+#-----------------------------------------------------------------------------
+derivative_mode                     logical            .false.
+rk_timestep_fac                     real               100.0
 
 #-----------------------------------------------------------------------------
 # category: debugging
