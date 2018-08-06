@@ -13,7 +13,7 @@ module update_vel_module
 contains
 
   subroutine update_velocity(uold,unew,umac,uedge,force,w0,w0mac,dx,dt, &
-                             sponge,mla,the_bc_level)
+                             sponge,mla,the_bc_level,derivative_mode)
 
     use bl_prof_module
     use bl_constants_module
@@ -32,11 +32,14 @@ contains
     type(multifab)    , intent(in   ) :: sponge(:)
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
+    logical           , intent(in   ), optional :: derivative_mode
 
     ! local
     integer :: i,n,n_1d
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_w0
+    
+    logical :: deriv
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: unp(:,:,:,:)
@@ -55,7 +58,13 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_velocity")
-
+    
+    if (present(derivative_mode)) then
+        deriv = derivative_mode
+    else
+        deriv = .false.
+    endif
+    
     dm = mla%dim
     nlevs = mla%nlevel
 
@@ -84,7 +93,7 @@ contains
                                      ump(:,1,1,1),  ng_um, &
                                      uepx(:,1,1,:), ng_ue, &
                                      fp(:,1,1,:), ng_f, w0(n,:), &
-                                     lo, hi, dx(n,:), dt, spp(:,1,1,1), ng_sp)
+                                     lo, hi, dx(n,:), dt, spp(:,1,1,1), ng_sp,deriv)
           case (2)
              vmp  => dataptr(umac(n,2),i)
              uepy => dataptr(uedge(n,2),i)
@@ -101,7 +110,7 @@ contains
                                      uepx(:,:,1,:), uepy(:,:,1,:), ng_ue, &
                                      w0xp(:,:,1,1), w0yp(:,:,1,1), ng_w0, &
                                      fp(:,:,1,:), ng_f, w0(n_1d,:), &
-                                     lo, hi, dx(n,:), dt, spp(:,:,1,1), ng_sp)
+                                     lo, hi, dx(n,:), dt, spp(:,:,1,1), ng_sp,deriv)
           case (3)
              vmp  => dataptr(umac(n,2),i)
              wmp   => dataptr(umac(n,3),i)
@@ -120,7 +129,7 @@ contains
                                      uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
                                      fp(:,:,:,:), ng_f, w0(n_1d,:), &
                                      w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
-                                     ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+                                     ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp,deriv)
           end select
        end do
 
@@ -138,7 +147,7 @@ contains
   end subroutine update_velocity
 
   subroutine update_velocity_1d(uold,ng_uo,unew,ng_un,umac,ng_um,uedgex,ng_ue, &
-                                force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp)
+                                force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp,derivative_mode)
 
     use bl_constants_module
     use probin_module, only: do_sponge
@@ -153,6 +162,7 @@ contains
     real (kind = dp_t), intent(in   ) ::     w0(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
+    logical           , intent(in   ) :: derivative_mode
 
     integer :: i
     real (kind = dp_t) ubar
@@ -167,12 +177,20 @@ contains
        ugradu = ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1) 
 
        ! update with (Utilde dot grad) Utilde and force
-       unew(i,1) = uold(i,1) - dt * ugradu + dt * force(i,1)
-
+       if (derivative_mode) then
+              unew(i,1) = - ugradu + force(i,1)
+       else
+              unew(i,1) = uold(i,1) - dt * ugradu + dt * force(i,1)
+       endif
+       
        ! subtract (w0 dot grad) Utilde term
        ubar = HALF*(w0(i) + w0(i+1))
-       unew(i,1) = unew(i,1) - dt * ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
-
+       if (derivative_mode) then
+              unew(i,1) = unew(i,1) - ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
+       else
+              unew(i,1) = unew(i,1) - dt * ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
+       endif
+       
        ! Add the sponge
        if (do_sponge) unew(i,:) = unew(i,:) * sponge(i)
 
@@ -182,7 +200,7 @@ contains
 
   subroutine update_velocity_2d(uold,ng_uo,unew,ng_un,umac,vmac,ng_um,uedgex,uedgey,ng_ue, &
                                 w0macx,w0macy,ng_w0, &
-                                force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp)
+                                force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp,derivative_mode)
 
     use geometry, only : polar
     use bl_constants_module
@@ -202,6 +220,7 @@ contains
     real (kind = dp_t), intent(in   ) ::     w0(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
+    logical           , intent(in   ) :: derivative_mode
 
     integer :: i, j
     real (kind = dp_t) ubar,vbar
@@ -223,11 +242,15 @@ contains
 
           ugradv = ubar*(uedgex(i+1,j,2) - uedgex(i,j,2))/dx(1) + &
                vbar*(uedgey(i,j+1,2) - uedgey(i,j,2))/dx(2)
-
+          
           ! update with (Utilde dot grad) Utilde and force
-          unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
-          unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
-
+          if (derivative_mode) then
+                  unew(i,j,1) = - ugradu + force(i,j,1)
+                  unew(i,j,2) = - ugradv + force(i,j,2)
+          else
+                  unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
+                  unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
+          endif
        enddo
     enddo
 
@@ -238,11 +261,12 @@ contains
             ! subtract (w0 dot grad) Utilde term
             vbar = HALF*(w0(j) + w0(j+1))
         
-            ! Add the sponge
             do i = lo(1), hi(1)
-
-                unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
-
+                if (derivative_mode) then
+                        unew(i,j,:) = unew(i,j,:) - vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
+                else
+                        unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
+                endif
             ! Add the sponge
                 if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
         
@@ -271,10 +295,13 @@ contains
                 w0_gradvr = gradvx * HALF*(w0macx(i,j)+w0macx(i+1,j)) &
                           + gradvy * HALF*(w0macy(i,j)+w0macy(i,j+1)) 
 
-
-                unew(i,j,1) = unew(i,j,1) - dt * w0_gradur
-                unew(i,j,2) = unew(i,j,2) - dt * w0_gradvr
-                
+                if (derivative_mode) then
+                        unew(i,j,1) = unew(i,j,1) - w0_gradur
+                        unew(i,j,2) = unew(i,j,2) - w0_gradvr
+                else
+                        unew(i,j,1) = unew(i,j,1) - dt * w0_gradur
+                        unew(i,j,2) = unew(i,j,2) - dt * w0_gradvr
+                endif
                 ! Add the sponge
                 if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
 
@@ -289,7 +316,7 @@ contains
   subroutine update_velocity_3d(uold,ng_uo,unew,ng_un,umac,vmac,wmac,ng_um, &
                                 uedgex,uedgey,uedgez,ng_ue,force,ng_f, &
                                 w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt, &
-                                sponge,ng_sp)
+                                sponge,ng_sp,derivative_mode)
 
     use fill_3d_module
     use geometry, only: spherical
@@ -314,6 +341,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real (kind = dp_t), intent(in   ) ::      dx(:)
     real (kind = dp_t), intent(in   ) :: dt
+    logical           , intent(in   ) :: derivative_mode
 
     integer :: i, j, k
     real (kind = dp_t) ubar,vbar,wbar
@@ -347,12 +375,17 @@ contains
              ugradw = ubar*(uedgex(i+1,j,k,3) - uedgex(i,j,k,3))/dx(1) + &
                   vbar*(uedgey(i,j+1,k,3) - uedgey(i,j,k,3))/dx(2) + &
                   wbar*(uedgez(i,j,k+1,3) - uedgez(i,j,k,3))/dx(3)
-
+             
              ! update with (Utilde dot grad) Utilde and force
-             unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
-             unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
-             unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
-
+             if (derivative_mode) then
+                     unew(i,j,k,1) = - ugradu + force(i,j,k,1)
+                     unew(i,j,k,2) = - ugradv + force(i,j,k,2)
+                     unew(i,j,k,3) = - ugradw + force(i,j,k,3)
+             else
+                     unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
+                     unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
+                     unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
+             endif
           enddo
        enddo
     enddo
@@ -367,10 +400,16 @@ contains
           wbar = HALF*(w0(k) + w0(k+1))
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
+                
+                if (derivative_mode) then
+                        unew(i,j,k,:) = unew(i,j,k,:) - wbar*(uedgez(i,j,k+1,:) &
+                             - uedgez(i,j,k,:))/dx(3)
 
-                unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(uedgez(i,j,k+1,:) &
-                     - uedgez(i,j,k,:))/dx(3)
-
+                else
+                        unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(uedgez(i,j,k+1,:) &
+                             - uedgez(i,j,k,:))/dx(3)
+                endif
+                
                 ! Add the sponge
                 if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
 
@@ -412,11 +451,16 @@ contains
                 w0_gradwr = gradwx * HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)) &
                           + gradwy * HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)) &
                           + gradwz * HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
+                if (derivative_mode) then
+                        unew(i,j,k,1) = unew(i,j,k,1) -  w0_gradur
+                        unew(i,j,k,2) = unew(i,j,k,2) -  w0_gradvr
+                        unew(i,j,k,3) = unew(i,j,k,3) -  w0_gradwr
 
-                unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
-                unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
-                unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_gradwr
-
+                else
+                        unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
+                        unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
+                        unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_gradwr
+                endif
                 ! Add the sponge
                 if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
 

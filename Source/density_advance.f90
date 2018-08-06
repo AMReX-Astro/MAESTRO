@@ -20,7 +20,8 @@ contains
   subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,scal_force,&
                              umac,w0,w0mac,etarhoflux, &
                              rho0_old,rho0_new,p0_dummy, &
-                             rho0_predicted_edge,dx,dt,the_bc_level)
+                             rho0_predicted_edge,dx,dt,the_bc_level,&
+                             derivative_mode)
 
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use bl_constants_module, only: ZERO, ONE
@@ -57,7 +58,8 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-
+    logical        , intent(in   ), optional :: derivative_mode
+    
     type(multifab) :: rho0_old_cart(mla%nlevel)
     type(multifab) :: p0_dummy_cart(mla%nlevel)
 
@@ -356,13 +358,22 @@ contains
           call build(p0_dummy_cart(n), get_layout(sold(n)), 1, 1)          
        end do
     end if
-
-    call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
+    if (present(derivative_mode)) then
+            call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
+                     p0_dummy,p0_dummy_cart,dx,dt,the_bc_level,derivative_mode)
+    else
+            call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
                      p0_dummy,p0_dummy_cart,dx,dt,the_bc_level)
-
+    endif
+    
     if (ntrac .ge. 1) then
-       call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
+       if (present(derivative_mode)) then
+               call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
+                        p0_dummy,p0_dummy_cart,dx,dt,the_bc_level,derivative_mode)
+       else
+               call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
                         p0_dummy,p0_dummy_cart,dx,dt,the_bc_level)
+       endif
     end if
 
     if (spherical .eq. 1 .or. polar .eq. 1) then

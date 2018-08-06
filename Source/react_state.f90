@@ -59,9 +59,9 @@ contains
     
 
   subroutine react_state(mla,tempbar_init,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
-                         dt,dx,the_bc_level)
+                         dt,dx,the_bc_level,derivative)
 
-    use probin_module, only: use_tfromp, do_heating, do_burning, derivative_mode
+    use probin_module, only: use_tfromp, do_heating, do_burning
     use variables, only: temp_comp, rhoh_comp, rho_comp,nscal
     use ml_cc_restriction_module , only : ml_cc_restriction
     use heating_module        , only : get_rho_Hext 
@@ -79,14 +79,20 @@ contains
     real(dp_t)     , intent(in   ) :: tempbar_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-
+    logical        , intent(in   ), optional :: derivative
+    
     ! Local
     type(bl_prof_timer), save :: bpt
-
+    logical :: derivative_mode
     integer :: n,nlevs,dm
 
     call build(bpt, "react_state")
-
+    
+    if (present(derivative)) then
+        derivative_mode = derivative
+    else
+        derivative_mode = .false.
+    endif
     nlevs = mla%nlevel
     dm = mla%dim
 
@@ -97,7 +103,7 @@ contains
        ! if we aren't burning, then we should just copy the old state to the
        ! new and only update the rhoh component with the heating term
        if (.not. do_burning) then
-          if derivative_mode then
+          if (derivative_mode) then
                   do n = 1, nlevs
                      ! add in the heating term
                      call multifab_plus_plus_c(snew(n),rhoh_comp,rho_Hext(n),1,1)

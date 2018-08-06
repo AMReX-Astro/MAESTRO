@@ -16,7 +16,7 @@ contains
   subroutine velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi, &
                               normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                               rho0_old,rho0_nph,grav_cell_old,grav_cell_nph,dx,dt, &
-                              the_bc_level,sponge)
+                              the_bc_level,sponge,derivative_mode)
     use addw0_module
     use bl_prof_module
     use update_vel_module
@@ -46,6 +46,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(multifab) , intent(in   ) :: sponge(:)
+    logical        , intent(in   ), optional :: derivative_mode
 
     type(multifab)  :: force(mla%nlevel)
     type(multifab)  :: uedge(mla%nlevel,mla%dim)
@@ -128,10 +129,14 @@ contains
     !********************************************************
     !     Update the velocity with convective differencing
     !********************************************************
-    
-    call update_velocity(uold,unew,umac,uedge,force,w0,w0mac, &
+    if (present(derivative_mode)) then
+            call update_velocity(uold,unew,umac,uedge,force,w0,w0mac, &
+                         dx,dt,sponge,mla,the_bc_level,derivative_mode)
+    else
+            call update_velocity(uold,unew,umac,uedge,force,w0,w0mac, &
                          dx,dt,sponge,mla,the_bc_level)
-
+    endif
+    
     do n = 1, nlevs
        call destroy(force(n))
        do comp=1,dm

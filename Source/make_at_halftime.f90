@@ -15,7 +15,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S_at_halftime(mla,shalf,sold,snew,the_bc_level)
+  subroutine make_S_at_halftime(mla,shalf,sold,snew,dt,derivative,the_bc_level)
 
     use bl_prof_module
     use ml_restrict_fill_module
@@ -26,6 +26,8 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(in   ) :: snew(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
+    logical        , intent(in   ) :: derivative
+    real(kind=dp_t), intent(in   ) :: dt
 
     real(kind=dp_t), pointer:: shp(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -58,13 +60,16 @@ contains
           select case (dm)
           case (1)
              call make_at_halftime_1d(shp(:,1,1,out_comp),sop(:,1,1,in_comp), &
-                                      snp(:,1,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
+                                      snp(:,1,1,in_comp),lo,hi,ng_h,ng_o,ng_n, &
+                                      dt,derivative)
           case (2)
              call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp), &
-                                      snp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
+                                      snp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n, &
+                                      dt,derivative)
           case (3)
              call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp), &
-                                      snp(:,:,:,in_comp),lo,hi,ng_h,ng_o,ng_n)
+                                      snp(:,:,:,in_comp),lo,hi,ng_h,ng_o,ng_n, &
+                                      dt,derivative)
           end select
        end do
 
@@ -79,7 +84,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime(phihalf,sold,snew,in_comp,out_comp,the_bc_level,mla)
+  subroutine make_at_halftime(phihalf,sold,snew,in_comp,out_comp,dt,derivative,the_bc_level,mla)
 
     use ml_restrict_fill_module
 
@@ -89,7 +94,9 @@ contains
     integer        , intent(in   ) :: in_comp,out_comp
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
-
+    logical        , intent(in   ) :: derivative
+    real(kind=dp_t), intent(in   ) :: dt
+    
     real(kind=dp_t), pointer:: rhp(:,:,:,:)
     real(kind=dp_t), pointer:: rop(:,:,:,:)
     real(kind=dp_t), pointer:: rnp(:,:,:,:)
@@ -113,13 +120,16 @@ contains
           select case (dm)
           case (1)
              call make_at_halftime_1d(rhp(:,1,1,out_comp),rop(:,1,1,in_comp), &
-                                      rnp(:,1,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
+                                      rnp(:,1,1,in_comp),lo,hi,ng_h,ng_o,ng_n,&
+                                      dt,derivative)
           case (2)
              call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp), &
-                                      rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
+                                      rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n,&
+                                      dt,derivative)
           case (3)
              call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp), &
-                                      rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o,ng_n)
+                                      rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o,ng_n,&
+                                      dt,derivative)
           end select
        end do
     end do
@@ -131,70 +141,100 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime_1d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new)
+  subroutine make_at_halftime_1d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new,&
+                                 dt,derivative)
 
     use bl_constants_module
-
+    use probin_module, only: derivative_mode
     integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old,ng_new
     real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:)
     real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :)
     real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_new :)
-
+    logical         , intent(in   ) :: derivative
+    real (kind=dp_t), intent(in   ) :: dt
+    
     !  Local variables
     integer :: i
-
-    do i = lo(1),hi(1)
-       phihalf(i) = HALF * (phiold(i) + phinew(i))
-    end do
-
+    if (derivative) then
+            do i = lo(1),hi(1)
+               phihalf(i) = phiold(i) + HALF * dt * phinew(i)
+            end do
+    else
+            do i = lo(1),hi(1)
+               phihalf(i) = HALF * (phiold(i) + phinew(i))
+            end do
+    endif
   end subroutine make_at_halftime_1d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime_2d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new)
+  subroutine make_at_halftime_2d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new,&
+                                 dt,derivative)
 
     use bl_constants_module
-
+    
     integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old,ng_new
     real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:)
     real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :,lo(2)-ng_old :)
     real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_new :,lo(2)-ng_new :)
+    logical         , intent(in   ) :: derivative
+    real (kind=dp_t), intent(in   ) :: dt
 
     !  Local variables
     integer :: i, j
-
-    do j = lo(2),hi(2)
-       do i = lo(1),hi(1)
-          phihalf(i,j) = HALF * (phiold(i,j) + phinew(i,j))
-       end do
-    end do
-
+    if (derivative) then
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  phihalf(i,j) = phiold(i,j) + HALF * dt * phinew(i,j)
+               end do
+            end do
+    else
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  phihalf(i,j) = HALF * (phiold(i,j) + phinew(i,j))
+               end do
+            end do
+    endif
   end subroutine make_at_halftime_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new)
+  subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new,&
+                                 dt,derivative)
 
     use bl_constants_module
-
+ 
     integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old,ng_new
     real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:,lo(3)-ng_half:)
     real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :,lo(2)-ng_old :,lo(3)-ng_old :)
     real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_new :,lo(2)-ng_new :,lo(3)-ng_new :)
-
+    logical         , intent(in   ) :: derivative
+    real (kind=dp_t), intent(in   ) :: dt
+    
     ! Local variables
     integer :: i, j, k
+    if (derivative) then
+        !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k = lo(3),hi(3)
+               do j = lo(2),hi(2)
+                  do i = lo(1),hi(1)
+                     phihalf(i,j,k) = phiold(i,j,k) + HALF * dt * phinew(i,j,k)
+                  end do
+               end do
+            end do
+            !$OMP END PARALLEL DO
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k)
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             phihalf(i,j,k) = HALF * (phiold(i,j,k) + phinew(i,j,k))
-          end do
-       end do
-    end do
-    !$OMP END PARALLEL DO
-
+    else
+            !$OMP PARALLEL DO PRIVATE(i,j,k)
+            do k = lo(3),hi(3)
+               do j = lo(2),hi(2)
+                  do i = lo(1),hi(1)
+                     phihalf(i,j,k) = HALF * (phiold(i,j,k) + phinew(i,j,k))
+                  end do
+               end do
+            end do
+            !$OMP END PARALLEL DO
+    endif
   end subroutine make_at_halftime_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

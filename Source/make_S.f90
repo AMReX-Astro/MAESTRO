@@ -476,11 +476,11 @@ contains
             xi_term = ZERO
             pres_term = ZERO
             do comp = 1, nspec
-            xi_term = xi_term - &
-                    eos_state%dhdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho 
+                    xi_term = xi_term - &
+                            eos_state%dhdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho 
 
-            pres_term = pres_term + &
-                    eos_state%dpdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho
+                    pres_term = pres_term + &
+                            eos_state%dpdX(comp)*rho_omegadot(i,j,comp)/eos_state%rho
             enddo
 
             Source(i,j) = (sigma/eos_state%rho) * &
@@ -490,19 +490,19 @@ contains
 
 
             if (use_delta_gamma1_term) then
-            delta_gamma1(i,j) = eos_state%gam1 - gamma1bar_cart(i,j)
-            
-            Ut_dot_er = &
-                    u(i,j,1)*normal(i,j,1) + &
-                    u(i,j,2)*normal(i,j,2) 
+                    delta_gamma1(i,j) = eos_state%gam1 - gamma1bar_cart(i,j)
                     
-            dg1_term(i,j) = delta_gamma1(i,j)*Ut_dot_er* &
-                    gradp0_cart(i,j)/ &
-                        (gamma1bar_cart(i,j)**2*p0_cart(i,j))
+                    Ut_dot_er = &
+                            u(i,j,1)*normal(i,j,1) + &
+                            u(i,j,2)*normal(i,j,2) 
+                            
+                    dg1_term(i,j) = delta_gamma1(i,j)*Ut_dot_er* &
+                            gradp0_cart(i,j)/ &
+                                (gamma1bar_cart(i,j)**2*p0_cart(i,j))
 
             else
-            dg1_term(i,j) = ZERO
-            delta_gamma1(i,j) = ZERO
+                    dg1_term(i,j) = ZERO
+                    delta_gamma1(i,j) = ZERO
             end if
 
         enddo

@@ -16,7 +16,7 @@ contains
   subroutine enthalpy_advance(mla,which_step,uold,sold,snew,sedge,sflux,scal_force,&
                               thermal,umac,w0,w0mac, &
                               rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
-                              tempbar,psi,dx,dt,the_bc_level)
+                              tempbar,psi,dx,dt,the_bc_level,derivative_mode)
 
     use bl_prof_module
     use bl_constants_module
@@ -61,7 +61,8 @@ contains
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-
+    logical        , intent(in   ), optional :: derivative_mode
+    
     type(multifab) :: rhoh0_old_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
@@ -427,10 +428,15 @@ contains
        call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
     end if
-
-    call update_scal(mla,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
+    
+    if (present(derivative_mode)) then
+        call update_scal(mla,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
+                     p0_new,p0_new_cart,dx,dt,the_bc_level,derivative_mode)
+    else
+        call update_scal(mla,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
                      p0_new,p0_new_cart,dx,dt,the_bc_level)
-
+    endif
+    
     if (spherical .eq. 1 .or. polar .eq. 1) then
        do n=1,nlevs
           call destroy(p0_new_cart(n))

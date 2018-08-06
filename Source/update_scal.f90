@@ -14,7 +14,7 @@ module update_scal_module
 contains
 
   subroutine update_scal(mla,nstart,nstop,sold,snew,sflux,scal_force,p0_new,p0_new_cart, &
-                         dx,dt,the_bc_level)
+                         dx,dt,the_bc_level,derivative_mode)
 
     use bl_prof_module
     use bl_constants_module
@@ -33,6 +33,7 @@ contains
     type(multifab)    , intent(in   ) :: p0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
+    logical           , intent(in), optional :: derivative_mode
 
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -42,6 +43,8 @@ contains
     real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: p0p(:,:,:,:)
+ 
+    logical :: derivative
 
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: i,n
@@ -50,7 +53,13 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_scal")
-
+    
+    if (present(derivative_mode)) then
+        derivative = derivative_mode
+    else
+        derivative = .false.
+    endif
+    
     dm = mla%dim
     nlevs = mla%nlevel
 
@@ -76,7 +85,7 @@ contains
                                   snp(:,1,1,:), ng_sn, &
                                  sfpx(:,1,1,:), ng_sf, &
                                    fp(:,1,1,:), ng_f, &
-                                 p0_new(n,:), lo, hi, dx(n,:), dt)
+                                 p0_new(n,:), lo, hi, dx(n,:), dt, derivative)
           case (2)
              sfpy => dataptr(sflux(n,2),i)
              if (polar .eq. 0) then
@@ -84,14 +93,14 @@ contains
                                     sop(:,:,1,:), ng_so, snp(:,:,1,:), ng_sn, &
                                     sfpx(:,:,1,:), sfpy(:,:,1,:), ng_sf, &
                                     fp(:,:,1,:), ng_f, &
-                                    p0_new(n,:), lo, hi, dx(n,:), dt)
+                                    p0_new(n,:), lo, hi, dx(n,:), dt, derivative)
              else
                 p0p => dataptr(p0_new_cart(n), i)
                 call update_scal_2d_polar(nstart, nstop, &
                                          sop(:,:,1,:), ng_so, snp(:,:,1,:), ng_sn, &
                                          sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                          ng_sf, fp(:,:,1,:), ng_f, &
-                                         p0p(:,:,1,1), ng_p, lo, hi, dx(n,:), dt)
+                                         p0p(:,:,1,1), ng_p, lo, hi, dx(n,:), dt, derivative)
              end if
           case (3)
              sfpy => dataptr(sflux(n,2),i)
@@ -101,14 +110,14 @@ contains
                                          sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          ng_sf, fp(:,:,:,:), ng_f, &
-                                         p0_new(n,:), lo, hi, dx(n,:), dt)
+                                         p0_new(n,:), lo, hi, dx(n,:), dt, derivative)
              else
                 p0p => dataptr(p0_new_cart(n), i)
                 call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          ng_sf, fp(:,:,:,:), ng_f, &
-                                         p0p(:,:,:,1), ng_p, lo, hi, dx(n,:), dt)
+                                         p0p(:,:,:,1), ng_p, lo, hi, dx(n,:), dt, derivative)
              end if
           end select
        end do
@@ -137,12 +146,12 @@ contains
   end subroutine update_scal
 
   subroutine update_scal_1d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,ng_sf, &
-                            force,ng_f,p0_new,lo,hi,dx,dt)
+                            force,ng_f,p0_new,lo,hi,dx,dt,derivative)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -155,6 +164,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,:)
     real (kind = dp_t), intent(in   ) :: p0_new(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: derivative
 
     integer            :: i, comp, comp2
     real (kind = dp_t) :: divterm
@@ -165,7 +175,7 @@ contains
     
     type(eos_t) :: eos_state
     
-    if (derivative_mode) then
+    if (derivative) then
 
             do comp = nstart, nstop
 
@@ -285,12 +295,12 @@ contains
   end subroutine update_scal_1d
 
   subroutine update_scal_2d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,ng_sf, &
-                            force,ng_f,p0_new,lo,hi,dx,dt)
+                            force,ng_f,p0_new,lo,hi,dx,dt, derivative)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -304,6 +314,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real (kind = dp_t), intent(in   ) :: p0_new(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: derivative
 
     integer            :: i, j, comp, comp2
     real (kind = dp_t) :: divterm
@@ -315,7 +326,7 @@ contains
     type(eos_t) :: eos_state
 
 
-    if (derivative_mode) then
+    if (derivative) then
 
             do comp = nstart, nstop
 
@@ -335,7 +346,7 @@ contains
             ! update density
             if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
                
-               snew(:,rho_comp) = ZERO
+               snew(:,:,rho_comp) = ZERO
                
                do j = lo(2), hi(2)
                   do i = lo(1), hi(1)
@@ -447,12 +458,12 @@ contains
   end subroutine update_scal_2d
 
   subroutine update_scal_2d_polar(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy, &
-                                 ng_sf,force,ng_f,p0_new_cart,ng_p,lo,hi,dx,dt)
+                                 ng_sf,force,ng_f,p0_new_cart,ng_p,lo,hi,dx,dt,derivative)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -466,6 +477,7 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real (kind = dp_t), intent(in   )::   p0_new_cart(lo(1)-ng_p :,lo(2)-ng_p :)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: derivative
 
     integer            :: i, j, comp, comp2
     real (kind = dp_t) :: divterm
@@ -477,7 +489,7 @@ contains
 
 
 
-    if (derivative_mode) then
+    if (derivative) then
 
             !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
             do comp = nstart, nstop
@@ -499,16 +511,14 @@ contains
             ! update density
             if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
                
-               snew(:,rho_comp) = ZERO
+               snew(:,:,rho_comp) = ZERO
                !$OMP PARALLEL DO PRIVATE(i,j,comp)             
                do j = lo(2), hi(2)
                   do i = lo(1), hi(1)
-                          !$OMP DO
                           ! define the update to rho as the sum of the updates to (rho X)_i
                           do comp = nstart, nstop
                              snew(i,j,rho_comp) = snew(i,j,rho_comp) + snew(i,j,comp)
                           enddo
-                          !$OMP END DO NOWAIT
                   enddo                  
                enddo
                !$OMP END PARALLEL DO
@@ -624,12 +634,12 @@ contains
   
   
   subroutine update_scal_3d_cart(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
-                                 ng_sf,force,ng_f,p0_new,lo,hi,dx,dt)
+                                 ng_sf,force,ng_f,p0_new,lo,hi,dx,dt, derivative)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -644,6 +654,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     real (kind = dp_t), intent(in   ) :: p0_new(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: derivative
 
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
@@ -654,7 +665,7 @@ contains
 
     type(eos_t) :: eos_state
 
-    if (derivative_mode) then
+    if (derivative) then
 
             !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
             do comp = nstart, nstop
@@ -668,28 +679,26 @@ contains
                                 + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
            
                         snew(i,j,k,comp) = (-divterm + force(i,j,k,comp))
-                   
+                     end do
                    end do              
                end do
                !$OMP END DO NOWAIT    
             enddo
-            !$OMP END PARALLEL
+            !$OMP END PARALLEL 
 
             ! update density
             if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
                
-               snew(:,rho_comp) = ZERO
+               snew(:,:,:,rho_comp) = ZERO
                !$OMP PARALLEL DO PRIVATE(i,j,comp)             
                do k = lo(3), hi(3)
                   do j = lo(2), hi(2)
                      do i = lo(1), hi(1)
-                        
-                          !$OMP DO
                           ! define the update to rho as the sum of the updates to (rho X)_i
                           do comp = nstart, nstop
                              snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + snew(i,j,k,comp)
                           enddo
-                          !$OMP END DO NOWAIT
+                      enddo
                   enddo                  
                enddo
                !$OMP END PARALLEL DO
@@ -807,12 +816,12 @@ contains
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
-                                 ng_sf,force,ng_f,p0_new_cart,ng_p,lo,hi,dx,dt)
+                                 ng_sf,force,ng_f,p0_new_cart,ng_p,lo,hi,dx,dt, derivative)
 
     use network,       only: nspec
     use eos_module,    only: eos, eos_input_rp
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, derivative_mode
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use pred_parameters
     use bl_constants_module
@@ -827,6 +836,7 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     real (kind = dp_t), intent(in   )::   p0_new_cart(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: derivative
 
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
@@ -838,7 +848,7 @@ contains
 
 
 
-    if (derivative_mode) then
+    if (derivative) then
 
             !$OMP PARALLEL PRIVATE(i,j,divterm,comp) 
             do comp = nstart, nstop
@@ -852,7 +862,7 @@ contains
                                 + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
            
                         snew(i,j,k,comp) = (-divterm + force(i,j,k,comp))
-                   
+                      end do
                    end do              
                end do
                !$OMP END DO NOWAIT    
@@ -862,18 +872,17 @@ contains
             ! update density
             if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
                
-               snew(:,rho_comp) = ZERO
+               snew(:,:,:,rho_comp) = ZERO
                !$OMP PARALLEL DO PRIVATE(i,j,comp)             
                do k = lo(3), hi(3)
                   do j = lo(2), hi(2)
                      do i = lo(1), hi(1)
                         
-                          !$OMP DO
                           ! define the update to rho as the sum of the updates to (rho X)_i
                           do comp = nstart, nstop
                              snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + snew(i,j,k,comp)
                           enddo
-                          !$OMP END DO NOWAIT
+                      enddo
                   enddo                  
                enddo
                !$OMP END PARALLEL DO
