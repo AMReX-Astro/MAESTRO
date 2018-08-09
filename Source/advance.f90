@@ -83,7 +83,7 @@ contains
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use make_pi_cc_module           , only : make_pi_cc
-    use rk_module                   , only : update_rk
+    use rk_module                   , only : update_rk, update_thermo_rk
     use make_gpi_module             , only : make_gpi
     use ml_restrict_fill_module    
     
@@ -284,9 +284,12 @@ if (derivative_mode .and. .not. init_mode) then
 ! derivative mode is not implemented for diffusion
 
 
+dt = dt / rk_timestep_fac
 ! derivatives are saved in snew
 do rkstep=1,4
-    dt = dt / rk_timestep_fac
+
+    w0_old        = w0
+    gamma1bar_old = gamma1bar
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- react the full state and then base state through dt/2
@@ -299,21 +302,13 @@ do rkstep=1,4
     end if
 
     do n=1,nlevs
-       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
-       call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
-       
        !set all derivatives to ZERO
-       call setval(s1(n),ZERO,all=.true.)
+       call setval(snew(n),ZERO,all=.true.)
     end do
 
-    call react_state(mla,tempbar_init,sold,snew,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,dt,dx, &
+    call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_old,ZERO,dx, &
                      the_bc_tower%bc_tower_array,derivative_mode)
 
-    do n=1,nlevs
-       call destroy(rho_omegadot1(n))
-       call destroy(rho_Hnuc1(n))
-       call destroy(rho_Hext(n))
-    end do
 
     if (barrier_timers) call parallel_barrier()
     react_time = react_time + parallel_wtime() - react_time_start
@@ -364,12 +359,6 @@ do rkstep=1,4
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
                         rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
-    if (dm .gt. 1) then
-       do n=1,nlevs
-          call destroy(w0_force_cart(n))
-       end do
-    end if
-
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
        call multifab_build(macrhs(n),            mla%la(n), 1, 0)
@@ -396,6 +385,8 @@ do rkstep=1,4
        call multifab_build(macphi(n), mla%la(n), 1, 1)
        call setval(macphi(n), ZERO, all=.true.)
     end do
+    
+
 
     ! MAC projection !
     if (spherical .eq. 1 .or. polar .eq. 1) then
@@ -421,6 +412,7 @@ do rkstep=1,4
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        macrhs,div_coeff_1d=div_coeff_old,div_coeff_1d_edge=div_coeff_edge)
     end if
+
 
     do n=1,nlevs
        call destroy(macrhs(n))
@@ -487,7 +479,7 @@ do rkstep=1,4
 
     call density_advance(mla,1,sold,snew,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
                          rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
-                         dx,dt,the_bc_tower%bc_tower_array,derivative_mode)
+                         dx,ZERO,the_bc_tower%bc_tower_array,derivative_mode)
 
     grav_cell_new = grav_cell_old
     p0_new = p0_old
@@ -499,13 +491,12 @@ do rkstep=1,4
 
     call enthalpy_advance(mla,1,uold,sold,snew,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
                           rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
-                          tempbar,psi,dx,dt,the_bc_tower%bc_tower_array,derivative_mode)
+                          tempbar,psi,dx,ZERO,the_bc_tower%bc_tower_array,derivative_mode)
 
     do n = 1, nlevs
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
-             call destroy(umac(n,comp))
        end do
        call destroy(scal_force(n))
     end do
@@ -517,24 +508,24 @@ do rkstep=1,4
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-!    thermal_time_start = parallel_wtime()
+    thermal_time_start = parallel_wtime()
 
-!    if (use_thermal_diffusion) then
-!       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-!          write(6,*) '<<< STEP  4a: thermal conduct >>>'
-!       end if
+    if (use_thermal_diffusion) then
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  4a: thermal conduct >>>'
+       end if
 
-!       call thermal_conduct(mla,dx,dt,sold,hcoeff1,Xkcoeff1,pcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
-!                            snew,p0_old,p0_new,the_bc_tower)
-!    end if
+       call thermal_conduct(mla,dx,dt,sold,hcoeff1,Xkcoeff1,pcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
+                            sold,p0_old,p0_new,the_bc_tower,snew,derivative_mode)
+    end if
 
-!    if (barrier_timers) call parallel_barrier()
-!    thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
+    if (barrier_timers) call parallel_barrier()
+    thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
 
-!    misc_time_start = parallel_wtime()
+    misc_time_start = parallel_wtime()
 
-!    if (barrier_timers) call parallel_barrier()
-!    misc_time = misc_time + parallel_wtime() - misc_time_start
+    if (barrier_timers) call parallel_barrier()
+    misc_time = misc_time + parallel_wtime() - misc_time_start
 
 
 
@@ -555,10 +546,14 @@ do rkstep=1,4
     
     ! in derivative mode we use rhohalf = sold + 1/2 * dt * snew is this a problem?
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,dt,.true.,the_bc_tower%bc_tower_array,mla)
+
+    
+    rho0_nph = rho0_old
+    grav_cell_nph = grav_cell_old
     
     call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi,normal,w0,w0mac,w0_force, &
                           w0_force_cart,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
-                          dx,dt,the_bc_tower%bc_tower_array,sponge,derivative_mode)
+                          dx,ZERO,the_bc_tower%bc_tower_array,sponge,derivative_mode)
 
     if (init_mode) then
        ! throw away w0 by setting w0 = w0_old
@@ -584,15 +579,10 @@ do rkstep=1,4
 !! Update for next runge kutta step
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    call update_rk(snew,sold,stemp,szero,rkstep,mla,derivative_mode)
-    call update_rk(unew,uold,utemp,uzero,rkstep,mla,derivative_mode)
+    call update_rk(snew,sold,stemp,szero,rkstep,dt,mla,derivative_mode)
+    call update_rk(unew,uold,utemp,uzero,rkstep,dt,mla,derivative_mode)
    
-   !//TODO: 
-   !!we need some consistency checks here, to fulfill the cutoffs
-   ! if ( do_eos_h_above_cutoff) then 
-   ! do an eos_update for rhoh, where sold(i,rho_comp) .le. base_cutoff_density
-   ! we should alot avoid negative (partial) densities, see update_scal
-   ! we also need to update the temperature here 
+    call update_thermo_rk(sold,p0_old,rho0_old,dx,mla,the_bc_tower%bc_tower_array)    
    
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -619,9 +609,9 @@ do rkstep=1,4
           call multifab_build(pcoeff2(n),  mla%la(n), 1,     1)
        end do
 
-       call make_thermal_coeffs(snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
+       call make_thermal_coeffs(sold,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
 
-       call make_explicit_thermal(mla,dx,thermal2,snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
+       call make_explicit_thermal(mla,dx,thermal2,sold,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
                                   p0_new,the_bc_tower)
 
        do n=1,nlevs
@@ -651,12 +641,9 @@ do rkstep=1,4
                 dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(rho_Hext(n))
        call destroy(delta_gamma1(n))
        call destroy(delta_gamma1_term(n))
     end do
-
-
 
 enddo
 
@@ -665,15 +652,56 @@ enddo
     if (.not. init_mode) then
             !copy the runge kutta result into right multifab
             do n=1,nlevs
-                 call multifab_copy_c(unew(n),     1,utemp(n),      1,dm,   nghost(uold(n)))
+                 call multifab_copy_c(unew(n),      1,utemp(n),      1,dm,   nghost(uold(n)))
                  call multifab_copy_c(snew(n),      1,stemp(n),      1,nscal,nghost(uold(n)))
-                 call multifab_copy_c(Source_new(n),1,Source_temp(n),1,1)
             enddo
             
     endif
+
+    call update_thermo_rk(snew,p0_old,rho0_old,dx,mla,the_bc_tower%bc_tower_array)  
+    
+    if(use_thermal_diffusion) then
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff2(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
+
+       call make_explicit_thermal(mla,dx,thermal2,snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
+                                  p0_new,the_bc_tower)
+
+       do n=1,nlevs
+          call destroy(Tcoeff2(n))
+          call destroy(hcoeff2(n))
+          call destroy(Xkcoeff2(n))
+          call destroy(pcoeff2(n))
+       end do
+
+    else
+       do n=1,nlevs
+          call setval(thermal2(n),ZERO,all=.true.)
+       end do
+    end if
     
     
-   
+    
+    do n=1,nlevs
+       call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
+    end do
+
+    ! p0 is only used for the delta_gamma1_term
+    call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
+                snew,unew, &
+                normal, &
+                rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                p0_old,gamma1bar,delta_gamma1_termbar,psi, &
+                dx,mla,the_bc_tower%bc_tower_array)
+       
     ! define dSdt = (Source_new - Source_old) / dt
     do n=1,nlevs
        call multifab_copy(dSdt(n),Source_new(n))
@@ -681,8 +709,10 @@ enddo
        call multifab_div_div_s(dSdt(n),dt)
     end do
 
-    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,dt,.false.,the_bc_tower%bc_tower_array,mla)
 
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,dt,.false.,the_bc_tower%bc_tower_array,mla)
+    div_coeff_nph = div_coeff_old
+    
     if (barrier_timers) call parallel_barrier()
     advect_time = advect_time + parallel_wtime() - advect_time_start
        
@@ -1963,9 +1993,9 @@ do rkstep=1,4
 !! Update for next runge kutta step
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (init_mode) exit
-    call update_rk(snew,sold,stemp,szero,rkstep,mla)
-    call update_rk(unew,uold,utemp,uzero,rkstep,mla)
-    call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,mla)
+    call update_rk(snew,sold,stemp,szero,rkstep,dt,mla)
+    call update_rk(unew,uold,utemp,uzero,rkstep,dt,mla)
+    call update_rk(Source_new,Source_old,Source_temp,Source_zero,rkstep,dt,mla)
 
     if (.not. init_mode .and. rkstep .ne. 4) then
         !cleanup to prevent memory pile up during runge kutta integration

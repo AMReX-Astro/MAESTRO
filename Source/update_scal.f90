@@ -183,7 +183,7 @@ contains
                      
                   divterm = (sfluxx(i+1,comp) - sfluxx(i,comp))/dx(1)
 
-                  snew(i,comp) = (-divterm + force(i,comp))
+                  snew(i,comp) = snew(i,comp) + (-divterm + force(i,comp))
                   
                end do
 
@@ -336,7 +336,7 @@ contains
                      divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
                              + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-                      snew(i,j,comp) = (-divterm + force(i,j,comp))
+                      snew(i,j,comp) = snew(i,j,comp) + (-divterm + force(i,j,comp))
                    
                    end do              
                end do
@@ -500,7 +500,7 @@ contains
                      divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
                              + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-                      snew(i,j,comp) = (-divterm + force(i,j,comp))
+                      snew(i,j,comp) = snew(i,j,comp) + (-divterm + force(i,j,comp))
                    
                    end do              
                end do
@@ -678,7 +678,7 @@ contains
                                 + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
                                 + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
            
-                        snew(i,j,k,comp) = (-divterm + force(i,j,k,comp))
+                        snew(i,j,k,comp) = snew(i,j,k,comp) + (-divterm + force(i,j,k,comp))
                      end do
                    end do              
                end do
@@ -861,7 +861,7 @@ contains
                                 + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
                                 + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
            
-                        snew(i,j,k,comp) = (-divterm + force(i,j,k,comp))
+                        snew(i,j,k,comp) = snew(i,j,k,comp) + (-divterm + force(i,j,k,comp))
                       end do
                    end do              
                end do

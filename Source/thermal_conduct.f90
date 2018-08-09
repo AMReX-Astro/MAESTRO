@@ -23,7 +23,8 @@ contains
   ! enthalpy-diffusion terms in the temperature conduction term.
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1, &
-                             hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
+                             hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower,&
+                             snew,derivative)
 
     use bl_prof_module
     use bndry_reg_module
@@ -51,6 +52,8 @@ contains
     type(multifab) , intent(inout) :: s2(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:),p0_new(:,0:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
+    type(multifab) , intent(inout), optional :: snew(:)
+    logical        , intent(in   ), optional :: derivative
 
     ! Local
     type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
@@ -383,24 +386,41 @@ contains
        end do
        call destroy(rhs(n))
     end do
-
-    ! load new rho*h into s2
-    do n=1,nlevs
-       call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
-       call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
-    enddo
-
+    
+    if (present(derivative) .and. derivative) then
+        ! load new rho*h - old rho*h into snew
+        do n=1,nlevs
+           call multifab_mult_mult_c(phi(n),1,s2(n),rho_comp,1)
+           call multifab_div_div_c(phi(n),1,s2(n),rhoh_comp,1)
+           call multifab_plus_plus_c(snew(n),rhoh_comp,phi(n),1,1)
+        enddo
+    else    
+        ! load new rho*h into s2
+        do n=1,nlevs
+           call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
+           call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
+        enddo
+    endif
+    
     do n=1,nlevs
        call destroy(phi(n))
     end do
 
     ! restrict data and fill all ghost cells
-    call ml_restrict_and_fill(nlevs,s2,mla%mba%rr,the_bc_tower%bc_tower_array, &
+    if (present(derivative) .and. derivative) then
+       call ml_restrict_and_fill(nlevs,snew,mla%mba%rr,the_bc_tower%bc_tower_array, &
+                              icomp=rhoh_comp, &
+                              bcomp=dm+rhoh_comp, &
+                              nc=1, &
+                              ng=snew(1)%ng)
+    else
+       call ml_restrict_and_fill(nlevs,s2,mla%mba%rr,the_bc_tower%bc_tower_array, &
                               icomp=rhoh_comp, &
                               bcomp=dm+rhoh_comp, &
                               nc=1, &
                               ng=s2(1)%ng)
-
+    endif
+    
     call destroy(bpt)
 
   end subroutine thermal_conduct

@@ -40,6 +40,7 @@ contains
     use modify_scal_force_module, only: modify_scal_force
     use convert_rhoX_to_X_module, only: convert_rhoX_to_X
     use pred_parameters
+    use multifab_module
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
@@ -359,6 +360,7 @@ contains
        end do
     end if
     if (present(derivative_mode)) then
+    !call multifab_print(sflux(1,1),'sflux')
             call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
                      p0_dummy,p0_dummy_cart,dx,dt,the_bc_level,derivative_mode)
     else
@@ -387,14 +389,14 @@ contains
           if (parallel_IOProcessor()) write(6,1999) n
 
           do comp = spec_comp,spec_comp+nspec-1
-             call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
+             !call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
              
              smin = multifab_min_c(snew(n),comp) 
              smax = multifab_max_c(snew(n),comp)
              
              if (parallel_IOProcessor()) &
                   write(6,2002) spec_names(comp-spec_comp+1), smin,smax
-             call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
+             !call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
           end do
           
           smin = multifab_min_c(snew(n),rho_comp) 
