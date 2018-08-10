@@ -150,7 +150,7 @@ contains
     endif
 
     ! if we aren't doing any heating/burning, then just copy the old to the new
-    if (.not. (do_heating .or. do_burning .or. derivative_mode)) then
+    if (.not. (do_heating .or. do_burning) .and. .not. derivative_mode) then
        do n = 1, nlevs
           call multifab_copy(snew(n),sold(n),nghost(sold(n)))
        enddo
@@ -170,14 +170,16 @@ contains
        call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
        call ml_cc_restriction(rho_Hnuc(n-1)    ,rho_Hnuc(n)    ,mla%mba%rr(n-1,:))
     enddo
-
-    ! now update temperature
-    if (use_tfromp) then
-       call makeTfromRhoP(snew,p0,mla,the_bc_level,dx)
-    else
-       call makeTfromRhoH(snew,p0,mla,the_bc_level,dx)
-    end if
-
+    
+    if (.not. derivative_mode) then
+        ! now update temperature
+        if (use_tfromp) then
+           call makeTfromRhoP(snew,p0,mla,the_bc_level,dx)
+        else
+           call makeTfromRhoH(snew,p0,mla,the_bc_level,dx)
+        end if
+    endif
+    
     call destroy(bpt)
 
   end subroutine react_state
