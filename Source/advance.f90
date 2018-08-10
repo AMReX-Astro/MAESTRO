@@ -281,7 +281,6 @@ if (derivative_mode .and. .not. init_mode) then
 
 ! derivative mode is not implemented for burning network
 ! derivative mode is not implemented for evolving background state
-! derivative mode is not implemented for diffusion
 
 
 dt = dt / rk_timestep_fac
@@ -304,6 +303,7 @@ do rkstep=1,4
     do n=1,nlevs
        !set all derivatives to ZERO
        call setval(snew(n),ZERO,all=.true.)
+       call setval(unew(n),ZERO,all=.true.)
     end do
 
     call react_state(mla,tempbar_init,sold,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_old,ZERO,dx, &
@@ -357,7 +357,7 @@ do rkstep=1,4
     end do
     
     call advance_premac(uold,sold,umac,gpi,normal,w0,w0mac,w0_force,w0_force_cart, &
-                        rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
+                        rho0_old,grav_cell_old,dx,ZERO,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
@@ -550,7 +550,7 @@ do rkstep=1,4
     
     rho0_nph = rho0_old
     grav_cell_nph = grav_cell_old
-    
+
     call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpi,normal,w0,w0mac,w0_force, &
                           w0_force_cart,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
                           dx,ZERO,the_bc_tower%bc_tower_array,sponge,derivative_mode)
@@ -561,6 +561,7 @@ do rkstep=1,4
     end if
 
     do n=1,nlevs
+       call destroy(rhohalf(n))
        do comp=1,dm
           call destroy(umac(n,comp))
        end do
@@ -708,7 +709,10 @@ enddo
        call multifab_sub_sub(dSdt(n),Source_old(n))
        call multifab_div_div_s(dSdt(n),dt)
     end do
-
+    
+    do n=1,nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+    end do
 
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,dt,.false.,the_bc_tower%bc_tower_array,mla)
     div_coeff_nph = div_coeff_old
@@ -841,7 +845,8 @@ enddo
 
     if (.not. init_mode) then
        
-       grav_cell_old = grav_cell_new
+       div_coeff_new = div_coeff_old
+       grav_cell_new = grav_cell_old
 
        if (.not. fix_base_state) then
           ! compute tempbar by "averaging"

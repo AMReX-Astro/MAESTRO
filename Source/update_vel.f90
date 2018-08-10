@@ -178,7 +178,7 @@ contains
 
        ! update with (Utilde dot grad) Utilde and force
        if (derivative_mode) then
-              unew(i,1) = - ugradu + force(i,1)
+              unew(i,1) = unew(i,1) - ugradu + force(i,1)
        else
               unew(i,1) = uold(i,1) - dt * ugradu + dt * force(i,1)
        endif
@@ -245,8 +245,8 @@ contains
           
           ! update with (Utilde dot grad) Utilde and force
           if (derivative_mode) then
-                  unew(i,j,1) = - ugradu + force(i,j,1)
-                  unew(i,j,2) = - ugradv + force(i,j,2)
+                  unew(i,j,1) = unew(i,j,1) - ugradu + force(i,j,1)
+                  unew(i,j,2) = unew(i,j,2) - ugradv + force(i,j,2)
           else
                   unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
                   unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
@@ -378,9 +378,9 @@ contains
              
              ! update with (Utilde dot grad) Utilde and force
              if (derivative_mode) then
-                     unew(i,j,k,1) = - ugradu + force(i,j,k,1)
-                     unew(i,j,k,2) = - ugradv + force(i,j,k,2)
-                     unew(i,j,k,3) = - ugradw + force(i,j,k,3)
+                     unew(i,j,k,1) = unew(i,j,k,1) - ugradu + force(i,j,k,1)
+                     unew(i,j,k,2) = unew(i,j,k,2) - ugradv + force(i,j,k,2)
+                     unew(i,j,k,3) = unew(i,j,k,3) - ugradw + force(i,j,k,3)
              else
                      unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
                      unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
