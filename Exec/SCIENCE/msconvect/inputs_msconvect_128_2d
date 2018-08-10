@@ -10,7 +10,7 @@
 !Run parameters
  print_init_hse_diag = T
  restart = 2000
- max_step = 4000
+ max_step = 2010
  init_iter = 1
  
  stop_time = 1e9
@@ -86,15 +86,15 @@
 
 !Cutoff densities + sponge 
  !effectively no anelastic cutoff
- anelastic_cutoff = 1.12
- base_cutoff_density = 1.12
+ anelastic_cutoff = 1.2
+ base_cutoff_density = 1.2
  buoyancy_cutoff_factor = 1.14
  !standard implementiation: sponge starts at sponge_center_density * sponge_start_factor
  do_sponge = T
  sponge_mode = 1 
  sponge_center_density = 2
  sponge_start_factor = 1.2d0
- sponge_kappa = 2.0d-3
+ sponge_kappa = 2.0d3
  
  
 !Initialization 
@@ -124,7 +124,7 @@
 
  
 !Verbosity
-    verbose = 0
+    verbose = 5
  mg_verbose = 0
  cg_verbose = 0
 
@@ -137,7 +137,7 @@
  
  
 !Thermal diffusion
- use_thermal_diffusion = T
+ use_thermal_diffusion = F
 
  
  
@@ -160,4 +160,6 @@
  mini_plot_var3 = 'species'
  mini_plot_var4 = 'temperature'
 
+ derivative_mode = T
+ rk_timestep_fac = 1.0
 /
