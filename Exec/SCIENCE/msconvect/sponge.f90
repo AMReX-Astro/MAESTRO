@@ -217,17 +217,17 @@ contains
                             sponge(i,j) = ONE / (ONE + dt * smdamp * sponge_kappa)
                         endif
 
-                        ! Outer sponge: damps velocities in the corners of the domain
-                        if (r >= r_sp_outer) then
-                            if (r < r_tp_outer) then
-                                smdamp = HALF * &
-                                    (ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
-                            else
-                                smdamp = ONE
-                            endif
-                            sponge(i,j) = sponge(i,j) / &
-                                (ONE + dt * smdamp * 10.d0 * sponge_kappa)
-                        endif
+!                        ! Outer sponge: damps velocities in the corners of the domain
+!                        if (r >= r_sp_outer) then
+!                            if (r < r_tp_outer) then
+!                                smdamp = HALF * &
+!                                    (ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+!                            else
+!                                smdamp = ONE
+!                            endif
+!                            sponge(i,j) = sponge(i,j) / &
+!                                (ONE + dt * smdamp * 10.d0 * sponge_kappa)
+!                        endif
 
                     end do
                 end do
@@ -260,26 +260,26 @@ contains
                             sponge(i,j) = ONE / (ONE + dt * smdamp * sponge_kappa)
                         endif
 
-                        ! Outer sponge: damps velocities in the corners of the domain
-                        if (x >= r_sp_outer .and. x>y) then
-                            if (x < r_tp_outer) then
-                                smdamp = HALF * &
-                                    (ONE - cos(M_PI*(x - r_sp_outer)/(r_tp_outer - r_sp_outer)))
-                            else
-                                smdamp = ONE
-                            endif
-                            sponge(i,j) = sponge(i,j) / &
-                                (ONE + dt * smdamp * 10.d0 * sponge_kappa)
-                        else if (y>=r_sp_outer) then
-                            if (y < r_tp_outer) then
-                                smdamp = HALF * &
-                                    (ONE - cos(M_PI*(y - r_sp_outer)/(r_tp_outer - r_sp_outer)))
-                            else
-                                smdamp = ONE
-                            endif
-                            sponge(i,j) = sponge(i,j) / &
-                                (ONE + dt * smdamp * 10.d0 * sponge_kappa)
-                        endif
+!                        ! Outer sponge: damps velocities in the corners of the domain
+!                        if (x >= r_sp_outer .and. x>y) then
+!                            if (x < r_tp_outer) then
+!                                smdamp = HALF * &
+!                                    (ONE - cos(M_PI*(x - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+!                            else
+!                                smdamp = ONE
+!                            endif
+!                            sponge(i,j) = sponge(i,j) / &
+!                                (ONE + dt * smdamp * 10.d0 * sponge_kappa)
+!                        else if (y>=r_sp_outer) then
+!                            if (y < r_tp_outer) then
+!                                smdamp = HALF * &
+!                                    (ONE - cos(M_PI*(y - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+!                            else
+!                                smdamp = ONE
+!                            endif
+!                            sponge(i,j) = sponge(i,j) / &
+!                                (ONE + dt * smdamp * 10.d0 * sponge_kappa)
+!                        endif
 
                     end do
                 end do
@@ -349,17 +349,17 @@ contains
                    sponge(i,j,k) = ONE / (ONE + dt * smdamp * sponge_kappa)
                 endif
 
-                ! Outer sponge: damps velocities in the corners of the domain
-                if (r >= r_sp_outer) then
-                   if (r < r_tp_outer) then
-                      smdamp = HALF * &
-                           (ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
-                   else
-                      smdamp = ONE
-                   endif
-                   sponge(i,j,k) = sponge(i,j,k) / &
-                        (ONE + dt * smdamp * 10.d0 * sponge_kappa)
-                endif
+!                ! Outer sponge: damps velocities in the corners of the domain
+!                if (r >= r_sp_outer) then
+!                   if (r < r_tp_outer) then
+!                      smdamp = HALF * &
+!                           (ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+!                   else
+!                      smdamp = ONE
+!                   endif
+!                   sponge(i,j,k) = sponge(i,j,k) / &
+!                        (ONE + dt * smdamp * 10.d0 * sponge_kappa)
+!                endif
 
              end do
           end do

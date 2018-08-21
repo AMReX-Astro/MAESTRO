@@ -10,7 +10,7 @@
 !Run parameters
  print_init_hse_diag = T
  restart = 2000
- max_step = 2010
+ max_step = 6000
  init_iter = 1
  
  stop_time = 1e9
@@ -71,8 +71,8 @@
  
  
 !Grid (physical)
- prob_hi_x = 1.2e11
- prob_hi_y = 1.2e11
+ prob_hi_x = 1.1e11
+ prob_hi_y = 1.1e11
  prob_hi_z = 0.
  
  
@@ -86,16 +86,17 @@
 
 !Cutoff densities + sponge 
  !effectively no anelastic cutoff
- anelastic_cutoff = 1.2
- base_cutoff_density = 1.2
+ anelastic_cutoff = 0.00000000012
+ base_cutoff_density = 0.00000000012
  buoyancy_cutoff_factor = 1.14
  !standard implementiation: sponge starts at sponge_center_density * sponge_start_factor
  do_sponge = T
  sponge_mode = 1 
- sponge_center_density = 2
- sponge_start_factor = 1.2d0
- sponge_kappa = 2.0d3
+ sponge_center_density = 4
+ sponge_start_factor = 1.5d0
+ sponge_kappa = 2.5d-4
  
+ fix_base_state = T
  
 !Initialization 
 
