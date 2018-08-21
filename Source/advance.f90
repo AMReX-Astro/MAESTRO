@@ -454,8 +454,12 @@ do rkstep=1,4
 
        do n=1,nlevs
           call destroy(Tcoeff1(n))
+          call destroy(hcoeff1(n))
+          call destroy(Xkcoeff1(n))
+          call destroy(pcoeff1(n))
        end do
     end if
+    
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '            :  density_advance >>> '
@@ -498,6 +502,7 @@ do rkstep=1,4
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
        end do
+       call destroy(thermal1(n))
        call destroy(scal_force(n))
     end do
 
@@ -509,15 +514,6 @@ do rkstep=1,4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     thermal_time_start = parallel_wtime()
-
-    if (use_thermal_diffusion) then
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  4a: thermal conduct >>>'
-       end if
-
-       call thermal_conduct(mla,dx,dt,sold,hcoeff1,Xkcoeff1,pcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
-                            sold,p0_old,p0_new,the_bc_tower,snew,derivative_mode)
-    end if
 
     if (barrier_timers) call parallel_barrier()
     thermal_time = thermal_time + (parallel_wtime() - thermal_time_start)
@@ -601,32 +597,34 @@ do rkstep=1,4
     ! reset cutoff coordinates to old time value
     call compute_cutoff_coords(rho0_old)
 
+    do n=1,nlevs
+       call multifab_build(thermal1(n), mla%la(n), 1, 0)
+       call setval(thermal1(n),ZERO,all=.true.)
+    end do
+    
+    ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-
        do n=1,nlevs
-          call multifab_build(Tcoeff2(n),  mla%la(n), 1,     1)
-          call multifab_build(hcoeff2(n),  mla%la(n), 1,     1)
-          call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
-          call multifab_build(pcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(Tcoeff1(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff1(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff1(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff1(n),  mla%la(n), 1,     1)
        end do
 
-       call make_thermal_coeffs(sold,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
+       call make_thermal_coeffs(sold,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1)
 
-       call make_explicit_thermal(mla,dx,thermal2,sold,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
-                                  p0_new,the_bc_tower)
+       call make_explicit_thermal(mla,dx,thermal1,sold,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
+                                  p0_old,the_bc_tower)
 
        do n=1,nlevs
-          call destroy(Tcoeff2(n))
-          call destroy(hcoeff2(n))
-          call destroy(Xkcoeff2(n))
-          call destroy(pcoeff2(n))
-       end do
-
-    else
-       do n=1,nlevs
-          call setval(thermal2(n),ZERO,all=.true.)
+          call destroy(Tcoeff1(n))
+          call destroy(hcoeff1(n))
+          call destroy(Xkcoeff1(n))
+          call destroy(pcoeff1(n))
        end do
     end if
+    
+    
 
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
@@ -637,11 +635,12 @@ do rkstep=1,4
     call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
                 sold,uold, &
                 normal, &
-                rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2, &
+                rho_omegadot2,rho_Hnuc2,rho_Hext,thermal1, &
                 p0_old,gamma1bar,delta_gamma1_termbar,psi, &
                 dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
+       call destroy(thermal1(n))
        call destroy(delta_gamma1(n))
        call destroy(delta_gamma1_term(n))
     end do
@@ -683,6 +682,22 @@ enddo
 
        call make_explicit_thermal(mla,dx,thermal2,snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
                                   p0_new,the_bc_tower)
+
+
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  4a: thermal conduct >>>'
+       end if
+       
+       ! do the thermal diffusion
+       call thermal_conduct(mla,dx,dt,sold,hcoeff2,Xkcoeff2,pcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
+                            snew,p0_old,p0_new,the_bc_tower)
+
+       ! recompute the thermal coefficients with the updated enthalpy (we need this for the Source term)
+       call make_thermal_coeffs(snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
+
+       call make_explicit_thermal(mla,dx,thermal2,snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
+                                  p0_new,the_bc_tower)
+
 
        do n=1,nlevs
           call destroy(Tcoeff2(n))
