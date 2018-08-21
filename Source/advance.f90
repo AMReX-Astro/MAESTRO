@@ -79,7 +79,7 @@ contains
                                              use_tfromp, use_thermal_diffusion, &
                                              use_delta_gamma1_term, nodal, mach_max_abort, &
                                              prob_lo, prob_hi, use_particles, ppm_trace_forces, &
-                                             derivative_mode, rk_timestep_fac
+                                             derivative_mode, rk_timestep_fac, do_sponge
     use time_module                 , only : time
     use addw0_module                , only : addw0
     use make_pi_cc_module           , only : make_pi_cc
@@ -661,6 +661,15 @@ enddo
 
     call update_thermo_rk(snew,p0_old,rho0_old,dx,mla,the_bc_tower%bc_tower_array)  
     
+    !apply the sponge
+    if (do_sponge) then
+        do n=1,nlevs
+            do comp=1,dm
+                call multifab_mult_mult_c(unew(n),comp,sponge(n),1,nghost(sponge(n)))
+            enddo
+        enddo
+    endif
+ 
     if(use_thermal_diffusion) then
 
        do n=1,nlevs

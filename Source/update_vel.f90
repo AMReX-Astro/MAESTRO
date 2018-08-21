@@ -186,13 +186,13 @@ contains
        ! subtract (w0 dot grad) Utilde term
        ubar = HALF*(w0(i) + w0(i+1))
        if (derivative_mode) then
-              unew(i,1) = unew(i,1) - ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
+            unew(i,1) = unew(i,1) - ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
        else
-              unew(i,1) = unew(i,1) - dt * ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
-       endif
+            unew(i,1) = unew(i,1) - dt * ubar*(uedgex(i+1,1) - uedgex(i,1))/dx(1)
+       endif       
        
-       ! Add the sponge
-       if (do_sponge) unew(i,:) = unew(i,:) * sponge(i)
+            ! Add the sponge
+            if (do_sponge) unew(i,:) = unew(i,:) * sponge(i)
 
     enddo
 
@@ -245,11 +245,11 @@ contains
           
           ! update with (Utilde dot grad) Utilde and force
           if (derivative_mode) then
-                  unew(i,j,1) = unew(i,j,1) - ugradu + force(i,j,1)
-                  unew(i,j,2) = unew(i,j,2) - ugradv + force(i,j,2)
+              unew(i,j,1) = unew(i,j,1) - ugradu + force(i,j,1)
+              unew(i,j,2) = unew(i,j,2) - ugradv + force(i,j,2)
           else
-                  unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
-                  unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
+              unew(i,j,1) = uold(i,j,1) - dt * ugradu + dt * force(i,j,1)
+              unew(i,j,2) = uold(i,j,2) - dt * ugradv + dt * force(i,j,2)
           endif
        enddo
     enddo
@@ -263,13 +263,13 @@ contains
         
             do i = lo(1), hi(1)
                 if (derivative_mode) then
-                        unew(i,j,:) = unew(i,j,:) - vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
+                    unew(i,j,:) = unew(i,j,:) - vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
                 else
-                        unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
-                endif
-            ! Add the sponge
-                if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
-        
+                    unew(i,j,:) = unew(i,j,:) - dt * vbar*(uedgey(i,j+1,:) - uedgey(i,j,:))/dx(2)
+                endif               
+                    ! Add the sponge
+                    if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
+
             enddo
         enddo
 
@@ -296,14 +296,14 @@ contains
                           + gradvy * HALF*(w0macy(i,j)+w0macy(i,j+1)) 
 
                 if (derivative_mode) then
-                        unew(i,j,1) = unew(i,j,1) - w0_gradur
-                        unew(i,j,2) = unew(i,j,2) - w0_gradvr
+                    unew(i,j,1) = unew(i,j,1) - w0_gradur
+                    unew(i,j,2) = unew(i,j,2) - w0_gradvr
                 else
-                        unew(i,j,1) = unew(i,j,1) - dt * w0_gradur
-                        unew(i,j,2) = unew(i,j,2) - dt * w0_gradvr
-                endif
-                ! Add the sponge
-                if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
+                    unew(i,j,1) = unew(i,j,1) - dt * w0_gradur
+                    unew(i,j,2) = unew(i,j,2) - dt * w0_gradvr
+                endif                
+                    ! Add the sponge
+                    if (do_sponge) unew(i,j,:) = unew(i,j,:) * sponge(i,j)
 
              enddo
           enddo
@@ -378,13 +378,13 @@ contains
              
              ! update with (Utilde dot grad) Utilde and force
              if (derivative_mode) then
-                     unew(i,j,k,1) = unew(i,j,k,1) - ugradu + force(i,j,k,1)
-                     unew(i,j,k,2) = unew(i,j,k,2) - ugradv + force(i,j,k,2)
-                     unew(i,j,k,3) = unew(i,j,k,3) - ugradw + force(i,j,k,3)
+                 unew(i,j,k,1) = unew(i,j,k,1) - ugradu + force(i,j,k,1)
+                 unew(i,j,k,2) = unew(i,j,k,2) - ugradv + force(i,j,k,2)
+                 unew(i,j,k,3) = unew(i,j,k,3) - ugradw + force(i,j,k,3)
              else
-                     unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
-                     unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
-                     unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
+                 unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
+                 unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
+                 unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
              endif
           enddo
        enddo
@@ -402,16 +402,16 @@ contains
              do i = lo(1), hi(1)
                 
                 if (derivative_mode) then
-                        unew(i,j,k,:) = unew(i,j,k,:) - wbar*(uedgez(i,j,k+1,:) &
-                             - uedgez(i,j,k,:))/dx(3)
+                    unew(i,j,k,:) = unew(i,j,k,:) - wbar*(uedgez(i,j,k+1,:) &
+                        - uedgez(i,j,k,:))/dx(3)
 
                 else
-                        unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(uedgez(i,j,k+1,:) &
-                             - uedgez(i,j,k,:))/dx(3)
-                endif
+                    unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(uedgez(i,j,k+1,:) &
+                        - uedgez(i,j,k,:))/dx(3)
+                endif                
                 
-                ! Add the sponge
-                if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
+                    ! Add the sponge
+                    if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
 
              enddo
           enddo
@@ -452,17 +452,16 @@ contains
                           + gradwy * HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)) &
                           + gradwz * HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
                 if (derivative_mode) then
-                        unew(i,j,k,1) = unew(i,j,k,1) -  w0_gradur
-                        unew(i,j,k,2) = unew(i,j,k,2) -  w0_gradvr
-                        unew(i,j,k,3) = unew(i,j,k,3) -  w0_gradwr
-
+                    unew(i,j,k,1) = unew(i,j,k,1) -  w0_gradur
+                    unew(i,j,k,2) = unew(i,j,k,2) -  w0_gradvr
+                    unew(i,j,k,3) = unew(i,j,k,3) -  w0_gradwr
                 else
-                        unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
-                        unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
-                        unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_gradwr
-                endif
-                ! Add the sponge
-                if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
+                    unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
+                    unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
+                    unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_gradwr
+                endif                
+                    ! Add the sponge
+                    if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
 
              enddo
           enddo
