@@ -377,6 +377,7 @@ do rkstep=1,4
                      gamma1bar_old,p0_old,delta_p_term,dt,delta_chi,.true.)
 
     do n=1,nlevs
+       call destroy(delta_chi(n))
        call destroy(delta_gamma1_term(n))
        call destroy(delta_p_term(n))
     end do
@@ -415,6 +416,7 @@ do rkstep=1,4
 
 
     do n=1,nlevs
+       call destroy(macphi(n))
        call destroy(macrhs(n))
     end do
 
@@ -504,6 +506,7 @@ do rkstep=1,4
        end do
        call destroy(thermal1(n))
        call destroy(scal_force(n))
+       call destroy(etarhoflux(n))
     end do
 
     if (barrier_timers) call parallel_barrier()
@@ -820,6 +823,7 @@ enddo
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
+       call destroy(delta_gamma1(n))
     end do
 
     do n=1,nlevs
