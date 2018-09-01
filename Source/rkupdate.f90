@@ -320,9 +320,9 @@ contains
     
     use bl_constants_module
     use network,       only: nspec
-    use eos_module,    only: eos, eos_input_rp
+    use eos_module,    only: eos, eos_input_rp, eos_input_rh
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp, use_tfromp
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp, pi_comp
     
     integer, intent(in) :: lo(:), hi(:), ng_s  
@@ -383,27 +383,41 @@ contains
     
     
     do i = lo(1), hi(1)
+        if (use_tfromp) then
+            eos_state%rho = s(i,rho_comp)
+            eos_state%T   = s(i,temp_comp)
+            if (use_pprime_in_tfromp) then
+                eos_state%p = p0(i) + s(i,pi_comp)
+            else
+                eos_state%p = p0(i)
+            endif
+            eos_state%xn  = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho            
             
-        eos_state%rho = s(i,rho_comp)
-        eos_state%T   = s(i,temp_comp)
-        if (use_pprime_in_tfromp) then
-            eos_state%p = p0(i) + s(i,pi_comp)
-        else
-            eos_state%p = p0(i)
-        endif
-        eos_state%xn  = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho            
-        
-        pt_index(:) = (/i, -1, -1/)
-                 
-        ! (rho,P) --> T,h
-        call eos(eos_input_rp, eos_state, pt_index)
-                 
-        if (do_eos_h_above_cutoff .and. s(i,rho_comp) .le. base_cutoff_density) then
-            s(i,rhoh_comp) = s(i,rho_comp) * eos_state%h
-        end if
-        
-        s(i,temp_comp) = eos_state%T
-                                     
+            pt_index(:) = (/i, -1, -1/)
+                     
+            ! (rho,P) --> T,h
+            call eos(eos_input_rp, eos_state, pt_index)
+                     
+            if (do_eos_h_above_cutoff .and. s(i,rho_comp) .le. base_cutoff_density) then
+                s(i,rhoh_comp) = s(i,rho_comp) * eos_state%h
+            end if
+            
+            s(i,temp_comp) = eos_state%T
+        else    
+              ! (rho, h) --> T, p
+
+              eos_state%rho   = s(i,rho_comp)
+              eos_state%T     = s(i,temp_comp)
+              eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+              eos_state%h = s(i,rhoh_comp) / s(i,rho_comp)
+
+              pt_index(:) = (/i, -1, -1/)
+
+              call eos(eos_input_rh, eos_state, pt_index)
+              
+              s(i,temp_comp) = eos_state%T
+        endif                             
     enddo
 
   end subroutine rk_update_thermo_1d
@@ -413,9 +427,9 @@ contains
 
     use bl_constants_module
     use network,       only: nspec
-    use eos_module,    only: eos, eos_input_rp
+    use eos_module,    only: eos, eos_input_rp, eos_input_rh
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp, use_tfromp
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp, pi_comp
     
     integer, intent(in) :: lo(:), hi(:), ng_s  
@@ -476,26 +490,42 @@ contains
     
     do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-                    
-            eos_state%rho = s(i,j,rho_comp)
-            eos_state%T   = s(i,j,temp_comp)
-            if (use_pprime_in_tfromp) then
-                eos_state%p = p0(j) + s(i,j,pi_comp)
+            if (use_tfromp) then        
+                eos_state%rho = s(i,j,rho_comp)
+                eos_state%T   = s(i,j,temp_comp)
+                if (use_pprime_in_tfromp) then
+                    eos_state%p = p0(j) + s(i,j,pi_comp)
+                else
+                    eos_state%p = p0(j)
+                endif
+                eos_state%xn  = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho            
+                        
+                pt_index(:) = (/i, j, -1/)
+                                 
+                ! (rho,P) --> T,h
+                call eos(eos_input_rp, eos_state, pt_index)
+                                 
+                if (do_eos_h_above_cutoff .and. s(i,j,rho_comp) .le. base_cutoff_density) then
+                   s(i,j,rhoh_comp) = s(i,j,rho_comp) * eos_state%h
+                end if
+                        
+                s(i,j,temp_comp) = eos_state%T
             else
-                eos_state%p = p0(j)
+                 ! (rho, h) --> T, p
+          
+                 eos_state%rho   = s(i,j,rho_comp)
+                 eos_state%T     = s(i,j,temp_comp)
+                 eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+                 
+                 eos_state%h = s(i,j,rhoh_comp) / s(i,j,rho_comp)
+
+                 pt_index(:) = (/i, j, -1/)
+              
+                 call eos(eos_input_rh, eos_state, pt_index)
+              
+                 s(i,j,temp_comp) = eos_state%T
+
             endif
-            eos_state%xn  = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho            
-                    
-            pt_index(:) = (/i, j, -1/)
-                             
-            ! (rho,P) --> T,h
-            call eos(eos_input_rp, eos_state, pt_index)
-                             
-            if (do_eos_h_above_cutoff .and. s(i,j,rho_comp) .le. base_cutoff_density) then
-               s(i,j,rhoh_comp) = s(i,j,rho_comp) * eos_state%h
-            end if
-                    
-            s(i,j,temp_comp) = eos_state%T
         enddo                         
     enddo
 
@@ -506,9 +536,9 @@ contains
 
     use bl_constants_module
     use network,       only: nspec
-    use eos_module,    only: eos, eos_input_rp
+    use eos_module,    only: eos, eos_input_rp, eos_input_rh
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp, use_tfromp
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp, pi_comp
     
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_pc, ng_rc  
@@ -569,26 +599,42 @@ contains
     
     do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-                    
-            eos_state%rho = s(i,j,rho_comp)
-            eos_state%T   = s(i,j,temp_comp)
-            if (use_pprime_in_tfromp) then
-                eos_state%p = p0_cart(i,j) + s(i,j,pi_comp)
+            if (use_tfromp) then        
+                eos_state%rho = s(i,j,rho_comp)
+                eos_state%T   = s(i,j,temp_comp)
+                if (use_pprime_in_tfromp) then
+                    eos_state%p = p0_cart(i,j) + s(i,j,pi_comp)
+                else
+                    eos_state%p = p0_cart(i,j)
+                endif
+                eos_state%xn  = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho            
+                        
+                pt_index(:) = (/i, j, -1/)
+                                 
+                ! (rho,P) --> T,h
+                call eos(eos_input_rp, eos_state, pt_index)
+                                 
+                if (do_eos_h_above_cutoff .and. s(i,j,rho_comp) .le. base_cutoff_density) then
+                   s(i,j,rhoh_comp) = s(i,j,rho_comp) * eos_state%h
+                end if
+                        
+                s(i,j,temp_comp) = eos_state%T
             else
-                eos_state%p = p0_cart(i,j)
+                ! (rho, h) --> T, p
+             
+                eos_state%rho   = s(i,j,rho_comp)
+                eos_state%T     = s(i,j,temp_comp)
+                eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                eos_state%h = s(i,j,rhoh_comp) / s(i,j,rho_comp)
+                
+                pt_index(:) = (/i, j, -1/)
+             
+                call eos(eos_input_rh, eos_state, pt_index)
+             
+                s(i,j,temp_comp) = eos_state%T
+
             endif
-            eos_state%xn  = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho            
-                    
-            pt_index(:) = (/i, j, -1/)
-                             
-            ! (rho,P) --> T,h
-            call eos(eos_input_rp, eos_state, pt_index)
-                             
-            if (do_eos_h_above_cutoff .and. s(i,j,rho_comp) .le. base_cutoff_density) then
-               s(i,j,rhoh_comp) = s(i,j,rho_comp) * eos_state%h
-            end if
-                    
-            s(i,j,temp_comp) = eos_state%T
         enddo                         
     enddo
 
@@ -598,9 +644,9 @@ contains
 
     use bl_constants_module
     use network,       only: nspec
-    use eos_module,    only: eos, eos_input_rp
+    use eos_module,    only: eos, eos_input_rp, eos_input_rh
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp, use_tfromp
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp, pi_comp
     
     integer, intent(in) :: lo(:), hi(:), ng_s  
@@ -662,26 +708,43 @@ contains
     do k = lo(3), hi(3)
         do j = lo(2), hi(2)
             do i = lo(1), hi(1)
-                        
-                eos_state%rho = s(i,j,k,rho_comp)
-                eos_state%T   = s(i,j,k,temp_comp)
-                if (use_pprime_in_tfromp) then
-                    eos_state%p = p0(k) + s(i,j,k,pi_comp)
+                
+                if (use_tfromp) then        
+                    eos_state%rho = s(i,j,k,rho_comp)
+                    eos_state%T   = s(i,j,k,temp_comp)
+                    if (use_pprime_in_tfromp) then
+                        eos_state%p = p0(k) + s(i,j,k,pi_comp)
+                    else
+                        eos_state%p = p0(k)
+                    endif
+                    eos_state%xn  = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho            
+                            
+                    pt_index(:) = (/i, j, k/)
+                                     
+                    ! (rho,P) --> T,h
+                    call eos(eos_input_rp, eos_state, pt_index)
+                                     
+                    if (do_eos_h_above_cutoff .and. s(i,j,k,rho_comp) .le. base_cutoff_density) then
+                        s(i,j,k,rhoh_comp) = s(i,j,k,rho_comp) * eos_state%h
+                    end if
+                            
+                    s(i,j,k,temp_comp) = eos_state%T
                 else
-                    eos_state%p = p0(k)
+                    ! (rho, h) --> T, p
+             
+                    eos_state%rho   = s(i,j,k,rho_comp)
+                    eos_state%T     = s(i,j,k,temp_comp)
+                    eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                    eos_state%h = s(i,j,k,rhoh_comp) / s(i,j,k,rho_comp)
+                    
+                    pt_index(:) = (/i, j, k/)
+                 
+                    call eos(eos_input_rh, eos_state, pt_index)
+                 
+                    s(i,j,k,temp_comp) = eos_state%T
+                 
                 endif
-                eos_state%xn  = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho            
-                        
-                pt_index(:) = (/i, j, k/)
-                                 
-                ! (rho,P) --> T,h
-                call eos(eos_input_rp, eos_state, pt_index)
-                                 
-                if (do_eos_h_above_cutoff .and. s(i,j,k,rho_comp) .le. base_cutoff_density) then
-                    s(i,j,k,rhoh_comp) = s(i,j,k,rho_comp) * eos_state%h
-                end if
-                        
-                s(i,j,k,temp_comp) = eos_state%T
             enddo                         
         enddo
     enddo
@@ -692,9 +755,9 @@ contains
 
     use bl_constants_module
     use network,       only: nspec
-    use eos_module,    only: eos, eos_input_rp
+    use eos_module,    only: eos, eos_input_rp, eos_input_rh
     use eos_type_module
-    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp
+    use probin_module, only: do_eos_h_above_cutoff, base_cutoff_density, use_pprime_in_tfromp, use_tfromp
     use variables,     only: spec_comp, rho_comp, rhoh_comp, temp_comp, pi_comp
     
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_pc, ng_rc
@@ -756,26 +819,42 @@ contains
     do k = lo(3), hi(3)
         do j = lo(2), hi(2)
             do i = lo(1), hi(1)
-                        
-                eos_state%rho = s(i,j,k,rho_comp)
-                eos_state%T   = s(i,j,k,temp_comp)
-                if (use_pprime_in_tfromp) then
-                    eos_state%p = p0_cart(i,j,k) + s(i,j,k,pi_comp)
+                if (use_tfromp) then     
+                    eos_state%rho = s(i,j,k,rho_comp)
+                    eos_state%T   = s(i,j,k,temp_comp)
+                    if (use_pprime_in_tfromp) then
+                        eos_state%p = p0_cart(i,j,k) + s(i,j,k,pi_comp)
+                    else
+                        eos_state%p = p0_cart(i,j,k)
+                    endif
+                    eos_state%xn  = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho            
+                            
+                    pt_index(:) = (/i, j, k/)
+                                     
+                    ! (rho,P) --> T,h
+                    call eos(eos_input_rp, eos_state, pt_index)
+                                     
+                    if (do_eos_h_above_cutoff .and. s(i,j,k,rho_comp) .le. base_cutoff_density) then
+                        s(i,j,k,rhoh_comp) = s(i,j,k,rho_comp) * eos_state%h
+                    end if
+                            
+                    s(i,j,k,temp_comp) = eos_state%T
                 else
-                    eos_state%p = p0_cart(i,j,k)
+                    ! (rho, h) --> T, p
+             
+                    eos_state%rho   = s(i,j,k,rho_comp)
+                    eos_state%T     = s(i,j,k,temp_comp)
+                    eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+
+                    eos_state%h = s(i,j,k,rhoh_comp) / s(i,j,k,rho_comp)
+                    
+                    pt_index(:) = (/i, j, k/)
+                 
+                    call eos(eos_input_rh, eos_state, pt_index)
+                 
+                    s(i,j,k,temp_comp) = eos_state%T
+
                 endif
-                eos_state%xn  = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho            
-                        
-                pt_index(:) = (/i, j, k/)
-                                 
-                ! (rho,P) --> T,h
-                call eos(eos_input_rp, eos_state, pt_index)
-                                 
-                if (do_eos_h_above_cutoff .and. s(i,j,k,rho_comp) .le. base_cutoff_density) then
-                    s(i,j,k,rhoh_comp) = s(i,j,k,rho_comp) * eos_state%h
-                end if
-                        
-                s(i,j,k,temp_comp) = eos_state%T
             enddo                         
         enddo
     enddo
