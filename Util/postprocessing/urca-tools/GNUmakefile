@@ -4,7 +4,7 @@ OMP    :=
 MKVERBOSE :=t 
 COMP := gfortran
 
-BOXLIB_HOME := $(AMREX_HOME)
+FBOXLIB_HOME := $(FBOXLIB_HOME)
 
 # some routines need an eos/network (i.e. to compute thermodynamic 
 # quantities.  If that is the case, set NEED_EOS_NETWORK := t
@@ -14,13 +14,13 @@ NEED_EOS_NETWORK := t
 MAESTRO_TOP_DIR := $(MAESTRO_HOME)
 
 # include the main Makefile stuff
-include $(BOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
+include $(FBOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
 # Microphysics core directories
 MICROPHYS_CORE := 
 
 # core BoxLib directories
-BOXLIB_CORE := Src/F_BaseLib
+FBOXLIB_CORE := Src/BaseLib
 
 # other packages needed for data_processing
 Fmdirs := 
@@ -67,6 +67,9 @@ endif
 EXTRA_THERMO := t
 FPP_DEFINES += -DEXTRA_THERMO=$(EXTRA_THERMO)
 
+# we are not using the CUDA stuff
+FPP_DEFINES += -DAMREX_DEVICE=""
+
 # the helmeos has a table
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
@@ -94,8 +97,8 @@ Fmpack += $(foreach dir, $(MICROPHYS_CORE), $(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
 
 # BoxLib stuff
-Fmpack += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir)/GPackage.mak)
-Fmlocs += $(foreach dir, $(BOXLIB_CORE), $(BOXLIB_HOME)/$(dir))
+Fmpack += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir))
 
 # any include files
 Fmincs := $(foreach dir, $(Fmincludes), $(MAESTRO_TOP_DIR)/$(dir))
@@ -120,13 +123,13 @@ PROBIN_PARAMETER_DIRS += $(MICROPHYSICS_HOME)/unit_test/
 EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE)
 
 
-PROBIN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
-EXTERN_PARAMETERS := $(shell $(BOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
+PROBIN_PARAMETERS := $(shell $(FBOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
+EXTERN_PARAMETERS := $(shell $(FBOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 	@echo " "
 	@echo "${bold}WRITING probin.f90${normal}"
-	$(BOXLIB_HOME)/Tools/F_scripts/write_probin.py \
+	$(FBOXLIB_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
 	@echo " "
@@ -134,7 +137,7 @@ probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 ALL: $(pnames)
 
 # include the fParallel Makefile rules
-include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak
+include $(FBOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 #-----------------------------------------------------------------------------
 # build_info stuff
@@ -143,7 +146,7 @@ deppairs: build_info.f90
 build_info.f90: 
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
-	$(BOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
+	$(FBOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
            --modules "$(Fmdirs) $(MICROPHYS_CORE) $(UNIT_DIR)" \
            --FCOMP "$(COMP)" \
            --FCOMP_version "$(FCOMP_VERSION)" \
@@ -151,7 +154,7 @@ build_info.f90:
            --f_compile_line "$(COMPILE.f)" \
            --C_compile_line "$(COMPILE.c)" \
            --link_line "$(LINK.f90)" \
-           --boxlib_home "$(BOXLIB_HOME)" \
+           --fboxlib_home "$(FBOXLIB_HOME)" \
            --source_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
            --integrator "$(INTEGRATOR_DIR)" \
