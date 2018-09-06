@@ -60,7 +60,7 @@ zhi_boundary_type = "outlet"
 
  enthalpy_pred_type = 0
  species_pred_type = 2
- evolve_base_state = T
+ evolve_base_state = F
 
  dpdt_factor = 0.0d0
 
