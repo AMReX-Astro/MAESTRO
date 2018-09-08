@@ -22,8 +22,8 @@
  prob_hi_y = 5.d8
  prob_hi_z = 5.d8
 
- max_step  = 200
- init_iter = 1
+ max_step  = 0
+ init_iter = 0
 
  stop_time = 30000.
 
@@ -49,7 +49,7 @@ zhi_boundary_type = "outlet"
  cg_verbose = 0
 
  do_initial_projection = T
- init_divu_iter = 3
+ init_divu_iter = 1
 
  velpert_amplitude = 1.d5
  velpert_radius = 2.d7
