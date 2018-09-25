@@ -1,10 +1,10 @@
 NDEBUG := t
 MPI    := t
-OMP    := t
+OMP    := 
 
 HYPRE :=
 
-COMP := Cray
+COMP := gfortran
 
 MKVERBOSE := t
 
