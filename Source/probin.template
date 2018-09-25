@@ -426,6 +426,7 @@ contains
     use extern_probin_module
 
     integer, intent(in) :: unit
+    logical :: ltest
 
     write (unit, *) "[*] indicates overridden default"
 
