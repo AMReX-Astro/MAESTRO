@@ -25,7 +25,7 @@
  prob_hi_y = 5.d8
  prob_hi_z = 5.d8
 
- max_step  = 41
+ max_step  = 200
  init_iter = 1
 
  stop_time = 30000.
@@ -33,7 +33,6 @@
  plot_int  = 10
  plot_deltat = 10.0d0
  chk_int   = 10
- restart   = 40
 
  cflfac = 0.7d0
  init_shrink = 0.1d0
