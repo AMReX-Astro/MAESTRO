@@ -12,7 +12,7 @@ module rk_module
 
 contains
 
-  subroutine update_rk(snew,sold,stemp,szero,step,dt,mla,derivative_mode)
+  subroutine update_rk(snew,sold,stemp,szero,step,dt,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -24,13 +24,12 @@ contains
     type(multifab)    , intent(in   ) :: szero(:)    
     type(ml_layout)   , intent(inout) :: mla
     real(kind=dp_t)   , intent(in   ) :: dt
-    logical           , intent(in   ), optional :: derivative_mode
 
     ! local
     integer :: i,n
     integer :: lo(mla%dim),hi(mla%dim),dm,nlevs
     integer :: ng_sn,ng_so,ng_st,ng_sz
-    logical :: deriv
+    
     real(kind=dp_t) :: fac, dtfac
     real(kind=dp_t), pointer:: snp(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -39,12 +38,6 @@ contains
         
     dm = mla%dim
     nlevs = mla%nlevel
-    
-    if (present(derivative_mode)) then
-        deriv = derivative_mode
-    else
-        deriv = .false.
-    endif
     
     
     select case(step)
@@ -82,15 +75,15 @@ contains
           case (1)
              call rk_update_1d(snp(:,1,1,:),ng_sn,sop(:,1,1,:),ng_so, &
                                 stp(:,1,1,:),ng_st,szp(:,1,1,:),ng_sz, &
-                                fac,dtfac,lo,hi,dt,deriv)
+                                fac,dtfac,lo,hi,dt)
           case (2)
              call rk_update_2d(snp(:,:,1,:),ng_sn,sop(:,:,1,:),ng_so, &
                                 stp(:,:,1,:),ng_st,szp(:,:,1,:),ng_sz, &
-                                fac,dtfac,lo,hi,dt,deriv)
+                                fac,dtfac,lo,hi,dt)
           case (3)
              call rk_update_3d(snp(:,:,:,:),ng_sn,sop(:,:,:,:),ng_so, &
                                 stp(:,:,:,:),ng_st,szp(:,:,:,:),ng_sz, &
-                                fac,dtfac,lo,hi,dt,deriv)
+                                fac,dtfac,lo,hi,dt)
           end select
        end do
 
@@ -99,8 +92,7 @@ contains
   end subroutine update_rk
 
   subroutine rk_update_1d(snew,ng_sn,sold,ng_so,stemp,ng_st,szero,ng_sz, &
-                         fac,dtfac,lo,hi,dt,derivative)
-    use probin_module, only: rk_timestep_fac 
+                         fac,dtfac,lo,hi,dt)
     
     integer, intent(in) :: lo(:), hi(:), ng_sn, ng_so, ng_st, ng_sz  
     real (kind = dp_t), intent(inout) ::   snew(lo(1)-ng_sn:,:)  
@@ -108,26 +100,18 @@ contains
     real (kind = dp_t), intent(inout) ::   stemp(lo(1)-ng_st:,:)  
     real (kind = dp_t), intent(in   ) ::   szero(lo(1)-ng_sz:,:)
     real (kind = dp_t), intent(in   ) :: fac, dtfac, dt
-    logical           , intent(in   ) :: derivative
     integer :: i
 
     do i = lo(1)-ng_sn, hi(1)+ng_sn
-            if (derivative) then
-                stemp(i,:) = stemp(i,:)  + snew(i,:) * fac * rk_timestep_fac * dt
-                sold(i,:) = szero(i,:) + snew(i,:) * dtfac * rk_timestep_fac * dt     
-            else
-                snew(i,:) = snew(i,:) - sold(i,:)
-                stemp(i,:) = stemp(i,:)  + snew(i,:) * fac * rk_timestep_fac 
-                sold(i,:) = szero(i,:) + snew(i,:) * dtfac * rk_timestep_fac 
-            endif
+        stemp(i,:) = stemp(i,:) + snew(i,:) * fac   * dt
+        sold(i,:)  = szero(i,:) + snew(i,:) * dtfac * dt     
     enddo
 
   end subroutine rk_update_1d
 
 
   subroutine rk_update_2d(snew,ng_sn,sold,ng_so,stemp,ng_st,szero,ng_sz, &
-                         fac,dtfac,lo,hi,dt,derivative)
-    use probin_module, only: rk_timestep_fac
+                         fac,dtfac,lo,hi,dt)
 
     integer, intent(in) :: lo(:), hi(:), ng_sn, ng_so, ng_st, ng_sz  
     real (kind = dp_t), intent(inout) ::   snew(lo(1)-ng_sn:,lo(2)-ng_sn:,:)  
@@ -135,28 +119,20 @@ contains
     real (kind = dp_t), intent(inout) ::   stemp(lo(1)-ng_st:,lo(2)-ng_st:,:)  
     real (kind = dp_t), intent(in   ) ::   szero(lo(1)-ng_sz:,lo(2)-ng_sz:,:)
     real (kind = dp_t), intent(in   ) :: fac, dtfac, dt
-    logical           , intent(in   ) :: derivative
 
     integer :: i,j
     !$OMP PARALLEL DO PRIVATE(i,j)
     do j = lo(2)-ng_sn, hi(2)+ng_sn
-            do i = lo(1)-ng_sn, hi(1)+ng_sn
-                    if (derivative) then
-                        stemp(i,j,:) = stemp(i,j,:)  + snew(i,j,:) * fac * rk_timestep_fac * dt
-                        sold(i,j,:) = szero(i,j,:) + snew(i,j,:) * dtfac * rk_timestep_fac * dt
-                    else
-                        snew(i,j,:) = snew(i,j,:) - sold(i,j,:)
-                        stemp(i,j,:) = stemp(i,j,:)  + snew(i,j,:) * fac * rk_timestep_fac
-                        sold(i,j,:) = szero(i,j,:) + snew(i,j,:) * dtfac * rk_timestep_fac
-                    endif
-            enddo
+        do i = lo(1)-ng_sn, hi(1)+ng_sn
+            stemp(i,j,:) = stemp(i,j,:) + snew(i,j,:) * fac   * dt
+            sold(i,j,:)  = szero(i,j,:) + snew(i,j,:) * dtfac * dt
+        enddo
     enddo
     !$OMP END PARALLEL DO    
   end subroutine rk_update_2d
 
   subroutine rk_update_3d(snew,ng_sn,sold,ng_so,stemp,ng_st,szero,ng_sz, &
-                         fac,dtfac,lo,hi,dt,derivative)
-    use probin_module, only: rk_timestep_fac
+                         fac,dtfac,lo,hi,dt)
 
     integer, intent(in) :: lo(:), hi(:), ng_sn, ng_so, ng_st, ng_sz  
     real (kind = dp_t), intent(inout) ::   snew(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:,:)  
@@ -164,30 +140,18 @@ contains
     real (kind = dp_t), intent(inout) ::   stemp(lo(1)-ng_st:,lo(2)-ng_st:,lo(3)-ng_st:,:)  
     real (kind = dp_t), intent(in   ) ::   szero(lo(1)-ng_sz:,lo(2)-ng_sz:,lo(3)-ng_sz:,:)
     real (kind = dp_t), intent(in   ) :: fac, dtfac, dt
-    logical           , intent(in   ) :: derivative
 
     integer :: i,j,k
     
     
     !$OMP PARALLEL DO PRIVATE(i,j,k)
     do k = lo(3)-ng_sn, hi(3)+ng_sn
-            do j = lo(2)-ng_sn, hi(2)+ng_sn
-                    do i = lo(1)-ng_sn, hi(1)+ng_sn
-                            if (derivative) then
-                                stemp(i,j,k,:) = stemp(i,j,k,:)  + snew(i,j,k,:) &
-                                                    * fac   * rk_timestep_fac * dt
-                                sold(i,j,k,:) = szero(i,j,k,:) + snew(i,j,k,:) &
-                                                    * dtfac * rk_timestep_fac * dt
-                            else
-                                snew(i,j,k,:) = snew(i,j,k,:) - sold(i,j,k,:)
-                                stemp(i,j,k,:) = stemp(i,j,k,:)  + snew(i,j,k,:) &
-                                                    * fac   * rk_timestep_fac
-                                sold(i,j,k,:) = szero(i,j,k,:) + snew(i,j,k,:) &
-                                                    * dtfac * rk_timestep_fac
-                                
-                            endif
-                    enddo
+        do j = lo(2)-ng_sn, hi(2)+ng_sn
+            do i = lo(1)-ng_sn, hi(1)+ng_sn
+                stemp(i,j,k,:) = stemp(i,j,k,:) + snew(i,j,k,:)*fac  *dt
+                sold(i,j,k,:)  = szero(i,j,k,:) + snew(i,j,k,:)*dtfac*dt
             enddo
+        enddo
     enddo
     !$OMP END PARALLEL DO    
   end subroutine rk_update_3d

@@ -698,7 +698,6 @@ sdc_couple_mac_velocity             logical            .false.
 # category: runge-kutta-integrator
 #-----------------------------------------------------------------------------
 derivative_mode                     logical            .false.
-rk_timestep_fac                     real               1.0
 
 #-----------------------------------------------------------------------------
 # category: debugging
