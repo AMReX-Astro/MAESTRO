@@ -6,7 +6,7 @@
  n_cellx = 128
  n_celly = 128
  n_cellz = 128
- max_grid_size = 64
+ max_grid_size = 32
 
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
