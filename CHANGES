@@ -1,3 +1,9 @@
+  * Major changes
+
+   -- the initial model generators have been removed from MAESTRO/
+      and are now a standalone git repo in the amrex-astro github
+      organization
+
 18.07
 
   * Major changes
