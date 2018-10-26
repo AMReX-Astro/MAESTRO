@@ -208,6 +208,8 @@ program fneutrinos
 
                     ! Update the ecap23 weights
                     ibin = floor((enu_ecap23 - energy_minimum)/energy_delta) + 1
+                    write(*,*) 'enu_ecap23 = ', enu_ecap23
+                    write(*,*) 'ibin = ', ibin
                     if (ibin .le. nbins) then
                        lambda = ecap23 * yna23 * N_avo * density * dvol
                        ecap23_weights(ibin) = ecap23_weights(ibin) + max(lambda, ZERO)
@@ -215,6 +217,8 @@ program fneutrinos
 
                     ! Update the beta23 weights
                     ibin = floor((enu_beta23 - energy_minimum)/energy_delta) + 1
+                    write(*,*) 'enu_beta23 = ', enu_beta23
+                    write(*,*) 'ibin = ', ibin
                     if (ibin .le. nbins) then
                        lambda = beta23 * yne23 * N_avo * density * dvol
                        beta23_weights(ibin) = beta23_weights(ibin) + max(lambda, ZERO)
