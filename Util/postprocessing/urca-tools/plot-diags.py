@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from bisect import bisect_left
 import argparse
@@ -12,6 +14,8 @@ parser.add_argument('-tmin', '--tmin', type=float, default=-1.0,
 parser.add_argument('-tmax', '--tmax', type=float, default=-1.0,
                     help='Maximum time to plot.')
 args = parser.parse_args()
+
+
 
 class Diagnostics(object):
     def __init__(self, file=None):
@@ -37,6 +41,7 @@ class Diagnostics(object):
     def plot(self, time, data, varlabel):
         # Plot variable 'varlabel' vs time
         fix, ax = plt.subplots(constrained_layout=True)
+        print('Plotting {}'.format(varlabel))
         ax.plot(time, data)
         ax.set_xlabel('time (sec)')
         ax.set_ylabel(varlabel)
@@ -117,11 +122,71 @@ class SimulationDiagnostics(object):
     def __init__(self, files=[]):
         self.files = files
         self.diagnostics = [Diagnostics(f) for f in self.files]
+        self.derived_diagnostics = Diagnostics()
+        self.add_derived_fields()
+        print('Added derived fields:')
+        print(self.derived_diagnostics.columns)
+        self.diagnostics.append(self.derived_diagnostics)
 
     def plotall(self):
         # Plot each of the columns against time
         for diag in self.diagnostics:
             diag.plotall()
+
+    def add_derived_fields(self):
+        # Add any derived fields, checking if their dependencies exist
+        self.add_total_energy()
+
+    def add_total_energy(self):
+        xtime = np.array([])
+        ntime = 'time'
+        
+        xgrav = np.array([])
+        ngrav = 'grav pot energy'
+        
+        xeint = np.array([])
+        neint = 'tot int energy'
+        
+        xekin = np.array([])
+        nekin = 'tot kin energy'
+
+        dependencies = {ntime:xtime,
+                        ngrav:xgrav,
+                        neint:xeint,
+                        nekin:xekin}
+
+        xtarget = np.array([])
+        ntarget = 'tot energy'
+
+        # Search for the dependency fields
+        # in all the diagnostic files
+        for kdep in dependencies.keys():
+            if not dependencies[kdep].size:
+                for diag in self.diagnostics:                
+                    if kdep in diag.columns:
+                        dependencies[kdep] = diag.data[kdep]
+                        break
+
+        # Check to make sure we found all the dependency fields
+        for kdep in dependencies.keys():
+            try:
+                assert(dependencies[kdep].size)
+            except:
+                raise ValueError('Dependency field {} for derived field {} could not be found.'.format(kdep, ntarget))
+
+        # Construct the derived field
+        xtarget = dependencies[ngrav] + dependencies[neint] + dependencies[nekin]
+
+        # Add time to derived field Diagnostics if not present
+        if not ntime in self.derived_diagnostics.columns:
+            self.derived_diagnostics.columns.append(ntime)
+            self.derived_diagnostics.data[ntime] = dependencies[ntime]
+
+        # Add derived field to derived field Diagnostics if not present
+        if not ntarget in self.derived_diagnostics.columns:
+            self.derived_diagnostics.columns.append(ntarget)
+            self.derived_diagnostics.data[ntarget] = xtarget
+
 
 if __name__ == "__main__":
     sdiag = SimulationDiagnostics(args.infiles)
