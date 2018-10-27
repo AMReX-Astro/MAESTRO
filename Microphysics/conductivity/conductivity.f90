@@ -41,7 +41,9 @@ contains
     ! call the EOS, passing through the arguments we called conducteos with
     call eos(input, state)
 
-    call actual_conductivity(state, cond)
+    call actual_conductivity(state)
+
+    cond = state % conductivity
 
   end subroutine conducteos
 

@@ -307,7 +307,6 @@ contains
     ! local
     integer :: i,comp    
     type (eos_t) :: eos_state
-    real (kind=dp_t) :: conductivity
 
 
     do i=lo(1)-1,hi(1)+1
@@ -328,17 +327,17 @@ contains
           eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
           
           ! dens, temp, and xmass are inputs
-          call conducteos(eos_input_rt, eos_state, conductivity)
+          call conducteos(eos_input_rt, eos_state)
           
-          Tcoeff(i) = -conductivity
-          hcoeff(i) = -conductivity/eos_state%cp
-          pcoeff(i) = (conductivity/eos_state%cp)* &
+          Tcoeff(i) = -eos_state % conductivity
+          hcoeff(i) = -eos_state % conductivity/eos_state%cp
+          pcoeff(i) = (eos_state % conductivity/eos_state%cp)* &
                ((1.0d0/eos_state%rho)* &
                (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
                eos_state%dedr/eos_state%dpdr)
        
           do comp=1,nspec
-             Xkcoeff(i,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
+             Xkcoeff(i,comp) = (eos_state % conductivity/eos_state%cp)*eos_state%dhdX(comp)
           enddo
 
        endif
@@ -374,7 +373,6 @@ contains
     ! local
     integer :: i,j,comp    
     type (eos_t) :: eos_state
-    real (kind=dp_t) :: conductivity
     
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
@@ -395,17 +393,17 @@ contains
              eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
              ! dens, temp, and xmass are inputs
-             call conducteos(eos_input_rt, eos_state, conductivity)
+             call conducteos(eos_input_rt, eos_state)
              
-             Tcoeff(i,j) = -conductivity
-             hcoeff(i,j) = -conductivity/eos_state%cp
-             pcoeff(i,j) = (conductivity/eos_state%cp)* &
+             Tcoeff(i,j) = -eos_state % conductivity
+             hcoeff(i,j) = -eos_state % conductivity/eos_state%cp
+             pcoeff(i,j) = (eos_state % conductivity/eos_state%cp)* &
                   ((1.0d0/eos_state%rho)* &
                   (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
                   eos_state%dedr/eos_state%dpdr)
              
              do comp=1,nspec
-                Xkcoeff(i,j,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
+                Xkcoeff(i,j,comp) = (eos_state % conductivity/eos_state%cp)*eos_state%dhdX(comp)
              enddo
 
           endif
@@ -442,9 +440,8 @@ contains
     ! local
     integer :: i,j,k,comp
     type (eos_t) :: eos_state
-    real (kind=dp_t) :: conductivity
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,comp,eos_state,conductivity)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,comp,eos_state)
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
@@ -466,17 +463,17 @@ contains
                 eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
              
                 ! dens, temp, and xmass are inputs
-                call conducteos(eos_input_rt, eos_state, conductivity)
+                call conducteos(eos_input_rt, eos_state)
                 
-                Tcoeff(i,j,k) = -conductivity
-                hcoeff(i,j,k) = -conductivity/eos_state%cp
-                pcoeff(i,j,k) = (conductivity/eos_state%cp)* &
+                Tcoeff(i,j,k) = -eos_state % conductivity
+                hcoeff(i,j,k) = -eos_state % conductivity/eos_state%cp
+                pcoeff(i,j,k) = (eos_state % conductivity/eos_state%cp)* &
                      ((1.0d0/eos_state%rho)* &
                      (1.0d0-eos_state%p/(eos_state%rho*eos_state%dpdr))+ &
                      eos_state%dedr/eos_state%dpdr)
                 
                 do comp=1,nspec
-                   Xkcoeff(i,j,k,comp) = (conductivity/eos_state%cp)*eos_state%dhdX(comp)
+                   Xkcoeff(i,j,k,comp) = (eos_state % conductivity/eos_state%cp)*eos_state%dhdX(comp)
                 enddo
 
              endif
