@@ -26,7 +26,7 @@ contains
 
   ! a generic wrapper that calls the EOS and then the conductivity
 
-  subroutine conducteos(input, state, cond)
+  subroutine conducteos(input, state)
 
     use actual_conductivity_module
     use eos_type_module, only : eos_t
@@ -36,14 +36,11 @@ contains
 
     integer         , intent(in   ) :: input
     type (eos_t)    , intent(inout) :: state
-    real (kind=dp_t), intent(inout) :: cond
 
     ! call the EOS, passing through the arguments we called conducteos with
     call eos(input, state)
 
     call actual_conductivity(state)
-
-    cond = state % conductivity
 
   end subroutine conducteos
 
