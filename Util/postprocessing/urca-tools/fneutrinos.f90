@@ -178,6 +178,8 @@ program fneutrinos
         !$OMP PARALLEL DO PRIVATE(kk, jj, ii, ibin) &
         !$OMP PRIVATE(ecap23, beta23, yna23, yne23, enu_ecap23, enu_beta23) &
         !$OMP PRIVATE(density, lambda) &
+        !$OMP REDUCTION(+:ecap23_weights) &
+        !$OMP REDUCTION(+:beta23_weights) &
         !$OMP SCHEDULE(DYNAMIC,1)
         do kk = lo(3), hi(3)
            do jj = lo(2), hi(2)
@@ -206,13 +208,21 @@ program fneutrinos
 
                     ! Update the ecap23 weights
                     ibin = floor((enu_ecap23 - energy_minimum)/energy_delta) + 1
-                    lambda = ecap23 * yna23 * N_avo * density * dvol
-                    ecap23_weights(ibin) = ecap23_weights(ibin) + max(lambda, ZERO)
+                    write(*,*) 'enu_ecap23 = ', enu_ecap23
+                    write(*,*) 'ibin = ', ibin
+                    if (ibin .le. nbins) then
+                       lambda = ecap23 * yna23 * N_avo * density * dvol
+                       ecap23_weights(ibin) = ecap23_weights(ibin) + max(lambda, ZERO)
+                    end if
 
                     ! Update the beta23 weights
                     ibin = floor((enu_beta23 - energy_minimum)/energy_delta) + 1
-                    lambda = beta23 * yne23 * N_avo * density * dvol
-                    beta23_weights(ibin) = beta23_weights(ibin) + max(lambda, ZERO)
+                    write(*,*) 'enu_beta23 = ', enu_beta23
+                    write(*,*) 'ibin = ', ibin
+                    if (ibin .le. nbins) then
+                       lambda = beta23 * yne23 * N_avo * density * dvol
+                       beta23_weights(ibin) = beta23_weights(ibin) + max(lambda, ZERO)
+                    end if
 
                     ! mark this range of the domain as used in the mask
                     imask(ii*rr_rel_fine:(ii+1)*rr_rel_fine-1, &

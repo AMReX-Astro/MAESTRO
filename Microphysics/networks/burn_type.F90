@@ -2,7 +2,12 @@ module burn_type_module
 
   use bl_types
   use bl_constants_module, only: ZERO
+
+#ifdef REACT_SPARSE_JACOBIAN
+  use actual_network, only: nspec, nspec_evolve, naux, NETWORK_SPARSE_JAC_NNZ
+#else
   use actual_network, only: nspec, nspec_evolve, naux
+#endif
 
   implicit none
 
@@ -59,7 +64,12 @@ module burn_type_module
     ! data, particularly xn, e, and T.
 
     real(dp_t) :: ydot(neqs)       != ZERO
-    real(dp_t) :: jac(neqs, neqs)  != ZERO
+
+#ifdef REACT_SPARSE_JACOBIAN
+    real(dp_t) :: sparse_jac(NETWORK_SPARSE_JAC_NNZ)
+#else
+    real(dp_t) :: jac(neqs, neqs)
+#endif
 
     ! Whether we are self-heating or not.
 
@@ -121,7 +131,12 @@ contains
     to_state % dcpdT = from_state % dcpdT
 
     to_state % ydot(1:neqs) = from_state % ydot(1:neqs)
+
+#ifdef REACT_SPARSE_JACOBIAN
+    to_state % sparse_jac(1:NETWORK_SPARSE_JAC_NNZ) = from_state % sparse_jac(1:NETWORK_SPARSE_JAC_NNZ)
+#else
     to_state % jac(1:neqs, 1:neqs) = from_state % jac(1:neqs, 1:neqs)
+#endif
 
     to_state % self_heat = from_state % self_heat
 

@@ -7,6 +7,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('infile', type=str,
                     help='Name of neutrino spectrum file to plot.')
+parser.add_argument('-s', '--sumonly', action='store_true',
+                    help='If supplied, only print the sum of the weights and quit.')
 args = parser.parse_args()
 
 
@@ -30,37 +32,38 @@ f.close()
 for h in header:
     data[h] = np.array(data[h])
 
-# Electron capture spectrum
-fig, ax = plt.subplots(constrained_layout=True)
-ax.semilogy(data['Energy'], data['Lambda_ecap23'], color='blue', label='ecap23')
-ax.set_xlim([0,1.5])
-ax.set_xlabel('$E_\\nu$ (MeV)')
-ax.set_ylabel('$f(E)$ (1/s)')
-plt.savefig('spectrum_ecap23.png', dpi=600)
-plt.clf()
+if not args.sumonly:
+    # Electron capture spectrum
+    fig, ax = plt.subplots(constrained_layout=True)
+    ax.semilogy(data['Energy'], data['Lambda_ecap23'], color='blue', label='ecap23')
+    ax.set_xlim([0,1.5])
+    ax.set_xlabel('$E_\\nu$ (MeV)')
+    ax.set_ylabel('$f(E)$ (1/s)')
+    plt.savefig('spectrum_ecap23.png', dpi=600)
+    plt.clf()
 
-# Beta decay spectrum
-fig, ax = plt.subplots(constrained_layout=True)
-ax.semilogy(data['Energy'], data['Lambda_beta23'], color='green', label='beta23')
-ax.set_xlim([0,1.5])
-ax.set_xlabel('$E_\\nu$ (MeV)')
-ax.set_ylabel('$f(E)$ (1/s)')
-plt.savefig('spectrum_beta23.png', dpi=600)
-plt.clf()
+    # Beta decay spectrum
+    fig, ax = plt.subplots(constrained_layout=True)
+    ax.semilogy(data['Energy'], data['Lambda_beta23'], color='green', label='beta23')
+    ax.set_xlim([0,1.5])
+    ax.set_xlabel('$E_\\nu$ (MeV)')
+    ax.set_ylabel('$f(E)$ (1/s)')
+    plt.savefig('spectrum_beta23.png', dpi=600)
+    plt.clf()
 
-# Total spectrum
-fig, ax = plt.subplots(constrained_layout=True)
-ax.semilogy(data['Energy'], data['Lambda_ecap23'], color='blue', label='ecap23')
-ax.semilogy(data['Energy'], data['Lambda_beta23'], color='green', label='beta23')
-ax.semilogy(data['Energy'], data['Lambda_total'], color='black', label='total')
-ax.set_xlim([0,1.5])
-ax.set_xlabel('$E_\\nu$ (MeV)')
-ax.set_ylabel('$f(E)$ (1/s)')
-plt.savefig('spectrum.png', dpi=600)
-plt.clf()
+    # Total spectrum
+    fig, ax = plt.subplots(constrained_layout=True)
+    ax.semilogy(data['Energy'], data['Lambda_ecap23'], color='blue', label='ecap23')
+    ax.semilogy(data['Energy'], data['Lambda_beta23'], color='green', label='beta23')
+    ax.semilogy(data['Energy'], data['Lambda_total'], color='black', label='total')
+    ax.set_xlim([0,1.5])
+    ax.set_xlabel('$E_\\nu$ (MeV)')
+    ax.set_ylabel('$f(E)$ (1/s)')
+    plt.savefig('spectrum.png', dpi=600)
+    plt.clf()
 
-number_rate_ecap23 = np.trapz(data['Lambda_ecap23'], data['Energy'])
-number_rate_beta23 = np.trapz(data['Lambda_beta23'], data['Energy'])
+number_rate_ecap23 = np.sum(data['Lambda_ecap23'])
+number_rate_beta23 = np.sum(data['Lambda_beta23'])
 
 print('Number rate for ecap23: {}'.format(number_rate_ecap23))
 print('Number rate for beta23: {}'.format(number_rate_beta23))

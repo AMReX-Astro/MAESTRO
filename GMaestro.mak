@@ -89,8 +89,20 @@ endif
 # we need all the thermodynamics
 FPP_DEFINES += -DEXTRA_THERMO
 
-# we are not using the CUDA stguff
+# we are not using the CUDA stuff
 FPP_DEFINES += -DAMREX_DEVICE=""
+
+# support sparse Jacobian interface in Microphysics
+ifeq ($(USE_REACT_SPARSE_JACOBIAN), TRUE)
+  FPP_DEFINES += -DREACT_SPARSE_JACOBIAN
+
+  # The following is sometimes useful to turn on for debugging sparse J indices
+  # (if a get/set/scale is called with (row, col) not in the sparse J, stop)
+  # Otherwise, set/scale do nothing, and get returns 0.
+  ifeq ($(USE_SPARSE_STOP_ON_OOB), TRUE)
+    FPP_DEFINES += -DSPARSE_STOP_ON_OOB
+  endif
+endif
 
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
