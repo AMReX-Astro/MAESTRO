@@ -1,3 +1,10 @@
+18.11
+
+  * Minor changes
+
+   -- simplified conductivity interface to match the eos interface by
+      storing the conductivity in the eos type.
+
 18.07
 
   * Major changes
