@@ -57,7 +57,7 @@ contains
 
   subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext,thermal,rho_omegadot, &
                   rho0,rhoh0,p0,tempbar, &
-                  gamma1bar,div_coeff, &
+                  gamma1bar,beta0, &
                   u,w0,normal, &
                   mla,the_bc_tower)
 
@@ -96,7 +96,7 @@ contains
     real(kind=dp_t), intent(in   ) ::        p0(:,0:)
     real(kind=dp_t), intent(in   ) ::   tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0(:,0:)
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     type(ml_layout), intent(in   ) :: mla
     type(bc_tower) , intent(in   ) :: the_bc_tower
@@ -190,7 +190,7 @@ contains
     Rloc_enucmax = 0.d0
 
     if ( firstCall ) then
-       
+
        ! allocate the storage space for the buffers -- diag_buf_size
        ! is a runtime parameter that specifies how many steps we
        ! should go between outputting.  We need to make sure that we
@@ -1189,11 +1189,25 @@ contains
   end subroutine diag_3d
 
   subroutine diag_finalize()
+    if (allocated(time_data)) then
        deallocate(time_data)
+    end if
+
+    if (allocated(file1_data)) then
        deallocate(file1_data)
+    end if
+
+    if (allocated(file2_data)) then
        deallocate(file2_data)
+    end if
+
+    if (allocated(file3_data)) then
        deallocate(file3_data)
+    end if
+
+    if (allocated(file4_data)) then
        deallocate(file4_data)
+    end if
   end subroutine diag_finalize
   
 end module diag_module

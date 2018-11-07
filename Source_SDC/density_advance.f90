@@ -99,7 +99,7 @@ contains
     ! Create source terms at time n
     !**************************************************************************
 
-    ! Source terms for X and for tracers include reaction forcing terms
+    ! source terms for X and for tracers include reaction forcing terms
     do n = 1, nlevs
        call setval(scal_force(n),ZERO,all=.true.)
        call multifab_plus_plus_c(scal_force(n), spec_comp, intra(n), spec_comp, nspec, 0)

@@ -18,7 +18,7 @@ contains
 
   subroutine make_w0(w0,w0_old,w0_force,Sbar_in, &
                      rho0_old,rho0_new,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
+                     gamma1bar_old,gamma1bar_new,p0_minus_peosbar, &
                      psi,etarho_ec,etarho_cc,dt,dtold,delta_chi_w0,is_predictor)
 
     use parallel
@@ -27,20 +27,20 @@ contains
     use bl_constants_module
     use probin_module, only: verbose, do_planar_invsq_grav, do_self_grav
 
-    real(kind=dp_t), intent(  out) ::                 w0(:,0:)
-    real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::                psi(:,0:)
-    real(kind=dp_t), intent(in   ) ::          etarho_ec(:,0:)
-    real(kind=dp_t), intent(in   ) ::          etarho_cc(:,0:)
-    real(kind=dp_t), intent(inout) ::           w0_force(:,0:)
-    real(kind=dp_t), intent(in   ) ::           rho0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::           rho0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::             p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::             p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
-    real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
+    real(kind=dp_t), intent(  out) ::               w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::           w0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::              psi(:,0:)
+    real(kind=dp_t), intent(in   ) ::        etarho_ec(:,0:)
+    real(kind=dp_t), intent(in   ) ::        etarho_cc(:,0:)
+    real(kind=dp_t), intent(inout) ::         w0_force(:,0:)
+    real(kind=dp_t), intent(in   ) ::         rho0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::         rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::           p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::           p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_peosbar(:,0:)
+    real(kind=dp_t), intent(in   ) ::          Sbar_in(:,0:)
     real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
     logical        , intent(in   ) :: is_predictor
@@ -61,13 +61,13 @@ contains
           call make_w0_planar_var_g(w0,w0_old,Sbar_in, &
                                     rho0_old,rho0_new,p0_old,p0_new, &
                                     gamma1bar_old,gamma1bar_new, &
-                                    p0_minus_pthermbar, &
+                                    p0_minus_peosbar, &
                                     etarho_cc,w0_force, &
                                     dt,dtold,delta_chi_w0,is_predictor)
        else
           call make_w0_planar(w0,w0_old,Sbar_in, &
                               p0_old,p0_new,gamma1bar_old,gamma1bar_new, &
-                              p0_minus_pthermbar,psi,w0_force, &
+                              p0_minus_peosbar,psi,w0_force, &
                               dt,dtold,delta_chi_w0,is_predictor)
        endif
 
@@ -78,7 +78,7 @@ contains
                               rho0_old(1,:),rho0_new(1,:), &
                               p0_old(1,:),p0_new(1,:), &
                               gamma1bar_old(1,:),gamma1bar_new(1,:), &
-                              p0_minus_pthermbar(1,:), &
+                              p0_minus_peosbar(1,:), &
                               etarho_ec(1,:),etarho_cc(1,:),w0_force(1,:), &
                               dt,dtold,delta_chi_w0,is_predictor)
 
@@ -105,7 +105,7 @@ contains
 
 
   subroutine make_w0_planar(w0,w0_old,Sbar_in,p0_old,p0_new, &
-                            gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
+                            gamma1bar_old,gamma1bar_new,p0_minus_peosbar, &
                             psi,w0_force,dt,dtold,delta_chi_w0,is_predictor)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, &
@@ -114,17 +114,17 @@ contains
     use probin_module, only: dpdt_factor
     use restrict_base_module
 
-    real(kind=dp_t), intent(  out) ::                 w0(:,0:)
-    real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
-    real(kind=dp_t), intent(in   ) ::             p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::             p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
-    real(kind=dp_t), intent(in   ) ::                psi(:,0:)
-    real(kind=dp_t), intent(  out) ::           w0_force(:,0:)
-    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
+    real(kind=dp_t), intent(  out) ::               w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::           w0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::          Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) ::           p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::           p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_peosbar(:,0:)
+    real(kind=dp_t), intent(in   ) ::              psi(:,0:)
+    real(kind=dp_t), intent(  out) ::         w0_force(:,0:)
+    real(kind=dp_t), intent(inout) ::     delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
     logical        , intent(in   ) :: is_predictor
 
@@ -178,10 +178,10 @@ contains
 
                 if (is_predictor) then
                    delta_chi_w0(n,r-1) = dpdt_factor * &
-                        p0_minus_pthermbar(n,r-1) / (gamma1bar_old(n,r-1)*p0_old(n,r-1)*dt)
+                        p0_minus_peosbar(n,r-1) / (gamma1bar_old(n,r-1)*p0_old(n,r-1)*dt)
                 else
                    delta_chi_w0(n,r-1) = delta_chi_w0(n,r-1) + dpdt_factor * &
-                        p0_minus_pthermbar(n,r-1) / (gamma1bar_new(n,r-1)*p0_new(n,r-1)*dt)
+                        p0_minus_peosbar(n,r-1) / (gamma1bar_new(n,r-1)*p0_new(n,r-1)*dt)
                 end if
 
              else
@@ -270,7 +270,7 @@ contains
   subroutine make_w0_planar_var_g(w0,w0_old,Sbar_in, &
                                   rho0_old,rho0_new,p0_old,p0_new, &
                                   gamma1bar_old,gamma1bar_new, &
-                                  p0_minus_pthermbar, &
+                                  p0_minus_peosbar, &
                                   etarho_cc,w0_force, &
                                   dt,dtold,delta_chi_w0,is_predictor)
 
@@ -285,19 +285,19 @@ contains
     use make_grav_module
     use tridiag_module, only: tridiag
 
-    real(kind=dp_t), intent(  out) ::                 w0(:,0:)
-    real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
-    real(kind=dp_t), intent(in   ) ::           rho0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::           rho0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::             p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::             p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
-    real(kind=dp_t), intent(in   ) ::          etarho_cc(:,0:)
-    real(kind=dp_t), intent(  out) ::           w0_force(:,0:)
-    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
+    real(kind=dp_t), intent(  out) ::               w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::           w0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::          Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) ::         rho0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::         rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::           p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::           p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_peosbar(:,0:)
+    real(kind=dp_t), intent(in   ) ::        etarho_cc(:,0:)
+    real(kind=dp_t), intent(  out) ::         w0_force(:,0:)
+    real(kind=dp_t), intent(inout) ::     delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
     logical        , intent(in   ) :: is_predictor
 
@@ -314,7 +314,7 @@ contains
     real(kind=dp_t), allocatable :: gamma1bar_old_fine(:)
     real(kind=dp_t), allocatable :: gamma1bar_new_fine(:)
     real(kind=dp_t), allocatable :: gamma1bar_nph_fine(:)
-    real(kind=dp_t), allocatable :: p0_minus_pthermbar_fine(:)
+    real(kind=dp_t), allocatable :: p0_minus_peosbar_fine(:)
     real(kind=dp_t), allocatable :: etarho_cc_fine(:)
     real(kind=dp_t), allocatable :: Sbar_in_fine(:)
     real(kind=dp_t), allocatable :: grav_edge_fine(:)
@@ -337,22 +337,22 @@ contains
     
 
     ! 1) allocate the finely-gridded temporary basestate arrays
-    allocate(                w0_fine(0:nr_fine))
-    allocate(             w0bar_fine(0:nr_fine))
-    allocate(           deltaw0_fine(0:nr_fine))
-    allocate(            p0_old_fine(0:nr_fine-1))
-    allocate(            p0_new_fine(0:nr_fine-1))
-    allocate(            p0_nph_fine(0:nr_fine-1))
-    allocate(          rho0_old_fine(0:nr_fine-1))
-    allocate(          rho0_new_fine(0:nr_fine-1))
-    allocate(          rho0_nph_fine(0:nr_fine-1))
-    allocate(     gamma1bar_old_fine(0:nr_fine-1))
-    allocate(     gamma1bar_new_fine(0:nr_fine-1))
-    allocate(     gamma1bar_nph_fine(0:nr_fine-1))
-    allocate(p0_minus_pthermbar_fine(0:nr_fine-1))
-    allocate(         etarho_cc_fine(0:nr_fine-1))
-    allocate(           Sbar_in_fine(0:nr_fine-1))
-    allocate(         grav_edge_fine(0:nr_fine))
+    allocate(              w0_fine(0:nr_fine))
+    allocate(           w0bar_fine(0:nr_fine))
+    allocate(         deltaw0_fine(0:nr_fine))
+    allocate(          p0_old_fine(0:nr_fine-1))
+    allocate(          p0_new_fine(0:nr_fine-1))
+    allocate(          p0_nph_fine(0:nr_fine-1))
+    allocate(        rho0_old_fine(0:nr_fine-1))
+    allocate(        rho0_new_fine(0:nr_fine-1))
+    allocate(        rho0_nph_fine(0:nr_fine-1))
+    allocate(   gamma1bar_old_fine(0:nr_fine-1))
+    allocate(   gamma1bar_new_fine(0:nr_fine-1))
+    allocate(   gamma1bar_nph_fine(0:nr_fine-1))
+    allocate(p0_minus_peosbar_fine(0:nr_fine-1))
+    allocate(       etarho_cc_fine(0:nr_fine-1))
+    allocate(         Sbar_in_fine(0:nr_fine-1))
+    allocate(       grav_edge_fine(0:nr_fine))
 
 
     ! 2) copy the data into the temp, uniformly-gridded basestate arrays.
@@ -362,7 +362,7 @@ contains
     call prolong_base_to_uniform(rho0_new,rho0_new_fine)
     call prolong_base_to_uniform(gamma1bar_old,gamma1bar_old_fine)
     call prolong_base_to_uniform(gamma1bar_new,gamma1bar_new_fine)
-    call prolong_base_to_uniform(p0_minus_pthermbar,p0_minus_pthermbar_fine)
+    call prolong_base_to_uniform(p0_minus_peosbar,p0_minus_peosbar_fine)
     call prolong_base_to_uniform(etarho_cc,etarho_cc_fine)
     call prolong_base_to_uniform(Sbar_in,Sbar_in_fine)
 
@@ -387,7 +387,7 @@ contains
        gamma1bar_p0_avg = gamma1bar_nph_fine(r-1) * p0_nph_fine(r-1)
 
        if (r-1 .lt. base_cutoff_density_coord(nlevs_radial)) then
-          volume_discrepancy = dpdt_factor * p0_minus_pthermbar_fine(r-1)/dt
+          volume_discrepancy = dpdt_factor * p0_minus_peosbar_fine(r-1)/dt
        else
           volume_discrepancy = ZERO
        end if
@@ -523,7 +523,7 @@ contains
   subroutine make_w0_spherical(w0,w0_old,Sbar_in, &
                                rho0_old,rho0_new,p0_old,p0_new, &
                                gamma1bar_old,gamma1bar_new, &
-                               p0_minus_pthermbar, &
+                               p0_minus_peosbar, &
                                etarho_ec,etarho_cc,w0_force, &
                                dt,dtold,delta_chi_w0,is_predictor)
 
@@ -535,20 +535,20 @@ contains
     use probin_module, only: dpdt_factor, base_cutoff_density
     use tridiag_module, only: tridiag
 
-    real(kind=dp_t), intent(  out) ::                 w0(0:)
-    real(kind=dp_t), intent(in   ) ::             w0_old(0:)
-    real(kind=dp_t), intent(in   ) ::            Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) ::           rho0_old(0:)
-    real(kind=dp_t), intent(in   ) ::           rho0_new(0:)
-    real(kind=dp_t), intent(in   ) ::             p0_old(0:)
-    real(kind=dp_t), intent(in   ) ::             p0_new(0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(0:)
-    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(0:)
-    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(0:)
-    real(kind=dp_t), intent(in   ) ::          etarho_ec(0:)
-    real(kind=dp_t), intent(in   ) ::          etarho_cc(0:)
-    real(kind=dp_t), intent(  out) ::           w0_force(0:)
-    real(kind=dp_t), intent(inout) ::       delta_chi_w0(:,0:)
+    real(kind=dp_t), intent(  out) ::               w0(0:)
+    real(kind=dp_t), intent(in   ) ::           w0_old(0:)
+    real(kind=dp_t), intent(in   ) ::          Sbar_in(0:)
+    real(kind=dp_t), intent(in   ) ::         rho0_old(0:)
+    real(kind=dp_t), intent(in   ) ::         rho0_new(0:)
+    real(kind=dp_t), intent(in   ) ::           p0_old(0:)
+    real(kind=dp_t), intent(in   ) ::           p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_old(0:)
+    real(kind=dp_t), intent(in   ) ::    gamma1bar_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_peosbar(0:)
+    real(kind=dp_t), intent(in   ) ::        etarho_ec(0:)
+    real(kind=dp_t), intent(in   ) ::        etarho_cc(0:)
+    real(kind=dp_t), intent(  out) ::         w0_force(0:)
+    real(kind=dp_t), intent(inout) ::     delta_chi_w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
     logical,         intent(in   ) :: is_predictor
 
@@ -589,7 +589,7 @@ contains
     do r=1,nr_fine
 
        if (rho0_old(r-1) .gt. base_cutoff_density) then
-          volume_discrepancy = dpdt_factor * p0_minus_pthermbar(r-1)/dt
+          volume_discrepancy = dpdt_factor * p0_minus_peosbar(r-1)/dt
        else
           volume_discrepancy = ZERO
        endif

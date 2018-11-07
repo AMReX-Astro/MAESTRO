@@ -100,7 +100,7 @@ contains
     ! Create source terms at time n
     !**************************************************************************
 
-    ! Source terms for X and for tracers are zero - do nothing
+    ! source terms for X and for tracers are zero - do nothing
     do n = 1, nlevs
        call setval(scal_force(n),ZERO,all=.true.)
     end do
@@ -145,7 +145,7 @@ contains
     end if
 
     !**************************************************************************
-    !     Add w0 to MAC velocities (trans velocities already have w0).
+    !     Add w0 to MAC velocities
     !**************************************************************************
 
     call addw0(umac,the_bc_level,mla,w0,w0mac,mult=ONE)

@@ -19,7 +19,7 @@ contains
     real(kind=dp_t), intent(  out) :: slx(lo(1)- 1:,:) 
     integer        , intent(in)    :: bc(:,:,:)
 
-    !     Local variables
+    ! Local variables
     integer :: is,ie
     integer :: i,comp
 
@@ -28,14 +28,15 @@ contains
 
     is = lo(1)
     ie = hi(1)
-
-    !     HERE DOING 1ST ORDER
     if (slope_order .eq. 0) then
+
+       ! HERE DOING 1ST ORDER
        slx = zero
 
-       !     HERE DOING 2ND ORDER
+
     else if (slope_order .eq. 2) then
 
+       ! HERE DOING 2ND ORDER
        do comp=1,nvar 
           do i = is-1,ie+1 
              del = half*(s(i+1,comp) - s(i-1,comp))
@@ -78,7 +79,7 @@ contains
 
     else 
 
-       !     HERE DOING 4TH ORDER
+       ! HERE DOING 4TH ORDER
        do comp=1,nvar 
 
           do i = is-2,ie+2 
@@ -111,7 +112,7 @@ contains
              sflag = sign(one,del)
              slx(is,comp)= sflag*min(slim,abs(del))
 
-             !           Recalculate the slope at is+1 using the revised dxscr(is,fromm)
+             ! Recalculate the slope at is+1 using the revised dxscr(is,fromm)
              dxscr(is,fromm) = slx(is,comp)
              ds = two * two3rd * dxscr(is+1,cen) - &
                   sixth * (dxscr(is+2,fromm) + dxscr(is,fromm))
@@ -132,7 +133,7 @@ contains
              sflag = sign(one,del)
              slx(ie,comp)= sflag*min(slim,abs(del))
 
-             !           Recalculate the slope at ie-1 using the revised dxscr(ie,fromm)
+             ! Recalculate the slope at ie-1 using the revised dxscr(ie,fromm)
              dxscr(ie,fromm) = slx(ie,comp)
              ds = two * two3rd * dxscr(ie-1,cen) - &
                   sixth * (dxscr(ie-2,fromm) + dxscr(ie,fromm))
@@ -156,7 +157,7 @@ contains
     real(kind=dp_t), intent(  out) :: slx(lo(1)- 1:, lo(2)- 1:,:) 
     integer        , intent(in)    :: bc(:,:,:)
 
-    !     Local variables
+    ! Local variables
     integer :: is,js,ie,je
     integer :: i,j,comp
 
@@ -168,13 +169,14 @@ contains
     ie = hi(1)
     je = hi(2)
 
-    !     HERE DOING 1ST ORDER
     if (slope_order .eq. 0) then
+
+       ! HERE DOING 1ST ORDER
        slx = zero
 
-       !     HERE DOING 2ND ORDER
     else if (slope_order .eq. 2) then
 
+       ! HERE DOING 2ND ORDER
        do comp=1,nvar 
           do j = js-1,je+1 
              do i = is-1,ie+1 
@@ -219,7 +221,7 @@ contains
 
     else 
 
-       !     HERE DOING 4TH ORDER
+       ! HERE DOING 4TH ORDER
        do comp=1,nvar 
           do j = js-1,je+1 
 
@@ -253,7 +255,7 @@ contains
                 sflag = sign(one,del)
                 slx(is,j,comp)= sflag*min(slim,abs(del))
 
-                !           Recalculate the slope at is+1 using the revised dxscr(is,fromm)
+                ! Recalculate the slope at is+1 using the revised dxscr(is,fromm)
                 dxscr(is,fromm) = slx(is,j,comp)
                 ds = two * two3rd * dxscr(is+1,cen) - &
                      sixth * (dxscr(is+2,fromm) + dxscr(is,fromm))
@@ -274,7 +276,7 @@ contains
                 sflag = sign(one,del)
                 slx(ie,j,comp)= sflag*min(slim,abs(del))
 
-                !           Recalculate the slope at ie-1 using the revised dxscr(ie,fromm)
+                ! Recalculate the slope at ie-1 using the revised dxscr(ie,fromm)
                 dxscr(ie,fromm) = slx(ie,j,comp)
                 ds = two * two3rd * dxscr(ie-1,cen) - &
                      sixth * (dxscr(ie-2,fromm) + dxscr(ie,fromm))
@@ -310,13 +312,15 @@ contains
     ie = hi(1)
     je = hi(2)
 
-    !     HERE DOING 1ST ORDER
+
     if (slope_order .eq. 0) then
+
+       ! HERE DOING 1ST ORDER
        sly = zero
 
-       !     HERE DOING 2ND ORDER
     else if (slope_order .eq. 2) then
 
+       ! HERE DOING 2ND ORDER
        do comp=1,nvar 
           do j = js-1,je+1 
              do i = is-1,ie+1 
@@ -367,8 +371,7 @@ contains
 
     else 
 
-       !     HERE DOING 4TH ORDER
-
+       ! HERE DOING 4TH ORDER
        do comp=1,nvar 
           do i = is-1,ie+1 
              do j = js-2,je+2 
@@ -399,7 +402,7 @@ contains
                 sflag = sign(one,del)
                 sly(i,js,comp)= sflag*min(slim,abs(del))
 
-                !           Recalculate the slope at js+1 using the revised dyscr(js,fromm)
+                ! Recalculate the slope at js+1 using the revised dyscr(js,fromm)
                 dyscr(js,fromm) = sly(i,js,comp)
                 ds = two * two3rd * dyscr(js+1,cen) - &
                      sixth * (dyscr(js+2,fromm) + dyscr(js,fromm))
@@ -419,7 +422,7 @@ contains
                 sflag = sign(one,del)
                 sly(i,je,comp)= sflag*min(slim,abs(del))
 
-                !           Recalculate the slope at js+1 using the revised dyscr(js,fromm)
+                ! Recalculate the slope at js+1 using the revised dyscr(js,fromm)
                 dyscr(je,fromm) = sly(i,je,comp)
                 ds = two * two3rd * dyscr(je-1,cen) -  &
                      sixth * (dyscr(je-2,fromm) + dyscr(je,fromm))
@@ -457,13 +460,14 @@ contains
     je = hi(2)
     ke = hi(3)
 
-    !     HERE DOING 1ST ORDER
     if (slope_order .eq. 0) then
+
+       ! HERE DOING 1ST ORDER
        slz = zero
 
-       !     HERE DOING 2ND ORDER
     else if (slope_order .eq. 2) then
 
+       ! HERE DOING 2ND ORDER
        do comp=1,nvar 
           do k = ks-1,ke+1 
              do j = js-1,je+1 
@@ -519,8 +523,7 @@ contains
 
     else 
 
-       !     HERE DOING 4TH ORDER
-
+       ! HERE DOING 4TH ORDER
        do comp=1,nvar 
           do j = js-1,je+1 
              do i = is-1,ie+1 
@@ -552,7 +555,7 @@ contains
                    sflag = sign(one,del)
                    slz(i,j,ks,comp)= sflag*min(slim,abs(del))
 
-                   !           Recalculate the slope at js+1 using the revised dzscr(js,fromm)
+                   ! Recalculate the slope at js+1 using the revised dzscr(js,fromm)
                    dzscr(ks,fromm) = slz(i,j,ks,comp)
                    ds = two * two3rd * dzscr(ks+1,cen) - &
                         sixth * (dzscr(ks+2,fromm) + dzscr(ks,fromm))
@@ -572,7 +575,7 @@ contains
                    sflag = sign(one,del)
                    slz(i,j,ke,comp)= sflag*min(slim,abs(del))
 
-                   !           Recalculate the slope at ks+1 using the revised dzscr(ks,fromm)
+                   ! Recalculate the slope at ks+1 using the revised dzscr(ks,fromm)
                    dzscr(ke,fromm) = slz(i,j,ke,comp)
                    ds = two * two3rd * dzscr(ke-1,cen) -  &
                         sixth * (dzscr(ke-2,fromm) + dzscr(ke,fromm))

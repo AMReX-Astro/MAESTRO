@@ -1,9 +1,9 @@
 -- spherical
- 
+
    generate an isentropic, self-gravitating WD model given a core
    temperature and density.
- 
- 
+
+
 -- test2
 
    generate an isentropic plane-parallel atmosphere with an entropy
@@ -30,4 +30,12 @@
    integration is down (up and down) from the location of the
    peak T in the model, and the temperature profile of the initial
    model is preserved.
-   
+
+
+-- kepler_hybrid
+
+   These were used for our original set of wdconvect calculations.
+   They take a 1-d model from the Kepler stellar evolution code (which
+   may not be uniformly spaced), and put it into HSE on the MAESTRO
+   grid.  This particular version forces the inner region of the star
+   to be completely isentropic.

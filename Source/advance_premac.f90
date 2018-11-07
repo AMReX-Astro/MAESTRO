@@ -19,8 +19,8 @@ module pre_advance_module
 contains
 
   subroutine advance_premac(uold,sold,umac,gpi,normal,w0,w0mac, &
-                            w0_force,w0_force_cart_vec,rho0,grav_cell,dx,dt, &
-                            the_bc_level,mla)
+                            w0_force,w0_force_cart,rho0_old,grav_cell_old, &
+                            dx,dt,the_bc_level,mla)
 
     use bl_prof_module, only: bl_prof_timer, build, destroy
     use velpred_module, only: velpred
@@ -30,7 +30,6 @@ contains
     use bl_constants_module, only: ONE
     use variables, only: rho_comp
     use fill_3d_module, only: put_1d_array_on_cart
-    use probin_module, only: ppm_trace_forces
 
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -40,9 +39,9 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: w0_force(:,0:)
-    type(multifab) , intent(in   ) :: w0_force_cart_vec(:)
-    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
-    real(kind=dp_t), intent(in   ) :: grav_cell(:,0:)
+    type(multifab) , intent(in   ) :: w0_force_cart(:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: grav_cell_old(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
@@ -62,13 +61,7 @@ contains
     nlevs = mla%nlevel
 
     do n=1,nlevs
-       if (ppm_trace_forces == 0) then
-          call multifab_build(force(n),get_layout(uold(n)),dm,1)
-       else
-          ! tracing needs more ghost cells
-          call multifab_build(force(n),get_layout(uold(n)),dm,uold(n)%ng)
-       endif
-
+       call multifab_build(force(n),get_layout(uold(n)),dm,1)
        call multifab_build(ufull(n),get_layout(uold(n)),dm,nghost(uold(n)))
     end do
 
@@ -98,7 +91,7 @@ contains
     is_final_update = .false.
     call mk_vel_force(force,is_final_update, &
                       uold,utrans,w0,w0mac,gpi,sold,rho_comp,normal, &
-                      rho0(:,:),grav_cell,dx,w0_force,w0_force_cart_vec, &
+                      rho0_old(:,:),grav_cell_old,dx,w0_force,w0_force_cart, &
                       the_bc_level,mla,.true.)
 
 

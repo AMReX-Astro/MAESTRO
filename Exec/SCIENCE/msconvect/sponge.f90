@@ -26,7 +26,7 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(rho0,dx,prob_lo_r)
+  subroutine init_sponge(rho0)
 
     ! The sponge has a HALF * ( 1 - cos( (r - r_sp)/L)) profile, where
     ! the width, L, is r_tp - r_sp.
@@ -41,15 +41,20 @@ contains
 
     use geometry, only: dr, r_end_coord, spherical, polar
     use bl_constants_module
-    use probin_module, only: verbose, sponge_start_factor, sponge_center_density
+    use probin_module, only: verbose, sponge_start_factor, sponge_center_density, &
+                             dm_in, drdxfac, prob_lo
 
-    real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
 
-    real (kind = dp_t) :: rloc
-    real (kind = dp_t) :: r_top
+    real (kind = dp_t) :: prob_lo_r,r_top
     integer            :: r
 
+    if (spherical .eq. 1 .or. polar .eq. 1) then                                                                                        
+        prob_lo_r = 0.d0                                                                                                                 
+    else                                                                                                                                
+        prob_lo_r = prob_lo(dm_in)                                                                                                       
+    end if  
+    
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     r_sp = r_top
 
@@ -57,9 +62,8 @@ contains
 
     ! set r_sp
     do r=0,r_end_coord(1,1)
-       rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < sponge_start_density) then
-          r_sp = rloc
+          r_sp = prob_lo_r + (dble(r)+HALF) * dr(1)
           exit
        endif
     enddo
@@ -67,9 +71,8 @@ contains
     ! set r_md
     r_md = r_top
     do r=0,r_end_coord(1,1)
-       rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < sponge_center_density) then
-          r_md = rloc
+          r_md = prob_lo_r + (dble(r)+HALF) * dr(1)
           exit
        endif
     enddo
@@ -80,14 +83,14 @@ contains
     ! outer sponge parameters used for spherical problems
     if (spherical .eq. 1 .or. polar .eq. 1) then
        r_sp_outer = r_tp
-       r_tp_outer = r_sp_outer + 4.d0 * dx(2)
+       r_tp_outer = r_sp_outer + 4.d0 * drdxfac * dr(1)
     end if
 
-    if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1000) r_sp, r_tp
+    if (parallel_IOProcessor() .and. verbose .ge. 1) write(6,1000) r_sp, r_tp
     if (spherical .eq. 1 .or. polar .eq. 1) then
-       if ( parallel_IOProcessor() .and. verbose .ge. 1) write(6,1001) r_sp_outer, r_tp_outer
+       if (parallel_IOProcessor() .and. verbose .ge. 1) write(6,1001) r_sp_outer, r_tp_outer
     end if
-    if ( parallel_IOProcessor() .and. verbose .ge. 1) print*,""
+    if (parallel_IOProcessor() .and. verbose .ge. 1) print*,""
 
 1000 format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
 1001 format('outer sponge: r_sp_outer, r_tp_outer: ',e20.12,2x,e20.12)

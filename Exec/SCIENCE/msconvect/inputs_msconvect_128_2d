@@ -9,8 +9,8 @@
  
 !Run parameters
  print_init_hse_diag = T
- restart = 2000
- max_step = 6000
+ !restart = 2000
+ max_step = 2000
  init_iter = 1
  
  stop_time = 1e9
@@ -48,8 +48,8 @@
   
  evolve_base_state = F
 
- ppm_type = 1
- species_pred_type = 1
+ species_pred_type = 3
+ ppm_trace_forces = 1
  
 !AMR 
  max_levs = 1
@@ -119,8 +119,8 @@
 !Timestepping
 !fixed_dt = 500
  cflfac = 0.3d0
- init_shrink = 100d0
- max_dt_growth = 1.01d0
+ init_shrink = 10d0
+ max_dt_growth = 1.05d0
  use_grav_dt = F
 
  
@@ -161,6 +161,5 @@
  mini_plot_var3 = 'species'
  mini_plot_var4 = 'temperature'
 
- derivative_mode = T
- rk_timestep_fac = 1.0
+ derivative_mode = F
 /

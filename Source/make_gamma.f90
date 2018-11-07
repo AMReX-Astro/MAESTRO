@@ -5,18 +5,45 @@ module make_gamma_module
   use bl_types
   use multifab_module
   use ml_layout_module
+  use average_module
+
   implicit none
 
   private
 
-  public :: make_gamma
+  public :: make_gamma1bar
 
 contains
 
+  subroutine make_gamma1bar(mla,scal,gamma1bar,p0,dx)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    type(ml_layout), intent(in   ) :: mla
+    type(multifab) , intent(in   ) :: scal(:)
+    real(dp_t)     , intent(inout) :: gamma1bar(:,0:)
+    real(dp_t)    ,  intent(in   ) :: p0(:,0:)
+    real(dp_t)    ,  intent(in   ) :: dx(:,:)
 
-  subroutine make_gamma(mla,gamma,s,p0,dx)
+    integer :: n,nlevs
+
+    type(multifab) :: gamma1(mla%nlevel)
+
+    nlevs = mla%nlevel
+
+    do n=1,nlevs
+       call multifab_build(gamma1(n), mla%la(n), 1, 0)
+    end do
+
+    call make_gamma(mla,gamma1,scal,p0,dx)
+    call average(mla,gamma1,gamma1bar,dx,1)
+
+    do n=1,nlevs
+       call multifab_destroy(gamma1(n))
+    end do
+
+  end subroutine make_gamma1bar
+
+
+  subroutine make_gamma(mla,gamma,scal,p0,dx)
 
     use bl_prof_module
     use ml_cc_restriction_module
@@ -25,7 +52,7 @@ contains
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: gamma(:)
-    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: scal(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
 
@@ -42,14 +69,14 @@ contains
     nlevs = mla%nlevel
 
     ng_g = nghost(gamma(1))
-    ng_s = nghost(s(1))
+    ng_s = nghost(scal(1))
 
     do n = 1, nlevs
-       do i = 1, nfabs(s(n))
+       do i = 1, nfabs(scal(n))
           gamp => dataptr(gamma(n), i)
-          sp   => dataptr(s(n), i)
-          lo = lwb(get_box(s(n), i))
-          hi = upb(get_box(s(n), i))
+          sp   => dataptr(scal(n), i)
+          lo = lwb(get_box(scal(n), i))
+          hi = upb(get_box(scal(n), i))
           select case (dm)
           case (1)
              call make_gamma_1d(lo,hi,gamp(:,1,1,1),ng_g,sp(:,1,1,:),ng_s,p0(n,:))
@@ -82,7 +109,7 @@ contains
 
   end subroutine make_gamma
 
-  subroutine make_gamma_1d(lo,hi,gamma,ng_g,s,ng_s,p0)
+  subroutine make_gamma_1d(lo,hi,gamma,ng_g,scal,ng_s,p0)
 
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
@@ -92,7 +119,7 @@ contains
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:)
-    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::  scal(lo(1)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     ! local variables
@@ -103,14 +130,14 @@ contains
 
     do i = lo(1), hi(1)
 
-       eos_state%rho   = s(i,rho_comp)
+       eos_state%rho   = scal(i,rho_comp)
        if (use_pprime_in_tfromp) then
-          eos_state%p     = p0(i) + s(i,pi_comp)
+          eos_state%p     = p0(i) + scal(i,pi_comp)
        else
           eos_state%p     = p0(i)
        endif
-       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
-       eos_state%T     = s(i,temp_comp)
+       eos_state%xn(:) = scal(i,spec_comp:spec_comp+nspec-1)/eos_state%rho
+       eos_state%T     = scal(i,temp_comp)
 
        pt_index(:) = (/i, -1, -1/)
 
@@ -123,7 +150,7 @@ contains
 
   end subroutine make_gamma_1d
 
-  subroutine make_gamma_2d(lo,hi,gamma,ng_g,s,ng_s,p0)
+  subroutine make_gamma_2d(lo,hi,gamma,ng_g,scal,ng_s,p0)
 
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
@@ -133,7 +160,7 @@ contains
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:)
-    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::  scal(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     ! local variables
@@ -145,14 +172,14 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          eos_state%rho   = s(i,j,rho_comp)
+          eos_state%rho   = scal(i,j,rho_comp)
           if (use_pprime_in_tfromp) then
-             eos_state%p     = p0(j) + s(i,j,pi_comp)
+             eos_state%p     = p0(j) + scal(i,j,pi_comp)
           else
              eos_state%p     = p0(j)
           endif
-          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
-          eos_state%T     = s(i,j,temp_comp)
+          eos_state%xn(:) = scal(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+          eos_state%T     = scal(i,j,temp_comp)
 
           pt_index(:) = (/i, j, -1/)
 
@@ -166,7 +193,7 @@ contains
 
   end subroutine make_gamma_2d
 
-  subroutine make_gamma_2d_polar(lo,hi,gamma,ng_g,s,ng_s,p0,dx)
+  subroutine make_gamma_2d_polar(lo,hi,gamma,ng_g,scal,ng_s,p0,dx)
 
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
@@ -177,7 +204,7 @@ contains
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:)
-    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::  scal(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -196,14 +223,14 @@ contains
     do j = lo(2), hi(2)
         do i = lo(1), hi(1)
 
-            eos_state%rho   = s(i,j,rho_comp)
+            eos_state%rho   = scal(i,j,rho_comp)
             if (use_pprime_in_tfromp) then
-                eos_state%p     = p0_cart(i,j,1) + s(i,j,pi_comp)
+                eos_state%p     = p0_cart(i,j,1) + scal(i,j,pi_comp)
             else
                 eos_state%p     = p0_cart(i,j,1)
             endif
-            eos_state%T     = s(i,j,temp_comp)
-            eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
+            eos_state%T     = scal(i,j,temp_comp)
+            eos_state%xn(:) = scal(i,j,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
             pt_index(:) = (/i, j, -1/)
 
@@ -221,9 +248,7 @@ contains
   end subroutine make_gamma_2d_polar  
   
   
-  
-  subroutine make_gamma_3d(lo,hi,gamma,ng_g,s,ng_s,p0)
-
+  subroutine make_gamma_3d(lo,hi,gamma,ng_g,scal,ng_s,p0)
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
     use network, only: nspec
@@ -233,7 +258,7 @@ contains
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:,lo(3)-ng_g:)
-    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::  scal(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     ! local variables
@@ -247,14 +272,14 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%rho   = scal(i,j,k,rho_comp)
              if (use_pprime_in_tfromp) then
-                eos_state%p     = p0(k) + s(i,j,k,pi_comp)
+                eos_state%p     = p0(k) + scal(i,j,k,pi_comp)
              else
                 eos_state%p     = p0(k)
              endif
-             eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+             eos_state%T     = scal(i,j,k,temp_comp)
+             eos_state%xn(:) = scal(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              pt_index(:) = (/i, j, k/)
 
@@ -270,7 +295,7 @@ contains
 
   end subroutine make_gamma_3d
 
-  subroutine make_gamma_3d_sphr(lo,hi,gamma,ng_g,s,ng_s,p0,dx)
+  subroutine make_gamma_3d_sphr(lo,hi,gamma,ng_g,scal,ng_s,p0,dx)
 
     use eos_module, only: eos, eos_input_rp
     use eos_type_module
@@ -281,7 +306,7 @@ contains
 
     integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
     real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:,lo(3)-ng_g:)
-    real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::  scal(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -301,14 +326,14 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             eos_state%rho   = s(i,j,k,rho_comp)
+             eos_state%rho   = scal(i,j,k,rho_comp)
              if (use_pprime_in_tfromp) then
-                eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
+                eos_state%p     = p0_cart(i,j,k,1) + scal(i,j,k,pi_comp)
              else
                 eos_state%p     = p0_cart(i,j,k,1)
              endif
-             eos_state%T     = s(i,j,k,temp_comp)
-             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
+             eos_state%T     = scal(i,j,k,temp_comp)
+             eos_state%xn(:) = scal(i,j,k,spec_comp:spec_comp+nspec-1)/eos_state%rho
 
              pt_index(:) = (/i, j, k/)
 

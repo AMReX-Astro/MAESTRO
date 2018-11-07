@@ -25,8 +25,8 @@ be sure to use the correct version: {\tt svn co -r 4088 ...}
 \item Edit the makefiles in {\tt screen}, {\tt utils}, {\tt num} and 
 {\tt interp\_1d}
 \item Edit the {\tt install} script in the main {\sf MESA} directory
-\item Edit the {\tt BoxLib/Tools/F\_mk/GMakedefs.mak} makefile
-\item Edit the {\tt BoxLib/Tools/F\_mk/comps/Linux\_cray.mak} file
+\item Edit the {\tt amrex/Tools/F\_mk/GMakedefs.mak} makefile
+\item Edit the {\tt amrex/Tools/F\_mk/comps/Linux\_cray.mak} file
 \item Install {\sf MESA}
 \item Compile {\sf MAESTRO}
 \end{enumerate}
@@ -203,7 +203,7 @@ the following four lines: {\tt do\_one sample}, {\tt do\_one star},
 {\tt do\_one adipls} and {\tt do\_one astero}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\sf BoxLib Linux\_cray.mak} file}
+\subsection{{\sf AMReX Linux\_cray.mak} file}
 
 Two flags used in the compilation of {\sf MESA} with the Cray compiler are 
 important; the {\tt -e m} or {\tt -em} flag and the {\tt -e f} or {\tt -ef} 
@@ -226,7 +226,7 @@ If the {\tt -ef} flag is not enabled, the {\tt .mod} file will be
 (the library is unaffected). The default for {\sf MAESTRO} is to not use 
 the {\tt -ef} flag, but it does use the {\tt -em} flag. To make {\sf MAESTRO} 
 and {\sf MESA} compatible, I added the {\tt -ef} flag to the 
-{\tt Linux\_cray.mak} file located in {\tt BoxLib/Tools/F\_mk/comps}. I also 
+{\tt Linux\_cray.mak} file located in {\tt amrex/Tools/F\_mk/comps}. I also 
 added a few more debugging flags:
 \begin{lstlisting}[language=make,mathescape=false]
   FFLAGS   += -J $(mdir) -I $(mdir) -emf
@@ -244,7 +244,7 @@ added a few more debugging flags:
 \end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{{\sf BoxLib GMakedefs.mak} makefile}
+\subsection{{\sf AMReX GMakedefs.mak} makefile}
 
 In {\sf MAESTRO}, {\tt .mod} files are located in the {\tt \$(tdir)/m} 
 directory, where {\tt tdir = t/\$(suf)} and {\tt \$(suf)} was in this case 
@@ -253,7 +253,7 @@ module files with the name {\tt t/Linux.Cray/m/network.mod}. The addition of
 the {\tt -ef} flag affects the entire name of the module so the Cray compiler 
 was creating files with the name {\tt t/linux.cray/m/network.mod}. To solve 
 this, I modified what {\tt tdir} is defined to be when using the Cray compiler. 
-This was done in the {\tt BoxLib/Tools/F\_mk/GMakedefs.mak} makefile by using 
+This was done in the {\tt amrex/Tools/F\_mk/GMakedefs.mak} makefile by using 
 a simple if statement:
 \begin{lstlisting}[language=make,mathescape=false]
   ifeq ($(COMP), Cray)

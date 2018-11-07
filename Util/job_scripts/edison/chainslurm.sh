@@ -24,7 +24,8 @@ for count in `seq 1 1 $2`
 do
   echo starting job $count to depend on $oldjob
   aout=`sbatch -d afterany:${oldjob} ${script}`
-  echo "   " jobid: $aout
+  nout=`echo $aout | sed 's/Submitted batch job //' | sed 's/ on cluster esedison//'`
+  echo "   " jobid: $nout
   echo " "
-  oldjob=$aout
+  oldjob=$nout
 done

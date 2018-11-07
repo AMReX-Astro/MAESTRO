@@ -17,7 +17,7 @@ zhi_boundary_type = "periodic"
   temp_max   = 1.d9
 
   min_time_step = 1.0d-7
-  react_its = 6
+  react_its = 5
 
   do_heating = .false.
 

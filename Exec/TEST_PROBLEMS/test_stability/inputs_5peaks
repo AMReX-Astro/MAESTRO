@@ -1,0 +1,149 @@
+&PROBIN
+
+!Input
+ model_file = "5peaks.dat"
+
+ 
+ 
+!Run parameters
+ print_init_hse_diag = T
+ max_step = 2100
+ init_iter = 1
+ 
+ stop_time = 1e9
+
+ plot_int  = 100
+ plot_deltat = -1.
+ mini_plot_int = -1
+ mini_plot_deltat = 1e5
+ chk_int   = 100
+ single_prec_plotfiles = T
+ 
+!EOS
+ small_temp = 1.e5 
+ 
+!Output
+ plot_base_name = "5peaks_plt"
+ check_base_name = "5peaks_chk"
+ mini_plot_base_name = "5peaks_miniplt" 
+
+ 
+ 
+!Grid (numerical)
+ drdxfac = 5
+ dm_in = 2
+ spherical_in = 0
+ octant = F
+ do_planar_invsq_grav = F
+ do_2d_planar_octant = 1
+
+ n_cellx = 128
+ n_celly = 128
+ n_cellz = 1
+ max_grid_size = 32
+ 
+ evolve_base_state = F
+
+ 
+ 
+!AMR 
+ max_levs = 1
+ ref_ratio = 2
+ regrid_int = 2
+ amr_buf_width = 2
+ 
+ dump_grid_file = T
+
+ 
+ 
+!Solver 
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+ 
+ 
+ 
+!Grid (physical)
+ prob_hi_x = 1.2e10
+ prob_hi_y = 1.2e10
+ prob_hi_z = 0.
+ 
+ 
+ 
+!Boundary conditions 
+ bcx_lo = 14
+ bcx_hi = 14
+ bcy_lo = 14
+ bcy_hi = 14
+
+
+!Cutoff densities + sponge 
+ anelastic_cutoff = 0.2
+ base_cutoff_density = 0.2
+ buoyancy_cutoff_factor = 2
+ !standard implementiation: sponge starts at sponge_center_density * sponge_start_factor
+ do_sponge = T
+ sponge_center_density = 1
+ sponge_start_factor = 1.2d0
+ sponge_kappa = 2.0d5
+ 
+ 
+!Initialization 
+
+ perturb_model = T
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+ 
+ do_initial_projection = T
+ init_divu_iter = 3
+
+ drive_initial_convection = F
+ stop_initial_convection = 2
+ 
+ velpert_amplitude = 2.d2               
+ velpert_radius = 1.0d10              
+ velpert_scale = 1.1d10               
+ velpert_steep = 1.d0
+ 
+  
+!Timestepping
+ cflfac = 0.3d0
+ init_shrink = 0.1d0
+ max_dt_growth = 1.05d0
+
+ 
+!Verbosity
+    verbose = 1
+ mg_verbose = 0
+ cg_verbose = 0
+
+ 
+ 
+!Burning/Heating
+ do_burning = F
+ do_heating = F
+
+ 
+ 
+!Thermal diffusion
+ use_thermal_diffusion = F
+
+ 
+ 
+!Plot variables
+ plot_trac = F
+ plot_cs = T
+ plot_ad_excess = T
+ plot_Hnuc = F
+ plot_Hext = T
+ plot_eta = F
+ plot_pidivu = T
+ plot_base = T
+ 
+!miniplot variables
+ mini_plot_var1 = 'density'
+ mini_plot_var2 = 'velocity'
+ mini_plot_var3 = 'species'
+ mini_plot_var4 = 'temperature'
+
+/

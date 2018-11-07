@@ -14,7 +14,7 @@ module eos_type_module
   integer, parameter :: eos_input_ph = 7  ! p, h are inputs
   integer, parameter :: eos_input_th = 8  ! T, h are inputs
 
-  ! these are used to allow for a generic interface to the 
+  ! these are used to allow for a generic interface to the
   ! root finding
   integer, parameter :: itemp = 1
   integer, parameter :: idens = 2

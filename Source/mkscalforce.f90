@@ -17,6 +17,8 @@ module mkscalforce_module
   use ml_layout_module
   use define_bc_module
   use ml_restrict_fill_module
+  use pred_parameters
+  use probin_module, only: enthalpy_pred_type
 
   implicit none
 
@@ -27,25 +29,27 @@ module mkscalforce_module
 contains
 
   subroutine mkrhohforce(mla, scal_force, is_prediction, thermal, umac, &
-                         p0_old, p0_new, rho0_old, rho0_new, &
+                         p0_1, p0_2, rho0_1, rho0_2, &
                          psi, dx, add_thermal, the_bc_level)
+
+    ! note, in the prediction of the interface states, we will set
+    ! both p0/rho0_1 and p0/rho0_2 to the same old value.  In the computation
+    ! of the rhoh_force for the update, they will be used to time-center.
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
     use geometry, only: spherical, nr_fine, nlevs_radial, polar
     use fill_3d_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
     logical        , intent(in   ) :: is_prediction
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::   p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_1(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_2(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_1(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_2(:,0:)
     real(kind=dp_t), intent(in   ) ::      psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: add_thermal
@@ -69,27 +73,30 @@ contains
     type(multifab) :: p0_cart(mla%nlevel)
     type(multifab) :: p0mac(mla%nlevel,mla%dim)
 
-    real(kind=dp_t) :: p0_nph(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t) ::   rho0(nlevs_radial,0:nr_fine-1)
-    real(kind=dp_t) ::   grav(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) ::   p0(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) :: rho0(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) :: grav(nlevs_radial,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkrhohforce")
 
+    ! if we are doing the prediction, then it only makes sense to be in
+    ! this routine if the quantity we are predicting is rhoh', h, or rhoh
+    if (is_prediction .and. &
+         .not. (enthalpy_pred_type .eq. predict_rhohprime .or. &
+                enthalpy_pred_type .eq. predict_h .or. &
+                enthalpy_pred_type .eq. predict_rhoh) ) then
+       call bl_error("ERROR: should only call mkrhohforce when predicting rhoh', h, or rhoh")
+    endif
+
     dm = mla%dim
     nlevs = mla%nlevel
 
-    ! if we are doing the prediction, then it only makes sense to be in
-    ! this routine if the quantity we are predicting is (rho h)' or h
-    if (is_prediction .AND. &
-         (enthalpy_pred_type == predict_T_then_rhohprime .OR. &
-          enthalpy_pred_type == predict_T_then_h)) then
-       call bl_error("ERROR: should not call mkrhohforce when predicting T")
-    endif
+    rho0 = HALF*(rho0_1 + rho0_2)
+    p0 = HALF * (p0_1 + p0_2)
 
     if (spherical .eq. 1 .or. polar .eq. 1) then
-       p0_nph = HALF * (p0_old + p0_new)
        do n = 1,nlevs
           call multifab_build(p0_cart(n),mla%la(n),1,1)
           do comp=1,dm
@@ -97,10 +104,10 @@ contains
           end do
        end do
 
-       call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+       call put_1d_array_on_cart(p0,p0_cart,foextrap_comp,.false.,.false.,&
                                  dx,the_bc_level,mla)
 
-       call make_s0mac(mla,p0_nph,p0mac,dx,foextrap_comp,the_bc_level)
+       call make_s0mac(mla,p0,p0mac,dx,foextrap_comp,the_bc_level)
     end if
 
     ng_f  = nghost(scal_force(1))
@@ -108,8 +115,6 @@ contains
     ng_th = nghost(thermal(1))
     ng_pm = nghost(p0mac(1,1))
     ng_p0 = nghost(p0_cart(1))
-
-    rho0 = HALF*(rho0_old + rho0_new)
 
     call make_grav_cell(grav,rho0)
     
@@ -125,14 +130,14 @@ contains
              ump => dataptr(umac(n,1),i)
              call mkrhohforce_1d(n,fp(:,1,1,rhoh_comp), ng_f, is_prediction, &
                                  ump(:,1,1,1), ng_um, &
-                                 tp(:,1,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
+                                 tp(:,1,1,1), ng_th, lo, hi, p0(n,:), &
                                  rho0(n,:), grav(n,:), psi(n,:), add_thermal)
           case (2)
              if (polar .eq. 0) then
                 vmp => dataptr(umac(n,2),i)
                 call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), ng_f, is_prediction, &
                                     vmp(:,:,1,1), ng_um, &
-                                    tp(:,:,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
+                                    tp(:,:,1,1), ng_th, lo, hi, p0(n,:), &
                                     rho0(n,:), grav(n,:), psi(n,:), add_thermal)
             else 
                 ump => dataptr(umac(n,1),i)
@@ -151,7 +156,7 @@ contains
              if (spherical .eq. 0) then
                 call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                     wmp(:,:,:,1), ng_um, &
-                                    tp(:,:,:,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
+                                    tp(:,:,:,1), ng_th, lo, hi, p0(n,:), &
                                     rho0(n,:), grav(n,:), psi(n,:), add_thermal)
              else
                 ump => dataptr(umac(n,1),i)
@@ -194,25 +199,18 @@ contains
 
   subroutine mkrhohforce_1d(n,rhoh_force,ng_f,is_prediction, &
                             umac,ng_um,thermal,ng_th,lo,hi, &
-                            p0_old,p0_new,rho0,grav,psi,add_thermal)
+                            p0,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
-    ! note, in the prediction of the interface states, we will set
-    ! both p0_old and p0_new to the same old value.  In the computation
-    ! of the rhoh_force for the update, they will be used to time-center.
-
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::   p0(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
@@ -228,12 +226,10 @@ contains
           gradp0 = rho0(i) * grav(i)
        else if (i.eq.nr(n)-1) then
           ! NOTE: this should be zero since p0 is constant up here
-          gradp0 = HALF * ( p0_old(i  ) + p0_new(i  ) &
-                           -p0_old(i-1) - p0_new(i-1) ) / dr(n)
+          gradp0 = ( p0(i) - p0(i-1) ) / dr(n)
        else
           ! NOTE: this should be zero since p0 is constant up here
-          gradp0 = HALF * ( p0_old(i+1) + p0_new(i+1) &
-                           -p0_old(i  ) - p0_new(i  ) ) / dr(n)
+          gradp0 = ( p0(i+1) - p0(i) ) / dr(n)
        end if
 
        uadv = HALF*(umac(i)+umac(i+1))
@@ -261,25 +257,19 @@ contains
 
   subroutine mkrhohforce_2d(n,rhoh_force,ng_f,is_prediction, &
                             vmac,ng_um,thermal,ng_th,lo,hi, &
-                            p0_old,p0_new,rho0,grav,psi,add_thermal)
+                            p0,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
-    ! note, in the prediction of the interface states, we will set
-    ! both p0_old and p0_new to the same old value.  In the computation
-    ! of the rhoh_force for the update, they will be used to time-center.
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::   p0(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
@@ -288,7 +278,6 @@ contains
     real(kind=dp_t) :: gradp0, vadv
     integer :: i,j
 
-
     ! Add wtilde d(p0)/dr
     do j = lo(2),hi(2)
 
@@ -296,14 +285,11 @@ contains
           gradp0 = rho0(j) * grav(j)
        else if (j.eq.nr(n)-1) then
           ! NOTE: this should be zero since p0 is constant up here
-          gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-                           -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+          gradp0 = ( p0(j) - p0(j-1) ) / dr(n)
        else
           ! NOTE: this should be zero since p0 is constant up here
-          gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-                           -p0_old(j  ) - p0_new(j  ) ) / dr(n)
+          gradp0 = ( p0(j+1) - p0(j) ) / dr(n)
        end if
-
 
        do i = lo(1),hi(1)
           vadv = HALF*(vmac(i,j)+vmac(i,j+1))
@@ -419,11 +405,9 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
   
   subroutine mkrhohforce_3d(n,rhoh_force,ng_f,is_prediction, &
                             wmac,ng_um,thermal,ng_th,lo,hi,&
-                            p0_old,p0_new,rho0,grav,psi,add_thermal)
+                            p0,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -432,8 +416,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::   p0(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
@@ -450,11 +433,11 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
        if (k .lt. base_cutoff_density_coord(n)) then
           gradp0 = rho0(k) * grav(k)
        else if (k.eq.nr(n)-1) then
-          gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                           -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+          ! NOTE: this should be zero since p0 is constant up here
+          gradp0 = ( p0(k) - p0(k-1) ) / dr(n)
        else
-          gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                           -p0_old(k  ) - p0_new(k  ) ) / dr(n)
+          ! NOTE: this should be zero since p0 is constant up here
+          gradp0 = ( p0(k+1) - p0(k) ) / dr(n)
        end if
 
        do j = lo(2),hi(2)
@@ -468,7 +451,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
         (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
         (.NOT. is_prediction)) then
@@ -505,8 +488,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
                                  ng_pm,lo,hi,dx,psi,add_thermal)
 
     use fill_3d_module
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -554,7 +535,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     !
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     !
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
         (is_prediction .AND. enthalpy_pred_type == predict_rhoh) .OR. &
@@ -590,23 +571,21 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
   end subroutine mkrhohforce_3d_sphr
 
-  subroutine mkhprimeforce(mla, sold, snew, scal_force, is_prediction, thermal, umac, &
-                           p0_old, p0_new, h0_old, h0_new, psi, dx, add_thermal, the_bc_level)
+  subroutine mkhprimeforce(mla, sold, scal_force, is_prediction, thermal, umac, &
+                           p0_old, h0_old, psi, dx, add_thermal, the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
-    use geometry, only: spherical, polar, nr_fine
+    use geometry, only: spherical, polar
     use fill_3d_module, only: put_1d_array_on_cart
-    use probin_module, only: enthalpy_pred_type
-    use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
-    type(multifab) , intent(in   ) :: sold(:), snew(:)
+    type(multifab) , intent(in   ) :: sold(:)
     logical        , intent(in   ) :: is_prediction
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: h0_old(:,0:), h0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: h0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: add_thermal
@@ -625,13 +604,9 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     real(kind=dp_t), pointer :: pp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
-    real(kind=dp_t), pointer :: snp(:,:,:,:)
 
     type(multifab)  :: p0_cart(mla%nlevel)
     type(multifab)  :: h0_cart(mla%nlevel)
-
-    real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
-    real(kind=dp_t) :: h0_nph(mla%nlevel,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -639,8 +614,8 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     ! if we are doing the prediction, then it only makes sense to be in
     ! this routine if the quantity we are predicting is h'
-    if (is_prediction .AND. enthalpy_pred_type .ne. predict_hprime) then
-       call bl_error("ERROR: should not call mkhprimeforce if enthalpy_pred_type .ne. predict_hprime")
+    if (is_prediction .and. enthalpy_pred_type .ne. predict_hprime) then
+       call bl_error("ERROR: should only call mkhprimeforce when predicting h'")
     endif
 
     dm = mla%dim
@@ -653,9 +628,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     if (spherical .eq. 1 .or. polar .eq. 1) then
        do n = 1,nlevs
-          p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
-          h0_nph(n,:) = HALF * (h0_old(n,:) + h0_new(n,:))
           call multifab_build(h0_cart(n),mla%la(n),1,1)
        end do
     end if
@@ -663,9 +636,9 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     do n=1,nlevs
 
        if (spherical .eq. 1 .or. polar .eq. 1) then
-          call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+          call put_1d_array_on_cart(p0_old,p0_cart,foextrap_comp,.false.,.false.,&
                                     dx,the_bc_level,mla)
-          call put_1d_array_on_cart(h0_nph,h0_cart,foextrap_comp,.false.,.false.,&
+          call put_1d_array_on_cart(h0_old,h0_cart,foextrap_comp,.false.,.false.,&
                                     dx,the_bc_level,mla)
        end if
 
@@ -675,7 +648,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
           vmp => dataptr(umac(n,2),i)
           tp  => dataptr(thermal(n),i)
           sop => dataptr(sold(n), i)
-          snp => dataptr(snew(n), i)
           lo = lwb(get_box(scal_force(n),i))
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
@@ -688,7 +660,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
                 call mkhprimeforce_2d_polar(fp(:,:,1,rhoh_comp), ng_f, is_prediction, &
                                            ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                            tp(:,:,1,1), ng_th, &
-                                           sop(:,:,1,rho_comp), snp(:,:,1,rho_comp), ng_s, &
+                                           sop(:,:,1,rho_comp), ng_s, &
                                            pp(:,:,1,1), hp(:,:,1,1), &
                                            lo, hi, dx(n,:), &
                                            psi(1,:), add_thermal)
@@ -703,7 +675,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
                 call mkhprimeforce_3d_sphr(fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                            ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                            tp(:,:,:,1), ng_th, &
-                                           sop(:,:,:,rho_comp), snp(:,:,:,rho_comp), ng_s, &
+                                           sop(:,:,:,rho_comp), ng_s, &
                                            pp(:,:,:,1), hp(:,:,:,1), &
                                            lo, hi, dx(n,:), &
                                            psi(1,:), add_thermal)
@@ -732,7 +704,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
   end subroutine mkhprimeforce
 
   subroutine mkhprimeforce_2d_polar(rhoh_force,ng_f,is_prediction,umac,vmac,ng_um, &
-                                   thermal,ng_th,rhoold,rhonew,ng_s,p0_cart,h0_cart,lo,hi, &
+                                   thermal,ng_th,rhoold,ng_s,p0_cart,h0_cart,lo,hi, &
                                    dx,psi,add_thermal)
 
     use fill_3d_module
@@ -747,7 +719,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
     real(kind=dp_t), intent(in   ) ::     rhoold(lo(1)-ng_s :,lo(2)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::     rhonew(lo(1)-ng_s :,lo(2)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :)
     real(kind=dp_t), intent(in   ) ::    h0_cart(lo(1)-   1 :,lo(2)-   1 :)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -758,14 +729,15 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy
     real(kind=dp_t) :: h0_lox,h0_hix,h0_loy,h0_hiy
-    real(kind=dp_t) :: rhoavg
     real(kind=dp_t) :: divup, p0divu
     real(kind=dp_t) :: divuh, h0divu
     integer         :: i,j
+
+
     !
     ! Here we make u grad p = div (u p) - p div (u)
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,p0_lox,p0_hix,p0_loy,p0_hiy,divup,p0divu,rhoavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,p0_lox,p0_hix,p0_loy,p0_hiy,divup,p0divu)
     do j = lo(2),hi(2)
         do i = lo(1),hi(1)
 
@@ -780,9 +752,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
             p0divu = ( (umac(i+1,j) - umac(i,j)) / dx(1) + &
                     (vmac(i,j+1) - vmac(i,j)) / dx(2) ) * p0_cart(i,j)
 
-            rhoavg = 0.5d0* (rhoold(i,j) + rhonew(i,j))
-
-            rhoh_force(i,j) = (divup - p0divu) / rhoavg
+            rhoh_force(i,j) = (divup - p0divu) / rhoold(i,j)
 
         end do
     end do
@@ -843,11 +813,10 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
   
   
   subroutine mkhprimeforce_3d_sphr(rhoh_force,ng_f,is_prediction,umac,vmac,wmac,ng_um, &
-                                   thermal,ng_th,rhoold,rhonew,ng_s,p0_cart,h0_cart,lo,hi, &
+                                   thermal,ng_th,rhoold,ng_s,p0_cart,h0_cart,lo,hi, &
                                    dx,psi,add_thermal)
 
     use fill_3d_module
-    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -859,7 +828,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
     real(kind=dp_t), intent(in   ) ::     rhoold(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::     rhonew(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
     real(kind=dp_t), intent(in   ) ::    h0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -870,14 +838,13 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: h0_lox,h0_hix,h0_loy,h0_hiy,h0_loz,h0_hiz
-    real(kind=dp_t) :: rhoavg
     real(kind=dp_t) :: divup, p0divu
     real(kind=dp_t) :: divuh, h0divu
     integer         :: i,j,k
     !
     ! Here we make u grad p = div (u p) - p div (u)
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu,rhoavg)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,divup,p0divu)
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -897,9 +864,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
                         (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
 
-             rhoavg = 0.5d0* (rhoold(i,j,k) + rhonew(i,j,k))
-
-             rhoh_force(i,j,k) = (divup - p0divu) / rhoavg
+             rhoh_force(i,j,k) = (divup - p0divu) / rhoold(i,j,k)
 
           end do
        end do
@@ -936,7 +901,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
-    ! (rho h)', but should be there if we are predicting h
+    ! (rho h)', but should be there if we are predicting h or rhoh
     if (.NOT. is_prediction) then
 
        allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
@@ -968,11 +933,11 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
   end subroutine mkhprimeforce_3d_sphr
 
-  subroutine mktempforce(mla,temp_force,umac,s,thermal,p0_old,p0_new,psi,dx,the_bc_level)
+  subroutine mktempforce(mla,temp_force,umac,s,thermal,p0_old,psi,dx,the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
-    use geometry, only: spherical, polar, nr_fine
+    use geometry, only: spherical, polar
     use fill_3d_module, only: put_1d_array_on_cart
 
     type(ml_layout), intent(in   ) :: mla
@@ -981,7 +946,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -989,7 +953,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     ! local
     integer         :: i,n,ng_f,ng_um,ng_s,ng_th
     type(multifab)  :: p0_cart(mla%nlevel)
-    real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
     integer         :: lo(mla%dim),hi(mla%dim),dm,nlevs
 
     real(kind=dp_t), pointer :: tp(:,:,:,:)
@@ -1004,6 +967,14 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     call build(bpt, "mktempforce")
 
+    ! it only makes sense to be in
+    ! this routine if the quantity we are predicting is T or T'
+    if (.not. (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
+               enthalpy_pred_type .eq. predict_T_then_h .or. &
+               enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
+       call bl_error("ERROR: should only call mkrhohforce when predicting T or T'")
+    endif
+
     dm = mla%dim
     nlevs = mla%nlevel
 
@@ -1013,11 +984,10 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     ng_th = nghost(thermal(1))
 
     if (spherical .eq. 1 .or. polar .eq. 1) then
-       p0_nph(1,:) = HALF * (p0_old(1,:) + p0_new(1,:))
        do n = 1,nlevs
           call multifab_build(p0_cart(n),mla%la(n),1,1)
        end do
-       call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+       call put_1d_array_on_cart(p0_old,p0_cart,foextrap_comp,.false.,.false.,&
                                  dx,the_bc_level,mla)
     end if
 
@@ -1036,7 +1006,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
           case (1)
              call mktempforce_1d(n, fp(:,1,1,temp_comp), ng_f, sp(:,1,1,:), ng_s, &
                                  ump(:,1,1,1), ng_um, tp(:,1,1,1), ng_th, lo, hi, &
-                                 p0_old(n,:), p0_new(n,:), psi(n,:))
+                                 p0_old(n,:), psi(n,:))
 
           case (2)
              vmp => dataptr(umac(n,2),i)
@@ -1050,7 +1020,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
              else
                 call mktempforce_2d(n, fp(:,:,1,temp_comp), ng_f, sp(:,:,1,:), ng_s, &
                                     vmp(:,:,1,1), ng_um, tp(:,:,1,1), ng_th, lo, hi, &
-                                    p0_old(n,:), p0_new(n,:), psi(n,:))
+                                    p0_old(n,:), psi(n,:))
              end if
           case(3)
              vmp => dataptr(umac(n,2),i)
@@ -1064,7 +1034,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
              else
                 call mktempforce_3d(n, fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                     wmp(:,:,:,1), ng_um, tp(:,:,:,1), ng_th, lo, hi, &
-                                    p0_old(n,:), p0_new(n,:), psi(n,:))
+                                    p0_old(n,:), psi(n,:))
              end if
           end select
        end do
@@ -1089,7 +1059,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
   end subroutine mktempforce
 
   subroutine mktempforce_1d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
-                            lo, hi, p0_old, p0_new, psi)
+                            lo, hi, p0_old, psi)
 
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -1099,17 +1069,13 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     ! compute the source terms for temperature
 
-    ! note, in the prediction of the interface states, we will set
-    ! both p0_old and p0_new to the same old value.  In the computation
-    ! of the temp_force for the update, they will be used to time-center.
-
     integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
     integer,         intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :)
     real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), psi(0:)
 
     integer :: i
 
@@ -1121,14 +1087,11 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     do i = lo(1),hi(1)
 
        if (i.eq.0) then
-          gradp0 = HALF * ( p0_old(i+1) + p0_new(i+1) &
-                           -p0_old(i  ) - p0_new(i  ) ) / dr(n)
+          gradp0 = ( p0_old(i+1) - p0_old(i) ) / dr(n)
        else if (i.eq.nr(n)-1) then
-          gradp0 = HALF * ( p0_old(i  ) + p0_new(i  ) &
-                           -p0_old(i-1) - p0_new(i-1) ) / dr(n)
+          gradp0 = ( p0_old(i) - p0_old(i-1) ) / dr(n)
        else
-          gradp0 = FOURTH * ( p0_old(i+1) + p0_new(i+1) &
-                             -p0_old(i-1) - p0_new(i-1) ) / dr(n)
+          gradp0 = HALF * ( p0_old(i+1) - p0_old(i-1) ) / dr(n)
        end if
 
        eos_state%T     = s(i,temp_comp)
@@ -1155,7 +1118,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
   end subroutine mktempforce_1d
 
   subroutine mktempforce_2d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
-                            lo, hi, p0_old, p0_new, psi)
+                            lo, hi, p0_old, psi)
 
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -1165,17 +1128,13 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     ! compute the source terms for temperature
 
-    ! note, in the prediction of the interface states, we will set
-    ! both p0_old and p0_new to the same old value.  In the computation
-    ! of the temp_force for the update, they will be used to time-center.
-
     integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
     integer,         intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :)
     real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), psi(0:)
 
     integer :: i,j
 
@@ -1187,14 +1146,11 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     do j = lo(2),hi(2)
 
        if (j.eq.0) then
-          gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-                           -p0_old(j  ) - p0_new(j  ) ) / dr(n)
+          gradp0 = ( p0_old(j+1) - p0_old(j) ) / dr(n)
        else if (j.eq.nr(n)-1) then
-          gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-                           -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+          gradp0 = ( p0_old(j) - p0_old(j-1) ) / dr(n)
        else
-          gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-                             -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+          gradp0 = HALF * ( p0_old(j+1) - p0_old(j-1) ) / dr(n)
        end if
 
        do i = lo(1),hi(1)
@@ -1302,7 +1258,7 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
   
   
   subroutine mktempforce_3d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
-                            lo, hi, p0_old, p0_new, psi)
+                            lo, hi, p0_old, psi)
 
     use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -1312,16 +1268,12 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
 
     ! compute the source terms for temperature
 
-    ! note, in the prediction of the interface states, we will set
-    ! both p0_old and p0_new to the same old value.  In the computation
-    ! of the temp_force for the update, they will be used to time-center.
-
     integer,         intent(in   ) :: lo(:),hi(:),n,ng_f,ng_s,ng_um,ng_th
     real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), psi(0:)
 
     integer         :: i,j,k
     real(kind=dp_t) :: dhdp, gradp0, wadv
@@ -1332,14 +1284,11 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,eos_state,pt_index,dhdp,wadv)
     do k = lo(3),hi(3)
        if (k.eq.0) then
-          gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                           -p0_old(k  ) - p0_new(k  ) ) / dr(n)
+          gradp0 = ( p0_old(k+1) - p0_old(k) ) / dr(n)
        else if (k.eq.nr(n)-1) then
-          gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                           -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+          gradp0 = ( p0_old(k) - p0_old(k-1) ) / dr(n)
        else
-          gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                             -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+          gradp0 = HALF * ( p0_old(k+1) - p0_old(k-1) ) / dr(n)
        end if
 
        do j = lo(2),hi(2)
@@ -1379,7 +1328,6 @@ subroutine mkrhohforce_2d_polar(rhoh_force,ng_f,is_prediction, &
     use eos_module, only: eos_input_rt, eos
     use eos_type_module
     use network, only: nspec
-    use pred_parameters
 
     ! compute the source terms for temperature
 

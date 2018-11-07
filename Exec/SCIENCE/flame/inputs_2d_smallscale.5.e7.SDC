@@ -77,6 +77,6 @@
 
  ! constraint parameters
  evolve_base_state = F
- beta_type = 3
+ beta0_type = 3
 
 /

@@ -1,0 +1,26 @@
+&PROBIN
+  dm_in = 3
+  test_set = "gr0_3d.small"
+
+  small_temp = 1.d5
+
+xlo_boundary_type = "periodic"
+xhi_boundary_type = "periodic"
+ylo_boundary_type = "periodic"
+yhi_boundary_type = "periodic"
+zlo_boundary_type = "periodic"
+zhi_boundary_type = "periodic"
+
+  dens_min   = 1.d9
+  dens_max   = 5.d9
+  temp_min   = 1.d8
+  temp_max   = 5.d8
+
+  min_time_step = 1.0d-10
+  react_its = 7
+
+  do_heating = .false.
+
+  xin_file   = "xin.reaclib_urca_trans"
+  run_prefix = "react_reaclib_urca_trans_"
+/

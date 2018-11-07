@@ -476,7 +476,7 @@ evolve_base_state                   logical            .true.
 fix_base_state                      logical            .false.
 
 # force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F}
-# and {\tt beta\_type} = 3
+# and {\tt beta0\_type} = 3
 do_smallscale                       logical            .false.
 
 # After the advective enthalpy update, recompute the enthalpy if we are
@@ -528,15 +528,15 @@ ppm_trace_forces                    integer            0
 
 
 # what type of coefficient to use inside the velocity divergence constraint. @@
-# {\tt beta\_type} = 1 uses $\beta_0$; @@
-# {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); @@
-# {\tt beta\_type} = 3 uses 1 (small-scale combustion).
-beta_type                           integer            1
+# {\tt beta0\_type} = 1 uses $\beta_0$; @@
+# {\tt beta0\_type} = 2 uses $\rho_0$ (anelastic); @@
+# {\tt beta0\_type} = 3 uses 1 (small-scale combustion).
+beta0_type                          integer            1
 
 # how to represent gravity in the $\beta_0$ integration:
 # .true. = piecewise linear
 # .false. = piecewise constant
-use_linear_grav_in_beta             logical            .false.
+use_linear_grav_in_beta0            logical            .false.
 
 # rotational frequency used for computing centrifugal term in rotation problems.
 rotational_frequency                real               ZERO
@@ -599,6 +599,12 @@ limit_conductivity                  logical            .false.
 
 # turn on (.true.) or off (.false.) burning
 do_burning                          logical            .true.
+
+# Burning cutoff density (do not burn if density is below this threshold)
+# Initialized to zero, runtime\_init() in probin.f90 will check to see
+# if burning\_cutoff\_density < 0 and if so will set
+# burning\_cutoff\_density = base\_cutoff\_density
+burning_cutoff_density              real               -1.0d0
 
 # Name of the species to be used in burner threshold
 burner_threshold_species            character          ""

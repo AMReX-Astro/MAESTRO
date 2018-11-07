@@ -34,7 +34,7 @@ module variables
      integer :: icomp_magvel = -1
      integer :: icomp_mom = -1
      integer :: icomp_vort = -1
-     integer :: icomp_src = -1
+     integer :: icomp_s_cc = -1
      integer :: icomp_tfromp = -1
      integer :: icomp_tpert = -1
      integer :: icomp_rhopert = -1
@@ -175,7 +175,7 @@ contains
     p%icomp_magvel      = p%next_index(1)
     p%icomp_mom         = p%next_index(1)
     p%icomp_vort        = p%next_index(1)
-    p%icomp_src         = p%next_index(1)
+    p%icomp_s_cc        = p%next_index(1)
     p%icomp_rhopert     = p%next_index(1)
 
     if (.not. use_tfromp .or. (use_tfromp .and. plot_h_with_use_tfromp)) then

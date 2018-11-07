@@ -45,7 +45,7 @@ subroutine varden()
   type(multifab), allocatable :: utemp(:)
 
   type(multifab), allocatable :: rhohalf(:)
-  type(multifab), allocatable :: div_coeff(:)
+  type(multifab), allocatable :: beta0(:)
   type(multifab), allocatable :: pi(:)
   type(multifab), allocatable :: macpi(:)
   type(multifab), allocatable :: gpi(:)
@@ -351,7 +351,7 @@ subroutine varden()
 
      ! hgprojection -- here pi is nodal and u is cell-centered
 
-     allocate(rhohalf(nlevs), pi(nlevs), gpi(nlevs), div_coeff(nlevs))
+     allocate(rhohalf(nlevs), pi(nlevs), gpi(nlevs), beta0(nlevs))
 
      do n = 1, nlevs
 
@@ -369,9 +369,9 @@ subroutine varden()
         call setval(gpi(n), ZERO, all=.true.)
         
         ! build the coefficient in the divergence.  We are doing 
-        ! divergence-free (incompressible), so set div_coeff = 1
-        call build(div_coeff(n),  mla%la(n), 1, 1)
-        call setval(div_coeff(n), ONE, all=.true.)
+        ! divergence-free (incompressible), so set beta0 = 1
+        call build(beta0(n),  mla%la(n), 1, 1)
+        call setval(beta0(n), ONE, all=.true.)
         
      enddo
 
@@ -383,7 +383,7 @@ subroutine varden()
                     unew, unew, rhohalf, &
                     pi, gpi, &
                     dx, dt, the_bc_tower, &
-                    div_coeff)
+                    beta0)
      
      call fabio_ml_write(unew, mla%mba%rr(:,1), trim(run_prefix) // "u_new", &
                          names=plot_names)
@@ -434,11 +434,11 @@ subroutine varden()
         call destroy(rhohalf(n))
         call destroy(pi(n))
         call destroy(gpi(n))
-        call destroy(div_coeff(n))
+        call destroy(beta0(n))
      enddo
 
      deallocate(uold, umid, unew, gphi)
-     deallocate(rhohalf, pi, gpi, div_coeff)
+     deallocate(rhohalf, pi, gpi, beta0)
      
   else
      do n = 1, nlevs

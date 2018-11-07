@@ -1,10 +1,81 @@
-changes since last merge with master:
+18.08
+
+  * Major changes
+
+   -- We fixed a corner coupling bug when advecting conservative
+      scalars (predicting rho, rhoh, or rhoX)
+
+18.07
+
+  * Major changes
+
+   -- we now rely on the separate FBoxLib library instead of the
+      Fortran portions of AMReX.  These are identical at the moment,
+      but the Fortran parts of AMReX will be removed in the future.
+
+18.03
+
+  * Minor changes
+
+   -- some small code clean-ups
+
+18.02
+
+  * Minor changes
+
+   -- some small code clean-ups
+
+17.12
+
+  * Minor changes
+
+  -- some variable names have been changed for clarity.
+
+17.10
+
+ * Major changes
+
+  -- we now get our reaction netwroks from the Microphysics repo (part
+     of StarKiller).  This allows for a much wider range of networks,
+     and enables the same microphysics as used in Castro.  The
+     interfaces to the burner were changed accordingly.  The SDC
+     reaction stuff does not work at the moment.
+
+  -- the README.md now describes the process to become a "core
+     developer" of Maestro, and what this means.
+
+
+17.08
 
  * Major changes:
 
+  -- we now get the stellar conductivities from the Microphysics repo
+     (part of StarKiller).  This is the same place as we get the
+     general Helmholtz equation of state.
+
+  -- the StarKiller-astro Microphysics repo now uses a denser table
+     for the Helmholtz EOS (thanks to Frank Timmes).  If you are using
+     this EOS, the new table will be soft-linked to your build
+     directory automatically.  If you have an old copy laying around,
+     it might fail to run, with an I/O error.
+
+
+17.06
+
+ * Major changes:
+
+   -- we now use the reaction networks from the separate Microphysics
+      git repo:
+
+      https://github.com/BoxLib-Codes/Microphysics
+
+      This is enabled by setting MICROPHYSICS_HOME to point to the
+      location of the Microphysics/ directory.  Note: this is the same
+      repo that is used for the general equations of state, so you
+      likely already have it installed.
+
    -- we now require the AMReX library instead of BoxLib to build.
 
-previous releases:
 
 16.08
 
@@ -16,9 +87,10 @@ previous releases:
       boxlib_fpe_invalid, boxlib_fpe_zero, and boxlib_fpe_overflow
       turn on/off FPE handling through the boxlib backtrace module
 
-   -- Chosing the general Helmholtz stellar equation of state is now done
-      with EOS_DIR := helmholtz, instead of helmeos.  This reflects the 
-      actual name of the directory in the Microphysics repo.
+   -- Chosing the general Helmholtz stellar equation of state is now
+      done with EOS_DIR := helmholtz, instead of helmeos.  This
+      reflects the actual name of the directory in the Microphysics
+      repo.
 
 
 16.07
@@ -34,7 +106,7 @@ previous releases:
  * Minor changes:
 
    -- The runtime parameter small_x is now owned by the network module.
-   
+
    -- The conductivity_constant runtime parameter is now owned by
       Microphysics/conductivity/constant.
 
@@ -85,5 +157,3 @@ previous releases:
 
    -- A workaround for a compiler bug in the Cray 8.4.x compilers was
       implemented, and these compilers are now supported
-
-

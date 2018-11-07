@@ -82,12 +82,9 @@ contains
     real(kind=dp_t), pointer::   wzp(:,:,:,:)
     
     integer :: lo(mla%dim),hi(mla%dim),i,n,comp,dm,nlevs
-    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w, ng_b
-    real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
-    real(kind=dp_t) :: dt_grav, dt_grav_grid, dt_grav_proc
-    real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
+    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_w,ng_b
+    real(kind=dp_t) :: dt_grid,dt_proc,dt_start,dt_lev
     real(kind=dp_t) :: umax,umax_grid,umax_proc,umax_lev
-    real(kind=dp_t) :: dts_local(3), dts_global(3)
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
 
@@ -102,6 +99,7 @@ contains
     w0_force_dummy = 0.d0
 
     umax = 0.d0
+    dt = 1.d20
 
     do n=1,nlevs
        call multifab_build(force(n), mla%la(n), dm, 1)
@@ -175,11 +173,8 @@ contains
 
     do n=1,nlevs
        
-       dt_adv_proc  = 1.d99
-       dt_divu_proc = 1.d99
-       dt_start     = 1.d99
-       dt_grav_proc = 1.d99
-       umax_grid    = 0.d0
+       dt_start  = 1.d99
+       dt_proc   = 1.d99
        umax_proc    = 0.d0
 
        do i = 1, nfabs(u(n))
@@ -191,11 +186,10 @@ contains
           lo =  lwb(get_box(u(n), i))
           hi =  upb(get_box(u(n), i))
           if (use_grav_dt) then
-	    bp    => dataptr(brunt(n), i)
+	         bp => dataptr(brunt(n), i)
           endif
-          dt_adv_grid   = HUGE(dt_adv_grid)
-          dt_grav_grid   = HUGE(dt_grav_grid)
-          dt_divu_grid  = HUGE(dt_divu_grid)
+          dt_grid   = HUGE(dt_grid)
+          umax_grid = 0.d0
 
           select case (dm)
           case (1)
@@ -203,7 +197,7 @@ contains
                            fp(:,1,1,1), ng_f, bp(:,1,1,1), ng_b, dUp(:,1,1,1), ng_dU, &
                            dSdtp(:,1,1,1), ng_dS, &
                            w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
-                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
+                           dx(n,:), rho_min, dt_grid, umax_grid, cflfac)
           case (2)
              if (polar .eq. 1) then
                 ng_w = nghost(w0mac(1,1))
@@ -215,7 +209,7 @@ contains
                                    dSdtp(:,:,1,1), ng_dS, &
                                    w0(1,:),wxp(:,:,1,1),wyp(:,:,1,1),ng_w, &
                                    p0(1,:), gamma1bar(1,:), hp(1,:), lo, hi, dx(n,:), &
-                                   rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
+                                   rho_min, dt_grid, umax_grid, cflfac)
              
             else
              
@@ -223,7 +217,7 @@ contains
                             fp(:,:,1,:), ng_f, bp(:,:,1,1), ng_b, dUp(:,:,1,1), ng_dU, &
                             dSdtp(:,:,1,1), ng_dS, &
                             w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, &
-                            dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
+                            dx(n,:), rho_min, dt_grid, umax_grid, cflfac)
             end if
           case (3)
              if (spherical .eq. 1) then
@@ -237,58 +231,41 @@ contains
                                    dSdtp(:,:,:,1), ng_dS, &
                                    w0(1,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
                                    p0(1,:), gamma1bar(1,:), hp(1,:), lo, hi, dx(n,:), &
-                                   rho_min, dt_adv_grid, dt_divu_grid,dt_grav_grid, umax_grid, cflfac)
+                                   rho_min, dt_grid, umax_grid, cflfac)
              else
                 call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f, bp(:,:,:,1), ng_b, dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, &
                                    w0(n,:), p0(n,:), gamma1bar(n,:), hp(n,:), lo, hi, dx(n,:), &
-                                   rho_min, dt_adv_grid, dt_divu_grid, dt_grav_grid, umax_grid, cflfac)
+                                   rho_min, dt_grid, umax_grid, cflfac)
              end if
           end select
 
-          dt_adv_proc  = min( dt_adv_proc,  dt_adv_grid)
-          dt_divu_proc = min(dt_divu_proc, dt_divu_grid)
-          dt_grav_proc = min(dt_grav_proc, dt_grav_grid)
-          umax_proc    = max(   umax_proc,    umax_grid)
+          dt_proc  = min(  dt_proc,   dt_grid)
+          umax_proc= max(umax_proc, umax_grid)
 
        end do
 
-       ! This sets dt to be the min of dt_proc over all processors.
-       dts_local(1) = dt_adv_proc
-       dts_local(2) = dt_divu_proc
-       dts_local(3) = dt_grav_proc
-       call parallel_reduce( dts_global,  dts_local, MPI_MIN)
-       dt_adv = dts_global(1)
-       dt_divu = dts_global(2)
-       dt_grav = dts_global(3)
+       call parallel_reduce(  dt_lev,   dt_proc, MPI_MIN)
+       call parallel_reduce(umax_lev, umax_proc, MPI_MAX)
 
-       ! we could pack this in the MIN reduce by looking at 1/umax_proc
-       call parallel_reduce(umax_lev,    umax_proc, MPI_MAX)
-
+       ! update umax over all levels
        umax = max(umax,umax_lev)
 
-       dt_lev = min(dt_adv,dt_divu,dt_grav)
-
+       ! protect against huge time steps
        if (dt_lev .eq. dt_start) then
-          if (dm .eq. 1) then 
+          if (dm .eq. 1) then
              dt_lev = dx(n,1)
-          else
+          else if (dm .eq. 2) then
              dt_lev = min(dx(n,1),dx(n,2))
-             if (dm .eq. 3) dt_lev = min(dt_lev,dx(n,3))
+          else if (dm .eq. 3) then
+             dt_lev = min(dx(n,1),dx(n,2),dx(n,3))
           end if
        end if
 
+       ! update dt over all levels
        dt = min(dt,dt_lev)
  
-       if (parallel_IOProcessor()) then
-              print*,''
-              print*,"Call to estdt in level", n
-              print*,"gives dt_adv =",dt_adv
-              print*,"gives dt_divu =",dt_divu
-              print*,"gives dt_grav =",dt_grav
-              print*,""
-       end if
     end do   ! end loop over levels
 
     if (dt < small_dt) then
@@ -321,7 +298,7 @@ contains
   subroutine estdt_1d(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                       divU, ng_dU, dSdt, ng_dS, &
                       w0, p0, gamma1bar, hp, lo, hi, &
-                      dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
+                      dx, rho_min, dt, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
@@ -337,7 +314,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,dt_grav,umax
+    real (kind = dp_t), intent(inout) :: dt,umax
     
     real (kind = dp_t)  :: spdx, spdr, bm
     real (kind = dp_t)  :: fx
@@ -360,10 +337,10 @@ contains
 
     umax = max(spdr,spdx)
 
-    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
-    if (spdr > eps) dt_adv = min(dt_adv, dx(1)/spdr)
+    if (spdx > eps) dt = min(dt, dx(1)/spdx)
+    if (spdr > eps) dt = min(dt, dx(1)/spdr)
 
-    dt_adv = dt_adv * cfl
+    dt = dt * cfl
     
     ! force constraints
     fx = ZERO
@@ -373,7 +350,7 @@ contains
     enddo
     
     if (fx > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/fx))
+       dt = min(dt,sqrt(2.0D0 *dx(1)/fx))
     
     ! divU constraint
     do i = lo(1), hi(1)
@@ -390,7 +367,7 @@ contains
           
        if (denom > ZERO) then
           
-          dt_divu = min(dt_divu, &
+          dt = min(dt, &
                0.4d0*(ONE - rho_min/s(i,rho_comp))/denom)
        endif
           
@@ -410,7 +387,7 @@ contains
              a = HALF*s(i,rho_comp)*dSdt(i)
              b = s(i,rho_comp)*divU(i)
              c = rho_min - s(i,rho_comp)
-             dt_divu = min(dt_divu, 0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+             dt = min(dt, 0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
           endif
           
     enddo
@@ -424,13 +401,12 @@ contains
       bm = ZERO
       do i = lo(1), hi(1)
         if (s(i,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
-	  bm = max(bm ,sqrt(abs(brunt(i)))*hp(i))
-	endif
+	        bm = max(bm ,sqrt(abs(brunt(i)))*hp(i))
+	    endif
       enddo
       
       
-      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
-      dt_grav = dt_grav * cfl
+      if (bm > eps) dt = min(dt, dx(1)*TWO*M_PI*cfl/bm)
     endif
     
   end subroutine estdt_1d
@@ -438,7 +414,7 @@ contains
   subroutine estdt_2d(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                       divU, ng_dU, dSdt, ng_dS, &
                       w0, p0, gamma1bar, hp, lo, hi, &
-                      dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
+                      dx, rho_min, dt, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
@@ -454,7 +430,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,dt_grav,umax
+    real (kind = dp_t), intent(inout) :: dt,umax
     
     real (kind = dp_t)  :: spdx, spdy, spdr, bm
     real (kind = dp_t)  :: fx, fy
@@ -485,11 +461,11 @@ contains
 
     umax = max(umax,spdx,spdy,spdr)
 
-    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
-    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
-    if (spdr > eps) dt_adv = min(dt_adv, dx(2)/spdr)
+    if (spdx > eps) dt = min(dt, dx(1)/spdx)
+    if (spdy > eps) dt = min(dt, dx(2)/spdy)
+    if (spdr > eps) dt = min(dt, dx(2)/spdr)
 
-    dt_adv = dt_adv * cfl
+    dt = dt * cfl
     
     ! force constraints
     fx = ZERO
@@ -504,10 +480,10 @@ contains
     enddo; enddo
     
     if (fx > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/fx))
+       dt = min(dt,sqrt(2.0D0 *dx(1)/fx))
     
     if (fy > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(2)/fy))
+       dt = min(dt,sqrt(2.0D0 *dx(2)/fy))
     
     ! divU constraint
     do j = lo(2), hi(2)
@@ -526,7 +502,7 @@ contains
           
           if (denom > ZERO) then
              
-             dt_divu = min(dt_divu, &
+             dt = min(dt, &
                   0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
           endif
           
@@ -548,7 +524,7 @@ contains
              a = HALF*s(i,j,rho_comp)*dSdt(i,j)
              b = s(i,j,rho_comp)*divU(i,j)
              c = rho_min - s(i,j,rho_comp)
-             dt_divu = min(dt_divu, 0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+             dt = min(dt, 0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
           endif
           
        enddo
@@ -564,13 +540,12 @@ contains
       
       do j = lo(2), hi(2); do i = lo(1), hi(1)
         if (s(i,j,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
-	  bm = max(bm ,sqrt(abs(brunt(i,j)))*hp(j))
-	endif
+	        bm = max(bm ,sqrt(abs(brunt(i,j)))*hp(j))
+	    endif
       enddo; enddo
       
       
-      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
-      dt_grav = dt_grav * cfl
+      if (bm > eps) dt = min(dt, dx(1)*TWO*M_PI*cfl/bm)
     endif
     
   end subroutine estdt_2d
@@ -579,7 +554,7 @@ contains
   subroutine estdt_2d_polar(u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
                            w0,w0macx,w0macy,ng_w, p0, gamma1bar, hp, &
-                           lo, hi, dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
+                           lo, hi, dx, rho_min, dt, umax, cfl)
 
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
@@ -598,7 +573,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
+    real (kind = dp_t), intent(inout) :: dt,umax
     
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:)
     real (kind = dp_t), allocatable :: hp_cart(:,:,:)
@@ -642,11 +617,11 @@ contains
 
     umax = max(umax,spdx,spdy,spdr)
 
-    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
-    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
-    if (spdr > eps) dt_adv = min(dt_adv, dr(1)/spdr)
+    if (spdx > eps) dt = min(dt, dx(1)/spdx)
+    if (spdy > eps) dt = min(dt, dx(2)/spdy)
+    if (spdr > eps) dt = min(dt, dr(1)/spdr)
 
-    dt_adv = dt_adv * cfl
+    dt = dt * cfl
     
     ! Limit dt based on forcing terms
     fx = ZERO 
@@ -665,10 +640,10 @@ contains
     !$OMP END PARALLEL DO
     
     if (fx > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
+       dt = min(dt,sqrt(2.0D0*dx(1)/fx))
     
     if (fy > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/fy))
+       dt = min(dt,sqrt(2.0D0*dx(2)/fy))
     
     ! divU constraint
     do r=1,nr_fine-1
@@ -680,7 +655,7 @@ contains
 
     call put_1d_array_on_cart_2d_polar(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
     
-    !$OMP PARALLEL DO PRIVATE(i,j,a,b,c,gp_dot_u,denom) REDUCTION(MIN : dt_divu)
+    !$OMP PARALLEL DO PRIVATE(i,j,a,b,c,gp_dot_u,denom) REDUCTION(MIN : dt)
     do j = lo(2), hi(2)
         do i = lo(1), hi(1)
             
@@ -690,7 +665,7 @@ contains
             denom = divU(i,j) - gp_dot_u 
             
             if (denom > ZERO) then
-                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
+                dt = min(dt,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
             endif
             !
             ! An additional dS/dt timestep constraint originally
@@ -705,7 +680,7 @@ contains
                 a = HALF*s(i,j,rho_comp)*dSdt(i,j)
                 b = s(i,j,rho_comp)*divU(i,j)
                 c = rho_min - s(i,j,rho_comp)
-                dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+                dt = min(dt,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
             endif
                         
         enddo
@@ -724,13 +699,12 @@ contains
       !$OMP PARALLEL DO PRIVATE(i,j) REDUCTION(MAX : bm)
       do j = lo(2), hi(2); do i = lo(1), hi(1)
         if (s(i,j,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
-	  bm = max(bm ,sqrt(abs(brunt(i,j)))*hp_cart(i,j,1))
-	endif
+	        bm = max(bm ,sqrt(abs(brunt(i,j)))*hp_cart(i,j,1))
+	    endif
       enddo; enddo
       !$OMP END PARALLEL DO
 
-      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
-      dt_grav = dt_grav * cfl    
+      if (bm > eps) dt = min(dt, dx(1)*TWO*M_PI*cfl/bm)
       
     endif
     
@@ -746,8 +720,7 @@ contains
   subroutine estdt_3d_cart(n, u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
                            w0, p0, gamma1bar, hp, lo, hi, &
-                           dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
-
+                           dx, rho_min, dt, umax, cfl)
     use geometry,  only: nr
     use variables, only: rho_comp
     use probin_module, only: use_grav_dt, buoyancy_cutoff_factor, base_cutoff_density
@@ -762,7 +735,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
+    real (kind = dp_t), intent(inout) :: dt, umax
     
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr, bm
     real (kind = dp_t)  :: fx, fy, fz
@@ -804,12 +777,12 @@ contains
 
     umax = max(umax,spdx,spdy,spdz,spdr)
 
-    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
-    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
-    if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
-    if (spdr > eps) dt_adv = min(dt_adv, dx(3)/spdr)
+    if (spdx > eps) dt = min(dt, dx(1)/spdx)
+    if (spdy > eps) dt = min(dt, dx(2)/spdy)
+    if (spdz > eps) dt = min(dt, dx(3)/spdz)
+    if (spdr > eps) dt = min(dt, dx(3)/spdr)
 
-    dt_adv = dt_adv * cfl
+    dt = dt * cfl
     !
     ! Limit dt based on forcing terms
     !
@@ -836,17 +809,17 @@ contains
     !$OMP END PARALLEL DO
     
     if (fx > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
+       dt = min(dt,sqrt(2.0D0*dx(1)/fx))
     
     if (fy > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/fy))
+       dt = min(dt,sqrt(2.0D0*dx(2)/fy))
     
     if (fz > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
+       dt = min(dt,sqrt(2.0D0*dx(3)/fz))
     !
     ! divU constraint
     !
-    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,denom) REDUCTION(MIN : dt_divu)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,gradp0,denom) REDUCTION(MIN : dt)
     do k = lo(3), hi(3)
        
        if (k .eq. 0) then
@@ -863,7 +836,7 @@ contains
              denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1bar(k)*p0(k))
              
              if (denom > ZERO) then
-                dt_divu = min(dt_divu, &
+                dt = min(dt, &
                      0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
              endif
              
@@ -872,7 +845,7 @@ contains
     enddo
     !$OMP END PARALLEL DO
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c) REDUCTION(MIN : dt_divu)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c) REDUCTION(MIN : dt)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)           
@@ -889,7 +862,7 @@ contains
                 a = HALF*s(i,j,k,rho_comp)*dSdt(i,j,k)
                 b = s(i,j,k,rho_comp)*divU(i,j,k)
                 c = rho_min - s(i,j,k,rho_comp)
-                dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+                dt = min(dt,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
              endif
              
           enddo
@@ -907,14 +880,13 @@ contains
       !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
         if (s(i,j,k,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
-	  bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
-	endif
+	        bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp(k))
+	    endif
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
 
       
-      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
-      dt_grav = dt_grav * cfl
+      if (bm > eps) dt = min(dt, dx(1)*TWO*M_PI*cfl/bm)
     endif
     
     
@@ -923,8 +895,7 @@ contains
   subroutine estdt_3d_sphr(u, ng_u, s, ng_s, force, ng_f, brunt, ng_b, &
                            divU, ng_dU, dSdt, ng_dS, &
                            w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, hp, &
-                           lo, hi, dx, rho_min, dt_adv, dt_divu, dt_grav, umax, cfl)
-
+                           lo, hi, dx, rho_min, dt, umax, cfl)
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
     use probin_module, only: use_grav_dt, max_levs, buoyancy_cutoff_factor, base_cutoff_density
@@ -943,7 +914,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:), hp(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, dt_grav, umax
+    real (kind = dp_t), intent(inout) :: dt, umax
     
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: hp_cart(:,:,:,:)
@@ -994,12 +965,12 @@ contains
 
     umax = max(umax,spdx,spdy,spdz,spdr)
 
-    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
-    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
-    if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
-    if (spdr > eps) dt_adv = min(dt_adv, dr(1)/spdr)
+    if (spdx > eps) dt = min(dt, dx(1)/spdx)
+    if (spdy > eps) dt = min(dt, dx(2)/spdy)
+    if (spdz > eps) dt = min(dt, dx(3)/spdz)
+    if (spdr > eps) dt = min(dt, dr(1)/spdr)
 
-    dt_adv = dt_adv * cfl
+    dt = dt * cfl
     
     ! Limit dt based on forcing terms
     fx = ZERO 
@@ -1025,13 +996,13 @@ contains
     !$OMP END PARALLEL DO
     
     if (fx > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
+       dt = min(dt,sqrt(2.0D0*dx(1)/fx))
     
     if (fy > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/fy))
+       dt = min(dt,sqrt(2.0D0*dx(2)/fy))
     
     if (fz > eps) &
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
+       dt = min(dt,sqrt(2.0D0*dx(3)/fz))
     
     ! divU constraint
     do r=1,nr_fine-1
@@ -1043,7 +1014,7 @@ contains
 
     call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0)
     
-    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c,gp_dot_u,denom) REDUCTION(MIN : dt_divu)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,a,b,c,gp_dot_u,denom) REDUCTION(MIN : dt)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1055,7 +1026,7 @@ contains
              denom = divU(i,j,k) - gp_dot_u 
              
              if (denom > ZERO) then
-                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                dt = min(dt,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
              endif
              !
              ! An additional dS/dt timestep constraint originally
@@ -1070,7 +1041,7 @@ contains
                 a = HALF*s(i,j,k,rho_comp)*dSdt(i,j,k)
                 b = s(i,j,k,rho_comp)*divU(i,j,k)
                 c = rho_min - s(i,j,k,rho_comp)
-                dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+                dt = min(dt,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
              endif
                           
           enddo
@@ -1090,13 +1061,12 @@ contains
       !$OMP PARALLEL DO PRIVATE(i,j,k) REDUCTION(MAX : bm)
       do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
         if (s(i,j,k,rho_comp) .gt. buoyancy_cutoff_factor*base_cutoff_density) then
-	  bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp_cart(i,j,k,1))
-	endif
+	        bm = max(bm ,sqrt(abs(brunt(i,j,k)))*hp_cart(i,j,k,1))
+	    endif
       enddo; enddo; enddo
       !$OMP END PARALLEL DO
 
-      if (bm > eps) dt_grav = min(dt_grav, dx(1)*TWO*M_PI/bm)
-      dt_grav = dt_grav * cfl    
+      if (bm > eps) dt = min(dt, dx(1)*TWO*M_PI*cfl/bm)
       
     endif
     

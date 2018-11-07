@@ -20,20 +20,20 @@ module divu_iter_module
 contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pi,gpi,thermal, &
-                       Source_old,normal,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
+                       S_cc,normal,nodalrhs,dSdt,beta0_old,rho0_old,p0_old,gamma1bar, &
                        tempbar_init,w0,grav_cell,dx,dt,the_bc_tower,mla)
 
     use variables, only: nscal, foextrap_comp
     use network, only: nspec
     use probin_module, only: use_thermal_diffusion, evolve_base_state, &
-         init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
+                             init_divu_iter, cflfac, verbose, init_shrink, fixed_dt
     use geometry, only: spherical, nr_fine, nlevs_radial, polar
     use proj_parameters, only: divu_iters_comp
     use react_state_module
     use make_explicit_thermal_module
-    use make_S_module
+    use make_S_cc_module
     use average_module
-    use hgrhs_module
+    use make_nodalrhs_module
     use fill_3d_module
     use hgproject_module
     use estdt_module
@@ -42,17 +42,19 @@ contains
     use mg_eps_module, only: eps_divu_cart, eps_divu_sph, &
          divu_iter_factor, divu_level_factor
 
+    use fabio_module
+
     integer        , intent(in   ) :: istep_divu_iter
     type(multifab) , intent(inout) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pi(:)
     type(multifab) , intent(inout) :: gpi(:)
     type(multifab) , intent(inout) :: thermal(:)
-    type(multifab) , intent(inout) :: Source_old(:)
+    type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: normal(:)
-    type(multifab) , intent(inout) :: hgrhs(:)
+    type(multifab) , intent(inout) :: nodalrhs(:)
     type(multifab) , intent(in   ) :: dSdt(:)
-    real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -76,7 +78,7 @@ contains
     type(multifab) :: rho_omegadot(mla%nlevel)
     type(multifab) :: rho_Hnuc(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
-    type(multifab) :: div_coeff_3d(mla%nlevel)
+    type(multifab) :: beta0_cart(mla%nlevel)
     type(multifab) :: Tcoeff(mla%nlevel)
     type(multifab) :: hcoeff(mla%nlevel)
     type(multifab) :: Xkcoeff(mla%nlevel)
@@ -88,7 +90,7 @@ contains
     real(dp_t) ::                  psi(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::            etarho_cc(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::   p0_minus_pthermbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::     p0_minus_peosbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         delta_chi_w0(nlevs_radial,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
@@ -103,7 +105,7 @@ contains
     psi = ZERO
     etarho_cc = ZERO
     delta_gamma1_termbar = ZERO
-    p0_minus_pthermbar = ZERO
+    p0_minus_peosbar = ZERO
 
     halfdt = HALF*dt
     ng_s   = nghost(sold(1))
@@ -149,12 +151,12 @@ contains
        call multifab_build(delta_gamma1(n),      mla%la(n), 1, 0)
     end do
 
-    call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold, &
-                normal, &
-                rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
-                p0_old,gamma1bar,delta_gamma1_termbar,psi, &
-                dx,mla,the_bc_tower%bc_tower_array)
+    call make_S_cc(S_cc,delta_gamma1_term,delta_gamma1, &
+                   sold,uold, &
+                   normal, &
+                   rho_omegadot,rho_Hnuc,rho_Hext,thermal, &
+                   p0_old,gamma1bar,delta_gamma1_termbar,psi, &
+                   dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot(n))
@@ -164,16 +166,16 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,Source_old,Sbar,dx,1)
+       call average(mla,S_cc,Sbar,dx,1)
        call make_w0(w0,w0,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,p0_minus_pthermbar, &
+                    gamma1bar,gamma1bar,p0_minus_peosbar, &
                     psi,etarho_ec,etarho_cc,dt,dt,delta_chi_w0,.true.)
     end if
     
     ! This needs to be a separate loop so Sbar is fully defined before 
     ! we get here.
-    call make_hgrhs(the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term, &
-                    Sbar,div_coeff_old,dx)
+    call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc,delta_gamma1_term, &
+                    Sbar,beta0_old,dx)
     
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -215,18 +217,18 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+       call multifab_build(beta0_cart(n), mla%la(n), 1, 1)
     end do
        
-    call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+    call put_1d_array_on_cart(beta0_old,beta0_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
 
     call hgproject(divu_iters_comp,mla,uold,uold,rhohalf,pi,gpi,dx,dt_temp, &
-                   the_bc_tower,div_coeff_3d,hgrhs,eps_divu)
+                   the_bc_tower,beta0_cart,nodalrhs,eps_divu)
     
     do n=1,nlevs
-       call destroy(div_coeff_3d(n))
+       call destroy(beta0_cart(n))
        call destroy(rhohalf(n))
     end do
 
@@ -236,9 +238,8 @@ contains
     end do
     
     dt_hold = dt
-    dt      = HUGE(dt)
 
-    call estdt(mla,the_bc_tower,uold,sold,gpi,Source_old,dSdt, &
+    call estdt(mla,the_bc_tower,uold,sold,gpi,S_cc,dSdt, &
                w0,rho0_old,p0_old,gamma1bar,grav_cell,dx,cflfac,dt)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then

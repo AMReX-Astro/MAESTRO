@@ -36,7 +36,7 @@ test_spherical/
 
    Set up an isentropically stratified star and stir it up with a
    random velocity field.  The low Mach number constraint is replaced
-   with the anelastic constraint (through the beta_type runtime
+   with the anelastic constraint (through the beta0_type runtime
    parameter).  Analytically, under these conditions, the density of
    the star should not change.  This test problem was discussed in
    Maestro paper IV.

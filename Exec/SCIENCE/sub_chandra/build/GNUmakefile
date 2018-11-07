@@ -13,7 +13,7 @@ MAESTRO_TOP_DIR := ../../../..
 
 # define the physics packages to build this problem
 EOS_DIR := helmholtz
-CONDUCTIVITY_DIR := timmes_stellar
+CONDUCTIVITY_DIR := stellar
 NETWORK_DIR := triple_alpha_plus_cago
 
 # define the special directories needed to build this problem.  Note:

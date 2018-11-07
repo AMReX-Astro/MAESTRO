@@ -32,18 +32,9 @@ contains
     use eos_type_module
     use probin_module, ONLY: dens_fuel, temp_fuel, xc12_fuel, vel_fuel
 
-    integer :: ic12, io16
-
     type (eos_t) :: eos_state
 
     ! figure out the indices for different species
-    ic12  = network_species_index("carbon-12")
-    io16  = network_species_index("oxygen-16")
-
-    if (ic12 < 0 .or. io16 < 0) then
-       call bl_error("ERROR: species indices undefined in inlet_bc")
-    endif
-
     eos_state%rho = dens_fuel
     eos_state%T   = temp_fuel
 

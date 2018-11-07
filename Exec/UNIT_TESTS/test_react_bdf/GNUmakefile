@@ -17,7 +17,7 @@ endif
 
 # define the physics packages to build this problem
 EOS_DIR := helmholtz
-CONDUCTIVITY_DIR := timmes_stellar
+CONDUCTIVITY_DIR := stellar
 
 NETWORK_DIR := ignition_simple_bdf
 #NETWORK_DIR := rprox_vbdf

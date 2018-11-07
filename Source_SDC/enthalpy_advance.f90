@@ -184,7 +184,7 @@ contains
 
        ! make force for hprime
        is_prediction = .true.
-       call mkhprimeforce(mla,sold,sold,scal_force,is_prediction,thermal,umac,p0_old, &
+       call mkhprimeforce(mla,sold,scal_force,is_prediction,thermal,umac,p0_old, &
                           p0_old,h0_old,h0_old,psi,dx,.true.,the_bc_level)
 
     else if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
@@ -192,7 +192,7 @@ contains
               (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
 
        ! make force for temperature
-       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old,psi,dx,the_bc_level)
+       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,psi,dx,the_bc_level)
 
     end if        
 

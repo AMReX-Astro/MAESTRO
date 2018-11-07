@@ -1,8 +1,8 @@
 &PROBIN
 
 !Input
- model_file = "changed_stratification.binary.bin"
- use_binary_input = T
+ model_file = "octant_fine_small.text"
+ use_binary_input = F
 
  
  
@@ -14,13 +14,15 @@
  
  stop_time = 1e9
 
- plot_int  = 1000
+ plot_int  = 100
  plot_deltat = -1.
  mini_plot_int = -1
  mini_plot_deltat = 1e5
  chk_int   = 1000
  single_prec_plotfiles = T
- 
+
+ !species_pred_type = 3
+ ppm_trace_forces = 1 
 !EOS
  small_temp = 1.e5 
  
@@ -37,9 +39,9 @@
  spherical_in = 1
  octant = T
 
- n_cellx = 128
- n_celly = 128
- n_cellz = 128
+ n_cellx = 64
+ n_celly = 64
+ n_cellz = 64
  max_grid_size = 32
  
  evolve_base_state = F
@@ -64,9 +66,9 @@
  
  
 !Grid (physical)
- prob_hi_x = 0.4e11
- prob_hi_y = 0.4e11
- prob_hi_z = 0.4e11
+ prob_hi_x = 0.6e11
+ prob_hi_y = 0.6e11
+ prob_hi_z = 0.6e11
  
  
  
@@ -82,12 +84,12 @@
 
 !Cutoff densities + sponge 
  !effectively no anelastic cutoff
- anelastic_cutoff = 8.5
- base_cutoff_density = 8.5
+ anelastic_cutoff = 2
+ base_cutoff_density = 2
  buoyancy_cutoff_factor = 1.14
  !standard implementiation: sponge starts at sponge_center_density * sponge_start_factor
  do_sponge = T
- sponge_center_density = 15
+ sponge_center_density = 4
  sponge_start_factor = 1.2d0
  sponge_kappa = 2e-3
  
@@ -104,16 +106,16 @@
  drive_initial_convection = F
  stop_initial_convection = 2
  
- velpert_amplitude = 2.d2               
- velpert_radius = 1.0d10              
+ velpert_amplitude = 2.d4               
+ velpert_radius = 2.0d10              
  velpert_scale = 1.1d10               
  velpert_steep = 1.d0
  
   
 !Timestepping
  cflfac = 0.3d0
- init_shrink = 0.1d0
- max_dt_growth = 1.01d0
+ init_shrink = 1d0
+ max_dt_growth = 1.05d0
  use_grav_dt = F
 
  
@@ -126,12 +128,12 @@
  
 !Burning/Heating
  do_burning = F
- do_heating = T
+ do_heating = F
 
  
  
 !Thermal diffusion
- use_thermal_diffusion = T
+ use_thermal_diffusion = F
 
  
  

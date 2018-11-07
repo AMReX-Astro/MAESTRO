@@ -24,18 +24,25 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(rho0,dx,prob_lo_r)
+  subroutine init_sponge(rho0)
 
-    use geometry, only: dr, r_end_coord
+    use geometry, only: dr, r_end_coord, spherical
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff, prob_hi, sponge_start_factor
+    use probin_module, only: anelastic_cutoff, prob_hi, sponge_start_factor, dm_in, prob_lo
 
-    real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
 
     real (kind = dp_t) :: rloc
     real (kind = dp_t) :: r_top
     integer            :: r
+
+    real (kind=dp_t) :: prob_lo_r
+
+    if (spherical .eq. 1) then
+       prob_lo_r = 0.d0
+    else
+       prob_lo_r = prob_lo(dm_in)
+    end if
 
     r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     topsponge_lo_r = r_top
