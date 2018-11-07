@@ -25,7 +25,7 @@ contains
   subroutine initveldata(u,s0_init,p0_init,dx,bc,mla)
 
     use mt19937_module
-    
+
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
@@ -48,7 +48,7 @@ contains
 
     ! random number
     real(kind=dp_t) :: rand
-    
+
     dm = mla%dim
     nlevs = mla%nlevel
 
@@ -114,7 +114,7 @@ contains
              end if
           end select
        end do
-    
+
     enddo
 
     if (nlevs .eq. 1) then
@@ -140,20 +140,20 @@ contains
           call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
                                          bc(n-1),bc(n),1,1,dm)
        enddo
-       
+
     end if
-    
+
 
   end subroutine initveldata
 
-  
+
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init,alpha,beta,gamma,phix,phiy,norm)
-    
-    
+
+
     use probin_module, only: prob_lo, prob_hi, octant, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
     integer           , intent(in   ) :: lo(:),hi(:),ng
-    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
@@ -180,9 +180,6 @@ contains
 
     ! the point we're at
     real(kind=dp_t) :: xloc(2)
-    
-    ! the center
-    real(kind=dp_t) :: xc(2)
 
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(2)
@@ -190,22 +187,13 @@ contains
     ! initialize the velocity to zero everywhere
     u = ZERO
 
-    ! define where center of star is
-    if (octant) then 
-      xc(1) = prob_lo(1)
-      xc(2) = prob_lo(2)
-    else 
-      xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
-      xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
-    endif
-    
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
 
              ! set perturbational velocity to zero
              upert = ZERO
-            
+
              ! compute where we physically are
              xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
              xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
@@ -232,12 +220,12 @@ contains
                            (-gamma(i,j)*dble(j)*cx(i,j)*sy(i,j) &
                              +beta(i,j)*dble(j)*cy(i,j)*sx(i,j)) &
                              / norm(i,j)
-                            
+
                       upert(2) = upert(2) + &
                            (gamma(i,j)*dble(i)*cy(i,j)*sx(i,j) &
                            -alpha(i,j)*dble(j)*cx(i,j)*sy(i,j)) &
                              / norm(i,j)
-                            
+
                 enddo
              enddo
 
@@ -256,11 +244,11 @@ contains
     enddo
 
   end subroutine initveldata_2d
-  
-  
-  
-  
-  
+
+
+
+
+
   ! the velocity is initialized to zero plus a perturbation which is a
   ! summation of 27 fourier modes with random amplitudes and phase
   ! shifts over a square of length "velpert_scale".  The parameter
@@ -276,7 +264,7 @@ contains
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale, velpert_min, octant
     use mt19937_module
-    
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -311,7 +299,7 @@ contains
 
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
-    
+
     !random number
     real(kind=dp_t) :: rand
 
@@ -319,18 +307,18 @@ contains
     u = ZERO
 
     ! define where center of star is
-    if (octant) then 
+    if (octant) then
       xc(1) = prob_lo(1)
       xc(2) = prob_lo(2)
       xc(3) = prob_lo(3)
-    else 
+    else
       xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
       xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
       xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
     endif
-    
+
     call init_genrand(20908)
-             
+
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
@@ -394,8 +382,8 @@ contains
                 upert(i) = velpert_amplitude*upert(i) &
                      *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
-             
-             
+
+
              if (sum(abs(upert)) < velpert_min) then
 !                 rand = genrand_real1()
 !                 rand = 2.0d0*rand - 1.0d0
@@ -410,7 +398,7 @@ contains
 		  upert(2) = ZERO
 		  upert(3) = ZERO
              endif
-             
+
              ! add perturbational velocity to background velocity
              do i=1,3
                 u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
@@ -419,17 +407,17 @@ contains
           enddo
        enddo
     enddo
-      
+
   end subroutine initveldata_3d_sphr
 
-  
+
    subroutine initveldata_3d_cart(u,lo,hi,ng,dx,s0_init,p0_init, &
                                  alpha,beta,gamma,phix,phiy,phiz, normk)
 
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale, velpert_min
     use mt19937_module
-    
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -461,16 +449,16 @@ contains
 
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
-    
+
     !random number
     real(kind=dp_t) :: rand
 
     ! initialize the velocity to zero everywhere
     u = ZERO
 
-    
+
     call init_genrand(20908)
-             
+
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
@@ -530,8 +518,8 @@ contains
                 upert(i) = velpert_amplitude*upert(i) &
                      *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
-             
-             
+
+
              if (sum(abs(upert)) < velpert_min) then
 !                 rand = genrand_real1()
 !                 rand = 2.0d0*rand - 1.0d0
@@ -546,7 +534,7 @@ contains
 		  upert(2) = ZERO
 		  upert(3) = ZERO
              endif
-             
+
              ! add perturbational velocity to background velocity
              do i=1,3
                 u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
@@ -555,8 +543,8 @@ contains
           enddo
        enddo
     enddo
-      
+
   end subroutine initveldata_3d_cart
 
-  
+
 end module init_vel_module

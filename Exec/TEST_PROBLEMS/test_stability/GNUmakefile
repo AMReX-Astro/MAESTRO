@@ -4,7 +4,7 @@ OMP    := t
 
 HYPRE :=
 
-COMP := Intel
+COMP := gfortran
 
 MKVERBOSE := t
 
