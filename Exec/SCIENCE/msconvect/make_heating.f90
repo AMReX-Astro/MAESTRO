@@ -233,10 +233,9 @@ contains
 	 
 	   
 	   ! approximate cno energy generation without screening according to Kippenhahn, Weigert, Weiss textbook
-	   ! including the ad hoc adjustment for the N14(p,gamma) reaction according to Adelberger 2010 -> * 1.66/3.2
 	   
 	    gcno = 1.0 - 2.00 * T9 + 3.41 * T9 ** TWO - 2.43 * T9 ** THREE
-	    ecno = 1.66/3.2 * 8.24E25 * gcno * xcno * xh1 * rho * T923 * euler ** (-15.231 * T913 - (1.25 *T9 ) ** TWO )
+	    ecno = 8.24E25 * gcno * xcno * xh1 * rho * T923 * euler ** (-15.231 * T913 - (1.25 *T9 ) ** TWO )
 	   
 	   ! approximate cno energy generation without screening according to maths.qmul.ac.uk
 	   ! xcno = xspec(3) + xspec(4)
