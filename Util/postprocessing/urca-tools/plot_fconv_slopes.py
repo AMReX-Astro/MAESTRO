@@ -62,8 +62,8 @@ class ConvectiveGradients(object):
         ax.plot(self.r[:idxup], dledoux, color='red', linestyle='-.', label='ledoux $\mathrm{\\nabla_{conv}}$')
         mx = max(np.amax(dadiabatic), np.amax(dledoux))
         mn = min(np.amin(dadiabatic), np.amin(dledoux))
-        mx = max(abs(mx), abs(mn))
-        plt.yscale('symlog', linthreshy=0.1*mx)
+        mlin = min(abs(mx), abs(mn))
+        plt.yscale('symlog', linthreshy=0.5*mlin)
         ax.set_ylabel('$\mathrm{\\nabla_{actual} - \\nabla_{conv}}$')
         plt.legend()
         if fmt=='png':
