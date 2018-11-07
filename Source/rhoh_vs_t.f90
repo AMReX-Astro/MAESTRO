@@ -10,7 +10,7 @@ module rhoh_vs_t_module
 
   private
 
-  public :: makeHfromRhoT_edge, makeTfromRhoH, makeTfromRhoP, makePfromRhoH, makeTHfromRhoP
+  public :: makeHfromRhoT_edge, makeTfromRhoH, makeTfromRhoP, makePfromRhoH
   
 contains
 
@@ -1404,9 +1404,9 @@ contains
   !============================================================================
   ! makeTfromRhoP
   !============================================================================
-  subroutine makeTfromRhoP(state,p0,mla,the_bc_level,dx)
+  subroutine makeTfromRhoP(state,p0,mla,the_bc_level,dx,updateRhoH_in)
 
-    use variables,             only: temp_comp
+    use variables,             only: temp_comp, rhoh_comp
     use bl_prof_module
     use geometry, only: spherical, polar
 
@@ -1415,15 +1415,19 @@ contains
     type(ml_layout)   , intent(in   ) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
+    integer, intent(in), optional     :: updateRhoH_in
 
     ! local
-    integer                  :: i,ng,n
+    integer                  :: i,ng,n,updateRhoH
     integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeTfromRhoP")
+
+    updateRhoH = 0
+    if (present(updateRhoH_in)) updateRhoH = updateRhoH_in
 
     dm = mla%dim
     nlevs = mla%nlevel
@@ -1438,18 +1442,18 @@ contains
           hi = upb(get_box(state(n),i))
           select case (dm)
           case (1)
-             call makeTfromRhoP_1d(sp(:,1,1,:),lo,hi,ng,p0(n,:))
+             call makeTfromRhoP_1d(sp(:,1,1,:),lo,hi,ng,p0(n,:),updateRhoH)
           case (2)
              if (polar .eq. 1) then
-                call makeTfromRhoP_2d_polar(sp(:,:,1,:),lo,hi,ng,p0(1,:),dx(n,:))
+                call makeTfromRhoP_2d_polar(sp(:,:,1,:),lo,hi,ng,p0(1,:),dx(n,:),updateRhoH)
              else
-                call makeTfromRhoP_2d(sp(:,:,1,:),lo,hi,ng,p0(n,:))
+                call makeTfromRhoP_2d(sp(:,:,1,:),lo,hi,ng,p0(n,:),updateRhoH)
              end if
           case (3)
              if (spherical .eq. 1) then
-                call makeTfromRhoP_3d_sphr(sp(:,:,:,:),lo,hi,ng,p0(1,:),dx(n,:))
+                call makeTfromRhoP_3d_sphr(sp(:,:,:,:),lo,hi,ng,p0(1,:),dx(n,:),updateRhoH)
              else
-                call makeTfromRhoP_3d(sp(:,:,:,:),lo,hi,ng,p0(n,:))
+                call makeTfromRhoP_3d(sp(:,:,:,:),lo,hi,ng,p0(n,:),updateRhoH)
              end if
           end select
        end do
@@ -1463,6 +1467,15 @@ contains
                               nc=1, &
                               ng=state(1)%ng)
 
+    if (updateRhoH .eq. 1) then
+       call ml_restrict_and_fill(nlevs,state,mla%mba%rr,the_bc_level, &
+                                 icomp=rhoh_comp, &
+                                 bcomp=dm+rhoh_comp, &
+                                 nc=1, &
+                                 ng=state(1)%ng)
+
+    end if
+
     call destroy(bpt)
 
   end subroutine makeTfromRhoP
@@ -1470,15 +1483,15 @@ contains
   !----------------------------------------------------------------------------
   ! makeTfromRhoP_1d
   !----------------------------------------------------------------------------
-  subroutine makeTfromRhoP_1d(state,lo,hi,ng,p0)
+  subroutine makeTfromRhoP_1d(state,lo,hi,ng,p0,updateRhoH)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, updateRhoH
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     
@@ -1506,6 +1519,9 @@ contains
        call eos(eos_input_rp, eos_state, pt_index)
 
        state(i,temp_comp) = eos_state%T
+       if (updateRhoH .eq. 1) then
+          state(i,rhoh_comp) = eos_state%rho*eos_state%h
+       end if
 
     enddo
 
@@ -1514,15 +1530,15 @@ contains
   !----------------------------------------------------------------------------
   ! makeTfromRhoP_2d
   !----------------------------------------------------------------------------
-  subroutine makeTfromRhoP_2d(state,lo,hi,ng,p0)
+  subroutine makeTfromRhoP_2d(state,lo,hi,ng,p0,updateRhoH)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, updateRhoH
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     
@@ -1551,6 +1567,9 @@ contains
           call eos(eos_input_rp, eos_state, pt_index)
           
           state(i,j,temp_comp) = eos_state%T
+          if (updateRhoH .eq. 1) then
+             state(i,j,rhoh_comp) = eos_state%rho*eos_state%h
+          end if
           
        enddo
     enddo
@@ -1560,16 +1579,16 @@ contains
 !----------------------------------------------------------------------------
   ! makeTfromRhoP_2d_polar
   !----------------------------------------------------------------------------
-  subroutine makeTfromRhoP_2d_polar(state,lo,hi,ng,p0,dx)
+  subroutine makeTfromRhoP_2d_polar(state,lo,hi,ng,p0,dx,updateRhoH)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use fill_3d_module
     use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, updateRhoH
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
@@ -1604,6 +1623,9 @@ contains
              
              state(i,j,temp_comp) = eos_state%T
              
+             if (updateRhoH .eq. 1) then
+                state(i,j,rhoh_comp) = eos_state%rho*eos_state%h
+             end if
         enddo
     enddo
     !$OMP END PARALLEL DO
@@ -1615,16 +1637,16 @@ contains
   !----------------------------------------------------------------------------
   ! makeTfromRhoP_3d
   !----------------------------------------------------------------------------
-  subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0)
+  subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0,updateRhoH)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use fill_3d_module
     use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, updateRhoH
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
 
@@ -1655,6 +1677,9 @@ contains
              call eos(eos_input_rp, eos_state, pt_index)
              
              state(i,j,k,temp_comp) = eos_state%T
+             if (updateRhoH .eq. 1) then
+                state(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
+             end if
              
           enddo
        enddo
@@ -1666,16 +1691,16 @@ contains
   !----------------------------------------------------------------------------
   ! makeTfromRhoP_3d_sphr
   !----------------------------------------------------------------------------
-  subroutine makeTfromRhoP_3d_sphr(state,lo,hi,ng,p0,dx)
+  subroutine makeTfromRhoP_3d_sphr(state,lo,hi,ng,p0,dx,updateRhoH)
 
-    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp
+    use variables,     only: rho_comp, spec_comp, temp_comp, pi_comp, rhoh_comp
     use eos_module,    only: eos_input_rp, eos
     use eos_type_module
     use network,       only: nspec
     use fill_3d_module
     use probin_module, only: use_pprime_in_tfromp
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, updateRhoH
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
@@ -1710,6 +1735,9 @@ contains
              call eos(eos_input_rp, eos_state, pt_index)
              
              state(i,j,k,temp_comp) = eos_state%T
+             if (updateRhoH .eq. 1) then
+                state(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
+             end if
              
           enddo
        enddo
@@ -1912,324 +1940,5 @@ contains
     !$OMP END PARALLEL DO
 
   end subroutine makePfromRhoH_3d
-
-
-  !============================================================================
-  ! makeTHfromRhoP
-  !============================================================================
-  subroutine makeTHfromRhoP(s,p0,the_bc_level,mla,dx)
-
-    use multifab_module
-    use ml_layout_module
-    use define_bc_module
-    use variables, only: rhoh_comp, temp_comp
-    use geometry, only: spherical, polar
-
-    type(multifab) , intent(inout) :: s(:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
-    type(ml_layout), intent(inout) :: mla
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
-    
-    ! local
-    real(kind=dp_t), pointer :: sop(:,:,:,:)
-    integer                  :: i,n,ng_s
-    integer                  :: lo(mla%dim),hi(mla%dim),dm,nlevs
-
-    type(bl_prof_timer), save :: bpt
-
-    call build(bpt, "makeTHfromRhoP")
-
-    dm = mla%dim
-    nlevs = mla%nlevel
-
-    ng_s = nghost(s(1))
-
-    do n=1,nlevs
-       do i = 1, nfabs(s(n))
-          sop => dataptr(s(n),i)
-          lo =  lwb(get_box(s(n),i))
-          hi =  upb(get_box(s(n),i))
-          select case (dm)
-          case (1)
-             call makeTHfromRhoP_1d(sop(:,1,1,:), ng_s, lo, hi, p0(n,:))
-          case (2)
-             if (polar .eq. 1) then
-                call makeTHfromRhoP_2d_polar(sop(:,:,1,:), ng_s, lo, hi, p0(1,:), dx(n,:))
-             else   
-                call makeTHfromRhoP_2d(sop(:,:,1,:), ng_s, lo, hi, p0(n,:))
-             end if
-          case (3)
-             if (spherical .eq. 1) then
-                call makeTHfromRhoP_3d_sphr(sop(:,:,:,:), ng_s, lo, hi, p0(1,:), dx(n,:))
-             else
-                call makeTHfromRhoP_3d(sop(:,:,:,:), ng_s, lo, hi, p0(n,:))
-             end if
-          end select
-       end do
-    enddo
-
-    ! restrict data and fill all ghost cells
-    call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
-                              icomp=rhoh_comp, &
-                              bcomp=dm+rhoh_comp, &
-                              nc=1, &
-                              ng=s(1)%ng)
-
-    ! restrict data and fill all ghost cells
-    call ml_restrict_and_fill(nlevs,s,mla%mba%rr,the_bc_level, &
-                              icomp=temp_comp, &
-                              bcomp=dm+temp_comp, &
-                              nc=1, &
-                              ng=s(1)%ng)
-
-    call destroy(bpt)
-
-  end subroutine makeTHfromRhoP
-
-  !----------------------------------------------------------------------------
-  ! makeTHfromRhoP_1d
-  !----------------------------------------------------------------------------
-  subroutine makeTHfromRhoP_1d(s,ng_s,lo,hi,p0)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network,       only: nspec
-    use variables
-    use probin_module, only: use_pprime_in_tfromp
-
-    integer           , intent(in   ) :: lo(:),hi(:),ng_s
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,:)  
-    real(kind=dp_t)   , intent(in   ) :: p0(0:)
-
-    ! local
-    integer    :: i
-    integer :: pt_index(MAX_SPACEDIM)
-    type (eos_t) :: eos_state
-
-    do i=lo(1),hi(1)
-
-       eos_state%rho   = s(i,rho_comp)
-       eos_state%xn(:) = s(i,spec_comp:spec_comp+nspec-1)/s(i,rho_comp)
-       eos_state%T     = s(i,temp_comp)
-       if (use_pprime_in_tfromp) then
-          eos_state%p     = p0(i) + s(i,pi_comp)
-       else
-          eos_state%p     = p0(i)
-       endif
-       pt_index(:) = (/i, -1, -1/)
-
-       call eos(eos_input_rp, eos_state, pt_index)
-
-       s(i,rhoh_comp) = eos_state%rho*eos_state%h
-       s(i,temp_comp) = eos_state%T
-
-    end do
-
-  end subroutine makeTHfromRhoP_1d
-
-  !----------------------------------------------------------------------------
-  ! makeTHfromRhoP_2d
-  !----------------------------------------------------------------------------
-  subroutine makeTHfromRhoP_2d(s,ng_s,lo,hi,p0)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network,       only: nspec
-    use variables
-    use probin_module, only: use_pprime_in_tfromp
-
-    integer           , intent(in   ) :: lo(:),hi(:),ng_s
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,:)  
-    real(kind=dp_t)   , intent(in   ) :: p0(0:)
-
-    ! local
-    integer    :: i,j
-    integer :: pt_index(MAX_SPACEDIM)
-    type (eos_t) :: eos_state
-
-    do j=lo(2),hi(2)
-       do i=lo(1),hi(1)
-
-          eos_state%rho   = s(i,j,rho_comp)
-          eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
-          eos_state%T     = s(i,j,temp_comp)
-          if (use_pprime_in_tfromp)  then
-             eos_state%p     = p0(j) + s(i,j,pi_comp)
-          else
-             eos_state%p     = p0(j)
-          endif
-
-          pt_index(:) = (/i, j, -1/)
-
-          call eos(eos_input_rp, eos_state, pt_index)
-
-          s(i,j,rhoh_comp) = eos_state%rho*eos_state%h
-          s(i,j,temp_comp) = eos_state%T
-
-       end do
-    end do
-
-  end subroutine makeTHfromRhoP_2d
-
-  
-  !----------------------------------------------------------------------------
-  ! makeTHfromRhoP_2d_polar
-  !----------------------------------------------------------------------------
-  subroutine makeTHfromRhoP_2d_polar(s,ng_s,lo,hi,p0,dx)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network,    only: nspec
-    use variables
-    use fill_3d_module
-    use probin_module, only: use_pprime_in_tfromp
-
-    integer           , intent(in   ) :: lo(:),hi(:),ng_s
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t)   , intent(in   ) :: p0(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
-
-    ! local
-    integer    :: i,j
-    real(kind=dp_t), allocatable :: p0_cart(:,:,:)
-    integer :: pt_index(MAX_SPACEDIM)
-    type (eos_t) :: eos_state
-
-    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),1))
-    call put_1d_array_on_cart_2d_polar(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
-
-    !$OMP PARALLEL DO PRIVATE(i,j, eos_state, pt_index)
-    do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-             
-             eos_state%rho   = s(i,j,rho_comp)
-             eos_state%xn(:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
-             eos_state%T     = s(i,j,temp_comp)
-             if (use_pprime_in_tfromp) then
-                eos_state%p     = p0_cart(i,j,1) + s(i,j,pi_comp)
-             else
-                eos_state%p     = p0_cart(i,j,1)
-             endif
-
-             pt_index(:) = (/i, j, -1/)
-             
-             call eos(eos_input_rp, eos_state, pt_index)
-             
-             s(i,j,rhoh_comp) = eos_state%rho*eos_state%h
-             s(i,j,temp_comp) = eos_state%T
-             
-        end do
-    end do
-    !$OMP END PARALLEL DO
-
-    deallocate(p0_cart)
-
-  end subroutine makeTHfromRhoP_2d_polar
-  
-  
-  !----------------------------------------------------------------------------
-  ! makeTHfromRhoP_3d
-  !----------------------------------------------------------------------------
-  subroutine makeTHfromRhoP_3d(s,ng_s,lo,hi,p0)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network,    only: nspec
-    use variables
-    use probin_module, only: use_pprime_in_tfromp
-
-    integer           , intent(in   ) :: lo(:),hi(:),ng_s
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)  
-    real(kind=dp_t)   , intent(in   ) :: p0(0:)
-
-    ! local
-    integer    :: i,j,k
-    integer :: pt_index(MAX_SPACEDIM)
-    type (eos_t) :: eos_state
-
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
-    do k=lo(3),hi(3)
-       do j=lo(2),hi(2)
-          do i=lo(1),hi(1)
-             
-             eos_state%rho   = s(i,j,k,rho_comp)
-             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
-             eos_state%T     = s(i,j,k,temp_comp)
-             if (use_pprime_in_tfromp) then
-                eos_state%p     = p0(k) + s(i,j,k,pi_comp)
-             else
-                eos_state%p     = p0(k)
-             endif
-
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rp, eos_state, pt_index)
-             
-             s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
-             s(i,j,k,temp_comp) = eos_state%T
-             
-          end do
-       end do
-    end do
-    !$OMP END PARALLEL DO
-
-  end subroutine makeTHfromRhoP_3d
-
-  !----------------------------------------------------------------------------
-  ! makeTHfromRhoP_3d_sphr
-  !----------------------------------------------------------------------------
-  subroutine makeTHfromRhoP_3d_sphr(s,ng_s,lo,hi,p0,dx)
-
-    use eos_module, only: eos_input_rp, eos
-    use eos_type_module
-    use network,    only: nspec
-    use variables
-    use fill_3d_module
-    use probin_module, only: use_pprime_in_tfromp
-
-    integer           , intent(in   ) :: lo(:),hi(:),ng_s
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t)   , intent(in   ) :: p0(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
-
-    ! local
-    integer    :: i,j,k
-    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
-    integer :: pt_index(MAX_SPACEDIM)
-    type (eos_t) :: eos_state
-
-    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0)
-
-    !$OMP PARALLEL DO PRIVATE(i,j,k, eos_state, pt_index)
-    do k=lo(3),hi(3)
-       do j=lo(2),hi(2)
-          do i=lo(1),hi(1)
-             
-             eos_state%rho   = s(i,j,k,rho_comp)
-             eos_state%xn(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,k,rho_comp)
-             eos_state%T     = s(i,j,k,temp_comp)
-             if (use_pprime_in_tfromp) then
-                eos_state%p     = p0_cart(i,j,k,1) + s(i,j,k,pi_comp)
-             else
-                eos_state%p     = p0_cart(i,j,k,1)
-             endif
-
-             pt_index(:) = (/i, j, k/)
-             
-             call eos(eos_input_rp, eos_state, pt_index)
-             
-             s(i,j,k,rhoh_comp) = eos_state%rho*eos_state%h
-             s(i,j,k,temp_comp) = eos_state%T
-             
-          end do
-       end do
-    end do
-    !$OMP END PARALLEL DO
-
-    deallocate(p0_cart)
-
-  end subroutine makeTHfromRhoP_3d_sphr
 
 end module rhoh_vs_t_module

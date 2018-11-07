@@ -1,8 +1,12 @@
-from __future__ import print_function
+"""
+Class for working with angle-averaged profiles.
+
+Donald E. Willcox
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Angle-averaged profile Class
 class AngleAveragedProfile(object):
     def __init__(self, filename=None):
         self.init_vars()

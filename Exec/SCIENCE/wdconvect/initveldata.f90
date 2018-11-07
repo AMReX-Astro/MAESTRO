@@ -62,20 +62,26 @@ contains
              do k=1,3
                 rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
+                !rand = (.5)**i * (.7)**j * (.3)**k * (-1.)**i
                 alpha(i,j,k) = rand
                 rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
+                !rand = (.5)**i * (.3)**j * (.7)**k * (-1.)**j
                 beta(i,j,k) = rand
                 rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
+                !rand = (.3)**i * (.5)**j * (.7)**k * (-1.)**k
                 gamma(i,j,k) = rand
                 rand = genrand_real1()
+                !rand = (.3)**i * (.7)**j * (.5)**k
                 rand = 2.0d0*M_PI*rand
                 phix(i,j,k) = rand
                 rand = genrand_real1()
+                !rand = (.7)**i * (.3)**j * (.5)**k 
                 rand = 2.0d0*M_PI*rand
                 phiy(i,j,k) = rand
                 rand = genrand_real1()
+                !rand = (.7)**i * (.5)**j * (.3)**k 
                 rand = 2.0d0*M_PI*rand
                 phiz(i,j,k) = rand
              enddo

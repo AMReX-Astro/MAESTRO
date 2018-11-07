@@ -183,20 +183,20 @@ contains
 
        ! make force for hprime
        is_prediction = .true.
-       call mkhprimeforce(mla,sold,sold,scal_force,is_prediction,thermal,umac,p0_old, &
-                          p0_old,h0_old,h0_old,psi,dx,.true.,the_bc_level)
+       call mkhprimeforce(mla,sold,scal_force,is_prediction,thermal,umac,p0_old, &
+                          h0_old,psi,dx,.true.,the_bc_level)
 
     else if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
               (enthalpy_pred_type .eq. predict_T_then_h        ) .or. &
               (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
 
        ! make force for temperature
-       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old,psi,dx,the_bc_level)
+       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,psi,dx,the_bc_level)
 
     end if        
       
     !**************************************************************************
-    !     Add w0 to MAC velocities (trans velocities already have w0).
+    !     Add w0 to MAC velocities 
     !**************************************************************************
 
     call addw0(umac,the_bc_level,mla,w0,w0mac,mult=ONE)
@@ -206,7 +206,7 @@ contains
     !**************************************************************************
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
-       ! convert (rho h) -> (rho h)' or
+       ! convert (rho h) -> (rho h)'
        call put_in_pert_form(mla,sold,rhoh0_old,dx,rhoh_comp,foextrap_comp,.true., &
                              the_bc_level)
     end if

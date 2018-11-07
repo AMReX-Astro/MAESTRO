@@ -30,21 +30,21 @@ contains
                               gpi,pi,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,rho_Hext,thermal2,&
-                              div_coeff_old,div_coeff_new, &
+                              beta0_old,beta0_new, &
                               grav_cell_old,dx,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
-                              psi,sponge,hgrhs,tempbar_init,particles)
+                              dSdt,S_cc_old,S_cc_new,etarho_ec,etarho_cc, &
+                              psi,sponge,nodalrhs,tempbar_init,particles)
 
     use bl_prof_module              , only : bl_prof_timer, build, destroy
     use      pre_advance_module     , only : advance_premac
     use velocity_advance_module     , only : velocity_advance
     use  density_advance_module     , only : density_advance
     use enthalpy_advance_module     , only : enthalpy_advance
-    use make_div_coeff_module       , only : make_div_coeff
+    use make_beta0_module       , only : make_beta0
     use make_w0_module              , only : make_w0
     use advect_base_module          , only : advect_base_dens, advect_base_enthalpy
     use react_state_module          , only : react_state
-    use make_S_module               , only : make_S
+    use make_S_cc_module            , only : make_S
     use average_module              , only : average
     use phihalf_module              , only : make_S_at_halftime, make_at_halftime
     use extraphalf_module           , only : extrap_to_halftime
@@ -64,7 +64,7 @@ contains
     use macrhs_module               , only : make_macrhs
     use macproject_module           , only : macproject
 
-    use hgrhs_module                , only : make_hgrhs, correct_hgrhs
+    use make_nodalrhs_module         , only : make_nodalrhs, correct_nodalrhs
     use hgproject_module            , only : hgproject
     use proj_parameters             , only : pressure_iters_comp, regular_timestep_comp
 
@@ -102,19 +102,19 @@ contains
     type(multifab),  intent(inout) :: rho_Hnuc2(:)
     type(multifab),  intent(inout) :: rho_Hext(:)
     type(multifab),  intent(inout) ::  thermal2(:)
-    real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
-    real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
+    real(dp_t)    ,  intent(inout) :: beta0_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: beta0_new(:,0:)
     real(dp_t)    ,  intent(inout) :: grav_cell_old(:,0:)
     real(dp_t)    ,  intent(in   ) :: dx(:,:),dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(multifab),  intent(inout) ::       dSdt(:)
-    type(multifab),  intent(inout) :: Source_old(:)
-    type(multifab),  intent(inout) :: Source_new(:)
+    type(multifab),  intent(inout) :: S_cc_old(:)
+    type(multifab),  intent(inout) :: S_cc_new(:)
     real(dp_t)    ,  intent(inout) ::  etarho_ec(:,0:)
     real(dp_t)    ,  intent(inout) ::  etarho_cc(:,0:)
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
-    type(multifab),  intent(inout) ::  hgrhs(:)
+    type(multifab),  intent(inout) ::  nodalrhs(:)
     type(particle_container), intent(inout) :: particles
 
     ! local
@@ -122,8 +122,8 @@ contains
     type(multifab) ::       w0_force_cart(mla%nlevel)
     type(multifab) ::              macrhs(mla%nlevel)
     type(multifab) ::              macphi(mla%nlevel)
-    type(multifab) ::           hgrhs_old(mla%nlevel)
-    type(multifab) ::          Source_nph(mla%nlevel)
+    type(multifab) ::           nodalrhs_old(mla%nlevel)
+    type(multifab) ::          S_cc_nph(mla%nlevel)
     type(multifab) ::            thermal1(mla%nlevel)
     type(multifab) ::              s2star(mla%nlevel)
     type(multifab) ::                  s1(mla%nlevel)
@@ -132,9 +132,8 @@ contains
     type(multifab) ::        delta_gamma1(mla%nlevel)
     type(multifab) ::       rho_omegadot1(mla%nlevel)
     type(multifab) ::           rho_Hnuc1(mla%nlevel)
-    type(multifab) ::        div_coeff_3d(mla%nlevel)
-    type(multifab) :: div_coeff_cart_edge(mla%nlevel,mla%dim)
-    type(multifab) ::              gamma1(mla%nlevel)
+    type(multifab) ::        beta0_cart(mla%nlevel)
+    type(multifab) :: beta0_cart_edge(mla%nlevel,mla%dim)
     type(multifab) ::          etarhoflux(mla%nlevel)
     type(multifab) ::            peos_old(mla%nlevel)
     type(multifab) ::            peos_nph(mla%nlevel)
@@ -164,13 +163,13 @@ contains
     real(kind=dp_t), allocatable ::              peosbar(:,:)
     real(kind=dp_t), allocatable ::             w0_force(:,:)
     real(kind=dp_t), allocatable ::                 Sbar(:,:)
-    real(kind=dp_t), allocatable ::        div_coeff_nph(:,:)
+    real(kind=dp_t), allocatable ::        beta0_nph(:,:)
     real(kind=dp_t), allocatable ::        gamma1bar_old(:,:)
     real(kind=dp_t), allocatable ::      gamma1bar_temp1(:,:)
     real(kind=dp_t), allocatable ::      gamma1bar_temp2(:,:)
     real(kind=dp_t), allocatable :: delta_gamma1_termbar(:,:)
     real(kind=dp_t), allocatable ::               w0_old(:,:)
-    real(kind=dp_t), allocatable ::       div_coeff_edge(:,:)
+    real(kind=dp_t), allocatable ::       beta0_edge(:,:)
     real(kind=dp_t), allocatable ::  rho0_predicted_edge(:,:)
 
     integer    :: i,n,comp,proj_type,numcell,nlevs,dm
@@ -207,13 +206,13 @@ contains
     allocate(             peosbar(nlevs_radial,0:nr_fine-1))
     allocate(            w0_force(nlevs_radial,0:nr_fine-1))
     allocate(                Sbar(nlevs_radial,0:nr_fine-1))
-    allocate(       div_coeff_nph(nlevs_radial,0:nr_fine-1))
+    allocate(       beta0_nph(nlevs_radial,0:nr_fine-1))
     allocate(       gamma1bar_old(nlevs_radial,0:nr_fine-1))
     allocate(     gamma1bar_temp1(nlevs_radial,0:nr_fine-1))
     allocate(     gamma1bar_temp2(nlevs_radial,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs_radial,0:nr_fine-1))
     allocate(              w0_old(nlevs_radial,0:nr_fine))
-    allocate(      div_coeff_edge(nlevs_radial,0:nr_fine))
+    allocate(      beta0_edge(nlevs_radial,0:nr_fine))
     allocate( rho0_predicted_edge(nlevs_radial,0:nr_fine))
 
     if (verbose .ge. 1) then
@@ -290,14 +289,14 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+       call multifab_build(S_cc_nph(n), mla%la(n), 1, 1)
     end do
 
     if (time .eq. ZERO) then
-       call make_S_at_halftime(mla,Source_nph,Source_old,Source_new, &
+       call make_S_at_halftime(mla,S_cc_nph,S_cc_old,S_cc_new, &
                                the_bc_tower%bc_tower_array)
     else
-       call extrap_to_halftime(mla,Source_nph,dSdt,Source_old,dt, &
+       call extrap_to_halftime(mla,S_cc_nph,dSdt,S_cc_old,dt, &
                                the_bc_tower%bc_tower_array)
     end if
 
@@ -362,7 +361,7 @@ contains
 
     if (evolve_base_state) then
 
-       call average(mla,Source_nph,Sbar,dx,1)
+       call average(mla,S_cc_nph,Sbar,dx,1)
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar_old, &
                     gamma1bar_old,p0_minus_peosbar,psi,etarho_ec,etarho_cc,dt,dtold)
@@ -418,12 +417,12 @@ contains
 
     macproj_time_start = parallel_wtime()
 
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
+    call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,beta0_old,dx, &
                      gamma1bar_old,gamma1bar_old,p0_old,p0_old,delta_p_term,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
-       call destroy(Source_nph(n))
+       call destroy(S_cc_nph(n))
        call destroy(delta_p_term(n))
     end do
 
@@ -436,25 +435,25 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
+             call multifab_build_edge(beta0_cart_edge(n,comp), mla%la(n),1,1,comp)
           end do
        end do
 
-       call make_s0mac(mla,div_coeff_old,div_coeff_cart_edge,dx,foextrap_comp, &
+       call make_s0mac(mla,beta0_old,beta0_cart_edge,dx,foextrap_comp, &
                        the_bc_tower%bc_tower_array)
 
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower,macrhs, &
-                       div_coeff_cart_edge=div_coeff_cart_edge)
+                       beta0_cart_edge=beta0_cart_edge)
 
        do n=1,nlevs
           do comp=1,dm
-             call destroy(div_coeff_cart_edge(n,comp))
+             call destroy(beta0_cart_edge(n,comp))
           end do
        end do
     else
-       call cell_to_edge(div_coeff_old,div_coeff_edge)
+       call cell_to_edge(beta0_old,beta0_edge)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_1d_edge=div_coeff_edge)
+                       macrhs,beta0_1d=beta0_old,beta0_1d_edge=beta0_edge)
     end if
 
     do n=1,nlevs
@@ -572,21 +571,11 @@ contains
           ! compute p0_nph
           p0_nph = HALF*(p0_old+p0_new)
 
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-
           ! compute gamma1bar^{(1)} and store it in gamma1bar_temp1
-          call make_gamma(mla,gamma1,s1,p0_old,dx)
-          call average(mla,gamma1,gamma1bar_temp1,dx,1)
+          call make_gamma1bar(mla,s1,gamma1bar_temp1,p0_old,dx)
 
           ! compute gamma1bar^{(2),*} and store it in gamma1bar_temp2
-          call make_gamma(mla,gamma1,s2,p0_new,dx)
-          call average(mla,gamma1,gamma1bar_temp2,dx,1)
-
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
+          call make_gamma1bar(mla,s2,gamma1bar_temp2,p0_new,dx)
 
           ! compute gamma1bar^{nph,*} and store it in gamma1bar_temp2
           gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
@@ -706,27 +695,18 @@ contains
     ! compute gamma1bar
     if (evolve_base_state) then
 
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-       
-       call make_gamma(mla,gamma1,snew,p0_new,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
+       call make_gamma1bar(mla,snew,gamma1bar,p0_new,dx)
 
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
-
-       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
     else
         
-       ! Just copy div_coeff_new from div_coeff_old if not evolving the base state
-       div_coeff_new = div_coeff_old
+       ! Just copy beta0_new from beta0_old if not evolving the base state
+       beta0_new = beta0_old
 
     end if
 
-    div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
+    beta0_nph = HALF*(beta0_old + beta0_new)
 
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
@@ -777,7 +757,7 @@ contains
     end do
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+    call make_S(S_cc_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,thermal2,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
@@ -787,10 +767,10 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+       call multifab_build(S_cc_nph(n), mla%la(n), 1, 1)
     end do
 
-    call make_S_at_halftime(mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
+    call make_S_at_halftime(mla,S_cc_nph,S_cc_old,S_cc_new,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
@@ -863,7 +843,7 @@ contains
 
     if (evolve_base_state) then
 
-       call average(mla,Source_nph,Sbar,dx,1)
+       call average(mla,S_cc_nph,Sbar,dx,1)
 
        if(use_delta_gamma1_term) then
           ! add delta_gamma1_termbar to Sbar
@@ -912,12 +892,12 @@ contains
     end do
 
     ! note delta_gamma1_term here is not time-centered
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
+    call make_macrhs(macrhs,rho0_old,S_cc_nph,delta_gamma1_term,Sbar,beta0_nph,dx, &
                      gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
-       call destroy(Source_nph(n))
+       call destroy(S_cc_nph(n))
        call destroy(delta_p_term(n))
     end do
 
@@ -931,25 +911,25 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build_edge(div_coeff_cart_edge(n,comp), mla%la(n),1,1,comp)
+             call multifab_build_edge(beta0_cart_edge(n,comp), mla%la(n),1,1,comp)
           end do
        end do
 
-       call make_s0mac(mla,div_coeff_nph,div_coeff_cart_edge,dx,foextrap_comp, &
+       call make_s0mac(mla,beta0_nph,beta0_cart_edge,dx,foextrap_comp, &
                        the_bc_tower%bc_tower_array)
 
        call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                       div_coeff_cart_edge=div_coeff_cart_edge)
+                       beta0_cart_edge=beta0_cart_edge)
 
        do n=1,nlevs
           do comp=1,dm
-             call destroy(div_coeff_cart_edge(n,comp))
+             call destroy(beta0_cart_edge(n,comp))
           end do
        end do
     else
-       call cell_to_edge(div_coeff_nph,div_coeff_edge)
+       call cell_to_edge(beta0_nph,beta0_edge)
        call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,macrhs, &
-                       div_coeff_1d=div_coeff_nph,div_coeff_1d_edge=div_coeff_edge)
+                       beta0_1d=beta0_nph,beta0_1d_edge=beta0_edge)
     end if
 
 
@@ -1069,17 +1049,8 @@ contains
        else
           p0_nph = HALF*(p0_old+p0_new)
 
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-
           ! compute gamma1bar^{(2)} and store it in gamma1bar_temp2
-          call make_gamma(mla,gamma1,s2,p0_new,dx)
-          call average(mla,gamma1,gamma1bar_temp2,dx,1)
-
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
+          call make_gamma1bar(mla,s2,gamma1bar_temp2,,p0_new,dx)
 
           ! compute gamma1bar^{nph} and store it in gamma1bar_temp2
           gamma1bar_temp2 = HALF*(gamma1bar_temp1+gamma1bar_temp2)
@@ -1212,23 +1183,14 @@ contains
     ! compute gamma1bar
     if (evolve_base_state) then
 
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-
-       call make_gamma(mla,gamma1,snew,p0_new,dx)
-       call average(mla,gamma1,gamma1bar,dx,1)
-
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
+       call make_gamma1bar(mla,snew,gamma1bar,p0_new,dx)
 
        !  We used to call this even if evolve_base was false,but we don't need to
-       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+       call make_beta0(beta0_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
     end if
 
-    div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
+    beta0_nph = HALF*(beta0_old+beta0_new)
 
     if (barrier_timers) call parallel_barrier()
     misc_time = misc_time + parallel_wtime() - misc_time_start
@@ -1280,7 +1242,7 @@ contains
     ndproj_time_start = parallel_wtime()
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+    call make_S(S_cc_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hnuc2,rho_Hext,thermal2,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
@@ -1289,7 +1251,7 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,Source_new,Sbar,dx,1)
+       call average(mla,S_cc_new,Sbar,dx,1)
 
        if(use_delta_gamma1_term) then
           ! add delta_gamma1_termbar to Sbar
@@ -1298,10 +1260,10 @@ contains
 
     end if
     
-    ! define dSdt = (Source_new - Source_old) / dt
+    ! define dSdt = (S_cc_new - S_cc_old) / dt
     do n=1,nlevs
-       call multifab_copy(dSdt(n),Source_new(n))
-       call multifab_sub_sub(dSdt(n),Source_old(n))
+       call multifab_copy(dSdt(n),S_cc_new(n))
+       call multifab_sub_sub(dSdt(n),S_cc_old(n))
        call multifab_div_div_s(dSdt(n),dt)
     end do
 
@@ -1360,22 +1322,22 @@ contains
        proj_type = pressure_iters_comp
 
        do n=1,nlevs
-          call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
-          call multifab_copy(hgrhs_old(n),hgrhs(n))
+          call multifab_build(nodalrhs_old(n), mla%la(n), 1, 0, nodal)
+          call multifab_copy(nodalrhs_old(n),nodalrhs(n))
        end do
-       call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
-                       Sbar,div_coeff_nph,dx)
+       call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc_new,delta_gamma1_term, &
+                       Sbar,beta0_nph,dx)
        do n=1,nlevs
-          call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
-          call multifab_div_div_s(hgrhs(n),dt)
+          call multifab_sub_sub(nodalrhs(n),nodalrhs_old(n))
+          call multifab_div_div_s(nodalrhs(n),dt)
        end do
 
     else
 
        proj_type = regular_timestep_comp
 
-       call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
-                       Sbar,div_coeff_nph,dx)
+       call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc_new,delta_gamma1_term, &
+                       Sbar,beta0_nph,dx)
 
        ! compute delta_p_term = peos_new - peosbar_cart (for RHS of projection)
        if (dpdt_factor .gt. ZERO) then
@@ -1415,7 +1377,7 @@ contains
              call destroy(peosbar_cart(n))
           end do
           
-          call correct_hgrhs(the_bc_tower,mla,rho0_new,hgrhs,div_coeff_nph,dx,dt, &
+          call correct_nodalrhs(the_bc_tower,mla,rho0_new,nodalrhs,beta0_nph,dx,dt, &
                              gamma1bar,p0_new,delta_p_term)
           
           do n=1,nlevs
@@ -1431,24 +1393,24 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+       call multifab_build(beta0_cart(n), mla%la(n), 1, 1)
     end do
        
-    call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
+    call put_1d_array_on_cart(beta0_nph,beta0_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,div_coeff_3d,hgrhs)
+    call hgproject(proj_type,mla,unew,uold,rhohalf,pi,gpi,dx,dt,the_bc_tower,beta0_cart,nodalrhs)
 
     do n=1,nlevs
-       call destroy(div_coeff_3d(n))
+       call destroy(beta0_cart(n))
        call destroy(rhohalf(n))
     end do
     
-    ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
+    ! If doing pressure iterations then put nodalrhs_old into nodalrhs to be returned to varden.
     if (init_mode) then
        do n=1,nlevs
-          call multifab_copy(hgrhs(n),hgrhs_old(n))
-          call destroy(hgrhs_old(n))
+          call multifab_copy(nodalrhs(n),nodalrhs_old(n))
+          call destroy(nodalrhs_old(n))
        end do
     end if
 
@@ -1470,7 +1432,7 @@ contains
        ! pass in the new time value, time+dt
        call diag(time+dt,dt,dx,snew,rho_Hnuc2,rho_Hext,thermal2,rho_omegadot2,&
                  rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,div_coeff_new, &
+                 gamma1bar,beta0_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
 
@@ -1479,7 +1441,7 @@ contains
        if (mach_max_abort > ZERO) then
           call sanity_check(time+dt,dx,snew, &
                  rho0_new,rhoh0_new,p0_new,tempbar, &
-                 gamma1bar,div_coeff_new, &
+                 gamma1bar,beta0_new, &
                  unew,w0,normal, &
                  mla,the_bc_tower)
        endif

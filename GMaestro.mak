@@ -1,5 +1,8 @@
 # A set of useful macros for putting together a MAESTRO application.
 
+# system blas
+BLAS_LIBRARY ?= -lopenblas
+
 # check the version number -- this comes from the GNU Make cookbook
 NEED := 3.81
 OK := $(filter $(NEED),$(firstword $(sort $(MAKE_VERSION) $(NEED))))
@@ -8,17 +11,17 @@ ifndef OK
    $(error your version of GNU make is too old.  You need atleast version $(NEED))
 endif
 
-# Make sure we have AMReX and that the build system will find it
-ifdef AMREX_HOME
-   ifeq ($(findstring ~, $(AMREX_HOME)), ~)
-      $(error you cannot include the ~ character in your AMREX_HOME variable)
+# Make sure we have FBoxLib and that the build system will find it
+ifdef FBOXLIB_HOME
+   ifeq ($(findstring ~, $(FBOXLIB_HOME)), ~)
+      $(error you cannot include the ~ character in your FBOXLIB_HOME variable)
    endif
 else
-   $(error Maestro requires AMReX. Please ensure that you have downloaded it and set $$AMREX_HOME appropriately)
+   $(error Maestro requires FBoxLib. Please ensure that you have downloaded it and set $$FBOXLIB_HOME appropriately)
 endif
 
 # include the main Makefile stuff
-include $(AMREX_HOME)/Tools/F_mk/GMakedefs.mak
+include $(FBOXLIB_HOME)/Tools/F_mk/GMakedefs.mak
 
 # default target (make just takes the one that appears first)
 ALL: main.$(suf).exe
@@ -26,47 +29,47 @@ ALL: main.$(suf).exe
 
 #-----------------------------------------------------------------------------
 # core AMREX directories
-AMREX_CORE := Src/F_BaseLib \
-              Src/LinearSolvers/F_MG
+FBOXLIB_CORE := Src/BaseLib \
+                Src/MultiGrid
 
 # include the random number generator stuff
 RANDOM := t
 
 #-----------------------------------------------------------------------------
 # core MAESTRO directories
-MAESTRO_CORE := 
+MAESTRO_CORE :=
 
 # path to SDC files -- note this must come before Source/ in the vpath
-SDC_CORE := 
+SDC_CORE :=
 
 ifdef SDC
   SDC_CORE += $(MAESTRO_TOP_DIR)/Source_SDC
 endif
 
-# next look for the files in Source/ itself 
+# next look for the files in Source/ itself
 #
 #   Note: a unit test (UNIT_TEST := t) tests only a single component
 #   of the MAESTRO algorithm, so we don't, in general, want to build
 #   all of the source in the MAESTRO/Source directory.  So, for unit
 #   tests, we leave it off the list of core directories, but do
-#   include it in the VPATH 
+#   include it in the VPATH
 #
-#   Setting AMREX_ONLY := t means that we don't even want the
+#   Setting FBOXLIB_ONLY := t means that we don't even want the
 #   MAESTRO/Source directory in our VPATH
 
-ifndef UNIT_TEST 
-  ifndef AMREX_ONLY 
-    MAESTRO_CORE += Source 
-  endif 
+ifndef UNIT_TEST
+  ifndef FBOXLIB_ONLY
+    MAESTRO_CORE += Source
+  endif
 endif
 
 
 #-----------------------------------------------------------------------------
 # core extern directories needed by every MAESTRO build
-UTIL_CORE := 
+UTIL_CORE :=
 
-ifndef AMREX_ONLY
-  UTIL_CORE := Util/model_parser 
+ifndef FBOXLIB_ONLY
+  UTIL_CORE := Util/model_parser
 endif
 
 UTIL_CORE += Util/simple_log
@@ -74,24 +77,41 @@ UTIL_CORE += Util/simple_log
 #-----------------------------------------------------------------------------
 # microphysics
 
-# for backward compatibility -- MICROPHYSICS_DIR is deprecated
-ifndef MICROPHYSICS_HOME
-  ifdef MICROPHYSICS_DIR
-    MICROPHYSICS_HOME := $(MICROPHYSICS_DIR)
-    $(info MICROPHYSICS_DIR is deprecated.  Please use MICROPHYSICS_HOME)
-  endif 
+
+
+# default to $(MICROPHYSICS_HOME) for the EOS unless we are gamma_law_general
+ifeq ($(EOS_DIR), gamma_law_general)
+  EOS_TOP_DIR := $(MAESTRO_HOME)/Microphysics/EOS
+else
+  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
 endif
 
+# we need all the thermodynamics
+FPP_DEFINES += -DEXTRA_THERMO
+
+# we are not using the CUDA stuff
+FPP_DEFINES += -DAMREX_DEVICE=""
+
+# support sparse Jacobian interface in Microphysics
+ifeq ($(USE_REACT_SPARSE_JACOBIAN), TRUE)
+  FPP_DEFINES += -DREACT_SPARSE_JACOBIAN
+
+  # The following is sometimes useful to turn on for debugging sparse J indices
+  # (if a get/set/scale is called with (row, col) not in the sparse J, stop)
+  # Otherwise, set/scale do nothing, and get returns 0.
+  ifeq ($(USE_SPARSE_STOP_ON_OOB), TRUE)
+    FPP_DEFINES += -DSPARSE_STOP_ON_OOB
+  endif
+endif
 
 ifeq ($(EOS_DIR), helmeos)
   EOS_DIR := helmholtz
   $(info EOS_DIR = helmeos is deprecated.  Please use helmholtz instead)
 endif
 
-# the helmeos has an include file -- also add a target to link the table
-# into the problem directory.
+# the helmeholtz eos has an include file -- also add a target to link
+# the table into the problem directory.
 ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
-  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
   EOS_PATH := $(EOS_TOP_DIR)/helmholtz
   ALL: table
 endif
@@ -99,65 +119,59 @@ endif
 table:
 	@if [ ! -f helm_table.dat ]; then echo ${bold}Linking helm_table.dat${normal}; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
-ifeq ($(findstring multigamma, $(EOS_DIR)), multigamma)
-  EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
+# For the URCA network in Microphysics, link the rate tables
+ifeq ($(findstring URCA-simple, $(NETWORK_DIR)), URCA-simple)
+  ALL: urcatables
 endif
 
-MICROPHYS_CORE := $(MAESTRO_TOP_DIR)/Microphysics/EOS $(MAESTRO_TOP_DIR)/Microphysics/screening
 
-# locations of the microphysics 
-ifndef EOS_TOP_DIR 
-  EOS_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/EOS
-endif
+urcatables:
+	@if [ ! -f 23Ne-23Na_betadecay.dat ]; then echo ${bold}Linking 23Ne-23Na_betadecay.dat${normal}; ln -s $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/23Ne-23Na_betadecay.dat .;  fi
+	@if [ ! -f 23Na-23Ne_electroncapture.dat ]; then echo ${bold}Linking 23Na-23Ne_electroncapture.dat${normal}; ln -s $(NETWORK_TOP_DIR)/$(NETWORK_DIR)/23Na-23Ne_electroncapture.dat .;  fi
 
-ifndef NETWORK_TOP_DIR 
+
+# All networks except general_null should pull in the Microphysics repository.
+ifneq ($(findstring general_null, $(NETWORK_DIR)), general_null)
+  NETWORK_TOP_DIR := $(MICROPHYSICS_HOME)/networks
+  include $(NETWORK_TOP_DIR)/GNetwork.mak
+else
   NETWORK_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/networks
+  MICROPHYS_CORE += $(NETWORK_TOP_DIR) $(NETWORK_TOP_DIR)/$(NETWORK_DIR)
+endif
+
+ifdef SYSTEM_BLAS
+  libraries += $(BLAS_LIBRARY)
+endif
+
+# are we using the stellar conductivity?
+ifeq ($(findstring stellar, $(CONDUCTIVITY_DIR)), stellar)
+  CONDUCTIVITY_TOP_DIR := $(MICROPHYSICS_HOME)/conductivity
 endif
 
 ifndef CONDUCTIVITY_TOP_DIR
   CONDUCTIVITY_TOP_DIR := $(MAESTRO_TOP_DIR)/Microphysics/conductivity
 endif
 
+
+
 # add in the network, EOS, and conductivity
-MICROPHYS_CORE += $(EOS_TOP_DIR)/$(EOS_DIR) \
-                  $(NETWORK_TOP_DIR)/$(NETWORK_DIR) \
-                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR) 
-
-# get any additional network dependencies
-include $(NETWORK_TOP_DIR)/$(strip $(NETWORK_DIR))/NETWORK_REQUIRES
-
-ifdef NEED_VODE
-  UTIL_CORE += Util/VODE 
-  NEED_BLAS := t
-  NEED_LINPACK := t
-endif
-
-ifdef NEED_BLAS
-  ifdef SYSTEM_BLAS
-    libraries += -lblas
-  else
-    UTIL_CORE += Util/BLAS
-  endif
-endif
-
-ifdef NEED_LINPACK
-  UTIL_CORE += Util/LINPACK
-endif
-
-ifdef NEED_VBDF
-  UTIL_CORE += Util/VBDF
-endif
+MICROPHYS_CORE += $(MAESTRO_TOP_DIR)/Microphysics/EOS \
+		  $(MAESTRO_TOP_DIR)/Microphysics/networks \
+		  $(EOS_TOP_DIR) \
+		  $(EOS_TOP_DIR)/$(EOS_DIR) \
+                  $(MAESTRO_TOP_DIR)/Microphysics/conductivity \
+                  $(CONDUCTIVITY_TOP_DIR)/$(CONDUCTIVITY_DIR)
 
 
 #-----------------------------------------------------------------------------
 # extra directory
-ifndef EXTRA_TOP_DIR 
+ifndef EXTRA_TOP_DIR
   EXTRA_TOP_DIR := $(MAESTRO_TOP_DIR)/
 endif
 
 EXTRAS := $(addprefix $(EXTRA_TOP_DIR)/, $(EXTRA_DIR))
 
-ifndef EXTRA_TOP_DIR2 
+ifndef EXTRA_TOP_DIR2
   EXTRA_TOP_DIR2 := $(MAESTRO_TOP_DIR)/
 endif
 
@@ -168,6 +182,13 @@ EXTRAS += $(addprefix $(EXTRA_TOP_DIR2)/, $(EXTRA_DIR2))
 # compile in support for particles
 PARTICLES := t
 
+#-----------------------------------------------------------------------------
+# If we are using OpenACC, add the corresponding preprocessor macro.
+ifdef ACC
+  ifeq ($(ACC), t)
+    FPP_DEFINES += -DACC
+  endif
+endif
 
 #-----------------------------------------------------------------------------
 # Fmpack is the list of all the GPackage.mak files that we need to
@@ -201,17 +222,14 @@ Fmlocs += $(foreach dir, $(MICROPHYS_CORE), $(dir))
 Fmpack += $(foreach dir, $(EXTRAS), $(dir)/GPackage.mak)
 Fmlocs += $(foreach dir, $(EXTRAS), $(dir))
 
-# AMReX
-Fmpack += $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir)/GPackage.mak)
-Fmlocs += $(foreach dir, $(AMREX_CORE), $(AMREX_HOME)/$(dir))
+# FBoxLib
+Fmpack += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir)/GPackage.mak)
+Fmlocs += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir))
 
 
 # any include directories
-Fmincs := 
+Fmincs :=
 
-
-# include the necessary GPackage.mak files that define this setup
-include $(Fmpack)
 
 # vpath defines the directories to search for the source files
 
@@ -224,6 +242,10 @@ endif
 #  Note: GMakerules.mak will include '.' at the start of the
 #  VPATH_LOCATIONS to first search in the problem directory
 VPATH_LOCATIONS += $(Fmlocs)  $(EXTRA_LOCATIONS)
+
+# include the necessary GPackage.mak files that define this setup
+# but do this after VPATH_LOCATIONS
+include $(Fmpack)
 
 
 # list of directories to put in the Fortran include path
@@ -241,30 +263,30 @@ main.$(suf).exe: $(objects)
 # runtime parameter stuff (probin.f90)
 
 # template used by write_probin.py to build probin.f90
-ifndef AMREX_ONLY
+ifndef FBOXLIB_ONLY
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Source/probin.template
 else
   PROBIN_TEMPLATE := $(MAESTRO_TOP_DIR)/Util/parameters/dummy.probin.template
 endif
 
 # list of the directories to search for _parameters files
-PROBIN_PARAMETER_DIRS = ./ 
+PROBIN_PARAMETER_DIRS = ./
 
-ifndef AMREX_ONLY 
+ifndef FBOXLIB_ONLY
   PROBIN_PARAMETER_DIRS += $(MAESTRO_TOP_DIR)/Source
 endif
 
 # list of all valid _parameters files for probin
-PROBIN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
+PROBIN_PARAMETERS := $(shell $(FBOXLIB_HOME)/Tools/F_scripts/findparams.py $(PROBIN_PARAMETER_DIRS))
 
 # list of all valid _parameters files for extern
 EXTERN_PARAMETER_DIRS += $(MICROPHYS_CORE) $(NETWORK_TOP_DIR)
-EXTERN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
+EXTERN_PARAMETERS := $(shell $(FBOXLIB_HOME)/Tools/F_scripts/findparams.py $(EXTERN_PARAMETER_DIRS))
 
 probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 	@echo " "
 	@echo "${bold}WRITING probin.f90${normal}"
-	$(AMREX_HOME)/Tools/F_scripts/write_probin.py \
+	$(FBOXLIB_HOME)/Tools/F_scripts/write_probin.py \
            -t $(PROBIN_TEMPLATE) -o probin.f90 -n probin \
            --pa "$(PROBIN_PARAMETERS)" --pb "$(EXTERN_PARAMETERS)"
 	@echo " "
@@ -274,10 +296,10 @@ probin.f90: $(PROBIN_PARAMETERS) $(EXTERN_PARAMETERS) $(PROBIN_TEMPLATE)
 # build_info stuff
 deppairs: build_info.f90
 
-build_info.f90: 
+build_info.f90:
 	@echo " "
 	@echo "${bold}WRITING build_info.f90${normal}"
-	$(AMREX_HOME)/Tools/F_scripts/makebuildinfo.py \
+	$(FBOXLIB_HOME)/Tools/F_scripts/makebuildinfo.py \
            --modules "$(Fmdirs) $(MICROPHYS_CORE)" \
            --FCOMP "$(COMP)" \
            --FCOMP_version "$(FCOMP_VERSION)" \
@@ -285,7 +307,7 @@ build_info.f90:
            --f_compile_line "$(COMPILE.f)" \
            --C_compile_line "$(COMPILE.c)" \
            --link_line "$(LINK.f90)" \
-           --amrex_home "$(AMREX_HOME)" \
+           --fboxlib_home "$(FBOXLIB_HOME)" \
            --source_home "$(MAESTRO_TOP_DIR)" \
            --extra_home "$(MICROPHYSICS_HOME)" \
            --network "$(NETWORK_DIR)" \
@@ -299,8 +321,8 @@ $(odir)/build_info.o: build_info.f90
 
 
 #-----------------------------------------------------------------------------
-# include the AMReX Fortran Makefile rules
-include $(AMREX_HOME)/Tools/F_mk/GMakerules.mak
+# include the FBoxLib Makefile rules
+include $(FBOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 
 #-----------------------------------------------------------------------------
@@ -311,15 +333,12 @@ print-%: ; @echo $* is $($*)
 
 
 #-----------------------------------------------------------------------------
-# cleaning.  Add more actions to 'clean' and 'realclean' to remove 
+# cleaning.  Add more actions to 'clean' and 'realclean' to remove
 # probin.f90 and build_info.f90 -- this is where the '::' in make comes
 # in handy
-clean:: 
-	$(RM) probin.f90 
+clean::
+	$(RM) probin.f90
 	$(RM) build_info.f90
 
 realclean ::
 	$(RM) helm_table.dat
-
-
-

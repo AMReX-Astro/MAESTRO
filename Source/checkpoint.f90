@@ -15,7 +15,7 @@ module checkpoint_module
 
 contains
 
-  subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, Source_new, &
+  subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, S_cc, &
                               rho_omegadot2, rho_Hnuc2, rho_Hext, thermal2, &
                               rrs, dt)
 
@@ -30,7 +30,7 @@ contains
     use cputime_module, only: get_cputime
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
-    type(multifab)  , intent(in) :: dSdt(:), Source_old(:), Source_new(:)
+    type(multifab)  , intent(in) :: dSdt(:), S_cc(:)
     type(multifab)  , intent(in) :: rho_omegadot2(:), rho_Hnuc2(:), rho_Hext(:), thermal2(:)
     integer         , intent(in) :: rrs(:,:)
     character(len=*), intent(in) :: dirname
@@ -70,15 +70,8 @@ contains
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
     end if
 
-    write(unit=sd_name, fmt='(a,"/Source_old")') trim(dirname)
-    call fabio_ml_multifab_write_d(Source_old, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
-
-    if (parallel_IOProcessor() .and. verbose .ge. 1) then
-      write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
-    end if
-
-    write(unit=sd_name, fmt='(a,"/Source_new")') trim(dirname)
-    call fabio_ml_multifab_write_d(Source_new, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
+    write(unit=sd_name, fmt='(a,"/S_cc")') trim(dirname)
+    call fabio_ml_multifab_write_d(S_cc, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name)
@@ -160,7 +153,7 @@ contains
 
   end subroutine checkpoint_write
 
-  subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, Source_new, rho_omegadot2, &
+  subroutine checkpoint_read(mfs, mfs_nodal, dSdt, S_cc, rho_omegadot2, &
                              rho_Hnuc2, rho_Hext, thermal2, dirname, dt_out, nlevs_out)
 
     use bl_IO_module, only: unit_new
@@ -171,7 +164,7 @@ contains
     use time_module, only: time
 
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
-    type(multifab  ),                pointer :: dSdt(:), Source_old(:), Source_new(:)
+    type(multifab  ),                pointer :: dSdt(:), S_cc(:)
     type(multifab  ),                pointer :: rho_omegadot2(:), rho_Hnuc2(:), rho_Hext(:), thermal2(:)
     character(len=*), intent(in   )          :: dirname
     integer         , intent(  out)          :: nlevs_out
@@ -218,13 +211,9 @@ contains
     write(unit=sd_name, fmt='(a,"/dSdt")') trim(dirname)
     call fabio_ml_multifab_read_d(dSdt, sd_name)
 
-!   Read the Source_old data into a multilevel multifab.
-    write(unit=sd_name, fmt='(a,"/Source_old")') trim(dirname)
-    call fabio_ml_multifab_read_d(Source_old, sd_name)
-
-!   Read the Source_new data into a multilevel multifab.
-    write(unit=sd_name, fmt='(a,"/Source_new")') trim(dirname)
-    call fabio_ml_multifab_read_d(Source_new, sd_name)
+!   Read the S_cc data into a multilevel multifab.
+    write(unit=sd_name, fmt='(a,"/S_cc")') trim(dirname)
+    call fabio_ml_multifab_read_d(S_cc, sd_name)
 
 !   Read the rho_omegadot2 data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/rho_omegadot2")') trim(dirname)

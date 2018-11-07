@@ -94,7 +94,7 @@ contains
     ! Create source terms at time n
     !**************************************************************************
 
-    ! Source terms for X and for tracers are zero - do nothing
+    ! source terms for X and for tracers are zero - do nothing
     do n = 1, nlevs
        call setval(scal_force(n),ZERO,all=.true.)
     end do

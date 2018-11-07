@@ -16,7 +16,7 @@ module mac_hypre_module
  
 contains
 
-  subroutine mac_hypre(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
+  subroutine mac_hypre(mla,rh,phi,fine_flx,solver_alpha,solver_beta,dx,the_bc_tower,bc_comp, &
                        stencil_order,ref_ratio,rel_solver_eps,abs_solver_eps)
 
     use cc_stencil_fill_module, only: stencil_fill_cc_all_mglevels
@@ -31,7 +31,7 @@ contains
     real(dp_t)     , intent(in)           :: dx(:,:)
     type(bc_tower) , intent(in)           :: the_bc_tower
     integer        , intent(in   )        :: bc_comp
-    type(multifab) , intent(in   )        :: alpha(:), beta(:,:)
+    type(multifab) , intent(in   )        :: solver_alpha(:), solver_beta(:,:)
     type(multifab) , intent(inout)        ::    rh(:),  phi(:)
     type(bndry_reg), intent(inout)        :: fine_flx(:)
     real(dp_t)     , intent(in   )        :: rel_solver_eps 
@@ -112,11 +112,11 @@ contains
        la = mla%la(n)
 
        call multifab_build(cell_coeffs(mgt(n)%nlevels), la, 1, 1)
-       call multifab_copy_c(cell_coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=nghost(alpha(n)))
+       call multifab_copy_c(cell_coeffs(mgt(n)%nlevels),1,solver_alpha(n),1, 1,ng=nghost(solver_alpha(n)))
 
        do d = 1, dm
           call multifab_build_edge(edge_coeffs(mgt(n)%nlevels,d),la,1,1,d)
-          call multifab_copy_c(edge_coeffs(mgt(n)%nlevels,d),1,beta(n,d),1,1,ng=nghost(beta(n,d)))
+          call multifab_copy_c(edge_coeffs(mgt(n)%nlevels,d),1,solver_beta(n,d),1,1,ng=nghost(solver_beta(n,d)))
        end do
 
        if (n > 1) then

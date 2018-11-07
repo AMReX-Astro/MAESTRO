@@ -1,0 +1,131 @@
+&PROBIN
+
+ ! initial model
+ model_file = "WD_urca_nuc_M-0.5_hot.hse.2560"
+ drdxfac = 5
+
+ job_name = "512^3, rhoc = 4.5e9"
+
+
+ ! gridding and geometry
+ max_levs = 2
+ n_cellx = 256
+ n_celly = 256
+ n_cellz = 256
+
+ max_grid_size_1 = 32
+ max_grid_size_2 = 32
+
+ regrid_int = 2
+ min_eff = 0.8
+
+ spherical_in = 1
+ dm_in = 3
+
+ prob_hi_x = 5.12d8
+ prob_hi_y = 5.12d8
+ prob_hi_z = 5.12d8
+
+ xlo_boundary_type = "outlet"
+ ylo_boundary_type = "outlet"
+ zlo_boundary_type = "outlet"
+
+ xhi_boundary_type = "outlet"
+ yhi_boundary_type = "outlet"
+ zhi_boundary_type = "outlet"
+
+
+ ! stepping
+ max_step  = 100000000
+ stop_time = 10000.
+
+ cflfac = 0.8d0
+
+ init_shrink = 0.1d0
+ max_dt_growth = 1.1d0
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
+
+
+ ! algorithm details
+ verbose = 1	
+ 
+ do_burning = T
+
+ enthalpy_pred_type = 1
+ evolve_base_state = T
+
+ dpdt_factor = 0.0d0
+
+ use_tfromp = T
+
+ use_eos_coulomb = T
+
+
+ ! cutoffs
+ anelastic_cutoff = 1.d6
+ base_cutoff_density = 1.d5
+
+ do_sponge = .true.
+ sponge_center_density = 3.d6
+ sponge_start_factor = 3.333d0
+ sponge_kappa = 10.0d0
+
+
+ ! multigrid
+ max_mg_bottom_nlevels = 16
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
+ mg_verbose = 1
+ cg_verbose = 0
+
+
+ ! initialization
+ init_iter = 1
+ do_initial_projection = T
+ init_divu_iter = 3
+
+
+ ! I/O
+ plot_base_name = "wd_512_rhoc4-5_plt"
+ plot_int = -1
+ plot_deltat = 5.0d0
+
+ check_base_name = "wd_512_rhoc4-5_chk"
+ chk_int   = 100
+
+ single_prec_plotfiles = T
+
+ plot_trac = F
+ plot_gpi = F
+ plot_h_with_use_tfromp = F
+
+
+ ! perturbation
+ velpert_amplitude = 1.d3
+ velpert_radius = 2.d7
+ velpert_scale = 1.d7
+ velpert_steep = 1.d5
+
+ ! BS Reactions ODE integration 
+ burner_verbose = .false.
+
+ ! Set which jacobian to use
+ ! 1 = analytic jacobian
+ ! 2 = numerical jacobian
+ jacobian   = 1
+
+ ode_max_steps = 1000
+ scaling_method = 2
+ retry_burn = .false.
+ renormalize_abundances = .false.
+
+ rtol_spec = 1.0d-12
+ rtol_enuc = 1.0d-9
+ rtol_temp = 1.0d-9
+ atol_spec = 1.0d-12
+ atol_enuc = 1.0d-9
+ atol_temp = 1.0d-9
+
+/

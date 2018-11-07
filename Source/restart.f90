@@ -12,8 +12,8 @@ module restart_module
 
 contains
 
-  subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old, &
-                               chk_src_new,chk_rho_omegadot2,chk_rho_Hnuc2, &
+  subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src, &
+                               chk_rho_omegadot2,chk_rho_Hnuc2, &
                                chk_rho_Hext,chk_thermal2,dt)
 
     use parallel
@@ -29,8 +29,7 @@ contains
     type(multifab)   , pointer        :: chkdata(:)
     type(multifab)   , pointer        :: chk_p(:)
     type(multifab)   , pointer        :: chk_dSdt(:)
-    type(multifab)   , pointer        :: chk_src_old(:)
-    type(multifab)   , pointer        :: chk_src_new(:)
+    type(multifab)   , pointer        :: chk_src(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     type(multifab)   , pointer        :: chk_rho_Hnuc2(:)
     type(multifab)   , pointer        :: chk_rho_Hext(:)
@@ -76,7 +75,7 @@ contains
     if ( parallel_IOProcessor()) &
          print *,'Reading ', trim(check_file_name), ' to get state data for restart'
 
-    call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, chk_src_new, &
+    call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src, &
                          chk_rho_omegadot2, chk_rho_Hnuc2, chk_rho_Hext, &
                          chk_thermal2, check_file_name, &
                          dt, nlevs_local)

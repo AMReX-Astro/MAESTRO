@@ -18,7 +18,7 @@ module velpred_module
 
 contains
 
-  subroutine velpred(u,ufull,umac,utrans,force,w0,w0mac,dx,dt,the_bc_level,mla)
+  subroutine velpred(utilde,ufull,umac,utrans,force,w0,w0mac,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -26,7 +26,7 @@ contains
     use fill_3d_module
     use ml_cc_restriction_module, only : ml_edge_restriction_c
 
-    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(in   ) :: utilde(:)
     type(multifab) , intent(in   ) :: ufull(:)
     type(multifab) , intent(inout) :: umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
@@ -59,7 +59,7 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    ng_u  = nghost(u(1))
+    ng_u  = nghost(utilde(1))
     ng_uf = nghost(ufull(1))
     ng_um = nghost(umac(1,1))
     ng_ut = nghost(utrans(1,1))
@@ -67,14 +67,14 @@ contains
     ng_w0 = nghost(w0mac(1,1))
 
     do n=1,nlevs
-       do i = 1, nfabs(u(n))
-          uop  => dataptr(u(n),i)
+       do i = 1, nfabs(utilde(n))
+          uop  => dataptr(utilde(n),i)
           ufp  => dataptr(ufull(n),i)
           ump  => dataptr(umac(n,1),i)
           utp  => dataptr(utrans(n,1),i)
           fp   => dataptr(force(n),i)
-          lo   =  lwb(get_box(u(n),i))
-          hi   =  upb(get_box(u(n),i))
+          lo   =  lwb(get_box(utilde(n),i))
+          hi   =  upb(get_box(utilde(n),i))
           select case (dm)
           case (1)
              call velpred_1d(uop(:,1,1,:), ng_u, &
@@ -139,7 +139,7 @@ contains
 
   end subroutine velpred
 
-  subroutine velpred_1d(u,ng_u,ufull,ng_uf,umac,ng_um,force,ng_f, &
+  subroutine velpred_1d(utilde,ng_u,ufull,ng_uf,umac,ng_um,force,ng_f, &
                         w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
     use bc_module
@@ -150,7 +150,7 @@ contains
     use ppm_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_f
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) ::  utilde(lo(1)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :)
@@ -192,10 +192,10 @@ contains
     hx = dx(1)
 
     if (ppm_type .eq. 0) then
-       call slopex_1d(u,slopex,lo,hi,ng_u,1,adv_bc)
+       call slopex_1d(utilde,slopex,lo,hi,ng_u,1,adv_bc)
 
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_1d(u(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
+       call ppm_1d(utilde(:,1),ng_u,ufull(:,1),ng_uf,Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
        if (ppm_trace_forces .eq. 1) then
           call ppm_1d(force(:),ng_f,ufull(:,1),ng_uf,Ipf,Imf,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
        endif
@@ -208,10 +208,10 @@ contains
     if (ppm_type .eq. 0) then
        do i=is,ie+1
           ! extrapolate velocity to left face
-          umacl(i) = u(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1) &
+          umacl(i) = utilde(i-1,1) + (HALF-(dt2/hx)*max(ZERO,ufull(i-1,1)))*slopex(i-1,1) &
                + dt2*force(i-1)
           ! extrapolate velocity to right face
-          umacr(i) = u(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1) &
+          umacr(i) = utilde(i  ,1) - (HALF+(dt2/hx)*min(ZERO,ufull(i  ,1)))*slopex(i  ,1) &
                + dt2*force(i  )
        end do
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
@@ -244,7 +244,7 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       umac(is) = u(is-1,1)
+       umac(is) = utilde(is-1,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        umac(is) = ZERO
     case (OUTLET)
@@ -257,7 +257,7 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       umac(ie+1) = u(ie+1,1)
+       umac(ie+1) = utilde(ie+1,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        umac(ie+1) = ZERO
     case (OUTLET)
@@ -272,9 +272,9 @@ contains
 
   end subroutine velpred_1d
 
-  subroutine velpred_2d(u,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
-                        w0,w0macx,w0macy,ng_w0,lo,hi,dx,dt,phys_bc,adv_bc)
 
+  subroutine velpred_2d(utilde,ng_u,ufull,ng_uf,utrans,vtrans,ng_ut,umac,vmac,ng_um,force,ng_f, &
+                        w0,w0macx,w0macy,ng_w0,lo,hi,dx,dt,phys_bc,adv_bc)
     use bc_module
     use slope_module
     use geometry, only: polar
@@ -284,7 +284,7 @@ contains
     use ppm_module
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) :: utilde(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -358,13 +358,13 @@ contains
     hy = dx(2)
 
     if (ppm_type .eq. 0) then
-       call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
-       call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
+       call slopex_2d(utilde,slopex,lo,hi,ng_u,2,adv_bc)
+       call slopey_2d(utilde,slopey,lo,hi,ng_u,2,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_2d(u(:,:,1),ng_u, &
+       call ppm_2d(utilde(:,:,1),ng_u, &
                    ufull(:,:,1),ufull(:,:,2),ng_uf, &
                    Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
-       call ppm_2d(u(:,:,2),ng_u, &
+       call ppm_2d(utilde(:,:,2),ng_u, &
                    ufull(:,:,1),ufull(:,:,2),ng_uf, &
                    Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
 
@@ -392,11 +392,11 @@ contains
              maxu = max(ZERO,ufull(i-1,j,1))
              minu = min(ZERO,ufull(i  ,j,1))
              ! extrapolate both components of velocity to left face
-             ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,1)
-             ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,2)
+             ulx(i,j,1) = utilde(i-1,j,1) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,1)
+             ulx(i,j,2) = utilde(i-1,j,2) + (HALF - (dt2/hx)*maxu)*slopex(i-1,j,2)
              ! extrapolate both components of velocity to right face
-             urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,1)
-             urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,2)
+             urx(i,j,1) = utilde(i  ,j,1) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,1)
+             urx(i,j,2) = utilde(i  ,j,2) - (HALF + (dt2/hx)*minu)*slopex(i  ,j,2)
           end do
        end do
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
@@ -415,8 +415,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       ulx(is,js-1:je+1,1:2) = u(is-1,js-1:je+1,1:2)
-       urx(is,js-1:je+1,1:2) = u(is-1,js-1:je+1,1:2)
+       ulx(is,js-1:je+1,1:2) = utilde(is-1,js-1:je+1,1:2)
+       urx(is,js-1:je+1,1:2) = utilde(is-1,js-1:je+1,1:2)
     case (SLIP_WALL, SYMMETRY)
        ulx(is,js-1:je+1,1) = ZERO
        urx(is,js-1:je+1,1) = ZERO
@@ -435,8 +435,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       ulx(ie+1,js-1:je+1,1:2) = u(ie+1,js-1:je+1,1:2)
-       urx(ie+1,js-1:je+1,1:2) = u(ie+1,js-1:je+1,1:2)
+       ulx(ie+1,js-1:je+1,1:2) = utilde(ie+1,js-1:je+1,1:2)
+       urx(ie+1,js-1:je+1,1:2) = utilde(ie+1,js-1:je+1,1:2)
     case (SLIP_WALL, SYMMETRY)
        ulx(ie+1,js-1:je+1,1) = ZERO
        urx(ie+1,js-1:je+1,1) = ZERO
@@ -469,11 +469,11 @@ contains
              maxu = max(ZERO,ufull(i,j-1,2))
              minu = min(ZERO,ufull(i,j  ,2))
              ! extrapolate both components of velocity to left face
-             uly(i,j,1) = u(i,j-1,1) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,1)
-             uly(i,j,2) = u(i,j-1,2) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,2)
+             uly(i,j,1) = utilde(i,j-1,1) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,1)
+             uly(i,j,2) = utilde(i,j-1,2) + (HALF-(dt2/hy)*maxu)*slopey(i,j-1,2)
              ! extrapolate both components of velocity to right face
-             ury(i,j,1) = u(i,j  ,1) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,1)
-             ury(i,j,2) = u(i,j  ,2) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,2)
+             ury(i,j,1) = utilde(i,j  ,1) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,1)
+             ury(i,j,2) = utilde(i,j  ,2) - (HALF+(dt2/hy)*minu)*slopey(i,j  ,2)
           end do
        end do
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
@@ -492,8 +492,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       uly(is-1:ie+1,js,1:2) = u(is-1:ie+1,js-1,1:2)
-       ury(is-1:ie+1,js,1:2) = u(is-1:ie+1,js-1,1:2)
+       uly(is-1:ie+1,js,1:2) = utilde(is-1:ie+1,js-1,1:2)
+       ury(is-1:ie+1,js,1:2) = utilde(is-1:ie+1,js-1,1:2)
     case (SLIP_WALL, SYMMETRY)
        uly(is-1:ie+1,js,1) = ury(is-1:ie+1,js,1)
        uly(is-1:ie+1,js,2) = ZERO
@@ -512,8 +512,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       uly(is-1:ie+1,je+1,1:2) = u(is-1:ie+1,je+1,1:2)
-       ury(is-1:ie+1,je+1,1:2) = u(is-1:ie+1,je+1,1:2)
+       uly(is-1:ie+1,je+1,1:2) = utilde(is-1:ie+1,je+1,1:2)
+       ury(is-1:ie+1,je+1,1:2) = utilde(is-1:ie+1,je+1,1:2)
     case (SLIP_WALL, SYMMETRY)
        ury(is-1:ie+1,je+1,1) = uly(is-1:ie+1,je+1,1)
        uly(is-1:ie+1,je+1,2) = ZERO
@@ -581,7 +581,7 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       umac(is,js:je) = u(is-1,js:je,1)
+       umac(is,js:je) = utilde(is-1,js:je,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        umac(is,js:je) = ZERO
     case (OUTLET)
@@ -594,7 +594,7 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       umac(ie+1,js:je) = u(ie+1,js:je,1)
+       umac(ie+1,js:je) = utilde(ie+1,js:je,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        umac(ie+1,js:je) = ZERO
     case (OUTLET)
@@ -644,7 +644,7 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       vmac(is:ie,js) = u(is:ie,js-1,2)
+       vmac(is:ie,js) = utilde(is:ie,js-1,2)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        vmac(is:ie,js) = ZERO
     case (OUTLET)
@@ -657,7 +657,7 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       vmac(is:ie,je+1) = u(is:ie,je+1,2)
+       vmac(is:ie,je+1) = utilde(is:ie,je+1,2)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        vmac(is:ie,je+1) = ZERO
     case (OUTLET)
@@ -672,7 +672,7 @@ contains
 
   end subroutine velpred_2d
 
-  subroutine velpred_3d(u,ng_u,ufull,ng_uf, &
+  subroutine velpred_3d(utilde,ng_u,ufull,ng_uf, &
                         umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
                         force,ng_f,w0,w0macx,w0macy,w0macz,ng_w0, &
                         lo,hi,dx,dt,phys_bc,adv_bc)
@@ -687,7 +687,7 @@ contains
 
     integer        , intent(in   ) :: lo(:),hi(:)
     integer        , intent(in   ) :: ng_u,ng_uf,ng_um,ng_ut,ng_f,ng_w0
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(in   ) :: utilde(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(in   ) ::  ufull(lo(1)-ng_uf:,lo(2)-ng_uf:,lo(3)-ng_uf:,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -795,19 +795,19 @@ contains
        ung = ng_u
        !$OMP PARALLEL DO PRIVATE(k) FIRSTPRIVATE(ung)
        do k = lo(3)-1,hi(3)+1
-          call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ung,3,adv_bc)
-          call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ung,3,adv_bc)
+          call slopex_2d(utilde(:,:,k,:),slopex(:,:,k,:),lo,hi,ung,3,adv_bc)
+          call slopey_2d(utilde(:,:,k,:),slopey(:,:,k,:),lo,hi,ung,3,adv_bc)
        end do
        !$OMP END PARALLEL DO
-       call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
+       call slopez_3d(utilde,slopez,lo,hi,ng_u,3,adv_bc)
     else if (ppm_type .eq. 1 .or. ppm_type .eq. 2) then
-       call ppm_3d(u(:,:,:,1),ng_u, &
+       call ppm_3d(utilde(:,:,:,1),ng_u, &
                    ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
                    Ipu,Imu,lo,hi,adv_bc(:,:,1),dx,dt,.false.)
-       call ppm_3d(u(:,:,:,2),ng_u, &
+       call ppm_3d(utilde(:,:,:,2),ng_u, &
                    ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
                    Ipv,Imv,lo,hi,adv_bc(:,:,2),dx,dt,.false.)
-       call ppm_3d(u(:,:,:,3),ng_u, &
+       call ppm_3d(utilde(:,:,:,3),ng_u, &
                    ufull(:,:,:,1),ufull(:,:,:,2),ufull(:,:,:,3),ng_uf, &
                    Ipw,Imw,lo,hi,adv_bc(:,:,3),dx,dt,.false.)
 
@@ -847,14 +847,14 @@ contains
                 minu = (HALF + dt2*min(ZERO,ufull(i  ,j,k,1))/hx)
 
                 ! extrapolate all components of velocity to left face
-                ulx(i,j,k,1) = u(i-1,j,k,1) + maxu * slopex(i-1,j,k,1)
-                ulx(i,j,k,2) = u(i-1,j,k,2) + maxu * slopex(i-1,j,k,2)
-                ulx(i,j,k,3) = u(i-1,j,k,3) + maxu * slopex(i-1,j,k,3)
+                ulx(i,j,k,1) = utilde(i-1,j,k,1) + maxu * slopex(i-1,j,k,1)
+                ulx(i,j,k,2) = utilde(i-1,j,k,2) + maxu * slopex(i-1,j,k,2)
+                ulx(i,j,k,3) = utilde(i-1,j,k,3) + maxu * slopex(i-1,j,k,3)
 
                 ! extrapolate all components of velocity to right face
-                urx(i,j,k,1) = u(i,j,k,1) - minu * slopex(i,j,k,1)
-                urx(i,j,k,2) = u(i,j,k,2) - minu * slopex(i,j,k,2)
-                urx(i,j,k,3) = u(i,j,k,3) - minu * slopex(i,j,k,3)
+                urx(i,j,k,1) = utilde(i,j,k,1) - minu * slopex(i,j,k,1)
+                urx(i,j,k,2) = utilde(i,j,k,2) - minu * slopex(i,j,k,2)
+                urx(i,j,k,3) = utilde(i,j,k,3) - minu * slopex(i,j,k,3)
              end do
           end do
        end do
@@ -882,8 +882,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       ulx(is,js-1:je+1,ks-1:ke+1,1:3) = u(is-1,js-1:je+1,ks-1:ke+1,1:3)
-       urx(is,js-1:je+1,ks-1:ke+1,1:3) = u(is-1,js-1:je+1,ks-1:ke+1,1:3)
+       ulx(is,js-1:je+1,ks-1:ke+1,1:3) = utilde(is-1,js-1:je+1,ks-1:ke+1,1:3)
+       urx(is,js-1:je+1,ks-1:ke+1,1:3) = utilde(is-1,js-1:je+1,ks-1:ke+1,1:3)
     case (SLIP_WALL, SYMMETRY)
        ulx(is,js-1:je+1,ks-1:ke+1,1) = ZERO
        urx(is,js-1:je+1,ks-1:ke+1,1) = ZERO
@@ -903,8 +903,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       ulx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = u(ie+1,js-1:je+1,ks-1:ke+1,1:)
-       urx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = u(ie+1,js-1:je+1,ks-1:ke+1,1:3)
+       ulx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = utilde(ie+1,js-1:je+1,ks-1:ke+1,1:)
+       urx(ie+1,js-1:je+1,ks-1:ke+1,1:3) = utilde(ie+1,js-1:je+1,ks-1:ke+1,1:3)
     case (SLIP_WALL, SYMMETRY)
        ulx(ie+1,js-1:je+1,ks-1:ke+1,1) = ZERO
        urx(ie+1,js-1:je+1,ks-1:ke+1,1) = ZERO
@@ -958,14 +958,14 @@ contains
                 minu = (HALF + dt2*min(ZERO,ufull(i,j  ,k,2))/hy)
 
                 ! extrapolate all components of velocity to left face
-                uly(i,j,k,1) = u(i,j-1,k,1) + maxu * slopey(i,j-1,k,1)
-                uly(i,j,k,2) = u(i,j-1,k,2) + maxu * slopey(i,j-1,k,2)
-                uly(i,j,k,3) = u(i,j-1,k,3) + maxu * slopey(i,j-1,k,3)
+                uly(i,j,k,1) = utilde(i,j-1,k,1) + maxu * slopey(i,j-1,k,1)
+                uly(i,j,k,2) = utilde(i,j-1,k,2) + maxu * slopey(i,j-1,k,2)
+                uly(i,j,k,3) = utilde(i,j-1,k,3) + maxu * slopey(i,j-1,k,3)
 
                 ! extrapolate all components of velocity to right face
-                ury(i,j,k,1) = u(i,j,k,1) - minu * slopey(i,j,k,1)
-                ury(i,j,k,2) = u(i,j,k,2) - minu * slopey(i,j,k,2)
-                ury(i,j,k,3) = u(i,j,k,3) - minu * slopey(i,j,k,3)
+                ury(i,j,k,1) = utilde(i,j,k,1) - minu * slopey(i,j,k,1)
+                ury(i,j,k,2) = utilde(i,j,k,2) - minu * slopey(i,j,k,2)
+                ury(i,j,k,3) = utilde(i,j,k,3) - minu * slopey(i,j,k,3)
              enddo
           enddo
        enddo
@@ -993,8 +993,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       uly(is-1:ie+1,js,ks-1:ke+1,1:3) = u(is-1:ie+1,js-1,ks-1:ke+1,1:3)
-       ury(is-1:ie+1,js,ks-1:ke+1,1:3) = u(is-1:ie+1,js-1,ks-1:ke+1,1:3)
+       uly(is-1:ie+1,js,ks-1:ke+1,1:3) = utilde(is-1:ie+1,js-1,ks-1:ke+1,1:3)
+       ury(is-1:ie+1,js,ks-1:ke+1,1:3) = utilde(is-1:ie+1,js-1,ks-1:ke+1,1:3)
     case (SLIP_WALL, SYMMETRY)
        uly(is-1:ie+1,js,ks-1:ke+1,1) = ury(is-1:ie+1,js,ks-1:ke+1,1)
        uly(is-1:ie+1,js,ks-1:ke+1,2) = ZERO
@@ -1014,8 +1014,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       uly(is-1:ie+1,je+1,ks-1:ke+1,1:3) = u(is-1:ie+1,je+1,ks-1:ke+1,1:3)
-       ury(is-1:ie+1,je+1,ks-1:ke+1,1:3) = u(is-1:ie+1,je+1,ks-1:ke+1,1:3)
+       uly(is-1:ie+1,je+1,ks-1:ke+1,1:3) = utilde(is-1:ie+1,je+1,ks-1:ke+1,1:3)
+       ury(is-1:ie+1,je+1,ks-1:ke+1,1:3) = utilde(is-1:ie+1,je+1,ks-1:ke+1,1:3)
     case (SLIP_WALL, SYMMETRY)
        ury(is-1:ie+1,je+1,ks-1:ke+1,1) = uly(is-1:ie+1,je+1,ks-1:ke+1,1)
        uly(is-1:ie+1,je+1,ks-1:ke+1,2) = ZERO
@@ -1068,14 +1068,14 @@ contains
                 minu = (HALF + dt2*min(ZERO,ufull(i,j,k  ,3))/hz)
 
                 ! extrapolate all components of velocity to left face
-                ulz(i,j,k,1) = u(i,j,k-1,1) + maxu * slopez(i,j,k-1,1)
-                ulz(i,j,k,2) = u(i,j,k-1,2) + maxu * slopez(i,j,k-1,2)
-                ulz(i,j,k,3) = u(i,j,k-1,3) + maxu * slopez(i,j,k-1,3)
+                ulz(i,j,k,1) = utilde(i,j,k-1,1) + maxu * slopez(i,j,k-1,1)
+                ulz(i,j,k,2) = utilde(i,j,k-1,2) + maxu * slopez(i,j,k-1,2)
+                ulz(i,j,k,3) = utilde(i,j,k-1,3) + maxu * slopez(i,j,k-1,3)
 
                 ! extrapolate all components of velocity to right face
-                urz(i,j,k,1) = u(i,j,k,1) - minu * slopez(i,j,k,1)
-                urz(i,j,k,2) = u(i,j,k,2) - minu * slopez(i,j,k,2)
-                urz(i,j,k,3) = u(i,j,k,3) - minu * slopez(i,j,k,3)
+                urz(i,j,k,1) = utilde(i,j,k,1) - minu * slopez(i,j,k,1)
+                urz(i,j,k,2) = utilde(i,j,k,2) - minu * slopez(i,j,k,2)
+                urz(i,j,k,3) = utilde(i,j,k,3) - minu * slopez(i,j,k,3)
              end do
           end do
        end do
@@ -1103,8 +1103,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(3,1))
     case (INLET)
-       ulz(is-1:ie+1,js-1:je+1,ks,1:3) = u(is-1:ie+1,js-1:je+1,ks-1,1:3)
-       urz(is-1:ie+1,js-1:je+1,ks,1:3) = u(is-1:ie+1,js-1:je+1,ks-1,1:3)
+       ulz(is-1:ie+1,js-1:je+1,ks,1:3) = utilde(is-1:ie+1,js-1:je+1,ks-1,1:3)
+       urz(is-1:ie+1,js-1:je+1,ks,1:3) = utilde(is-1:ie+1,js-1:je+1,ks-1,1:3)
     case (SLIP_WALL, SYMMETRY)
        ulz(is-1:ie+1,js-1:je+1,ks,1) = urz(is-1:ie+1,js-1:je+1,ks,1)
        ulz(is-1:ie+1,js-1:je+1,ks,2) = urz(is-1:ie+1,js-1:je+1,ks,2)
@@ -1124,8 +1124,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(3,2))
     case (INLET)
-       ulz(is-1:ie+1,js-1:je+1,ke+1,1:3) = u(is-1:ie+1,js-1:je+1,ke+1,1:3)
-       urz(is-1:ie+1,js-1:je+1,ke+1,1:3) = u(is-1:ie+1,js-1:je+1,ke+1,1:3)
+       ulz(is-1:ie+1,js-1:je+1,ke+1,1:3) = utilde(is-1:ie+1,js-1:je+1,ke+1,1:3)
+       urz(is-1:ie+1,js-1:je+1,ke+1,1:3) = utilde(is-1:ie+1,js-1:je+1,ke+1,1:3)
     case (SLIP_WALL, SYMMETRY)
        urz(is-1:ie+1,js-1:je+1,ke+1,1) = ulz(is-1:ie+1,js-1:je+1,ke+1,1)
        urz(is-1:ie+1,js-1:je+1,ke+1,2) = ulz(is-1:ie+1,js-1:je+1,ke+1,2)
@@ -1193,8 +1193,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       ulyz(is-1:ie+1,js,ks:ke) = u(is-1:ie+1,js-1,ks:ke,1)
-       uryz(is-1:ie+1,js,ks:ke) = u(is-1:ie+1,js-1,ks:ke,1)
+       ulyz(is-1:ie+1,js,ks:ke) = utilde(is-1:ie+1,js-1,ks:ke,1)
+       uryz(is-1:ie+1,js,ks:ke) = utilde(is-1:ie+1,js-1,ks:ke,1)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        ulyz(is-1:ie+1,js,ks:ke) = uryz(is-1:ie+1,js,ks:ke)
     case (NO_SLIP_WALL)
@@ -1208,8 +1208,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       ulyz(is-1:ie+1,je+1,ks:ke) = u(is-1:ie+1,je+1,ks:ke,1)
-       uryz(is-1:ie+1,je+1,ks:ke) = u(is-1:ie+1,je+1,ks:ke,1)
+       ulyz(is-1:ie+1,je+1,ks:ke) = utilde(is-1:ie+1,je+1,ks:ke,1)
+       uryz(is-1:ie+1,je+1,ks:ke) = utilde(is-1:ie+1,je+1,ks:ke,1)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        uryz(is-1:ie+1,je+1,ks:ke) = ulyz(is-1:ie+1,je+1,ks:ke)
     case (NO_SLIP_WALL)
@@ -1261,8 +1261,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(3,1))
     case (INLET)
-       ulzy(is-1:ie+1,js:je,ks) = u(is-1:ie+1,js:je,ks-1,1)
-       urzy(is-1:ie+1,js:je,ks) = u(is-1:ie+1,js:je,ks-1,1)
+       ulzy(is-1:ie+1,js:je,ks) = utilde(is-1:ie+1,js:je,ks-1,1)
+       urzy(is-1:ie+1,js:je,ks) = utilde(is-1:ie+1,js:je,ks-1,1)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        ulzy(is-1:ie+1,js:je,ks) = urzy(is-1:ie+1,js:je,ks)
     case (NO_SLIP_WALL)
@@ -1276,8 +1276,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(3,2))
     case (INLET)
-       ulzy(is-1:ie+1,js:je,ke+1) = u(is-1:ie+1,js:je,ke+1,1)
-       urzy(is-1:ie+1,js:je,ke+1) = u(is-1:ie+1,js:je,ke+1,1)
+       ulzy(is-1:ie+1,js:je,ke+1) = utilde(is-1:ie+1,js:je,ke+1,1)
+       urzy(is-1:ie+1,js:je,ke+1) = utilde(is-1:ie+1,js:je,ke+1,1)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        urzy(is-1:ie+1,js:je,ke+1) = ulzy(is-1:ie+1,js:je,ke+1)
     case (NO_SLIP_WALL)
@@ -1330,8 +1330,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       vlxz(is,js-1:je+1,ks:ke) = u(is-1,js-1:je+1,ks:ke,2)
-       vrxz(is,js-1:je+1,ks:ke) = u(is-1,js-1:je+1,ks:ke,2)
+       vlxz(is,js-1:je+1,ks:ke) = utilde(is-1,js-1:je+1,ks:ke,2)
+       vrxz(is,js-1:je+1,ks:ke) = utilde(is-1,js-1:je+1,ks:ke,2)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        vlxz(is,js-1:je+1,ks:ke) = vrxz(is,js-1:je+1,ks:ke)
     case (NO_SLIP_WALL)
@@ -1345,8 +1345,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       vlxz(ie+1,js-1:je+1,ks:ke) = u(ie+1,js-1:je+1,ks:ke,2)
-       vrxz(ie+1,js-1:je+1,ks:ke) = u(ie+1,js-1:je+1,ks:ke,2)
+       vlxz(ie+1,js-1:je+1,ks:ke) = utilde(ie+1,js-1:je+1,ks:ke,2)
+       vrxz(ie+1,js-1:je+1,ks:ke) = utilde(ie+1,js-1:je+1,ks:ke,2)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        vrxz(ie+1,js-1:je+1,ks:ke) = vlxz(ie+1,js-1:je+1,ks:ke)
     case (NO_SLIP_WALL)
@@ -1400,8 +1400,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(3,1))
     case (INLET)
-       vlzx(is:ie,js-1:je+1,ks) = u(is:ie,js-1:je+1,ks-1,2)
-       vrzx(is:ie,js-1:je+1,ks) = u(is:ie,js-1:je+1,ks-1,2)
+       vlzx(is:ie,js-1:je+1,ks) = utilde(is:ie,js-1:je+1,ks-1,2)
+       vrzx(is:ie,js-1:je+1,ks) = utilde(is:ie,js-1:je+1,ks-1,2)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        vlzx(is:ie,js-1:je+1,ks) = vrzx(is:ie,js-1:je+1,ks)
     case (NO_SLIP_WALL)
@@ -1415,8 +1415,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(3,2))
     case (INLET)
-       vlzx(is:ie,js-1:je+1,ke+1) = u(is:ie,js-1:je+1,ke+1,2)
-       vrzx(is:ie,js-1:je+1,ke+1) = u(is:ie,js-1:je+1,ke+1,2)
+       vlzx(is:ie,js-1:je+1,ke+1) = utilde(is:ie,js-1:je+1,ke+1,2)
+       vrzx(is:ie,js-1:je+1,ke+1) = utilde(is:ie,js-1:je+1,ke+1,2)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        vrzx(is:ie,js-1:je+1,ke+1) = vlzx(is:ie,js-1:je+1,ke+1)
     case (NO_SLIP_WALL)
@@ -1469,8 +1469,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       wlxy(is,js:je,ks-1:ke+1) = u(is-1,js:je,ks-1:ke+1,3)
-       wrxy(is,js:je,ks-1:ke+1) = u(is-1,js:je,ks-1:ke+1,3)
+       wlxy(is,js:je,ks-1:ke+1) = utilde(is-1,js:je,ks-1:ke+1,3)
+       wrxy(is,js:je,ks-1:ke+1) = utilde(is-1,js:je,ks-1:ke+1,3)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        wlxy(is,js:je,ks-1:ke+1) = wrxy(is,js:je,ks-1:ke+1)
     case (NO_SLIP_WALL)
@@ -1484,8 +1484,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       wlxy(ie+1,js:je,ks-1:ke+1) = u(ie+1,js:je,ks-1:ke+1,3)
-       wrxy(ie+1,js:je,ks-1:ke+1) = u(ie+1,js:je,ks-1:ke+1,3)
+       wlxy(ie+1,js:je,ks-1:ke+1) = utilde(ie+1,js:je,ks-1:ke+1,3)
+       wrxy(ie+1,js:je,ks-1:ke+1) = utilde(ie+1,js:je,ks-1:ke+1,3)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        wrxy(ie+1,js:je,ks-1:ke+1) = wlxy(ie+1,js:je,ks-1:ke+1)
     case (NO_SLIP_WALL)
@@ -1540,8 +1540,8 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       wlyx(is:ie,js,ks-1:ke+1) = u(is:ie,js-1,ks-1:ke+1,3)
-       wryx(is:ie,js,ks-1:ke+1) = u(is:ie,js-1,ks-1:ke+1,3)
+       wlyx(is:ie,js,ks-1:ke+1) = utilde(is:ie,js-1,ks-1:ke+1,3)
+       wryx(is:ie,js,ks-1:ke+1) = utilde(is:ie,js-1,ks-1:ke+1,3)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        wlyx(is:ie,js,ks-1:ke+1) = wryx(is:ie,js,ks-1:ke+1)
     case (NO_SLIP_WALL)
@@ -1555,8 +1555,8 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       wlyx(is:ie,je+1,ks-1:ke+1) = u(is:ie,je+1,ks-1:ke+1,3)
-       wryx(is:ie,je+1,ks-1:ke+1) = u(is:ie,je+1,ks-1:ke+1,3)
+       wlyx(is:ie,je+1,ks-1:ke+1) = utilde(is:ie,je+1,ks-1:ke+1,3)
+       wryx(is:ie,je+1,ks-1:ke+1) = utilde(is:ie,je+1,ks-1:ke+1,3)
     case (SLIP_WALL, SYMMETRY, OUTLET)
        wryx(is:ie,je+1,ks-1:ke+1) = wlyx(is:ie,je+1,ks-1:ke+1)
     case (NO_SLIP_WALL)
@@ -1662,7 +1662,7 @@ contains
     ! impose lo side bc's
     select case(phys_bc(1,1))
     case (INLET)
-       umac(is,js:je,ks:ke) = u(is-1,js:je,ks:ke,1)
+       umac(is,js:je,ks:ke) = utilde(is-1,js:je,ks:ke,1)
     case (SLIP_WALL, NO_SLIP_WALL, SYMMETRY)
        umac(is,js:je,ks:ke) = ZERO
     case (OUTLET)
@@ -1675,7 +1675,7 @@ contains
     ! impose hi side bc's
     select case(phys_bc(1,2))
     case (INLET)
-       umac(ie+1,js:je,ks:ke) = u(ie+1,js:je,ks:ke,1)
+       umac(ie+1,js:je,ks:ke) = utilde(ie+1,js:je,ks:ke,1)
     case (SLIP_WALL, SYMMETRY, NO_SLIP_WALL)
        umac(ie+1,js:je,ks:ke) = ZERO
     case (OUTLET)
@@ -1761,7 +1761,7 @@ contains
     ! impose lo side bc's
     select case(phys_bc(2,1))
     case (INLET)
-       vmac(is:ie,js,ks:ke) = u(is:ie,js-1,ks:ke,2)
+       vmac(is:ie,js,ks:ke) = utilde(is:ie,js-1,ks:ke,2)
     case (SLIP_WALL, SYMMETRY, NO_SLIP_WALL)
        vmac(is:ie,js,ks:ke) = ZERO
     case (OUTLET)
@@ -1774,7 +1774,7 @@ contains
     ! impose hi side bc's
     select case(phys_bc(2,2))
     case (INLET)
-       vmac(is:ie,je+1,ks:ke) = u(is:ie,je+1,ks:ke,2)
+       vmac(is:ie,je+1,ks:ke) = utilde(is:ie,je+1,ks:ke,2)
     case (SLIP_WALL, SYMMETRY, NO_SLIP_WALL)
        vmac(is:ie,je+1,ks:ke) = ZERO
     case (OUTLET)
@@ -1862,7 +1862,7 @@ contains
     ! impose hi side bc's
     select case(phys_bc(3,1))
     case (INLET)
-       wmac(is:ie,js:je,ks) = u(is:ie,js:je,ks-1,3)
+       wmac(is:ie,js:je,ks) = utilde(is:ie,js:je,ks-1,3)
     case (SLIP_WALL, SYMMETRY, NO_SLIP_WALL)
        wmac(is:ie,js:je,ks) = ZERO
     case (OUTLET)
@@ -1875,7 +1875,7 @@ contains
     ! impose lo side bc's
     select case(phys_bc(3,2))
     case (INLET)
-       wmac(is:ie,js:je,ke+1) = u(is:ie,js:je,ke+1,3)
+       wmac(is:ie,js:je,ke+1) = utilde(is:ie,js:je,ke+1,3)
     case (SLIP_WALL, SYMMETRY, NO_SLIP_WALL)
        wmac(is:ie,js:je,ke+1) = ZERO
     case (OUTLET)

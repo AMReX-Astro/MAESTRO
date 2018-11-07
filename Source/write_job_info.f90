@@ -13,12 +13,12 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
   use bc_module
   use define_bc_module
   use ml_boxarray_module
-  use build_info_module, only: build_date, build_dir, build_machine, amrex_dir, &
+  use build_info_module, only: build_date, build_dir, build_machine, fboxlib_dir, &
                                NUM_MODULES, modules, FCOMP, FCOMP_version, &
                                f90_compile_line, f_compile_line, &
                                C_compile_line, link_line, &
-                               source_git_hash, amrex_git_hash, &
-                               extra_git_hash, extra_git_hash2, &
+                               source_git_hash, fboxlib_git_hash, &
+                               extra_git_hash, &
                                different_build_tree, build_git_hash, &
                                eos_dir, network_dir, conductivity_dir
   use omp_module
@@ -99,10 +99,10 @@ subroutine write_job_info(dirname, mba, the_bc_tower, write_pf_time)
      write (99,1001) "build date:    ", trim(build_date)
      write (99,1001) "build machine: ", trim(build_machine)
      write (99,1001) "build dir:     ", trim(build_dir)
-     write (99,1001) "AMReX dir:     ", trim(amrex_dir)
+     write (99,1001) "FBoxLib dir:   ", trim(fboxlib_dir)
      write (99,*) " "
      write (99,1001) "MAESTRO      git hash: ", trim(source_git_hash)
-     write (99,1001) "AMReX        git hash: ", trim(amrex_git_hash)
+     write (99,1001) "FBoxLib      git hash: ", trim(fboxlib_git_hash)
      write (99,1001) "Microphysics git hash: ", trim(extra_git_hash)
      if (different_build_tree) then
         write (99,1001) "build tree git hash: ", trim(build_git_hash)     

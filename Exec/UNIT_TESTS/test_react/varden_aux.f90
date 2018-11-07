@@ -371,7 +371,7 @@ contains
     varnames(hnuc_c)       = 'H_nuc'
     varnames(lhnuc_c)      = 'log10(H_nuc)'
     varnames(hext_c)       = 'H_ext'
-    varnames(h_con_c)      = 'enthapy consistency'
+    varnames(h_con_c)      = 'enthalpy consistency'
   end subroutine names_init
 
   subroutine get_xn(xn_zone, lo, hi)

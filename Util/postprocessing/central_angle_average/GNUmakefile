@@ -12,14 +12,16 @@ MAESTRO_TOP_DIR = ../../..
 
 
 # EOS and network
-EOS_DIR := helmeos
+EOS_TOP_DIR := $(MICROPHYSICS_HOME)/EOS
+EOS_DIR := helmholtz
 
-NETWORK_DIR := general_null
-GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ignition_wdconvect_urca.net
+CONDUCTIVITY_DIR := stellar
+NETWORK_TOP_DIR := $(MICROPHYSICS_HOME)/networks
+NETWORK_DIR := ignition_reaclib/URCA-simple
 
 # the local sources needed to build
 POST_SOURCES := central_angle_average.f90
 
-include ../GPostprocessing.mak
+include GPostprocessing.mak
 
 ALL: central_angle_average.$(suf).exe

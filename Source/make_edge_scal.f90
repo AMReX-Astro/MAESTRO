@@ -736,6 +736,9 @@ contains
     real(kind=dp_t), allocatable:: sedgely(:,:,:),sedgery(:,:,:)
     real(kind=dp_t), allocatable:: sedgelz(:,:,:),sedgerz(:,:,:)
 
+    ! used in corner coupling for conservative quantities
+    real(kind=dp_t), allocatable:: divu(:,:,:)
+
     allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
@@ -746,12 +749,29 @@ contains
     allocate(Ipf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
     allocate(Imf(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
+    if (is_conservative) then
+       allocate(divu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    end if
+
     is = lo(1)
     ie = hi(1)
     js = lo(2)
     je = hi(2)
     ks = lo(3)
     ke = hi(3)
+
+    if (is_conservative) then
+       !$OMP PARALLEL DO PRIVATE(i,j,k)
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                divu(i,j,k) = (  umac(i+1,j,k)-umac(i,j,k) &
+                               + vmac(i,j+1,k)-vmac(i,j,k) &
+                               + wmac(i,j,k+1)-wmac(i,j,k) ) / dx(1)
+             end do
+          end do
+       end do
+    end if
 
     if (ppm_type .eq. 0) then
        do k = lo(3)-1,hi(3)+1
@@ -1055,10 +1075,14 @@ contains
                 ! make slxy, srxy by updating 1D extrapolation
                 slxy(i,j,k) = slx(i,j,k) &
                      - (dt3/hy)*(simhy(i-1,j+1,k)*vmac(i-1,j+1,k) &
-                     - simhy(i-1,j,k)*vmac(i-1,j,k))
+                     - simhy(i-1,j,k)*vmac(i-1,j,k)) &
+                     - dt3*s(i-1,j,k,comp)*divu(i-1,j,k) &
+                     + (dt3/hy)*s(i-1,j,k,comp)*(vmac(i-1,j+1,k)-vmac(i-1,j,k))
                 srxy(i,j,k) = srx(i,j,k) &
                      - (dt3/hy)*(simhy(i  ,j+1,k)*vmac(i  ,j+1,k) &
-                     - simhy(i  ,j,k)*vmac(i  ,j,k))
+                     - simhy(i  ,j,k)*vmac(i  ,j,k)) &
+                     - dt3*s(i,j,k,comp)*divu(i,j,k) &
+                     + (dt3/hy)*s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k))
              enddo
           enddo
        enddo
@@ -1154,10 +1178,14 @@ contains
                 ! make slxz, srxz by updating 1D extrapolation
                 slxz(i,j,k) = slx(i,j,k) &
                      - (dt3/hz)*(simhz(i-1,j,k+1)*wmac(i-1,j,k+1) &
-                     - simhz(i-1,j,k)*wmac(i-1,j,k))
+                     - simhz(i-1,j,k)*wmac(i-1,j,k)) &
+                     - dt3*s(i-1,j,k,comp)*divu(i-1,j,k) &
+                     + (dt3/hz)*s(i-1,j,k,comp)*(wmac(i-1,j,k+1)-wmac(i-1,j,k))
                 srxz(i,j,k) = srx(i,j,k) &
                      - (dt3/hz)*(simhz(i  ,j,k+1)*wmac(i  ,j,k+1) &
-                     - simhz(i  ,j,k)*wmac(i  ,j,k))
+                     - simhz(i  ,j,k)*wmac(i  ,j,k)) &
+                     - dt3*s(i,j,k,comp)*divu(i,j,k) &
+                     + (dt3/hz)*s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k))
              enddo
           enddo
        enddo
@@ -1253,10 +1281,14 @@ contains
                 ! make slyx, sryx by updating 1D extrapolation
                 slyx(i,j,k) = sly(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j-1,k)*umac(i+1,j-1,k) &
-                     - simhx(i,j-1,k)*umac(i,j-1,k))
+                     - simhx(i,j-1,k)*umac(i,j-1,k)) &
+                     - dt3*s(i,j-1,k,comp)*divu(i,j-1,k) &
+                     + (dt3/hx)*s(i,j-1,k,comp)*(umac(i+1,j-1,k)-umac(i,j-1,k))
                 sryx(i,j,k) = sry(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j  ,k)*umac(i+1,j  ,k) &
-                     - simhx(i,j  ,k)*umac(i,j  ,k))
+                     - simhx(i,j  ,k)*umac(i,j  ,k)) &
+                     - dt3*s(i,j,k,comp)*divu(i,j,k) &
+                     + (dt3/hx)*s(i,j,k,comp)*(umac(i+1,j,k)-umac(i,j,k))
              enddo
           enddo
        enddo
@@ -1352,10 +1384,14 @@ contains
                 ! make slyz, sryz by updating 1D extrapolation
                 slyz(i,j,k) = sly(i,j,k) &
                      - (dt3/hz)*(simhz(i,j-1,k+1)*wmac(i,j-1,k+1) &
-                     - simhz(i,j-1,k)*wmac(i,j-1,k))
+                     - simhz(i,j-1,k)*wmac(i,j-1,k)) &
+                     - dt3*s(i,j-1,k,comp)*divu(i,j-1,k) &
+                     + (dt3/hz)*s(i,j-1,k,comp)*(wmac(i,j-1,k+1)-wmac(i,j-1,k))
                 sryz(i,j,k) = sry(i,j,k) &
                      - (dt3/hz)*(simhz(i,j  ,k+1)*wmac(i,j  ,k+1) &
-                     - simhz(i,j  ,k)*wmac(i,j  ,k))
+                     - simhz(i,j  ,k)*wmac(i,j  ,k)) &
+                     - dt3*s(i,j,k,comp)*divu(i,j,k) &
+                     + (dt3/hz)*s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k))
              enddo
           enddo
        enddo
@@ -1453,10 +1489,14 @@ contains
                 ! make slzx, srzx by updating 1D extrapolation
                 slzx(i,j,k) = slz(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j,k-1)*umac(i+1,j,k-1) &
-                     - simhx(i,j,k-1)*umac(i,j,k-1))
+                     - simhx(i,j,k-1)*umac(i,j,k-1)) &
+                     - dt3*s(i,j,k-1,comp)*divu(i,j,k-1) &
+                     + (dt3/hx)*s(i,j,k-1,comp)*(umac(i+1,j,k-1)-umac(i,j,k-1))
                 srzx(i,j,k) = srz(i,j,k) &
                      - (dt3/hx)*(simhx(i+1,j,k  )*umac(i+1,j,k  ) &
-                     - simhx(i,j,k  )*umac(i,j,k  ))
+                     - simhx(i,j,k  )*umac(i,j,k  )) &
+                     - dt3*s(i,j,k,comp)*divu(i,j,k) &
+                     + (dt3/hx)*s(i,j,k,comp)*(umac(i+1,j,k)-umac(i,j,k))
              enddo
           enddo
        enddo
@@ -1551,13 +1591,18 @@ contains
        do k=ks,ke+1
           do j=js,je
              do i=is-1,ie+1
+
                 ! make slzy, srzy by updating 1D extrapolation
                 slzy(i,j,k) = slz(i,j,k) &
                      - (dt3/hy)*(simhy(i,j+1,k-1)*vmac(i,j+1,k-1) &
-                     - simhy(i,j,k-1)*vmac(i,j,k-1))
+                     - simhy(i,j,k-1)*vmac(i,j,k-1)) &
+                     - dt3*s(i,j,k-1,comp)*divu(i,j,k-1) &
+                     + (dt3/hy)*s(i,j,k-1,comp)*(vmac(i,j+1,k-1)-vmac(i,j,k-1))
                 srzy(i,j,k) = srz(i,j,k) &
                      - (dt3/hy)*(simhy(i,j+1,k  )*vmac(i,j+1,k  ) &
-                     - simhy(i,j,k  )*vmac(i,j,k  ))
+                     - simhy(i,j,k  )*vmac(i,j,k  )) &
+                     - dt3*s(i,j,k,comp)*divu(i,j,k) &
+                     + (dt3/hy)*s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k))
              enddo
           enddo
        enddo
@@ -1991,6 +2036,10 @@ contains
     end if
 
     deallocate(sedgelz,sedgerz)
+
+    if (is_conservative) then
+       deallocate(divu)
+    end if
 
   end subroutine make_edge_scal_3d
 

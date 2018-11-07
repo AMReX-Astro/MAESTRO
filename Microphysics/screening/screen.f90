@@ -1,10 +1,11 @@
 subroutine screenz (t,d,z1,z2,a1,a2,ymass,aion,zion,nion,scfac, dscfacdt)
+  use network, only: nspec
   !$acc routine seq
   implicit none
 
   integer nion
   double precision t, d, z1, z2, a1, a2
-  double precision, dimension(nion) :: ymass, aion, zion
+  double precision, dimension(nspec) :: ymass, aion, zion
   double precision scfac
   double precision dscfacdt
 

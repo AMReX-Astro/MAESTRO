@@ -3,7 +3,7 @@
 
 module probin_module
 
-  use bl_types
+  use amrex_fort_module, only : rt => amrex_real
   use bl_space
   use bl_constants_module
   use pred_parameters
@@ -15,7 +15,6 @@ module probin_module
 
   @@declarationsA@@
 
-  real(dp_t), save, public    :: burning_cutoff_density  ! note: presently not runtime parameter
 
 
   ! Keep track of the inputs file that was used to read in runtime
@@ -26,15 +25,15 @@ module probin_module
   ! These will be allocated and defined below
   logical,    allocatable, save, public :: nodal(:)
   logical,    allocatable, save, public :: pmask(:)
-  real(dp_t), allocatable, save, public :: prob_lo(:)
-  real(dp_t), allocatable, save, public :: prob_hi(:)
+  real(rt), allocatable, save, public :: prob_lo(:)
+  real(rt), allocatable, save, public :: prob_hi(:)
 
 end module probin_module
 
 
 module extern_probin_module
 
-  use bl_types
+  use amrex_fort_module, only : rt => amrex_real
   use bl_space
 
   implicit none
@@ -48,7 +47,7 @@ end module extern_probin_module
 
 module runtime_init_module
 
-  use bl_types
+  use amrex_fort_module, only : rt => amrex_real
   use probin_module
   use extern_probin_module
 
@@ -86,8 +85,8 @@ contains
     logical    :: lexist
     integer    :: natonce, myproc, nprocs, nsets, myset, iset, ibuff(1)
     integer    :: wakeuppid, waitforpid, tag, un, ierr
-    real(dp_t) :: pistart, piend, pitotal, pistartall, piendall, pitotalall
-    real(dp_t) :: pitotal_max, pitotalall_max
+    real(rt) :: pistart, piend, pitotal, pistartall, piendall, pitotalall
+    real(rt) :: pitotal_max, pitotalall_max
 
     type(bl_prof_timer), save :: bpt
 
@@ -299,8 +298,8 @@ contains
        if (evolve_base_state) then
           call bl_error("do_smallscale requires evolve_base_state = F")
        end if
-       if (beta_type .ne. 3) then
-          call bl_error("do_smallscale requires beta_type = 3")
+       if (beta0_type .ne. 3) then
+          call bl_error("do_smallscale requires beta0_type = 3")
        end if
     end if
 
@@ -333,8 +332,11 @@ contains
     endif
 
 
-    ! for the moment, set the cutoff for burning to be base_cutoff_density
-    burning_cutoff_density = base_cutoff_density
+    ! check to see if user set burning_cutoff_density, otherwise
+    ! set it to base_cutoff_density
+    if (burning_cutoff_density .lt. ZERO) then
+       burning_cutoff_density = base_cutoff_density
+    end if
 
     ! initialize nodal
     allocate(nodal(dm_in))
@@ -403,7 +405,11 @@ contains
     call ml_layout_set_strategy(the_ml_layout_strategy)
 
     call destroy(bpt)
-    
+
+    ! Update the value of the parameters on the GPU.
+
+    @@acc@@
+
   end subroutine runtime_init
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -430,6 +436,7 @@ contains
     use extern_probin_module
 
     integer, intent(in) :: unit
+    logical :: ltest
 
     write (unit, *) "[*] indicates overridden default"
 

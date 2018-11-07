@@ -1,5 +1,5 @@
 NDEBUG := t 
-MPI    :=
+MPI    := t
 OMP    :=
 
 COMP := gfortran
@@ -12,7 +12,7 @@ MAESTRO_TOP_DIR := ../../..
 
 # define the physics packages to build this problem 
 EOS_DIR := helmholtz
-CONDUCTIVITY_DIR := timmes_stellar
+CONDUCTIVITY_DIR := stellar
 
 NETWORK_DIR := general_null
 GENERAL_NET_INPUTS := $(MAESTRO_TOP_DIR)/Microphysics/networks/$(NETWORK_DIR)/ignition.net

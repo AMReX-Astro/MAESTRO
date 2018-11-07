@@ -109,7 +109,7 @@ contains
     if (p%icomp_magvel > 0) p%names(p%icomp_magvel)      = "magvel"
     if (p%icomp_mom > 0) p%names(p%icomp_mom)         = "momentum"
     if (p%icomp_vort > 0) p%names(p%icomp_vort)        = "vort"
-    if (p%icomp_src > 0) p%names(p%icomp_src)         = "S"
+    if (p%icomp_s_cc > 0) p%names(p%icomp_s_cc)         = "S"
     if (p%icomp_rhopert > 0) p%names(p%icomp_rhopert)     = "rhopert"
     if (p%icomp_rhohpert > 0) p%names(p%icomp_rhohpert)    = "rhohpert"
   
@@ -174,7 +174,7 @@ contains
 
   subroutine make_plotfile(p,dirname,mla,u,s,pi,gpi,rho_omegadot, &
                            rho_Hnuc,rho_Hext, &
-                           thermal,Source,sponge,mba,dx, &
+                           thermal,S_cc,sponge,mba,dx, &
                            the_bc_tower,w0,rho0,rhoh0,p0, &
                            tempbar,gamma1bar,etarho_cc, &
                            normal,dt,particles,write_pf_time)
@@ -202,7 +202,7 @@ contains
     use time_module, only: time
     use particle_module, only: particle_container, make_particle_count
     use make_grav_module
-    use make_div_coeff_module
+    use make_beta0_module
     use make_pi_cc_module
     use make_brunt_freq_module
     use make_scale_module
@@ -218,7 +218,7 @@ contains
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
     type(multifab)   , intent(in   ) :: rho_Hext(:)
     type(multifab)   , intent(in   ) :: thermal(:)
-    type(multifab)   , intent(in   ) :: Source(:)
+    type(multifab)   , intent(in   ) :: S_cc(:)
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
     real(dp_t)       , intent(in   ) :: dt,dx(:,:)
@@ -240,7 +240,7 @@ contains
     type(multifab) :: w0r_cart(mla%nlevel)
     type(multifab) ::    pi_cc(mla%nlevel)
 
-    real(dp_t)  :: div_coeff(nlevs_radial,0:nr_fine-1)
+    real(dp_t)  :: beta0(nlevs_radial,0:nr_fine-1)
     real(dp_t)  :: grav_cell(nlevs_radial,0:nr_fine-1)
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
@@ -546,8 +546,8 @@ contains
        endif
 
        ! DIVU
-       if (p%icomp_src > 0) then
-          call multifab_copy_c(plotdata(n),p%icomp_src,Source(n),1,1)
+       if (p%icomp_s_cc > 0) then
+          call multifab_copy_c(plotdata(n),p%icomp_s_cc,S_cc(n),1,1)
        endif
 
     end do
@@ -687,19 +687,19 @@ contains
 
 
     if (use_alt_energy_fix) then
-       ! make beta_0 on a multifab
+       ! make beta0 on a multifab
        call make_grav_cell(grav_cell,rho0)
-       call make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_cell)
+       call make_beta0(beta0,rho0,p0,gamma1bar,grav_cell)
        
-       call put_1d_array_on_cart(div_coeff,tempfab,foextrap_comp,.false.,.false.,dx, &
+       call put_1d_array_on_cart(beta0,tempfab,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
     endif
 
     ! new function that average the nodal pi to cell-centers, then
     ! normalized the entire signal to sum to 0.  If we are doing
     ! use_alt_energy_fix = T, then we first want to convert
-    ! (pi/beta_0) to pi.
-    call make_pi_cc(mla,pi,pi_cc,the_bc_tower%bc_tower_array,tempfab)
+    ! (pi/beta0) to pi.
+    call make_pi_cc(mla,pi,pi_cc,1,the_bc_tower%bc_tower_array,tempfab)
 
     do n=1,nlevs
 

@@ -21,8 +21,8 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(uold,sold,pi,gpi,Source_old,normal,hgrhs,thermal, &
-                          div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
+  subroutine initial_proj(uold,sold,pi,gpi,S_cc,normal,nodalrhs,thermal, &
+                          beta0_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: foextrap_comp
     use network, only: nspec
@@ -30,9 +30,9 @@ contains
     use geometry, only: spherical, polar, nr_fine, nlevs_radial
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
-    use make_S_module
+    use make_S_cc_module
     use average_module
-    use hgrhs_module
+    use make_nodalrhs_module
     use fill_3d_module
     use hgproject_module
     use multifab_module
@@ -43,11 +43,11 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pi(:)
     type(multifab) , intent(inout) :: gpi(:)
-    type(multifab) , intent(inout) :: Source_old(:)
+    type(multifab) , intent(inout) :: S_cc(:)
     type(multifab) , intent(inout) :: normal(:)
-    type(multifab) , intent(inout) :: hgrhs(:)
+    type(multifab) , intent(inout) :: nodalrhs(:)
     type(multifab) , intent(inout) :: thermal(:)
-    real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: beta0_old(:,0:)
     real(kind=dp_t), intent(inout) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -64,7 +64,7 @@ contains
     type(multifab) :: rho_omegadot1(mla%nlevel)
     type(multifab) :: rho_Hnuc1(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
-    type(multifab) :: div_coeff_3d(mla%nlevel)
+    type(multifab) :: beta0_cart(mla%nlevel)
     type(multifab) :: Tcoeff(mla%nlevel)
     type(multifab) :: hcoeff(mla%nlevel)
     type(multifab) :: Xkcoeff(mla%nlevel)
@@ -129,12 +129,12 @@ contains
        call setval( delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold, &
-                normal, &
-                rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
-                p0,gamma1bar,delta_gamma1_termbar,psi, &
-                dx,mla,the_bc_tower%bc_tower_array)
+    call make_S_cc(S_cc,delta_gamma1_term,delta_gamma1, &
+                   sold,uold, &
+                   normal, &
+                   rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
+                   p0,gamma1bar,delta_gamma1_termbar,psi, &
+                   dx,mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_omegadot1(n))
@@ -144,7 +144,7 @@ contains
     end do
     
     if (evolve_base_state) then
-       call average(mla,Source_old,Sbar,dx,1)
+       call average(mla,S_cc,Sbar,dx,1)
     end if
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary
@@ -155,8 +155,8 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_hgrhs(the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar, &
-                    div_coeff_old,dx)
+    call make_nodalrhs(the_bc_tower,mla,nodalrhs,S_cc,delta_gamma1_term,Sbar, &
+                    beta0_old,dx)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -167,10 +167,10 @@ contains
     dt_temp = ONE
     
     do n=1,nlevs
-       call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
+       call multifab_build(beta0_cart(n), mla%la(n), 1, 1)
     end do
     
-    call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+    call put_1d_array_on_cart(beta0_old,beta0_cart,foextrap_comp,.false., &
                               .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     if (spherical .eq. 1 .or. polar .eq. 1) then
@@ -180,10 +180,10 @@ contains
     end if
 
     call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pi,gpi,dx, &
-                   dt_temp,the_bc_tower,div_coeff_3d,hgrhs,eps_init)
+                   dt_temp,the_bc_tower,beta0_cart,nodalrhs,eps_init)
     
     do n=1,nlevs
-       call destroy(div_coeff_3d(n))
+       call destroy(beta0_cart(n))
        call destroy(rhohalf(n))
     end do
 
