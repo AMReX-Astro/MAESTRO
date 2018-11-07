@@ -61,7 +61,11 @@ contains
     nlevs = mla%nlevel
 
     do n=1,nlevs
-       call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       if (ppm_trace_forces == 1) then
+          call multifab_build(force(n),get_layout(uold(n)),dm,nghost(uold(n)))
+       else
+          call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       endif
        call multifab_build(ufull(n),get_layout(uold(n)),dm,nghost(uold(n)))
     end do
 
