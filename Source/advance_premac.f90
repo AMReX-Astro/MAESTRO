@@ -63,7 +63,7 @@ contains
 
     do n=1,nlevs
        ! We need more ghost cells to trace the forces
-       if (ppm_trace_forces == 1) then
+       if (ppm_trace_force == 1) then
           call multifab_build(force(n),get_layout(uold(n)),dm,nghost(uold(n)))
        else
           call multifab_build(force(n),get_layout(uold(n)),dm,1)
