@@ -482,7 +482,6 @@ contains
     integer :: i
 
     type (eos_t) :: eos_state
-    real (kind=dp_t) :: conductivity
 
     do i = lo(1), hi(1)
 
@@ -490,9 +489,9 @@ contains
        eos_state%T     = state(i,temp_comp)
        eos_state%xn(:) = state(i,spec_comp:spec_comp+nspec-1) / eos_state%rho
 
-       call conducteos(eos_input_rt, eos_state, conductivity)
+       call conducteos(eos_input_rt, eos_state)
 
-       cond(i) = conductivity
+       cond(i) = eos_state % conductivity
 
     enddo
 
@@ -514,7 +513,6 @@ contains
     integer :: i, j
 
     type (eos_t) :: eos_state
-    real (kind=dp_t) :: conductivity
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -523,9 +521,9 @@ contains
           eos_state%T     = state(i,j,temp_comp)
           eos_state%xn(:) = state(i,j,spec_comp:spec_comp+nspec-1) / eos_state%rho
 
-          call conducteos(eos_input_rt, eos_state, conductivity)
+          call conducteos(eos_input_rt, eos_state)
 
-          cond(i,j) = conductivity
+          cond(i,j) = eos_state % conductivity
 
        enddo
     enddo
@@ -548,9 +546,8 @@ contains
     integer :: i, j, k
 
     type (eos_t) :: eos_state
-    real (kind=dp_t) :: conductivity
 
-    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state,conductivity)
+    !$OMP PARALLEL DO PRIVATE(i,j,k,eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -560,9 +557,9 @@ contains
              eos_state%xn(:) = state(i,j,k,spec_comp:spec_comp+nspec-1) / &
                            eos_state%rho
 
-             call conducteos(eos_input_rt, eos_state, conductivity)
+             call conducteos(eos_input_rt, eos_state)
 
-             cond(i,j,k) = conductivity
+             cond(i,j,k) = eos_state % conductivity
 
           enddo
        enddo

@@ -1,9 +1,17 @@
+changes since last release:
+
+  * Minor changes
+
+   -- simplified conductivity interface to match the eos interface by
+      storing the conductivity in the eos type.
+
 18.08
 
   * Major changes
 
    -- We fixed a corner coupling bug when advecting conservative
       scalars (predicting rho, rhoh, or rhoX)
+
 
 18.07
 
