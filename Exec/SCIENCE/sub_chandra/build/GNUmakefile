@@ -3,7 +3,7 @@ MPI    := t
 OMP    := t
 PROF   :=
 
-COMP := gfortran
+COMP := Cray
 
 MKVERBOSE := t
 
