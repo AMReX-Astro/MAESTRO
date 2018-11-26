@@ -29,7 +29,7 @@ contains
                              T_0,rho_0
 
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, polar, nr
+    use geometry, only: dr, spherical, nr
     use inlet_bc_module, only: set_inlet_bcs
     
     integer           , intent(in   ) :: n
@@ -63,7 +63,7 @@ contains
 888 format(a60,g18.10)
 889 format(a60)
 
-    if (spherical .eq. 1 .or. polar .eq. 1)  then
+    if (spherical .eq. 1)  then
        call bl_error("ERROR: rt base_state is not valid for spherical or polar")
     endif
 
