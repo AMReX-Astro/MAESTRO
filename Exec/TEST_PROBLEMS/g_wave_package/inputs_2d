@@ -1,0 +1,63 @@
+&PROBIN
+ spherical_in = 0
+ 
+ fix_base_state = T
+ 
+ max_levs = 1
+ n_cellx = 128
+ n_celly = 640
+
+ max_grid_size = 128
+
+ prob_hi_x = 1.5d5 !should be choosen as 2*pi/wave_kx = (prob_hi_y - prob_lo_y) / 10.0 / cos(wave_angle) 
+ prob_lo_y = -2.5d5
+ prob_hi_y = 5d5
+
+ wave_angle = -1.047197551d0   !1/3 of pi
+ mach_max = 1.0d-6
+ rho_0 = 1.0d0
+ T_0 = 300.0d0
+
+ grav_const = -1000.0
+ 
+ anelastic_cutoff = 1.d-10
+ base_cutoff_density = 1.d-10
+
+ do_sponge = F
+
+
+ ppm_type = 0
+
+ max_step  = 100000000
+ init_iter = 1
+
+ stop_time = 6276d0
+
+ init_shrink = 0.1d0
+ fixed_dt = 78.45
+
+ plot_base = T
+ plot_int  = 10
+ chk_int   = 100
+
+ cflfac = 0.9
+
+ xlo_boundary_type = "periodic"
+ xhi_boundary_type = "periodic"
+ ylo_boundary_type = "slip wall"
+ yhi_boundary_type = "outlet"
+
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = T
+ init_divu_iter = 1
+
+ perturb_model = T
+
+ small_temp = 1.d-10
+ small_dens = 1.d-10
+
+/
