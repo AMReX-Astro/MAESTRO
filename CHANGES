@@ -1,9 +1,9 @@
-changes since last release:
+18.12
 
-  * Minor changes
+  * fixed a bug in ppm_trace_sources
 
-   -- simplified conductivity interface to match the eos interface by
-      storing the conductivity in the eos type.
+  * simplified conductivity interface to match the eos interface by
+    storing the conductivity in the eos type.
 
 18.08
 
