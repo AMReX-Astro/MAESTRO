@@ -90,9 +90,9 @@ program frates
   print *, 'saving to pltfile: ', trim(outputfile)
   if (use_tfromp) print *, 'using tfromp instead of tfromh'
 
-  call burner_init()
   call network_init()
   call eos_init()
+  call burner_init()  
   
   ! build the input plotfile
   call build(pf,pltfile,uin)
@@ -112,8 +112,8 @@ program frates
   end do
 
   do i = 1, nrat_tabular
-     plot_names(i+5*nrates) = "dqweak_" // int_to_str(i)
-     plot_names(i+5*nrates+nrat_tabular) = "epart_" // int_to_str(i)
+     plot_names(i+5*nrates) = "add_energy_" // int_to_str(i)
+     plot_names(i+5*nrates+nrat_tabular) = "add_energy_rate_" // int_to_str(i)
   end do
 
   dens_comp = plotfile_var_index(pf,"density")
@@ -246,8 +246,8 @@ contains
     end do
 
     do i = 1, nrat_tabular
-       rflat(i + 5*nrates) = rate_state % dqweak(i)
-       rflat(i + 5*nrates + nrat_tabular) = rate_state % epart(i)
+       rflat(i + 5*nrates) = rate_state % add_energy(i)
+       rflat(i + 5*nrates + nrat_tabular) = rate_state % add_energy_rate(i)
     end do
   end subroutine flatten_rate_state
   
