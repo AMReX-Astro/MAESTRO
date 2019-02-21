@@ -6,18 +6,21 @@
  n_cellx = 128
  n_celly = 128
  n_cellz = 128
- max_grid_size = 32
+ max_grid_size = 64
 
  anelastic_cutoff = 1.d6
  base_cutoff_density = 1.d5
-
-do_sponge = T
  sponge_center_density = 3.d6
  sponge_start_factor = 3.333d0
  sponge_kappa = 10.0d0
 
+ max_mg_bottom_nlevels = 3
+ mg_bottom_solver = 4
+ hg_bottom_solver = 4
+
  spherical_in = 1
  dm_in = 3
+ do_sponge = .true.
 
  prob_hi_x = 5.d8
  prob_hi_y = 5.d8
@@ -56,14 +59,19 @@ do_sponge = T
  velpert_scale = 1.d7
  velpert_steep = 1.d5
 
- use_eos_coulomb = T
-
  do_burning = T
 
+ enthalpy_pred_type = 1
  evolve_base_state = T
 
  dpdt_factor = 0.0d0
 
  use_tfromp = T
+
+ single_prec_plotfiles = T
+
+ use_eos_coulomb = T
+
+ plot_trac = F
 
 /
