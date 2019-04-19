@@ -5,7 +5,7 @@ module eos_module
   use bl_constants_module
   use network, only: nspec, aion, zion
   use eos_type_module
-  use actual_eos_module
+  use actual_eos_module, only: actual_eos_init, actual_eos
 
   implicit none
 
