@@ -1,5 +1,8 @@
 # MAESTRO
 
+> **_NOTE:_**  MAESTRO is no longer being actively developed.  Users should switch
+> to MAESTROeX to take advantage of the latest capabilities: https://github.com/AMReX-Astro/MAESTROeX
+
 *a low Mach number stellar hydrodynamics code*
 
 `Maestro` solves the equations of low Mach number hydrodynamics for
