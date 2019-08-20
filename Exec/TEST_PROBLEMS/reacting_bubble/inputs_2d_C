@@ -2,7 +2,7 @@
  model_file = "model.hse.cool.coulomb"
  spherical_in = 0
 
- ppm_type = 0
+ ppm_type = 1
 
  max_levs = 1
  n_cellx = 384
@@ -15,10 +15,6 @@
  anelastic_cutoff = 3.d6
  base_cutoff_density = 3.d6
  
- evolve_base_state = T
-
- use_particles = T
-
  do_sponge = T
  sponge_center_density = 3.d6
  sponge_start_factor = 10.d0
@@ -55,6 +51,4 @@
  init_divu_iter = 1
 
  perturb_model = T
-
- use_alt_energy_fix = F
 /

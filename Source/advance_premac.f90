@@ -29,6 +29,7 @@ contains
     use addw0_module, only: addw0
     use bl_constants_module, only: ONE
     use variables, only: rho_comp
+    use probin_module, only: ppm_trace_forces
     use fill_3d_module, only: put_1d_array_on_cart
 
     type(multifab) , intent(in   ) :: uold(:)
@@ -61,7 +62,12 @@ contains
     nlevs = mla%nlevel
 
     do n=1,nlevs
-       call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       ! We need more ghost cells to trace the forces
+       if (ppm_trace_forces == 1) then
+          call multifab_build(force(n),get_layout(uold(n)),dm,nghost(uold(n)))
+       else
+          call multifab_build(force(n),get_layout(uold(n)),dm,1)
+       endif
        call multifab_build(ufull(n),get_layout(uold(n)),dm,nghost(uold(n)))
     end do
 

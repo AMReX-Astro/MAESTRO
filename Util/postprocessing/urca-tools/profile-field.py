@@ -21,33 +21,18 @@ parser.add_argument('-ax', '--axis', type=str, default='radius',
 parser.add_argument('-ax_log', '--axis_log', action='store_true',
                     help='If supplied, use log scaling for axis.')
 parser.add_argument('-nbins', '--nbins', type=int, default=64,
-                    help='Number of bins.')
-# parser.add_argument('-f_min', '--field_min', type=float,
-#                     help='Minimum to use for plotting the field.')
-# parser.add_argument('-f_max', '--field_max', type=float,
-#                     help='Maximum to use for plotting the field.')
-parser.add_argument('-o', '--outfile', type=str, default='profile.png',
-                    help='Name of output file to save. Defaults to "profile.png"')
+                    help='Number of bins. Defaults to 64.')
+parser.add_argument('-f_min', '--field_min', type=float,
+                    help='Minimum to use for plotting the field.')
+parser.add_argument('-f_max', '--field_max', type=float,
+                    help='Maximum to use for plotting the field.')
+parser.add_argument('-ax_min', '--axis_min', type=float,
+                    help='Minimum axis coordinate to use for plotting the field.')
+parser.add_argument('-ax_max', '--axis_max', type=float,
+                    help='Maximum axis coordinate to use for plotting the field.')
+parser.add_argument('-o', '--outfile', type=str,
+                    help='Name of output file to save. Defaults to "args.infile[0].[field]-vs-[axis].png"')
 args = parser.parse_args()
-
-# def doit():
-#     ds = yt.load(args.infile)
-#     ad = ds.all_data()
-
-#     plt = yt.ProfilePlot(ad, args.axis, args.field,
-#                          n_bins=args.nbins,
-#                          x_log=args.axis_log,
-#                          y_log={args.field:args.field_log})
-
-#     if args.field_min and args.field_max:
-#         plt.set_ylim(args.field, ymin=args.field_min, ymax=args.field_max)
-#     elif args.field_min:
-#         plt.set_ylim(args.field, ymin=args.field_min)
-#     elif args.field_max:
-#         plt.set_ylim(args.field, ymax=args.field_max)
-
-#     plt_name = '{}.{}-vs-{}.png'.format(args.infile, args.field, args.axis)
-#     plt.save(plt_name)
 
 def create_profile(infile):
     ds = yt.load(infile)
@@ -61,7 +46,29 @@ def create_profile(infile):
 def doit(labels):
     profiles = [create_profile(f) for f in args.infiles]
     plot = yt.ProfilePlot.from_profiles(profiles, labels=labels)
-    plot.save(args.outfile)
+
+    # Set vertical limits
+    if args.field_min and args.field_max:
+        plot.set_ylim(args.field, ymin=args.field_min, ymax=args.field_max)
+    elif args.field_min:
+        plot.set_ylim(args.field, ymin=args.field_min)
+    elif args.field_max:
+        plot.set_ylim(args.field, ymax=args.field_max)
+
+    # Set horizontal limits
+    if args.axis_min and args.axis_max:
+        plot.set_xlim(args.field, xmin=args.axis_min, xmax=args.axis_max)
+    elif args.axis_min:
+        plot.set_xlim(args.field, xmin=args.axis_min)
+    elif args.axis_max:
+        plot.set_xlim(args.field, xmax=args.axis_max)
+
+    # Save
+    if args.outfile:
+        plt_name = args.outfile
+    else:
+        plt_name = '{}.{}-vs-{}.png'.format(args.infile, args.field, args.axis)
+    plot.save(plt_name)
 
 if __name__=='__main__':
     if args.labels:

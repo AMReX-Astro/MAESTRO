@@ -841,99 +841,105 @@ contains
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
 
-               !TODO: For OpenACC dev, all masking/cell_valid logic has been
-               !removed.  Once it's working, we should see if we want to bring
-               !back the masking or not.
-
-               rho = sold(i,j,k,rho_comp)
-               ii = 1
-               do n = spec_comp, spec_comp+nspec-1
-                  x_in(ii) = sold(i,j,k,n) / rho
-                  ii = ii + 1
-               enddo
-
-               if (drive_initial_convection) then
-                  T_in = tempbar_init(k)
-               else
-                  T_in = sold(i,j,k,temp_comp)
+#ifndef ACC
+               cell_valid = .true.
+               if ( present(mask) ) then
+                  if ( (.not. mask(i,j,k)) ) cell_valid = .false.
                endif
-               
-               ! Fortran doesn't guarantee short-circuit evaluation of logicals 
-               ! so we need to test the value of ispec_threshold before using it 
-               ! as an index in x_in
-               if (ispec_threshold > 0) then
-                  x_test = x_in(ispec_threshold)
-               else
-                  x_test = ZERO
-               endif
-               
-               ! if the threshold species is not in the network, then we burn
-               ! normally.  if it is in the network, make sure the mass
-               ! fraction is above the cutoff.
-               if (rho > burning_cutoff_density .and.                &
-                    ( ispec_threshold < 0 .or.                       &
-                    (ispec_threshold > 0 .and.                       &
-                    x_test > burner_threshold_cutoff))) then
-                  ! Initialize burn state_in and state_out
-                  state_in % e   = 0.0d0
-                  state_in % rho = rho
-                  state_in % T   = T_in
-                  do n = 1, nspec
-                     state_in % xn(n) = x_in(n)
-                  enddo
-                  state_out = state_in
-                  call burner(state_in, state_out, dt)
-                  do n = 1, nspec
-                     x_out(n) = state_out % xn(n)
-                  enddo
-                  do n = 1, nspec
-                     rhowdot(n) = state_out % rho * &
-                          (state_out % xn(n) - state_in % xn(n)) / dt
-                  enddo
-                  rhoH = state_out % rho * (state_out % e - state_in % e) / dt
-               else
-                  x_out = x_in
-                  rhowdot = 0.d0
-                  rhoH = 0.d0
-               endif
-               
-               ! check if sum{X_k} = 1
-               sumX = ZERO
-               do n = 1, nspec
-                  sumX = sumX + x_out(n)
-               enddo
-               !TODO: Removed this check for OpenACC dev, put it somewhere once
-               !OpenACC's going.
-               !if (abs(sumX - ONE) > reaction_sum_tol) then
-               !   call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
-               !endif
 
-               ! pass the density and pi through
-               snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
-               snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
-               
-               ! update the species
-               ii = 1
-               do n = spec_comp, spec_comp+nspec-1
-                  snew(i,j,k,n) = x_out(ii) * rho
-                  ii = ii + 1
-               enddo
-               
-               ! store the energy generation and species create quantities
-               do n = 1, nspec
-                  rho_omegadot(i,j,k,n) = rhowdot(n)
-               enddo
-               rho_Hnuc(i,j,k) = rhoH
-               
-               ! update the enthalpy -- include the change due to external heating
-               snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
-                    + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
-               
-               ! pass the tracers through
-               do n = trac_comp, trac_comp+ntrac-1
-                  snew(i,j,k,n) = sold(i,j,k,n)
-               enddo
+               if (cell_valid) then
+#endif
 
+                  rho = sold(i,j,k,rho_comp)
+                  ii = 1
+                  do n = spec_comp, spec_comp+nspec-1
+                     x_in(ii) = sold(i,j,k,n) / rho
+                     ii = ii + 1
+                  enddo
+
+                  if (drive_initial_convection) then
+                     T_in = tempbar_init(k)
+                  else
+                     T_in = sold(i,j,k,temp_comp)
+                  endif
+
+                  ! Fortran doesn't guarantee short-circuit evaluation of logicals 
+                  ! so we need to test the value of ispec_threshold before using it 
+                  ! as an index in x_in
+                  if (ispec_threshold > 0) then
+                     x_test = x_in(ispec_threshold)
+                  else
+                     x_test = ZERO
+                  endif
+
+                  ! if the threshold species is not in the network, then we burn
+                  ! normally.  if it is in the network, make sure the mass
+                  ! fraction is above the cutoff.
+                  if (rho > burning_cutoff_density .and.                &
+                       ( ispec_threshold < 0 .or.                       &
+                       (ispec_threshold > 0 .and.                       &
+                       x_test > burner_threshold_cutoff))) then
+                     ! Initialize burn state_in and state_out
+                     state_in % e   = 0.0d0
+                     state_in % rho = rho
+                     state_in % T   = T_in
+                     do n = 1, nspec
+                        state_in % xn(n) = x_in(n)
+                     enddo
+                     state_out = state_in
+                     call burner(state_in, state_out, dt, rhowdot, rhoH)
+                     do n = 1, nspec
+                        x_out(n) = state_out % xn(n)
+                     enddo
+                     do n = 1, nspec
+                        rhowdot(n) = state_out % rho * &
+                             (state_out % xn(n) - state_in % xn(n)) / dt
+                     enddo
+                     rhoH = state_out % rho * (state_out % e - state_in % e) / dt
+                  else
+                     x_out = x_in
+                     rhowdot = 0.d0
+                     rhoH = 0.d0
+                  endif
+
+                  ! check if sum{X_k} = 1
+                  sumX = ZERO
+                  do n = 1, nspec
+                     sumX = sumX + x_out(n)
+                  enddo
+#ifndef ACC
+                  if (abs(sumX - ONE) > reaction_sum_tol) then
+                    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
+                  endif
+#endif
+                  ! pass the density and pi through
+                  snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
+                  snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
+
+                  ! update the species
+                  ii = 1
+                  do n = spec_comp, spec_comp+nspec-1
+                     snew(i,j,k,n) = x_out(ii) * rho
+                     ii = ii + 1
+                  enddo
+
+                  ! store the energy generation and species create quantities
+                  do n = 1, nspec
+                     rho_omegadot(i,j,k,n) = rhowdot(n)
+                  enddo
+                  rho_Hnuc(i,j,k) = rhoH
+
+                  ! update the enthalpy -- include the change due to external heating
+                  snew(i,j,k,rhoh_comp) = sold(i,j,k,rhoh_comp) &
+                       + ldt*rho_Hnuc(i,j,k) + ldt*rho_Hext(i,j,k)
+
+                  ! pass the tracers through
+                  do n = trac_comp, trac_comp+ntrac-1
+                     snew(i,j,k,n) = sold(i,j,k,n)
+                  enddo
+#ifndef ACC
+               endif
+#endif
             enddo
          enddo
       enddo
@@ -1026,16 +1032,15 @@ contains
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
 
+#ifndef ACC
                ! make sure the cell isn't covered by finer cells
-               !TODO: For OpenACC dev, all masking/cell_valid logic has been
-               !removed.  Once it's working, we should see if we want to bring
-               !back the masking or not.
-               ! cell_valid = .true.
-               ! if ( present(mask) ) then
-               !    if ( (.not. mask(i,j,k)) ) cell_valid = .false.
-               ! endif
+               cell_valid = .true.
+               if ( present(mask) ) then
+                  if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+               endif
 
-               ! if (cell_valid) then
+               if (cell_valid) then
+#endif
 
                   ! Initialize ingoing burn state
                   state_in % e = 0.0d0
@@ -1099,22 +1104,21 @@ contains
                      endif
                   endif
 
-                  ! ! Commented print and bl_error calls on GPU
-                  ! ! check if sum{X_k} = 1
-                  ! sumX = ZERO
-                  ! do n = 1, nspec
-                  !    sumX = sumX + state_out % xn(n)
-                  ! enddo
-                  ! if (abs(sumX - ONE) > reaction_sum_tol) then
-                  !    print *, state_out % xn(:)
-                  !    ! did we burn?
-                  !    print *, "burned: ", (state_in % rho > burning_cutoff_density .and. &
-                  !         ( ispec_threshold < 0 .or. &
-                  !          (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
-                  !    print *, 'density: ', state_in % rho, base_cutoff_density
-                  !    call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
-                  ! endif
-
+#ifndef ACC
+                  sumX = ZERO
+                  do n = 1, nspec
+                     sumX = sumX + state_out % xn(n)
+                  enddo
+                  if (abs(sumX - ONE) > reaction_sum_tol) then
+                     print *, state_out % xn(:)
+                     ! did we burn?
+                     print *, "burned: ", (state_in % rho > burning_cutoff_density .and. &
+                          ( ispec_threshold < 0 .or. &
+                           (ispec_threshold > 0 .and. x_test > burner_threshold_cutoff) ))
+                     print *, 'density: ', state_in % rho, base_cutoff_density
+                     call bl_error("ERROR: abundances do not sum to 1", abs(sumX-ONE))
+                  endif
+#endif
                   ! pass the density and pi through
                   snew(i,j,k,rho_comp) = sold(i,j,k,rho_comp)
                   snew(i,j,k,pi_comp) = sold(i,j,k,pi_comp)
@@ -1141,8 +1145,9 @@ contains
                   do n = trac_comp, trac_comp+ntrac-1
                      snew(i,j,k,n) = sold(i,j,k,n)
                   enddo
-               ! endif
-               
+#ifndef ACC
+               endif
+#endif
             enddo
          enddo
       enddo

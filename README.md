@@ -1,5 +1,8 @@
 # MAESTRO
 
+> **_NOTE:_**  MAESTRO is no longer being actively developed.  Users should switch
+> to MAESTROeX to take advantage of the latest capabilities: https://github.com/AMReX-Astro/MAESTROeX
+
 *a low Mach number stellar hydrodynamics code*
 
 `Maestro` solves the equations of low Mach number hydrodynamics for
@@ -15,10 +18,10 @@ http://amrex-astro.github.io/MAESTRO/
 
 ## Getting Started
 
-To use `Maestro` you need a copy of the `AMReX` library, available
+To use `Maestro` you need a copy of the ` FBoxLib` library, available
 on github at:
 
-https://github.com/AMReX-Codes/amrex.git
+https://github.com/AMReX-Codes/FBoxLib.git
 
 To use anything other than the simple microphysics, you need the
 StarKiller microphysics package, available on github at:
@@ -68,9 +71,9 @@ Development generally follows the following ideas:
     since these will be used for a squashed commit message.*
 
   * On the first workday of each month, we perform a merge of
-    `development` into `master`, in coordination with `AMReX`,
-    `Maestro`, and `Microphysics`.  For this merge to take place, we
-    need to be passing the regression tests.
+    `development` into `master`, in coordination with `AMReX` and
+    `FBoxLib`, `Maestro`, and `Microphysics`.  For this merge to take
+    place, we need to be passing the regression tests.
 
     To accommodate this need, we close the merge window into
     `development` a few days before the merge day.  While the merge

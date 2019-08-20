@@ -242,9 +242,6 @@ Fmlocs += $(foreach dir, $(FBOXLIB_CORE), $(FBOXLIB_HOME)/$(dir))
 Fmincs :=
 
 
-# include the necessary GPackage.mak files that define this setup
-include $(Fmpack)
-
 # vpath defines the directories to search for the source files
 
 # we always want to search the MAESTRO/Source directory, even for
@@ -256,6 +253,10 @@ endif
 #  Note: GMakerules.mak will include '.' at the start of the
 #  VPATH_LOCATIONS to first search in the problem directory
 VPATH_LOCATIONS += $(Fmlocs)  $(EXTRA_LOCATIONS)
+
+# include the necessary GPackage.mak files that define this setup
+# but do this after VPATH_LOCATIONS
+include $(Fmpack)
 
 
 # list of directories to put in the Fortran include path
@@ -331,7 +332,7 @@ $(odir)/build_info.o: build_info.f90
 
 
 #-----------------------------------------------------------------------------
-# include the AMReX Fortran Makefile rules
+# include the FBoxLib Makefile rules
 include $(FBOXLIB_HOME)/Tools/F_mk/GMakerules.mak
 
 

@@ -37,7 +37,8 @@ cells at the same height must be at the same level of refinement.
 This restriction is to allow for the base state to directly align with
 the Cartesian state everywhere.  For spherical geometries, there is no
 such restriction (again, see Figure~\ref{fig:base_state}).
-The \maestro\ grids are managed by the \amrex\ library, which is
+The \maestro\ grids are managed by the \fboxlib\ library\footnote{This is a pure Fortran library that 
+has a lot of similarities to the \cpp\ \amrex\ library}, which is
 distributed separately.
 
 
@@ -52,16 +53,15 @@ distributed separately.
   contribute to building the {\tt reacting\_bubble} problem in \maestro.  The
   red directories are part of most standard \maestro\ build.  The
   purple lines show the directories that are pulled in through
-  various Makefile variables ({\tt AMREX\_HOME}, {\tt NETWORK\_DIR},
+  various Makefile variables ({\tt FBOXLIB\_HOME}, {\tt NETWORK\_DIR},
   {\tt EOS\_DIR}, and {\tt CONDUCTIVITY\_DIR}).}
 \end{figure}
 
 
 Building \maestro\ requires both the \maestro-specific source
 files (distributed in the {\tt MAESTRO/} directory), and the
-\amrex\ library (distributed separately, consisting of the {\tt amrex/} directory).
-\amrex\ provides both a C++ and a Fortran framework.  \maestro\
-only uses the Fortran portions of \amrex.  Figure~\ref{fig:arch:eco}
+\fboxlib\ library (distributed separately, consisting of the {\tt FBoxLib/} directory).
+Figure~\ref{fig:arch:eco}
 shows the relationship between the different packages, highlighting
 what goes into defining a specific \maestro\ problem.
 
@@ -253,7 +253,7 @@ used by \maestro\ are:
 \end{itemize}
 
 
-Finally the {\tt amrex/Tools/Postprocessing/F\_Src} package provides simple
+Finally the {\tt FBoxLib/Tools/Postprocessing/F\_Src} package provides simple
 Fortran-based analysis routines (e.g.\ extract a line from a
 multidimensional dataset) that operate on \amrex\ datasets.  These are
 described in \S~\ref{sec:analysis}.  Several sub-directories with
@@ -487,9 +487,9 @@ starting point for full stars.
 
 
 
-\section{\amrex\ Data Structures}
+\section{\fboxlib\ Data Structures}
 
-\maestro's gridding is handled by the \amrex\ library, which
+\maestro's gridding is handled by the \fboxlib\ library, which
 contains the most fundamental objects used to construct parallel
 block-structured AMR applications---different
 regions of the domain can have different spatial resolutions.
@@ -522,7 +522,7 @@ processor (load balancing).
   Not shown is the case where data is nodal in the $y$-direction only.}
 \end{figure}
 On a grid, the data can be stored at cell-centers, on a face/edge, or
-on the corners.  In \amrex, data that is on an edge is termed `nodal'
+on the corners.  In \fboxlib, data that is on an edge is termed `nodal'
 in that direction (see Figure~\ref{fig:dataloc}).  Data that is on the
 corners is nodal in all spatial directions.  In \maestro, the state
 data (density, enthalpy, velocity, $\ldots$) is generally
@@ -530,10 +530,10 @@ cell-centered.  Fluxes are nodal in the direction they represent.
 A few quantities are nodal in all directions (e.g.\ $\phi$ used in
 the final velocity projection).
 
-To simplify the description of the underlying AMR grid, \amrex\
+To simplify the description of the underlying AMR grid, \fboxlib\
 provides a number of Fortran types.  We briefly summarize the major
-data types below.  A more extensive introduction to \amrex\ is 
-provided by the \amrex\ User's Guide, distributed with the library.
+data types below.  A more extensive introduction to \fboxlib\ is 
+provided by the \fboxlib\ User's Guide, distributed with the library.
 
 
 \subsection{\boxtype}
@@ -550,7 +550,7 @@ a global index space.
 \caption[Single-level grid structure]
 {\label{fig:boxes} Three boxes that comprise a single level.  At this
   resolution, the domain is 20$\times$18 zones.  Note that the
-  indexing in \amrex\ starts with $0$.}
+  indexing in \fboxlib\ starts with $0$.}
 \end{figure}
 
 
@@ -690,7 +690,7 @@ The procedure for accessing the data in each grid managed by the
 \multifab\ is shown in \S~\ref{sec:example}.  Subroutines to add,
 multiply, or divide two \multifab s exist, as do subroutines to copy
 from one \multifab\ to another---see
-\code{amrex/Src/F\_BaseLib/multifab.f90} for the full list of
+\code{FBoxLib/Src/F\_BaseLib/multifab.f90} for the full list of
 routines that work with \multifab s.
 
 
@@ -1037,9 +1037,9 @@ projection of the pressure ({\tt press\_comp}), or constructing
 the plotfile.
 
 
-\section{\amrex\ Helper Modules}
+\section{\fboxlib\ Helper Modules}
 
-There are a large number of modules in {\tt amrex/} that provide
+There are a large number of modules in {\tt FBoxLib/} that provide
 the core functionality for managing grids.  Here we describe
 the most popular such modules.
 
@@ -1092,7 +1092,7 @@ the dimensionality.
 \end{lstlisting}
 
 \noindent Here, the {\tt bl\_types} and \code{multifab\_module}
-modules bring in the basic \amrex\ data types. Specifically, here,
+modules bring in the basic \fboxlib\ data types. Specifically, here,
 \code{bl\_types} defines {\tt dp\_t} which is the {\tt kind} used for
 declaring double precision data, and \code{multifab\_module} defines
 the \multifab\ data type.  The \code{ml\_layout\_module} defines the
@@ -1327,7 +1327,7 @@ on the objective.
 \end{itemize}
 
 You generally won't see calls in the MAESTRO source code to these subroutines,
-as there is now a special \amrex\ subroutine, {\tt ml\_restrict\_and\_fill},
+as there is now a special \fboxlib\ subroutine, {\tt ml\_restrict\_and\_fill},
 that takes an array of multifabs at different level, and in order calls:
 (1) {\tt ml\_cc\_restriction\_c}, (2) {\tt multifab\_fill\_boundary},
 (3) {\tt multifab\_physbc}, and (4) {\tt multifab\_fill\_ghost\_cells}.
@@ -1350,7 +1350,7 @@ the boundary conditions for each box in the domain at that level of
 refinement: {\tt phys\_bc\_level\_array}, {\tt adv\_bc\_level\_array},
 and {\tt ell\_bc\_level\_array}.  In all cases, the boundary
 conditions are specified via integer values that are defined in {\tt
-  bc\_module} (part of \amrex).
+  bc\_module} (part of \fboxlib).
 
 Each level has a {\tt phys\_bc\_level\_array(0:ngrids,dim,2)} array,
 where {\tt ngrids} is the number of boxes on that level, {\tt dim} is

@@ -1,3 +1,38 @@
+18.12
+
+  * fixed a bug in ppm_trace_sources
+
+  * simplified conductivity interface to match the eos interface by
+    storing the conductivity in the eos type.
+
+18.08
+
+  * Major changes
+
+   -- We fixed a corner coupling bug when advecting conservative
+      scalars (predicting rho, rhoh, or rhoX)
+
+
+18.07
+
+  * Major changes
+
+   -- we now rely on the separate FBoxLib library instead of the
+      Fortran portions of AMReX.  These are identical at the moment,
+      but the Fortran parts of AMReX will be removed in the future.
+
+18.03
+
+  * Minor changes
+
+   -- some small code clean-ups
+
+18.02
+
+  * Minor changes
+
+   -- some small code clean-ups
+
 17.12
 
   * Minor changes

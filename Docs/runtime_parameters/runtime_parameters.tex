@@ -215,9 +215,10 @@
 \verb= burner_threshold_cutoff = &  Mass fraction cutoff for burner\_threshold\_species  used in burner threshold & 1.d-10 \\
 \verb= burner_threshold_species = &  Name of the species to be used in burner threshold & "" \\
 \rowcolor{tableShade}
+\verb= burning_cutoff_density = &  Burning cutoff density (do not burn if density is below this threshold) Initialized to zero, runtime\_init() in probin.f90 will check to see if burning\_cutoff\_density < 0 and if so will set burning\_cutoff\_density = base\_cutoff\_density & -1.0d0 \\
 \verb= do_burning = &  turn on (.true.) or off (.false.) burning & .true. \\
-\verb= do_subgrid_burning = &  break a zone into subzones, call the burner in each subzone and then average the result to the original cell & .false. \\
 \rowcolor{tableShade}
+\verb= do_subgrid_burning = &  break a zone into subzones, call the burner in each subzone and then average the result to the original cell & .false. \\
 \verb= reaction_sum_tol = &  mass fraction sum tolerance (if they don't sum to 1 within this tolerance, we abort) & 1.d-10 \\
 
 
@@ -346,7 +347,7 @@
 
 \rowcolor{tableShade}
 \verb= amr_buf_width = &  the number of buffer zones surrounding a cell tagged for refinement. note that this needs to be >= regrid\_int & -1 \\
-\verb= bcx_hi = &  $+x$ boundary condition (valid values are listed in {\tt  amrex/Src/F\_BaseLib/bc.f90}) & SLIP\_WALL \\
+\verb= bcx_hi = &  $+x$ boundary condition (valid values are listed in {\tt  boxlib/bc.f90}) & SLIP\_WALL \\
 \rowcolor{tableShade}
 \verb= bcx_lo = &  $-x$ boundary condition & SLIP\_WALL \\
 \verb= bcy_hi = &  $+y$ boundary condition & SLIP\_WALL \\
@@ -361,7 +362,7 @@
 \verb= dm_in = &  dimensionality (valid values are 2 or 3) & 2 \\
 \rowcolor{tableShade}
 \verb= do_2d_planar_octant = &  Set to 1 if using the 2D simplified (planar) model of an octant. & 0 \\
-\verb= drdxfac = &  Number of radial base state zones per Cartesian full state zone along the first dimension at the finest level for spherical geometry & 1 \\
+\verb= drdxfac = &  ratio of radial base state zones to Cartesian full state zones for spherical geometry & 1 \\
 \rowcolor{tableShade}
 \verb= dump_grid_file = &  dump out a file, named grids.out, containing the number of grids a each level. A new line is added each time regrid is called. & .false. \\
 \verb= max_grid_size = &  The largest grid size that will be created using make\_new\_grids. & 64 \\
@@ -495,7 +496,7 @@
 \verb= base_cutoff_density = &  The density below which we keep the initial model constant. Refer to Section \ref{Sec:Base Cutoff Density} & 3.d6 \\
 \rowcolor{tableShade}
 \verb= bds_type = &  0 = use ppm instead for multi-d integrator \newline 1 = bilinear & 0 \\
-\verb= beta0_type = &  what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta\_type} = 1 uses $\beta_0$; \newline {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta\_type} = 3 uses 1 (small-scale combustion). & 1 \\
+\verb= beta0_type = &  what type of coefficient to use inside the velocity divergence constraint. \newline {\tt beta0\_type} = 1 uses $\beta_0$; \newline {\tt beta0\_type} = 2 uses $\rho_0$ (anelastic); \newline {\tt beta0\_type} = 3 uses 1 (small-scale combustion). & 1 \\
 \rowcolor{tableShade}
 \verb= buoyancy_cutoff_factor = &  The multiplicative factor (over base\_cutoff\_density) below which we do zero out the buoyancy term in the momentum equation. & 5.0 \\
 \verb= co_latitude = &  latitude, in radians, for problems with rotation where the domain is only a subset of a full star. & ZERO \\
@@ -503,7 +504,7 @@
 \verb= do_eos_h_above_cutoff = &  After the advective enthalpy update, recompute the enthalpy if we are below the base cutoff density. & .true. \\
 \verb= do_planar_invsq_grav = &  are we doing 1/r$^2$ gravity for plane-parallel & .false. \\
 \rowcolor{tableShade}
-\verb= do_smallscale = &  force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta\_type} = 3 & .false. \\
+\verb= do_smallscale = &  force $\rho_0 = (\rho h)_0 = 0$, {\tt evolve\_base\_state = F} and {\tt beta0\_type} = 3 & .false. \\
 \verb= do_sponge = &  Use sponging. & .false. \\
 \rowcolor{tableShade}
 \verb= dpdt_factor = &  factor in front of the volume discrepancy term (0.0 = off) & 0.d0 \\

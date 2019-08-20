@@ -59,8 +59,8 @@
 \item {\em The code doesn't compile, but complains right away that there
    is ``{\tt No rule to make target `fabio\_c.c', needed by `t/Linux.gfortran.mpi/c.depends'}''}
 
-   The environment variable {\tt AMREX\_HOME} needs to be the full path
-   to the {\tt amrex/} directory.  You cannot use `{\tt $\sim$}' as a shortcut
+   The environment variable {\tt FBOXLIB\_HOME} needs to be the full path
+   to the {\tt FBoxLib/} directory.  You cannot use `{\tt $\sim$}' as a shortcut
    for your home directory.
   
 \item {\em {\tt make} issues an error like:
@@ -213,7 +213,7 @@ where {\tt inputs} is the desired inputs file {\em in each} {\tt xterm}.
 
 \item {\em How can I get more information about floating point exceptions?}
 
-\amrex\ can intercept floating point exceptions and provide a helpful
+\fboxlib\ can intercept floating point exceptions and provide a helpful
 backtrace that shows you where they were generated.  See \S
 \ref{ch:makefiles:special}.
 
