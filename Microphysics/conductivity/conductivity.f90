@@ -37,10 +37,14 @@ contains
     integer         , intent(in   ) :: input
     type (eos_t)    , intent(inout) :: state
 
+    real(dp_t) :: conduct
+
     ! call the EOS, passing through the arguments we called conducteos with
     call eos(input, state)
 
-    call actual_conductivity(state)
+    call actual_conductivity(state, conduct)
+
+    state % conductivity = conduct
 
   end subroutine conducteos
 
