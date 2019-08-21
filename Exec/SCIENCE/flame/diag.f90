@@ -74,7 +74,7 @@ contains
     integer :: un
     logical :: lexist
 
-    integer, save :: ic12, io16
+    !integer, save :: ic12, io16
     logical, save :: firstCall_io = .true.
     logical, save :: firstCall_params = .true.
 
@@ -87,8 +87,8 @@ contains
 
     if (firstCall_params) then
 
-       ic12 = network_species_index("carbon-12")
-       io16 = network_species_index("oxygen-16")
+       !ic12 = network_species_index("carbon-12")
+       !io16 = network_species_index("oxygen-16")
 
        firstCall_params = .false.
     endif

@@ -46,7 +46,7 @@ contains
     logical           :: radialtag_proc(0:nr_fine-1)
 
     real(kind = dp_t), save    :: fuel_XC12
-    integer, save :: ic12
+    !integer, save :: ic12
     logical, save :: firstCall = .true.    
     integer, parameter :: npad = 4
 
@@ -56,7 +56,7 @@ contains
 
     if (firstCall) then
 
-       ic12 = network_species_index("carbon-12")
+       !ic12 = network_species_index("carbon-12")
        fuel_XC12 = INLET_RHOX(ic12)/INLET_RHO
 
        firstCall = .false.

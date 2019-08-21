@@ -42,16 +42,17 @@ contains
 
     ! local
     real(kind=dp_t) :: rlen, rloc
-    integer :: r, ic12, io16, img24
+    integer :: r
+    !integer :: ic12, io16, img24
     real(kind=dp_t) :: p_ambient, dens_ash, rhoh_fuel, rhoh_ash
     real(kind=dp_t) :: xn_fuel(nspec), xn_ash(nspec), xn_smooth(nspec)
     
     type (eos_t) :: eos_state
 
     ! figure out the indices for different species
-    ic12  = network_species_index("carbon-12")
-    io16  = network_species_index("oxygen-16")
-    img24  = network_species_index("magnesium-24")    
+    !ic12  = network_species_index("carbon-12")
+    !io16  = network_species_index("oxygen-16")
+    !img24  = network_species_index("magnesium-24")    
 
     if (ic12 < 0 .or. io16 < 0 .or. img24 < 0) then
        call bl_error("ERROR: species indices not defined")
